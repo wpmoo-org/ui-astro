@@ -1,0 +1,37 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Badge from "../components/Badge.astro";
+import Button from "../components/Button.astro";
+import Card from "../components/Card.astro";
+---
+
+<BaseLayout title="Moo UI Astro" description="Astro theme foundation powered by Moo UI.">
+  <section class="row align-items-center g-5">
+    <div class="col-lg-7">
+      <Badge label="Astro foundation" variant="outline" pill />
+      <h1 class="display-5 fw-semibold mt-3">Build a theme on Moo UI contracts.</h1>
+      <p class="lead text-body-secondary">
+        Astro owns the page composition and theme shell. Moo UI supplies the
+        Bootstrap-native component language underneath.
+      </p>
+      <div class="d-flex flex-wrap gap-2">
+        <Button href="#components">Explore components</Button>
+        <Button variant="outline" href="https://ui.wpmoo.org/">Read the catalog</Button>
+      </div>
+    </div>
+    <div class="col-lg-5" id="components">
+      <Card title="Theme-ready primitives" subtitle="Start small, compose deliberately.">
+        <div class="d-flex flex-column gap-3">
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <span class="text-body-secondary">Button</span>
+            <Button size="sm">Save changes</Button>
+          </div>
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <span class="text-body-secondary">Badge</span>
+            <Badge label="Ready" variant="success" />
+          </div>
+        </div>
+      </Card>
+    </div>
+  </section>
+</BaseLayout>

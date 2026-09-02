@@ -1,0 +1,32 @@
+{
+  "name": "@wpmoo/ui-astro",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Astro starter template for Moo UI themes.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20.3.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    "./components/Badge.astro": "./src/components/Badge.astro",
+    "./components/Button.astro": "./src/components/Button.astro",
+    "./components/Card.astro": "./src/components/Card.astro",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@wpmoo/ui": "1.0.0-rc.4",
+    "astro": "5.15.0",
+    "bootstrap": "5.3.3"
+  }
+}

@@ -1,0 +1,42 @@
+---
+interface Props {
+  label: string;
+  variant?:
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | "success"
+    | "warning"
+    | "info"
+    | "light"
+    | "dark";
+  pill?: boolean;
+  class?: string;
+}
+
+const {
+  label,
+  variant = "default",
+  pill = false,
+  class: className = "",
+} = Astro.props;
+
+const variantClasses = {
+  default: "text-bg-primary",
+  secondary: "text-bg-secondary",
+  destructive: "text-bg-danger",
+  outline: "border text-body-secondary",
+  success: "text-bg-success",
+  warning: "text-bg-warning",
+  info: "text-bg-info",
+  light: "text-bg-light",
+  dark: "text-bg-dark",
+} as const;
+
+const classes = ["badge", variantClasses[variant], pill ? "rounded-pill" : "", className]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<span class={classes}>{label}</span>

@@ -1,0 +1,33 @@
+---
+interface Props {
+  title?: string;
+  subtitle?: string;
+  size?: "default" | "sm";
+  class?: string;
+}
+
+const {
+  title = "",
+  subtitle = "",
+  size = "default",
+  class: className = "",
+} = Astro.props;
+
+const classes = ["card", size === "sm" ? "card--sm" : "", className]
+  .filter(Boolean)
+  .join(" ");
+---
+
+<div class={classes}>
+  {title || subtitle ? (
+    <div class="card-header">
+      <div class="card-header__text">
+        {title && <h2 class="card-title">{title}</h2>}
+        {subtitle && <p class="card-subtitle">{subtitle}</p>}
+      </div>
+    </div>
+  ) : null}
+  <div class="card-body">
+    <slot />
+  </div>
+</div>

@@ -1,0 +1,79 @@
+---
+interface Props {
+  label?: string;
+  variant?:
+    | "default"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "destructive"
+    | "link"
+    | "success"
+    | "warning"
+    | "info"
+    | "light"
+    | "dark"
+    | "outline-primary"
+    | "outline-success"
+    | "outline-danger";
+  size?: "default" | "xs" | "sm" | "lg";
+  type?: "button" | "submit" | "reset";
+  href?: string;
+  disabled?: boolean;
+  class?: string;
+}
+
+const {
+  label = "",
+  variant = "default",
+  size = "default",
+  type = "button",
+  href,
+  disabled = false,
+  class: className = "",
+} = Astro.props;
+
+const variantClasses = {
+  default: "btn-primary",
+  secondary: "btn-secondary",
+  outline: "btn-outline-secondary",
+  ghost: "btn-ghost",
+  destructive: "btn-danger",
+  link: "btn-link",
+  success: "btn-success",
+  warning: "btn-warning",
+  info: "btn-info",
+  light: "btn-light",
+  dark: "btn-dark",
+  "outline-primary": "btn-outline-primary",
+  "outline-success": "btn-outline-success",
+  "outline-danger": "btn-outline-danger",
+} as const;
+
+const sizeClasses = {
+  default: "",
+  xs: "btn-xs",
+  sm: "btn-sm",
+  lg: "btn-lg",
+} as const;
+
+const classes = ["btn", variantClasses[variant], sizeClasses[size], className]
+  .filter(Boolean)
+  .join(" ");
+---
+
+{href ? (
+  <a
+    class={classes}
+    role="button"
+    href={disabled ? undefined : href}
+    aria-disabled={disabled ? "true" : undefined}
+    tabindex={disabled ? -1 : undefined}
+  >
+    <slot>{label}</slot>
+  </a>
+) : (
+  <button class={classes} type={type} disabled={disabled}>
+    <slot>{label}</slot>
+  </button>
+)}
