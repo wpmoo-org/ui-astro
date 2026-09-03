@@ -1,0 +1,20 @@
+---
+interface Item { id: string; label: string; value?: string; checked?: boolean; disabled?: boolean; description?: string; }
+interface Props {
+  name: string;
+  legend?: string;
+  items: Item[];
+  required?: boolean;
+  invalid?: boolean;
+  feedback?: string;
+  reverse?: boolean;
+  bare?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { name, legend = "", items, required = false, invalid = false, feedback = "", reverse = false, bare = false, class: className = "", ...rest } = Astro.props;
+const feedbackId = `${name}-feedback`;
+---
+
+{bare ? <div {...rest} class={className || undefined}>{items.map((item) => <div class:list={["form-check", reverse ? "form-check-reverse" : ""]}><input class:list={["form-check-input", invalid ? "is-invalid" : ""]} type="radio" name={name} id={item.id} value={item.value || undefined} checked={item.checked} disabled={item.disabled} required={required} aria-invalid={invalid ? "true" : undefined} aria-describedby={item.description || feedback ? [item.description ? `${item.id}-description` : "", feedback ? feedbackId : ""].filter(Boolean).join(" ") : undefined} /><label class="form-check-label" for={item.id}>{item.label}</label>{item.description ? <div class="form-text" id={`${item.id}-description`}>{item.description}</div> : null}</div>)}{invalid && feedback ? <div class="invalid-feedback d-block" id={feedbackId}>{feedback}</div> : null}</div> : <fieldset {...rest} class:list={["radio-group", className]} aria-describedby={invalid && feedback ? feedbackId : undefined}><legend class="form-label">{legend}</legend>{items.map((item) => <div class:list={["form-check", reverse ? "form-check-reverse" : ""]}><input class:list={["form-check-input", invalid ? "is-invalid" : ""]} type="radio" name={name} id={item.id} value={item.value || undefined} checked={item.checked} disabled={item.disabled} required={required} aria-invalid={invalid ? "true" : undefined} aria-describedby={item.description || invalid && feedback ? [item.description ? `${item.id}-description` : "", invalid && feedback ? feedbackId : ""].filter(Boolean).join(" ") : undefined} /><label class="form-check-label" for={item.id}>{item.label}</label>{item.description ? <div class="form-text" id={`${item.id}-description`}>{item.description}</div> : null}</div>)}{invalid && feedback ? <div class="invalid-feedback d-block" id={feedbackId}>{feedback}</div> : null}</fieldset>}

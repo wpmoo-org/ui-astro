@@ -1,0 +1,34 @@
+---
+import CloseButton from "./CloseButton.astro";
+
+interface Props {
+  id: string;
+  title?: string;
+  description?: string;
+  headerClass?: string;
+  size?: "default" | "sm" | "lg" | "xl" | "fullscreen";
+  centered?: boolean;
+  scrollable?: boolean;
+  static?: boolean;
+  direction?: "" | "ltr" | "rtl" | "auto";
+  ariaLabel?: string;
+  describedby?: string;
+  dismissAriaLabel?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, title = "", description = "", headerClass = "", size = "default", centered = false, scrollable = false, static: staticBackdrop = false, direction = "", ariaLabel = "", describedby = "", dismissAriaLabel = "Close", class: className = "", ...rest } = Astro.props;
+const dialogClasses = ["modal-dialog", size !== "default" ? `modal-${size}` : "", centered ? "modal-dialog-centered" : "", scrollable ? "modal-dialog-scrollable" : ""].filter(Boolean).join(" ");
+const descriptionId = description ? `${id}-description` : "";
+---
+
+<div {...rest} class:list={["modal", "fade", className]} id={id} tabindex="-1" aria-label={ariaLabel || undefined} aria-labelledby={!ariaLabel && title ? `${id}-title` : undefined} aria-describedby={describedby || descriptionId || undefined} aria-hidden="true" dir={direction || undefined} data-bs-backdrop={staticBackdrop ? "static" : undefined} data-bs-keyboard={staticBackdrop ? "false" : undefined}>
+  <div class={dialogClasses}>
+    <div class="modal-content">
+      {title || description || Astro.slots.has("header") || Astro.slots.has("icon") ? <div class:list={["modal-header", headerClass]}>{Astro.slots.has("header") ? <slot name="header" /> : <><slot name="icon" /><div><h1 class="modal-title" id={`${id}-title`}>{title}</h1>{description ? <p class="modal-description mb-0" id={descriptionId}>{description}</p> : null}</div><CloseButton ariaLabel={dismissAriaLabel} dismiss="modal" /></>}</div> : null}
+      <div class="modal-body"><slot /></div>
+      {Astro.slots.has("footer") ? <div class="modal-footer"><slot name="footer" /></div> : null}
+    </div>
+  </div>
+</div>

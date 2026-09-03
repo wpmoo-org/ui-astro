@@ -1,0 +1,17 @@
+---
+interface Item { label: string; href?: string; active?: boolean; disabled?: boolean; badgeLabel?: string; badgeVariant?: string; }
+interface Props {
+  ariaLabel: string;
+  items?: Item[];
+  style?: "base" | "pills" | "underline";
+  vertical?: boolean;
+  dir?: "" | "ltr" | "rtl";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { ariaLabel, items = [], style = "pills", vertical = false, dir = "", class: className = "", ...rest } = Astro.props;
+const navClass = style === "base" ? "nav" : style === "underline" ? "nav nav-underline" : "nav nav-pills";
+---
+
+<nav {...rest} aria-label={ariaLabel} dir={dir || undefined}><ul class:list={[navClass, vertical ? "flex-column gap-1" : "", className]}>{items.map((item) => <li class="nav-item"><a class:list={["nav-link", item.active ? "active" : "", item.disabled ? "disabled" : ""]} href={item.disabled ? undefined : item.href || "#"} aria-disabled={item.disabled ? "true" : undefined} tabindex={item.disabled ? -1 : undefined} aria-current={item.active ? "page" : undefined}><span>{item.label}</span>{item.badgeLabel ? <span class:list={["badge", "rounded-pill", item.badgeVariant ? `text-bg-${item.badgeVariant === "destructive" ? "danger" : item.badgeVariant}` : "text-bg-secondary", "ms-auto"]}>{item.badgeLabel}</span> : null}</a></li>)}<slot /></ul></nav>

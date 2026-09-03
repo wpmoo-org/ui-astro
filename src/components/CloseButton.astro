@@ -1,0 +1,13 @@
+---
+interface Props {
+  ariaLabel?: string;
+  dismiss?: "alert" | "modal" | "offcanvas" | "toast" | "";
+  disabled?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { ariaLabel = "Close", dismiss = "", disabled = false, class: className = "", ...rest } = Astro.props;
+---
+
+<button {...rest} type="button" class:list={["btn-close", className]} aria-label={ariaLabel} data-bs-dismiss={dismiss || undefined} disabled={disabled}></button>

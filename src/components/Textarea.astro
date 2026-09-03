@@ -1,0 +1,38 @@
+---
+interface Props {
+  label?: string;
+  ariaLabel?: string;
+  id?: string;
+  name?: string;
+  placeholder?: string;
+  value?: string;
+  rows?: number;
+  size?: "" | "sm" | "lg";
+  help?: string;
+  invalidFeedback?: string;
+  ariaInvalid?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  readonly?: boolean;
+  describedby?: string;
+  dir?: "ltr" | "rtl" | "auto" | "";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { label = "", ariaLabel = "", id = "", name = "", placeholder = "", value = "", rows = 3, size = "", help = "", invalidFeedback = "", ariaInvalid = false, required = false, disabled = false, readonly = false, describedby = "", dir = "", class: className = "", ...rest } = Astro.props;
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+if (hasLabel === hasAriaLabel) {
+  throw new Error("Textarea requires exactly one of label or ariaLabel");
+}
+if (hasLabel && !id.trim()) {
+  throw new Error("Visible textarea labels require id");
+}
+const describedBy = [describedby, help ? `${id}-help` : "", invalidFeedback ? `${id}-feedback` : ""].filter(Boolean).join(" ");
+---
+
+{label ? <label class="form-label" for={id || undefined}>{label}</label> : null}
+<textarea {...rest} class:list={["form-control", size ? `form-control-${size}` : "", ariaInvalid ? "is-invalid" : "", className]} id={id || undefined} name={name || undefined} rows={rows} placeholder={placeholder || undefined} aria-label={ariaLabel || undefined} aria-invalid={ariaInvalid ? "true" : undefined} aria-describedby={describedBy || undefined} required={required} disabled={disabled} readonly={readonly} dir={dir || undefined}>{value}</textarea>
+{help ? <div class="form-text" id={`${id}-help`}>{help}</div> : null}
+{invalidFeedback ? <div class="invalid-feedback" id={`${id}-feedback`}>{invalidFeedback}</div> : null}

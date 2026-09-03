@@ -1,0 +1,30 @@
+---
+interface Props {
+  content: string;
+  variant: "page-title" | "page-description" | "section-title" | "example-title" | "subsection-title" | "muted" | "section-label" | "inline-code";
+  id?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { content = "", variant, id = "", class: className = "", ...rest } = Astro.props;
+const classes = [
+  variant === "page-title" ? "fw-semibold" : "",
+  variant === "page-description" ? "moo-page-description text-body-secondary mb-0" : "",
+  variant === "section-title" ? "h3" : "",
+  variant === "example-title" ? "h4" : "",
+  variant === "subsection-title" ? "h6" : "",
+  variant === "muted" ? "text-body-secondary" : "",
+  variant === "section-label" ? "small fw-semibold" : "",
+  className,
+].filter(Boolean).join(" ");
+---
+
+{variant === "page-title" ? <h1 {...rest} id={id || undefined} class={classes}><slot>{content}</slot></h1> : null}
+{variant === "page-description" ? <p {...rest} class={classes}><slot>{content}</slot></p> : null}
+{variant === "section-title" ? <h2 {...rest} id={id || undefined} class={classes}><slot>{content}</slot></h2> : null}
+{variant === "example-title" ? <h2 {...rest} id={id || undefined} class={classes}><slot>{content}</slot></h2> : null}
+{variant === "subsection-title" ? <h3 {...rest} id={id || undefined} class={classes}><slot>{content}</slot></h3> : null}
+{variant === "muted" ? <span {...rest} class={classes}><slot>{content}</slot></span> : null}
+{variant === "section-label" ? <span {...rest} class={classes}><slot>{content}</slot></span> : null}
+{variant === "inline-code" ? <code {...rest} class={className || undefined}><slot>{content}</slot></code> : null}

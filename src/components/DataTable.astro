@@ -1,0 +1,134 @@
+---
+interface Column {
+  key: string;
+  label: string;
+  srLabel?: string;
+  align?: string;
+  sortable?: boolean;
+  width?: string;
+  initialSort?: "none" | "asc" | "desc";
+  hideable?: boolean;
+  cardRole?: "title" | "actions" | "";
+  detailLabel?: string;
+}
+
+interface Row {
+  id: string;
+  label?: string;
+  cells: Record<string, string>;
+  search?: string;
+  facets?: Record<string, string>;
+  sort?: Record<string, string | number>;
+  card?: { title?: string; actions?: string };
+}
+
+interface FacetOption { value: string; label: string; count?: number; }
+interface Facet { key: string; label: string; options: FacetOption[]; }
+interface BulkAction { key: string; label: string; icon?: string; destructive?: boolean; options?: { value: string; label: string }[]; }
+
+interface Props {
+  id: string;
+  columns: Column[];
+  rows: Row[];
+  facets?: Facet[];
+  searchPlaceholder?: string;
+  pageSizes?: number[];
+  defaultPageSize?: number;
+  selectable?: boolean;
+  selectionNoun?: string;
+  bulkActions?: BulkAction[];
+  filterMode?: "inline" | "picker";
+  responsiveMode?: "scroll" | "cards" | "toggle";
+  responsiveBreakpoint?: "sm" | "md" | "lg" | "xl" | "xxl";
+  trustedHtml?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const {
+  id,
+  columns,
+  rows,
+  facets = [],
+  searchPlaceholder = "Filter...",
+  pageSizes = [10, 20, 30, 40, 50],
+  defaultPageSize = 10,
+  selectable = true,
+  selectionNoun = "row(s)",
+  bulkActions = [],
+  filterMode = "inline",
+  responsiveMode = "scroll",
+  responsiveBreakpoint = "lg",
+  trustedHtml = false,
+  class: className = "",
+  ...rest
+} = Astro.props;
+
+const pageSize = Number.isFinite(defaultPageSize) && defaultPageSize > 0 ? Math.floor(defaultPageSize) : 10;
+const availablePageSizes = pageSizes.filter((size) => Number.isFinite(size) && size > 0).map((size) => Math.floor(size));
+const resolvedPageSizes = availablePageSizes.length ? availablePageSizes : [10, 20, 30, 40, 50];
+const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+const initialPageWindow: Array<number | "\u2026"> = pageCount <= 7 ? Array.from({ length: pageCount }, (_, index) => index + 1) : [1, 2, "\u2026", pageCount];
+const sortState = (column: Column) => column.initialSort === "asc" || column.initialSort === "desc" ? column.initialSort : "none";
+const cardTitleColumn = columns.find((column) => column.cardRole === "title");
+const cardActionsColumn = columns.find((column) => column.cardRole === "actions");
+const cellValue = (row: Row, key: string) => row.cells[key] ?? "";
+---
+
+<div {...rest} class:list={["datatable", `datatable--responsive-${responsiveMode}`, responsiveMode !== "scroll" ? "datatable--responsive-cards-active" : "", className]} id={id} data-datatable-page-size={pageSize} data-datatable-filter-mode={filterMode} data-datatable-view={responsiveMode === "toggle" ? "table" : undefined}>
+  <div class="datatable-toolbar" data-datatable-toolbar>
+    <div class="datatable-toolbar-query">
+      <div class="datatable-search-filter">
+        <div class="input-group input-group-sm datatable-searchbar">
+          <span class="datatable-search-icon" aria-hidden="true"><slot name="search-icon"><Icon name="search" /></slot></span>
+          <input class="form-control datatable-search" type="search" placeholder={searchPlaceholder} aria-label={searchPlaceholder} data-datatable-search />
+          {filterMode === "picker" && facets.length ? (
+            <button class="btn btn-ghost btn-icon-sm datatable-filter-picker-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Open filters" data-datatable-filter-menu-trigger>
+              <slot name="filter-icon"><Icon name="list-filter" /></slot>
+            </button>
+          ) : null}
+          {filterMode === "picker" && facets.length ? (
+            <ul class="dropdown-menu dropdown-menu-end datatable-search-filter-menu">
+              <li class="datatable-filter-panel" data-datatable-filter-panel="facets"><h6 class="dropdown-header">Filter by</h6></li>
+              {facets.map((facet) => <li class="datatable-filter-panel" data-datatable-filter-panel="facets"><button class="dropdown-item datatable-filter-group" type="button" data-datatable-filter-group={facet.key}><span>{facet.label}</span><span class="datatable-filter-group-summary ms-auto small text-body-secondary" data-datatable-filter-group-summary={facet.key} hidden></span><slot name="filter-next-icon"><Icon name="chevron-right" position="inline-end" /></slot></button></li>)}
+              {facets.map((facet) => <li class="datatable-filter-panel" data-datatable-filter-panel="options" data-datatable-filter-panel-key={facet.key} hidden><button class="dropdown-item datatable-filter-panel-back" type="button" data-datatable-filter-back><slot name="filter-back-icon"><Icon name="chevron-left" /></slot><span>{facet.label}</span></button>{facet.options.length > 7 ? <div class="datatable-filter-option-search-wrap"><input class="form-control form-control-sm datatable-filter-option-search" type="search" placeholder={`Search ${facet.label.toLowerCase()}...`} aria-label={`Search ${facet.label.toLowerCase()}`} data-datatable-filter-option-search={facet.key} /></div> : null}<ul class="datatable-filter-options no-scrollbar scroll-fade-y">{facet.options.map((option) => <li><button class="dropdown-item dropdown-item-check datatable-filter-picker-item" type="button" data-datatable-filter-option={option.value} data-datatable-filter-option-key={facet.key} aria-pressed="false"><span class="dropdown-item-check__indicator" aria-hidden="true"><slot name="filter-check-icon"><Icon name="check" /></slot></span><span data-datatable-filter-option-label>{option.label}</span>{option.count !== undefined ? <span class="ms-auto small text-body-secondary">{option.count}</span> : null}</button></li>)}</ul></li>)}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </div>
+    <div class="datatable-toolbar-filters" role="group" aria-label="Table filters">
+      {facets.map((facet) => <div class="dropdown datatable-facet" data-datatable-facet={facet.key} hidden={filterMode === "picker"}><button class="btn btn-sm datatable-facet-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><span>{facet.label}</span><span class="datatable-facet-summary" data-datatable-facet-summary hidden></span></button><ul class="dropdown-menu datatable-facet-menu">{facet.options.length > 7 ? <li><input class="form-control form-control-sm datatable-facet-search" type="search" placeholder={`Search ${facet.label.toLowerCase()}...`} aria-label={`Search ${facet.label.toLowerCase()}`} data-datatable-facet-search /></li> : null}{facet.options.map((option) => <li><button class="dropdown-item datatable-facet-item" type="button" data-datatable-facet-option={option.value} aria-pressed="false"><span data-datatable-facet-option-label>{option.label}</span>{option.count !== undefined ? <span class="ms-auto small text-body-secondary">{option.count}</span> : null}</button></li>)}<li><button class="dropdown-item" type="button" data-datatable-facet-clear>Clear filters</button></li></ul></div>)}
+      <button type="button" class="btn btn-ghost btn-sm datatable-reset" hidden data-datatable-reset>Reset</button>
+    </div>
+    <div class="datatable-toolbar-actions">
+      {responsiveMode === "toggle" ? <div class="btn-group btn-group-sm datatable-view-toggle" role="group" aria-label="Table or card view"><input type="radio" class="btn-check" name={`${id}-view`} id={`${id}-view-table`} value="table" checked /><label class="btn btn-outline-secondary" for={`${id}-view-table`}>Table</label><input type="radio" class="btn-check" name={`${id}-view`} id={`${id}-view-cards`} value="cards" /><label class="btn btn-outline-secondary" for={`${id}-view-cards`}>Cards</label></div> : null}
+      <div class="dropdown datatable-view"><button class="btn btn-outline-secondary btn-sm datatable-view-trigger" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="View columns">View</button><ul class="dropdown-menu dropdown-menu-end">{columns.filter((column) => column.hideable !== false).map((column) => <li><button class="dropdown-item dropdown-item-check" type="button" data-datatable-column-toggle={column.key} aria-pressed="true">{column.label}</button></li>)}</ul></div>
+    </div>
+  </div>
+
+  <div class:list={["datatable-frame", responsiveMode === "cards" ? `d-none d-${responsiveBreakpoint}-block` : ""]}>
+    <div class="table-responsive scroll-fade-x">
+      <table class="table align-middle datatable-table" id={`${id}-table`}>
+        <thead><tr>
+          {selectable ? <th scope="col" class="datatable-col-select"><div class="form-check"><input class="form-check-input datatable-select-all" type="checkbox" id={`${id}-table-select-visible`} aria-label={`Select visible ${selectionNoun}`} aria-controls={`${id}-table`} data-datatable-select-all /></div></th> : null}
+          {columns.map((column) => { const state = sortState(column); return <th scope="col" class:list={["datatable-col", column.align ? `text-${column.align}` : ""]} style={column.width ? `width: ${column.width};` : undefined} data-datatable-column={column.key} data-datatable-column-fixed={column.hideable === false ? "true" : undefined} data-datatable-sort-state={column.sortable !== false ? state : undefined} data-datatable-initial-sort={column.sortable !== false && state !== "none" ? state : undefined} data-datatable-sort-direction={column.sortable !== false && state !== "none" ? state : undefined} aria-sort={column.sortable !== false ? state === "asc" ? "ascending" : state === "desc" ? "descending" : "none" : undefined}>{column.sortable !== false ? <div class="dropdown datatable-sort"><button class="btn btn-ghost btn-sm datatable-sort-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label={`Sort by ${column.label}`} data-datatable-sort-key={column.key}>{column.label}</button><ul class="dropdown-menu"><li><button class="dropdown-item" type="button" data-datatable-sort-action="asc">Asc</button></li><li><button class="dropdown-item" type="button" data-datatable-sort-action="desc">Desc</button></li>{column.hideable !== false ? <li><button class="dropdown-item" type="button" data-datatable-sort-action="hide">Hide</button></li> : null}</ul></div> : column.label || <span class="visually-hidden">{column.srLabel}</span>}</th>; })}
+        </tr></thead>
+        <tbody>{rows.map((row, rowIndex) => <tr id={row.id} hidden={rowIndex >= pageSize} data-datatable-row data-datatable-search={row.search} {...Object.fromEntries(Object.entries(row.facets || {}).map(([key, value]) => [`data-datatable-facet-${key}`, value]))}>
+          {selectable ? <td class="datatable-col-select"><div class="form-check"><input class="form-check-input datatable-checkbox-target" type="checkbox" id={`${id}-${row.id}-table-select`} aria-label={`Select ${row.label || row.id}`} data-datatable-select-row /></div></td> : null}
+          {columns.map((column) => <td class:list={["datatable-col", column.align ? `text-${column.align}` : ""]} data-datatable-column={column.key} data-datatable-sort-value={row.sort?.[column.key] !== undefined ? String(row.sort[column.key]) : undefined}>{trustedHtml ? <Fragment set:html={cellValue(row, column.key)} /> : cellValue(row, column.key)}</td>)}
+        </tr>)}</tbody>
+      </table>
+    </div>
+  </div>
+
+  {responsiveMode !== "scroll" ? <div class:list={["datatable-card-frame", responsiveMode === "cards" ? `d-${responsiveBreakpoint}-none` : ""]}><div class="datatable-cards" data-datatable-cards aria-label={`Responsive ${id} cards`}>{rows.map((row, rowIndex) => { const title = row.card?.title ?? (cardTitleColumn ? cellValue(row, cardTitleColumn.key) : ""); const actions = row.card?.actions ?? (cardActionsColumn ? cellValue(row, cardActionsColumn.key) : ""); return <article class="datatable-card" hidden={rowIndex >= pageSize} data-datatable-card data-datatable-card-for={row.id}><div class="datatable-card-header">{selectable ? <div class="form-check"><input class="form-check-input datatable-card-select" type="checkbox" aria-label={`Select ${row.label || row.id}`} data-datatable-select-row /></div> : null}<div class="datatable-card-heading">{title ? <div class="datatable-card-title">{trustedHtml ? <Fragment set:html={title} /> : title}</div> : null}</div>{actions ? <div class="datatable-card-actions">{trustedHtml ? <Fragment set:html={actions} /> : actions}</div> : null}</div><dl class="datatable-card-list">{columns.filter((column) => !["title", "actions"].includes(column.cardRole || "")).map((column) => <div class="datatable-card-row" data-datatable-detail-column={column.key}><dt>{column.detailLabel || column.label || column.srLabel || column.key}</dt><dd class:list={["datatable-card-value", column.align ? `text-${column.align}` : ""]}>{trustedHtml ? <Fragment set:html={cellValue(row, column.key)} /> : cellValue(row, column.key)}</dd></div>)}</dl></article>; })}</div></div> : null}
+
+  <div class="datatable-empty" data-datatable-empty hidden role="status" aria-live="polite"><p class="datatable-empty-title mb-1">No matching results</p><p class="datatable-empty-copy text-body-secondary mb-3">Try a different search or clear the active filters.</p><button type="button" class="btn btn-outline-secondary btn-sm" data-datatable-empty-reset>Clear filters</button></div>
+
+  <div class="datatable-pagination mt-3" data-datatable-pagination><div class="datatable-page-size d-flex align-items-center gap-2"><div class="dropdown datatable-page-size-control"><button class="btn btn-outline-secondary btn-sm datatable-page-size-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Rows per page"><span data-datatable-page-size-value>{pageSize}</span></button><ul class="dropdown-menu">{resolvedPageSizes.map((size) => <li><button class="dropdown-item" type="button" data-datatable-page-size-option={size} aria-pressed={size === pageSize ? "true" : "false"}>{size}</button></li>)}</ul></div><span class="small text-body-secondary text-nowrap">Rows per page</span></div><span class="datatable-results-summary small text-body-secondary" data-datatable-results-summary role="status" aria-live="polite">{rows.length ? `Showing 1-${Math.min(pageSize, rows.length)} of ${rows.length}` : "No results"}</span><nav aria-label="Table pagination" class="datatable-page-nav"><ul class="pagination pagination-sm mb-0"><li class="page-item disabled"><button type="button" class="page-link" aria-label="Go to first page" data-datatable-page-first disabled>&lt;&lt;</button></li><li class="page-item disabled"><button type="button" class="page-link" aria-label="Go to previous page" data-datatable-page-prev disabled>&lt;</button></li>{initialPageWindow.map((page) => page === "…" ? <li class="page-item" data-datatable-page-ellipsis><span class="page-link" aria-hidden="true">&hellip;</span><span class="visually-hidden">More pages</span></li> : <li class:list={["page-item", page === 1 ? "active" : ""]} aria-current={page === 1 ? "page" : undefined} data-datatable-page-number={page}><button type="button" class="page-link" aria-label={`Go to page ${page}`} data-datatable-page-go={page}>{page}</button></li>)}<template data-datatable-page-numbers></template><li class:list={["page-item", pageCount <= 1 ? "disabled" : ""]}><button type="button" class="page-link" aria-label="Go to next page" data-datatable-page-next disabled={pageCount <= 1}>&gt;</button></li><li class:list={["page-item", pageCount <= 1 ? "disabled" : ""]}><button type="button" class="page-link" aria-label="Go to last page" data-datatable-page-last disabled={pageCount <= 1}>&gt;&gt;</button></li></ul></nav></div>
+
+  {selectable ? <div class="datatable-bulk-actions" data-datatable-bulk-actions hidden role="status" aria-live="polite" aria-atomic="true"><span class="datatable-bulk-summary small" data-datatable-bulk-summary><span class="badge text-bg-dark rounded-pill" data-datatable-bulk-count>0</span> {selectionNoun} selected</span><button type="button" class="btn btn-ghost btn-sm" data-datatable-bulk-clear>Clear selection</button>{bulkActions.map((action) => action.options?.length ? <div class="dropdown"><button class:list={["btn", "btn-sm", action.destructive ? "btn-danger" : "btn-outline-secondary"]} type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label={action.label}>{action.label}</button><ul class="dropdown-menu">{action.options.map((option) => <li><button class="dropdown-item" type="button" data-datatable-bulk-update={action.key} data-datatable-bulk-update-value={option.value}>{option.label}</button></li>)}</ul></div> : <button class:list={["btn", "btn-sm", action.destructive ? "btn-danger" : "btn-outline-secondary"]} type="button" data-datatable-bulk-action={action.key} aria-label={action.label}>{action.label}</button>)}</div> : null}
+</div>

@@ -1,0 +1,20 @@
+---
+interface Props {
+  content?: string;
+  forId?: string;
+  id?: string;
+  align?: "start" | "end";
+  dir?: "ltr" | "rtl" | "";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { content = "", forId = "", id = "", align = "", dir = "", class: className = "", ...rest } = Astro.props;
+const tag = forId ? "label" : "span";
+---
+
+<div {...rest} class:list={["input-group", className]} dir={dir || undefined}>
+  {content ? (tag === "label" ? <label class="input-group-text" id={id || undefined} for={forId}>{content}<slot name="content" /></label> : <span class="input-group-text" id={id || undefined}>{content}<slot name="content" /></span>) : null}
+  <slot />
+  {align ? <div class="input-group-block-addon" data-align={`block-${align}`}><slot name="block" /></div> : null}
+</div>

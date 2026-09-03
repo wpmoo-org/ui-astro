@@ -1,0 +1,29 @@
+---
+interface Props {
+  value: number;
+  max?: number;
+  ariaLabel: string;
+  showLabel?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { value, max = 100, ariaLabel, showLabel = false, class: className = "", ...rest } = Astro.props;
+if (!ariaLabel.trim()) {
+  throw new Error("Progress ariaLabel is required");
+}
+if (max <= 0) {
+  throw new Error("Progress max must be positive");
+}
+if (value < 0 || value > max) {
+  throw new Error("Progress value must be between 0 and max");
+}
+const percent = Math.round((value / max) * 100);
+---
+
+<div {...rest}>
+  {showLabel ? <div class="d-flex justify-content-between small mb-1"><span>{ariaLabel}</span><span class="text-body-secondary">{percent}%</span></div> : null}
+  <div class:list={["progress", className]} role="progressbar" aria-label={ariaLabel} aria-valuenow={value} aria-valuemin="0" aria-valuemax={max}>
+    <div class="progress-bar" style={`width: ${percent}%`}></div>
+  </div>
+</div>

@@ -12,14 +12,18 @@ interface Props {
     | "light"
     | "dark";
   pill?: boolean;
+  visuallyHidden?: string;
   class?: string;
+  [key: string]: unknown;
 }
 
 const {
   label,
   variant = "default",
   pill = false,
+  visuallyHidden = "",
   class: className = "",
+  ...rest
 } = Astro.props;
 
 const variantClasses = {
@@ -39,4 +43,7 @@ const classes = ["badge", variantClasses[variant], pill ? "rounded-pill" : "", c
   .join(" ");
 ---
 
-<span class={classes}>{label}</span>
+<span {...rest} class={classes}>
+  <slot>{label}</slot>
+  {visuallyHidden ? <span class="visually-hidden">{visuallyHidden}</span> : null}
+</span>

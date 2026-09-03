@@ -1,0 +1,16 @@
+---
+interface Item { id: string; title: string; content: string; active?: boolean; disabled?: boolean; }
+interface Props {
+  id: string;
+  items: Item[];
+  orientation?: "horizontal" | "vertical";
+  trustedHtml?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, items, orientation = "horizontal", trustedHtml = false, class: className = "", ...rest } = Astro.props;
+const hasActive = items.some((item) => item.active);
+---
+
+<div {...rest} class:list={["tabs", orientation === "vertical" ? "tabs--vertical" : "", className]}><div class:list={["tabs-list", "nav", "nav-pills", orientation === "vertical" ? "flex-column" : ""]} id={`${id}-list`} role="tablist" aria-orientation={orientation === "vertical" ? "vertical" : undefined}>{items.map((item, index) => { const active = item.active || (!hasActive && index === 0); const tabId = `${id}-${item.id}-tab`; const paneId = `${id}-${item.id}-pane`; return <button class:list={["nav-link", active ? "active" : ""]} id={tabId} data-bs-toggle={orientation === "vertical" ? "pill" : "tab"} data-bs-target={`#${paneId}`} type="button" role="tab" aria-controls={paneId} aria-selected={active ? "true" : "false"} disabled={item.disabled}>{item.title}</button>})}</div><div class="tab-content" id={`${id}-content`}>{items.map((item, index) => { const active = item.active || (!hasActive && index === 0); const tabId = `${id}-${item.id}-tab`; const paneId = `${id}-${item.id}-pane`; return <div class:list={["tab-pane", "fade", active ? "show active" : ""]} id={paneId} role="tabpanel" aria-labelledby={tabId} tabindex="0">{trustedHtml ? <Fragment set:html={item.content} /> : item.content}</div>})}</div></div>

@@ -1,0 +1,35 @@
+---
+import "@wpmoo/ui/moo-ui.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Moo UI components for Astro themes." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="data:," />
+    <title>{title}</title>
+  </head>
+  <body class="bg-body-tertiary">
+    <header class="border-bottom bg-body">
+      <div class="container d-flex align-items-center justify-content-between gap-3 py-3">
+        <a class="fw-semibold text-decoration-none text-body" href="/">Moo UI Astro</a>
+        <span class="small text-body-secondary">Theme foundation</span>
+      </div>
+    </header>
+    <main class="container py-5">
+      <slot />
+    </main>
+    <script>
+      import "bootstrap/dist/js/bootstrap.bundle.min.js";
+    </script>
+  </body>
+</html>

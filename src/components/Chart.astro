@@ -1,0 +1,17 @@
+---
+interface Props {
+  id: string;
+  data: Record<string, unknown> | string;
+  ariaLabel: string;
+  type?: "area" | "line" | "bar" | "pie" | "doughnut" | "polarArea" | "radar" | "scatter" | "bubble";
+  options?: Record<string, unknown> | string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, data, ariaLabel, type = "line", options, class: className = "", ...rest } = Astro.props;
+const serialize = (value: Record<string, unknown> | string) => typeof value === "string" ? value : JSON.stringify(value);
+const hasOptions = options !== undefined && (typeof options === "string" ? options.trim().length > 0 : Object.keys(options).length > 0);
+---
+
+<div {...rest} class:list={["chart", className]} id={id} data-chart={type} data-chart-data={serialize(data)} data-chart-options={hasOptions ? serialize(options) : undefined}><canvas role="img" aria-label={ariaLabel}></canvas></div>

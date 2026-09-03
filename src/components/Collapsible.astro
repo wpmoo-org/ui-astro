@@ -1,0 +1,18 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  content?: string;
+  triggerAriaLabel?: string;
+  open?: boolean;
+  trustedHtml?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { id, title, content = "", triggerAriaLabel = "Toggle", open = false, trustedHtml = false, class: className = "", ...rest } = Astro.props;
+---
+
+<div {...rest} class:list={["collapsible", className]}><div class="collapsible-header"><h4 class="collapsible-title">{title}</h4><button class="btn btn-ghost btn-icon-sm" type="button" data-bs-toggle="collapse" data-bs-target={`#${id}`} aria-expanded={open ? "true" : "false"} aria-controls={id} aria-label={triggerAriaLabel}><slot name="icon"><Icon name="chevrons-up-down" /></slot></button></div><div id={id} class:list={["collapse", open ? "show" : ""]}><div class="collapsible-content">{content ? (trustedHtml ? <Fragment set:html={content} /> : content) : <slot />}</div></div></div>

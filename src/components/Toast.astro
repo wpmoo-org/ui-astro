@@ -1,0 +1,31 @@
+---
+import CloseButton from "./CloseButton.astro";
+
+interface Props {
+  id?: string;
+  title?: string;
+  body?: string;
+  timestamp?: string;
+  autohide?: boolean;
+  delay?: number;
+  dismissAriaLabel?: string;
+  priority?: "polite" | "assertive";
+  actionLabel?: string;
+  placement?: "top-start" | "top-center" | "top-end" | "bottom-start" | "bottom-center" | "bottom-end";
+  stacked?: boolean;
+  variant?: "default" | "success" | "info" | "warning" | "destructive" | "loading" | "danger" | "error";
+  container?: boolean;
+  trustedHtml?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { id = "toast", title = "", body = "", timestamp = "", autohide = true, delay = 5000, dismissAriaLabel = "Close", priority = "polite", actionLabel = "", placement = "bottom-end", stacked = false, variant = "default", container = false, trustedHtml = false, class: className = "", ...rest } = Astro.props;
+const placements: Record<string, string> = { "top-start": "top-0 start-0", "top-center": "top-0 start-50 translate-middle-x", "top-end": "top-0 end-0", "bottom-start": "bottom-0 start-0", "bottom-center": "bottom-0 start-50 translate-middle-x", "bottom-end": "bottom-0 end-0" };
+const normalizedVariant = variant === "danger" || variant === "error" ? "destructive" : variant;
+const variantIcons: Record<string, string> = { success: "check", info: "circle-info", warning: "triangle-alert", destructive: "triangle-alert", loading: "loader-circle" };
+---
+
+{container ? <div {...rest} class:list={["toast-container", "position-fixed", placements[placement], "p-3", stacked ? "toast-container--stacked" : "", className]} data-toast-stack={stacked ? "deck" : undefined}><slot /></div> : <div {...rest} class:list={["toast", className]} id={id} data-toast-variant={normalizedVariant !== "default" ? normalizedVariant : undefined} role={priority === "assertive" ? "alert" : "status"} aria-live={priority} aria-atomic="true" data-bs-autohide={!autohide ? "false" : undefined} data-bs-delay={delay !== 5000 ? delay : undefined}><div class="toast-header">{normalizedVariant !== "default" ? <span class="toast-status-icon" aria-hidden="true"><slot name="variant-icon"><Icon name={variantIcons[normalizedVariant]} /></slot></span> : null}<strong class="me-auto">{title}</strong>{timestamp ? <small>{timestamp}</small> : null}<CloseButton ariaLabel={dismissAriaLabel} dismiss="toast" /></div><div class="toast-body">{body ? (trustedHtml ? <Fragment set:html={body} /> : body) : <slot />}{actionLabel ? <button class="btn btn-link btn-sm p-0 ms-2" type="button" data-bs-dismiss="toast">{actionLabel}</button> : null}</div></div>}

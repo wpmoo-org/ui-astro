@@ -1,0 +1,64 @@
+---
+interface Option { value: string; label: string; description?: string; disabled?: boolean; selected?: boolean; }
+interface Group { label: string; options: Option[]; }
+type Item = Option | Group;
+interface Props {
+  id: string;
+  label?: string;
+  ariaLabel?: string;
+  name?: string;
+  placeholder?: string;
+  items: Item[];
+  selected?: string | string[];
+  describedby?: string;
+  disabled?: boolean;
+  invalid?: boolean;
+  required?: boolean;
+  open?: boolean;
+  highlightFirst?: boolean;
+  multiple?: boolean;
+  showClear?: boolean;
+  clearAriaLabel?: string;
+  dir?: "" | "ltr" | "rtl";
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { id, label = "", ariaLabel = "", name = "", placeholder = "", items, selected = "", describedby = "", disabled = false, invalid = false, required = false, open = false, highlightFirst = false, multiple = false, showClear = false, clearAriaLabel = "Clear selection", dir = "", class: className = "", ...rest } = Astro.props;
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+if (!id.trim()) {
+  throw new Error("Combobox id is required");
+}
+if (hasLabel === hasAriaLabel) {
+  throw new Error("Combobox requires exactly one of label or ariaLabel");
+}
+if (!items?.length) {
+  throw new Error("Combobox items are required");
+}
+if ((multiple && typeof selected === "string" && selected.trim()) || (!multiple && Array.isArray(selected))) {
+  throw new Error("Combobox selected values do not match the multiple mode");
+}
+if (multiple && showClear) {
+  throw new Error("Combobox clear button supports single selection only");
+}
+if (showClear && !clearAriaLabel.trim()) {
+  throw new Error("Combobox clearAriaLabel is required");
+}
+const selectedValues = Array.isArray(selected) ? selected : selected ? [selected] : [];
+const options = items.flatMap((item) => "options" in item ? item.options : [item]);
+const selectedOptions = options.filter((item) => selectedValues.includes(item.value) || item.selected);
+const selectedOption = selectedOptions[0];
+const highlighted = highlightFirst && !selectedOption ? options.find((item) => !item.disabled) : undefined;
+const listboxId = `${id}-listbox`;
+---
+
+<div {...rest} class:list={["combobox", multiple ? "combobox--multiple" : "", options.some((item) => item.description) ? "combobox--custom-items" : "", showClear && !multiple ? "combobox--clearable" : "", className]} data-combobox-selected={selectedOptions.length ? "true" : "false"} data-combobox-multiple={multiple ? "true" : undefined} dir={dir || undefined}>
+  {label ? <label class="form-label" for={`${id}-input`}>{label}{required ? <span class="text-danger"> *</span> : null}</label> : null}
+  <div class="combobox-control">
+    {multiple ? <div class:list={["form-control", "combobox-chips", invalid ? "is-invalid" : ""]}><span class="combobox-value">{selectedOptions.map((item) => <span class="badge text-bg-secondary combobox-chip" data-value={item.value}><span class="combobox-chip__label">{item.label}</span><button class="combobox-chip__remove" type="button" aria-label={`Remove ${item.label}`} data-value={item.value} data-combobox-chip-remove="true"><slot name="chip-remove-icon"><Icon name="x" position="inline-end" /></slot></button></span>)}</span><input class="combobox-chips-input combobox-input" id={`${id}-input`} type="text" role="combobox" autocomplete="off" aria-expanded={open ? "true" : "false"} aria-controls={listboxId} aria-autocomplete="list" aria-label={ariaLabel || undefined} aria-describedby={describedby || undefined} placeholder={placeholder || undefined} aria-invalid={invalid ? "true" : undefined} required={required} disabled={disabled} />{name ? <span data-combobox-value-store="true" data-combobox-name={name}>{selectedOptions.map((item) => <input type="hidden" name={name} value={item.value} />)}</span> : null}<template data-combobox-chip-icon><slot name="chip-remove-icon"><Icon name="x" position="inline-end" /></slot></template></div> : <><input class:list={["form-control", "combobox-input", invalid ? "is-invalid" : ""]} id={`${id}-input`} type="text" role="combobox" autocomplete="off" aria-expanded={open ? "true" : "false"} aria-controls={listboxId} aria-autocomplete="list" data-combobox-selected={selectedOption ? "true" : "false"} aria-activedescendant={highlighted ? `${id}-option-${options.indexOf(highlighted) + 1}` : undefined} aria-label={ariaLabel || undefined} aria-describedby={describedby || undefined} placeholder={placeholder || undefined} value={selectedOption?.label} aria-invalid={invalid ? "true" : undefined} required={required} disabled={disabled} />{name ? <input type="hidden" name={name} value={selectedOption?.value || ""} /> : null}{showClear ? <button type="button" class="combobox-clear" aria-label={clearAriaLabel} data-combobox-clear="true" hidden={!selectedOption} disabled={disabled}><slot name="clear-icon"><Icon name="x" position="inline-end" /></slot></button> : null}<span class="combobox-indicator" aria-hidden="true"><slot name="indicator-icon"><Icon name="chevron-down" position="inline-end" /></slot></span></>}
+    <ul class:list={["dropdown-menu", "combobox-menu", open ? "show" : ""]} id={listboxId} role="listbox" aria-multiselectable={multiple ? "true" : undefined}>{items.map((item, itemIndex) => <>{itemIndex > 0 && "options" in items[itemIndex - 1] ? <li role="presentation" aria-hidden="true" data-combobox-separator><hr class="dropdown-divider combobox-separator" /></li> : null}{"options" in item ? <li role="group" aria-labelledby={`${id}-${item.label}-group`} class="combobox-group" data-combobox-group><div class="dropdown-header combobox-group-label" id={`${id}-${item.label}-group`}>{item.label}</div><ul class="list-unstyled mb-0" role="presentation">{item.options.map((option) => <li role="presentation"><button class="dropdown-item combobox-option" id={`${id}-option-${options.indexOf(option) + 1}`} type="button" role="option" data-value={option.value} aria-selected={selectedValues.includes(option.value) ? "true" : "false"} aria-current={highlighted?.value === option.value ? "true" : undefined} disabled={option.disabled}><span class="combobox-option__content"><span class="combobox-option__label">{option.label}</span>{option.description ? <span class="combobox-option__description">{option.description}</span> : null}</span><span class="combobox-option__check" aria-hidden="true"><slot name="option-check"><Icon name="check" position="inline-end" /></slot></span></button></li>)}</ul></li> : <li role="presentation"><button class="dropdown-item combobox-option" id={`${id}-option-${options.indexOf(item) + 1}`} type="button" role="option" data-value={item.value} aria-selected={selectedValues.includes(item.value) ? "true" : "false"} aria-current={highlighted?.value === item.value ? "true" : undefined} disabled={item.disabled}><span class="combobox-option__content"><span class="combobox-option__label">{item.label}</span>{item.description ? <span class="combobox-option__description">{item.description}</span> : null}</span><span class="combobox-option__check" aria-hidden="true"><slot name="option-check"><Icon name="check" position="inline-end" /></slot></span></button></li>)}</>)}</ul>
+  </div>
+</div>

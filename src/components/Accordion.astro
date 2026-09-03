@@ -1,0 +1,18 @@
+---
+interface Item { id: string; title: string; content: string; open?: boolean; disabled?: boolean; }
+interface Props {
+  id: string;
+  items: Item[];
+  alwaysOpen?: boolean;
+  flush?: boolean;
+  trustedHtml?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { id, items, alwaysOpen = false, flush = true, trustedHtml = false, class: className = "", ...rest } = Astro.props;
+---
+
+<div {...rest} class:list={["accordion", "w-100", flush ? "accordion-flush" : "", className]} id={id}>{items.map((item) => { const panelId = `${id}-${item.id}`; const triggerId = `${panelId}-trigger`; return <div class="accordion-item"><h3 class="accordion-header"><button class:list={["accordion-button", !item.open ? "collapsed" : "", item.disabled ? "text-muted" : ""]} type="button" id={triggerId} data-bs-toggle="collapse" data-bs-target={`#${panelId}`} aria-expanded={item.open ? "true" : "false"} aria-controls={panelId} disabled={item.disabled}>{item.title}<slot name="icon"><Icon name="chevron-down" position="inline-end" /></slot></button></h3><div id={panelId} class:list={["accordion-collapse", "collapse", item.open ? "show" : ""]} data-bs-parent={alwaysOpen ? undefined : `#${id}`} aria-labelledby={triggerId}><div class="accordion-body">{trustedHtml ? <Fragment set:html={item.content} /> : item.content}</div></div></div>})}</div>

@@ -1,0 +1,22 @@
+---
+interface Item { id: string; label?: string; value?: string; ariaLabel?: string; pressed?: boolean; disabled?: boolean; }
+interface Props {
+  name: string;
+  legend: string;
+  items: Item[];
+  type?: "single" | "multiple";
+  variant?: "default" | "outline";
+  size?: "default" | "sm" | "lg";
+  vertical?: boolean;
+  spacing?: "auto" | "1" | "2" | "3";
+  disabled?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { name, legend, items, type = "single", variant = "default", size = "default", vertical = false, spacing = "auto", disabled = false, class: className = "", ...rest } = Astro.props;
+const gap = spacing === "auto" ? (vertical ? "gap-1" : "gap-2") : `gap-${spacing}`;
+const inputType = type === "single" ? "radio" : "checkbox";
+---
+
+<div {...rest} class:list={["toggle-group", "d-inline-flex", gap, vertical ? "flex-column" : "", className]} role="group" aria-label={legend}>{items.map((item) => <><input class="btn-check" type={inputType} name={name} id={item.id} value={item.value || item.id} autocomplete="off" aria-label={item.ariaLabel || undefined} checked={item.pressed} disabled={disabled || item.disabled} /><label class:list={["btn", variant === "outline" ? "btn-outline-secondary" : "btn-ghost", size !== "default" ? `btn-${size}` : ""]} for={item.id}>{item.label || item.ariaLabel}</label></>)}</div>

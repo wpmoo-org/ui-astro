@@ -21,7 +21,31 @@ interface Props {
   href?: string;
   disabled?: boolean;
   class?: string;
+  element?: "button" | "input" | "a";
+  ariaLabel?: string;
+  toggle?: boolean;
+  dropdown?: boolean;
+  dropdownOffset?: string;
+  dropdownAutoClose?: "" | "true" | "false" | "inside" | "outside";
+  dropdownCaret?: boolean;
+  loading?: boolean;
+  collapseTarget?: string;
+  collapseOpen?: boolean;
+  tooltip?: string;
+  tooltipPlacement?: "top" | "right" | "bottom" | "left";
+  tooltipHtml?: boolean;
+  popoverContent?: string;
+  popoverTitle?: string;
+  popoverPlacement?: "top" | "right" | "bottom" | "left";
+  popoverHtml?: boolean;
+  dialogTarget?: string;
+  dismiss?: "modal" | "offcanvas" | "toast" | "";
+  toastTarget?: string;
+  sheetTarget?: string;
+  [key: string]: unknown;
 }
+
+import Icon from "./internal/Icon.astro";
 
 const {
   label = "",
@@ -31,7 +55,38 @@ const {
   href,
   disabled = false,
   class: className = "",
+  element = href ? "a" : "button",
+  ariaLabel = "",
+  toggle = false,
+  dropdown = false,
+  dropdownOffset = "",
+  dropdownAutoClose = "",
+  dropdownCaret = false,
+  loading = false,
+  collapseTarget = "",
+  collapseOpen = false,
+  tooltip = "",
+  tooltipPlacement = "top",
+  tooltipHtml = false,
+  popoverContent = "",
+  popoverTitle = "",
+  popoverPlacement = "top",
+  popoverHtml = false,
+  dialogTarget = "",
+  dismiss = "",
+  toastTarget = "",
+  sheetTarget = "",
+  ...rest
 } = Astro.props;
+
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+if (!hasLabel && !hasAriaLabel && !Astro.slots.has("default")) {
+  throw new Error("Button without a visible label requires ariaLabel");
+}
+if (element !== "button" && (toggle || dropdown || dropdownOffset || dropdownAutoClose || dropdownCaret || loading || collapseTarget)) {
+  throw new Error("Button dropdown, toggle, loading, and collapseTarget options require element=button");
+}
 
 const variantClasses = {
   default: "btn-primary",
@@ -55,25 +110,92 @@ const sizeClasses = {
   xs: "btn-xs",
   sm: "btn-sm",
   lg: "btn-lg",
+  icon: "btn-icon",
+  "icon-xs": "btn-icon-xs",
+  "icon-sm": "btn-icon-sm",
+  "icon-lg": "btn-icon-lg",
 } as const;
 
 const classes = ["btn", variantClasses[variant], sizeClasses[size], className]
   .filter(Boolean)
   .join(" ");
+
+const resolvedClasses = [classes, dropdownCaret ? "dropdown-toggle" : "", element === "a" && disabled ? "disabled" : ""]
+  .filter(Boolean)
+  .join(" ");
+
+const pluginAttributes = tooltip
+  ? { "data-bs-toggle": "tooltip", "data-bs-title": tooltip, "data-bs-placement": tooltipPlacement, ...(tooltipHtml ? { "data-bs-html": "true" } : {}) }
+  : popoverContent
+    ? { "data-bs-toggle": "popover", "data-bs-content": popoverContent, "data-bs-placement": popoverPlacement, ...(popoverTitle ? { "data-bs-title": popoverTitle } : {}), ...(popoverHtml ? { "data-bs-html": "true" } : {}) }
+    : dialogTarget
+      ? { "data-bs-toggle": "modal", "data-bs-target": `#${dialogTarget}` }
+      : sheetTarget
+        ? { "data-bs-toggle": "offcanvas", "data-bs-target": `#${sheetTarget}` }
+        : {};
+
+const commonAttributes = {
+  ...pluginAttributes,
+  ...(dismiss ? { "data-bs-dismiss": dismiss } : {}),
+  ...(toastTarget ? { "data-toast-target": `#${toastTarget}` } : {}),
+};
+
+const buttonAttributes = {
+  ...(toggle
+    ? { "data-bs-toggle": "button" }
+    : dropdown
+      ? { "data-bs-toggle": "dropdown" }
+      : collapseTarget
+        ? { "data-bs-toggle": "collapse" }
+        : pluginAttributes),
+  ...(dropdown && dropdownOffset ? { "data-bs-offset": dropdownOffset } : {}),
+  ...(dropdown && dropdownAutoClose ? { "data-bs-auto-close": dropdownAutoClose } : {}),
+  ...(collapseTarget ? { "data-bs-target": `#${collapseTarget}` } : {}),
+  ...(dismiss ? { "data-bs-dismiss": dismiss } : {}),
+  ...(toastTarget ? { "data-toast-target": `#${toastTarget}` } : {}),
+};
 ---
 
-{href ? (
+{element === "a" ? (
   <a
-    class={classes}
+    {...rest}
+    {...commonAttributes}
+    class={resolvedClasses}
     role="button"
     href={disabled ? undefined : href}
+    aria-label={ariaLabel || undefined}
     aria-disabled={disabled ? "true" : undefined}
     tabindex={disabled ? -1 : undefined}
   >
+    <slot name="icon-start" />
     <slot>{label}</slot>
+    <slot name="icon-end" />
   </a>
+) : element === "input" ? (
+  <input
+    {...rest}
+    {...commonAttributes}
+    class={resolvedClasses}
+    type={type}
+    value={label}
+    disabled={disabled}
+    aria-label={ariaLabel || undefined}
+  />
 ) : (
-  <button class={classes} type={type} disabled={disabled}>
+  <button
+    {...rest}
+    {...buttonAttributes}
+    class={resolvedClasses}
+    type={type}
+    disabled={disabled}
+    aria-label={ariaLabel || undefined}
+    aria-pressed={toggle ? "false" : undefined}
+    aria-expanded={dropdown || collapseTarget ? (collapseTarget ? String(collapseOpen) : "false") : undefined}
+    aria-controls={collapseTarget || undefined}
+    aria-busy={loading ? "true" : undefined}
+  >
+    {loading ? <slot name="loading-icon"><Icon name="loader-circle" /></slot> : <slot name="icon-start" />}
     <slot>{label}</slot>
+    <slot name="icon-end" />
   </button>
 )}

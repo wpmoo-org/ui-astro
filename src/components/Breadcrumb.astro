@@ -1,0 +1,16 @@
+---
+interface Item { label?: string; href?: string; ellipsis?: boolean; dropdownItems?: { label: string; href?: string }[]; }
+interface Props {
+  items: Item[];
+  ariaLabel?: string;
+  divider?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { items, ariaLabel = "breadcrumb", divider = "", class: className = "", ...rest } = Astro.props;
+---
+
+<nav {...rest} aria-label={ariaLabel}><ol class:list={["breadcrumb", divider ? "breadcrumb--custom-divider" : "", className]} style={divider ? `--bs-breadcrumb-divider: '${divider}';` : undefined}>{items.map((item, index) => item.ellipsis ? <li class="breadcrumb-item"><span class="breadcrumb-ellipsis"><Icon name="ellipsis" /><span class="visually-hidden">{item.label || "More"}</span></span></li> : item.dropdownItems ? <li class="breadcrumb-item"><div class="breadcrumb-dropdown-item"><div class="dropdown"><button class="breadcrumb-dropdown-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span>{item.label}</span><Icon name="chevron-down" position="inline-end" /></button><ul class="dropdown-menu">{item.dropdownItems.map((entry) => <li><a class="dropdown-item" href={entry.href || "#"}>{entry.label}</a></li>)}</ul></div></div></li> : index === items.length - 1 ? <li class="breadcrumb-item active" aria-current="page">{item.label}</li> : <li class="breadcrumb-item"><a href={item.href || "#"}>{item.label}</a></li>)}</ol></nav>

@@ -1,0 +1,16 @@
+---
+interface Props {
+  as?: "field" | "form" | "fieldset" | "group" | "description" | "error";
+  id?: string;
+  legend?: string;
+  text?: string;
+  invalid?: boolean;
+  novalidate?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { as = "field", id = "", legend = "", text = "", invalid = false, novalidate = false, class: className = "", ...rest } = Astro.props;
+---
+
+{as === "form" ? <form {...rest} class:list={["field-form", className]} novalidate={novalidate}><slot /></form> : as === "fieldset" ? <fieldset {...rest} class:list={["field-fieldset", className]}><legend class="field-legend">{legend}</legend>{text ? <div class="field-description form-text">{text}</div> : null}<slot /></fieldset> : as === "group" ? <div {...rest} class:list={["field-group", className]}><slot /></div> : as === "description" ? <div {...rest} class:list={["field-description", "form-text", className]} id={id || undefined}>{text}<slot /></div> : as === "error" ? <div {...rest} class:list={["field-error", "invalid-feedback", className]} id={id || undefined}>{text}<slot /></div> : <div {...rest} class:list={["field", className]} data-invalid={invalid ? "true" : undefined}><slot /></div>}

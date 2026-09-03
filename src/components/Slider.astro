@@ -1,0 +1,44 @@
+---
+interface Props {
+  id: string;
+  label?: string;
+  ariaLabel?: string;
+  name?: string;
+  value?: number;
+  startValue?: number;
+  endValue?: number;
+  startName?: string;
+  endName?: string;
+  min?: number;
+  max?: number;
+  step?: number | "any";
+  disabled?: boolean;
+  showOutput?: boolean;
+  orientation?: "horizontal" | "vertical";
+  range?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, label = "", ariaLabel = "", name = "", value = 50, startValue = 25, endValue = 75, startName = "", endName = "", min = 0, max = 100, step = 1, disabled = false, showOutput = true, orientation = "horizontal", range = false, class: className = "", ...rest } = Astro.props;
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+if (!id.trim()) {
+  throw new Error("Slider id is required");
+}
+if (hasLabel === hasAriaLabel) {
+  throw new Error("Slider requires exactly one of label or ariaLabel");
+}
+if (max <= min) {
+  throw new Error("Slider max must be greater than min");
+}
+if (range ? startValue < min || startValue > max || endValue < min || endValue > max || startValue > endValue : value < min || value > max) {
+  throw new Error(range ? "Slider range values must be ordered between min and max" : "Slider value must be between min and max");
+}
+const startPercent = ((startValue - min) / (max - min)) * 100;
+const endPercent = ((endValue - min) / (max - min)) * 100;
+const valuePercent = ((value - min) / (max - min)) * 100;
+const labelId = `${id}-label`;
+---
+
+{range ? <div {...rest} class:list={["slider", "slider--range", orientation === "vertical" ? "slider--vertical" : "", className]} data-slider data-slider-orientation={orientation} role="group" aria-labelledby={labelId} style={`--moo-slider-start: ${startPercent}%; --moo-slider-end: ${endPercent}%;`}><div class="d-flex align-items-center justify-content-between gap-3">{label ? <span class="form-label mb-0" id={labelId}>{label}</span> : <span class="visually-hidden" id={labelId}>{ariaLabel}</span>}{showOutput ? <output class="small text-body-secondary" for={`${id}-start ${id}-end`} data-slider-output>{startValue} - {endValue}</output> : null}</div><div class="slider-track" data-slider-track><div class="slider-range" data-slider-range></div><input class="form-range slider-input" id={`${id}-start`} type="range" min={min} max={max} step={step} value={startValue} data-slider-input data-slider-thumb="start" aria-label={`Minimum ${label || ariaLabel}`} aria-orientation={orientation === "vertical" ? "vertical" : undefined} name={startName || undefined} disabled={disabled} /><input class="form-range slider-input slider-input--upper" id={`${id}-end`} type="range" min={min} max={max} step={step} value={endValue} data-slider-input data-slider-thumb="end" aria-label={`Maximum ${label || ariaLabel}`} aria-orientation={orientation === "vertical" ? "vertical" : undefined} name={endName || undefined} disabled={disabled} /></div></div> : <div {...rest} class:list={["slider", orientation === "vertical" ? "slider--vertical" : "", className]} data-slider data-slider-orientation={orientation} style={`--moo-slider-start: 0%; --moo-slider-end: ${valuePercent}%;`}>{label || showOutput ? <div class="d-flex align-items-center justify-content-between gap-3">{label ? <label class="form-label mb-0" for={id}>{label}</label> : null}{showOutput ? <output class="small text-body-secondary" for={id} data-slider-output>{value}</output> : null}</div> : null}<div class="slider-track" data-slider-track><div class="slider-range" data-slider-range></div><input class="form-range slider-input" id={id} type="range" min={min} max={max} step={step} value={value} data-slider-input aria-orientation={orientation === "vertical" ? "vertical" : undefined} name={name || undefined} aria-label={ariaLabel || undefined} disabled={disabled} /></div></div>}

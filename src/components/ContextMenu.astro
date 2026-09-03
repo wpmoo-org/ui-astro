@@ -1,0 +1,19 @@
+---
+interface Props {
+  id: string;
+  label: string;
+  fallbackLabel?: string;
+  align?: "" | "start" | "end";
+  class?: string;
+  triggerClass?: string;
+  menuClass?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { id, label, fallbackLabel = `Open ${label} menu`, align = "", class: className = "", triggerClass = "", menuClass = "", ...rest } = Astro.props;
+const menuId = `${id}-menu`;
+---
+
+<div {...rest} class:list={["context-menu", className]} id={id}><div class:list={["context-menu-trigger", triggerClass]} id={`${id}-surface`} role="button" tabindex="0" aria-haspopup="menu" aria-expanded="false" aria-controls={menuId}><slot /></div><button type="button" class="context-menu-trigger btn btn-ghost btn-icon-sm" id={`${id}-fallback`} data-bs-toggle="dropdown" data-context-menu-fallback aria-expanded="false" aria-controls={menuId} aria-label={fallbackLabel}><Icon name="ellipsis-vertical" /></button><ul class:list={["dropdown-menu", "context-menu-menu", align ? `dropdown-menu-${align}` : "", menuClass]} id={menuId} tabindex="-1" aria-label={label}><slot name="menu" /></ul></div>

@@ -1,0 +1,36 @@
+---
+interface Props {
+  id: string;
+  label?: string;
+  ariaLabel?: string;
+  labelledby?: string;
+  name?: string;
+  value?: string;
+  checked?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  description?: string;
+  describedby?: string;
+  labelWrapper?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, label = "", ariaLabel = "", labelledby = "", name = "", value = "", checked = false, disabled = false, invalid = false, description = "", describedby = "", labelWrapper = false, class: className = "", ...rest } = Astro.props;
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+const hasLabelledBy = labelledby.trim().length > 0;
+if (!id.trim()) {
+  throw new Error("Switch id is required");
+}
+if ([hasLabel, hasAriaLabel, hasLabelledBy].filter(Boolean).length !== 1) {
+  throw new Error("Switch requires exactly one of label, ariaLabel, or labelledby");
+}
+if (labelWrapper && hasLabel) {
+  throw new Error("Switch labelWrapper requires ariaLabel or labelledby");
+}
+const describedBy = [describedby, description ? `${id}-description` : ""].filter(Boolean).join(" ");
+---
+
+{labelWrapper ? <label class:list={["form-check", "form-switch", className]} for={id}><input {...rest} class:list={["form-check-input", invalid ? "is-invalid" : ""]} type="checkbox" role="switch" id={id} name={name || undefined} value={value || undefined} checked={checked} disabled={disabled} aria-label={ariaLabel || undefined} aria-labelledby={labelledby || undefined} aria-invalid={invalid ? "true" : undefined} aria-describedby={describedBy || undefined} /><span class="form-check-label">{label}</span></label> : <div class:list={["form-check", "form-switch", className]}><input {...rest} class:list={["form-check-input", invalid ? "is-invalid" : ""]} type="checkbox" role="switch" id={id} name={name || undefined} value={value || undefined} checked={checked} disabled={disabled} aria-label={ariaLabel || undefined} aria-labelledby={labelledby || undefined} aria-invalid={invalid ? "true" : undefined} aria-describedby={describedBy || undefined} />{label ? <label class="form-check-label" for={id}>{label}</label> : null}</div>}
+{description ? <div class="form-text" id={`${id}-description`}>{description}</div> : null}

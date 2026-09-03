@@ -1,0 +1,15 @@
+---
+interface Props {
+  ariaLabel: string;
+  vertical?: boolean;
+  toolbar?: boolean;
+  size?: "" | "sm" | "lg";
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { ariaLabel, vertical = false, toolbar = false, size = "", class: className = "", ...rest } = Astro.props;
+const classes = [toolbar ? "btn-toolbar" : vertical ? "btn-group-vertical" : "btn-group", size && !toolbar ? `btn-group-${size}` : "", className].filter(Boolean).join(" ");
+---
+
+<div {...rest} class={classes} role={toolbar ? "toolbar" : "group"} aria-label={ariaLabel}><slot /></div>

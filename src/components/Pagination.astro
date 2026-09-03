@@ -1,0 +1,15 @@
+---
+interface Props {
+  ariaLabel?: string;
+  size?: "" | "sm" | "lg";
+  items?: { label: string; href?: string; active?: boolean; disabled?: boolean; ellipsis?: boolean }[];
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { ariaLabel = "Pagination", size = "", items = [], class: className = "", ...rest } = Astro.props;
+---
+
+<nav {...rest} aria-label={ariaLabel}><ul class:list={["pagination", size ? `pagination-${size}` : "", className]}>{items.length ? items.map((item) => item.ellipsis ? <li class="page-item disabled"><span class="page-link"><Icon name="ellipsis" /><span class="visually-hidden">{item.label || "More pages"}</span></span></li> : <li class:list={["page-item", item.active ? "active" : "", item.disabled ? "disabled" : ""]} aria-current={item.active ? "page" : undefined}>{item.disabled ? <span class="page-link" role="link" aria-disabled="true" aria-label={item.label}>{item.label}</span> : <a class="page-link" href={item.href || "#"} aria-label={item.label}>{item.label}</a>}</li>) : <slot />}</ul></nav>

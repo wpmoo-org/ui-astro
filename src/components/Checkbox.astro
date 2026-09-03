@@ -1,0 +1,31 @@
+---
+interface Props {
+  id: string;
+  label?: string;
+  ariaLabel?: string;
+  checked?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  description?: string;
+  name?: string;
+  value?: string;
+  labelWrapper?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const { id, label = "", ariaLabel = "", checked = false, disabled = false, invalid = false, description = "", name = "", value = "", labelWrapper = false, class: className = "", ...rest } = Astro.props;
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+if (!id.trim()) {
+  throw new Error("Checkbox id is required");
+}
+if (hasLabel === hasAriaLabel) {
+  throw new Error("Checkbox requires exactly one of label or ariaLabel");
+}
+if (labelWrapper && hasLabel) {
+  throw new Error("Checkbox labelWrapper requires ariaLabel");
+}
+---
+
+{labelWrapper ? <label class:list={["form-check", className]} for={id}><input {...rest} class:list={["form-check-input", invalid ? "is-invalid" : ""]} type="checkbox" id={id} name={name || undefined} value={value || undefined} checked={checked} disabled={disabled} aria-label={ariaLabel || undefined} aria-invalid={invalid ? "true" : undefined} aria-describedby={description ? `${id}-description` : undefined} /><span class="form-check-label">{label}</span>{description ? <span class="form-text" id={`${id}-description`}>{description}</span> : null}</label> : <div class:list={["form-check", className]}><input {...rest} class:list={["form-check-input", invalid ? "is-invalid" : ""]} type="checkbox" id={id} name={name || undefined} value={value || undefined} checked={checked} disabled={disabled} aria-label={ariaLabel || undefined} aria-invalid={invalid ? "true" : undefined} aria-describedby={description ? `${id}-description` : undefined} />{label ? <label class="form-check-label" for={id}>{label}</label> : null}{description ? <div class="form-text" id={`${id}-description`}>{description}</div> : null}</div>}

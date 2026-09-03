@@ -1,0 +1,17 @@
+---
+interface Props {
+  ariaLabel?: string;
+  size?: "" | "sm";
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { ariaLabel = "Loading", size = "", class: className = "", ...rest } = Astro.props;
+---
+
+<div {...rest} class:list={["spinner", size ? `spinner-${size}` : "", className]} role="status">
+  <slot name="icon"><Icon name="loader-circle" /></slot>
+  <span class="visually-hidden">{ariaLabel}</span>
+</div>

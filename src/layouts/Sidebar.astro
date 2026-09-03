@@ -1,0 +1,107 @@
+---
+import "@wpmoo/ui/moo-ui.css";
+import SidebarPrimitive from "../components/Sidebar.astro";
+import Icon from "../components/internal/Icon.astro";
+
+interface SidebarItem {
+  title: string;
+  href?: string;
+  icon?: string;
+  badge?: string | number;
+  active?: boolean;
+  disabled?: boolean;
+  tooltip?: string;
+}
+
+interface SidebarGroup {
+  label?: string;
+  items: SidebarItem[];
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  sidebarId?: string;
+  sidebarLabel?: string;
+  brand?: string;
+  footerText?: string;
+  groups?: SidebarGroup[];
+  variant?: "sidebar" | "floating" | "inset";
+  side?: "left" | "right";
+  defaultOpen?: boolean;
+  storageKey?: string;
+  contentClass?: string;
+}
+
+const defaultGroups: SidebarGroup[] = [{
+  label: "Workspace",
+  items: [
+    { title: "Overview", href: "/", icon: "panel-left", active: true },
+    { title: "Calendar", href: "#calendar", icon: "calendar", badge: 2 },
+    { title: "About", href: "#about", icon: "circle-info" },
+  ],
+}];
+
+const {
+  title,
+  description = "Moo UI components for Astro themes.",
+  sidebarId = "app-sidebar",
+  sidebarLabel = "Application navigation",
+  brand = "Moo UI Astro",
+  footerText = "Theme foundation",
+  groups = defaultGroups,
+  variant = "sidebar",
+  side = "left",
+  defaultOpen = true,
+  storageKey = "",
+  contentClass = "container py-5",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="data:," />
+    <title>{title}</title>
+  </head>
+  <body class="bg-body-tertiary">
+    <SidebarPrimitive
+      id={sidebarId}
+      ariaLabel={sidebarLabel}
+      brand={brand}
+      footerText={footerText}
+      groups={groups}
+      variant={variant}
+      side={side}
+      defaultOpen={defaultOpen}
+      storageKey={storageKey}
+      showTrigger={false}
+    >
+      <div slot="main" class="sidebar-inset" data-slot="sidebar-inset">
+        <header class="sidebar-inset__header">
+          <button class="btn btn-ghost btn-icon-sm sidebar-trigger" type="button" data-sidebar-trigger data-bs-target={`#${sidebarId}`} aria-label="Toggle sidebar" aria-controls={sidebarId} aria-expanded={defaultOpen ? "true" : "false"}>
+            <Icon name="panel-left" />
+          </button>
+          <a class="fw-semibold text-decoration-none text-body" href="/">{brand}</a>
+          <span class="ms-auto small text-body-secondary">{footerText}</span>
+        </header>
+        <main class="sidebar-inset__content">
+          <div class={contentClass}>
+            <slot />
+          </div>
+        </main>
+      </div>
+    </SidebarPrimitive>
+    <script>
+      import "bootstrap/dist/js/bootstrap.bundle.min.js";
+      import SidebarRuntime from "@wpmoo/ui/sidebar.js";
+
+      document
+        .querySelectorAll('[data-slot="sidebar-wrapper"]')
+        .forEach((root) => SidebarRuntime.getOrCreateInstance(root));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,58 @@
+---
+interface Props {
+  id: string;
+  name?: string;
+  startName?: string;
+  endName?: string;
+  label?: string;
+  ariaLabel?: string;
+  placeholder?: string;
+  value?: string;
+  startValue?: string;
+  endValue?: string;
+  required?: boolean;
+  disabled?: boolean;
+  invalid?: boolean;
+  describedby?: string;
+  minDate?: string;
+  maxDate?: string;
+  disabledDates?: string[] | string;
+  locale?: string;
+  captionLayout?: string;
+  showPresets?: boolean;
+  range?: boolean;
+  class?: string;
+  [key: string]: unknown;
+}
+
+import Icon from "./internal/Icon.astro";
+
+const { id, name = "", startName = "", endName = "", label = "", ariaLabel = "", placeholder = "Pick a date", value = "", startValue = "", endValue = "", required = false, disabled = false, invalid = false, describedby = "", minDate = "", maxDate = "", disabledDates = [], locale = "en", captionLayout = "", showPresets = false, range = false, class: className = "", ...rest } = Astro.props;
+const hasLabel = label.trim().length > 0;
+const hasAriaLabel = ariaLabel.trim().length > 0;
+if (!id.trim()) {
+  throw new Error("DatePicker id is required");
+}
+if (range ? !startName.trim() || !endName.trim() : !name.trim()) {
+  throw new Error(range ? "Date range picker requires startName and endName" : "DatePicker name is required");
+}
+if (hasLabel === hasAriaLabel) {
+  throw new Error("DatePicker requires exactly one of label or ariaLabel");
+}
+const serializedDisabledDates = typeof disabledDates === "string" ? disabledDates : JSON.stringify(disabledDates);
+const dateText = (date: string, fallback: string) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return fallback;
+  return new Intl.DateTimeFormat(locale || "en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
+};
+const accessibleLabel = label || ariaLabel;
+const popoverId = `${id}-popover`;
+---
+
+<div {...rest} class:list={["moo-datepicker", range ? "moo-datepicker--range" : "", className]} id={id} data-datepicker={range ? undefined : true} data-datepicker-range={range ? true : undefined} data-datepicker-mode={range ? "range" : "single"} data-datepicker-locale={locale} data-datepicker-placeholder={placeholder} data-datepicker-value={!range && value ? value : undefined} data-datepicker-start-value={range && startValue ? startValue : undefined} data-datepicker-end-value={range && endValue ? endValue : undefined} data-datepicker-min-date={minDate || undefined} data-datepicker-max-date={maxDate || undefined} data-datepicker-disabled-dates={disabledDates.length || typeof disabledDates === "string" ? serializedDisabledDates : undefined} data-datepicker-show-presets={showPresets ? "true" : undefined} data-datepicker-disabled={disabled ? "true" : undefined} data-invalid={invalid ? "true" : undefined}>
+  {label ? <label class="form-label" for={`${id}-trigger`}>{label}</label> : null}
+  <button class:list={["btn", "btn-outline-secondary", "moo-datepicker__trigger", invalid ? "is-invalid" : ""]} id={`${id}-trigger`} type="button" data-datepicker-trigger aria-haspopup="dialog" aria-expanded="false" aria-controls={popoverId} aria-label={ariaLabel || undefined} aria-invalid={invalid ? "true" : undefined} aria-describedby={describedby || undefined} disabled={disabled}><Icon name={range ? "calendar-range" : "calendar"} /><span data-datepicker-label>{range ? (startValue && endValue ? `${dateText(startValue, placeholder)} - ${dateText(endValue, placeholder)}` : startValue ? dateText(startValue, placeholder) : placeholder) : dateText(value, placeholder)}</span></button>
+  {range ? <><input type="hidden" name={startName} value={startValue} data-datepicker-range-start disabled={disabled} /><input type="hidden" name={endName} value={endValue} data-datepicker-range-end disabled={disabled} /></> : <input type="hidden" name={name} value={value} data-datepicker-input disabled={disabled} />}
+  {required ? <input type="text" class="visually-hidden moo-datepicker__validation" value={range ? `${startValue}${startValue && endValue ? " - " : ""}${endValue}` : value} data-datepicker-validation required disabled={disabled} tabindex="-1" aria-label={`${accessibleLabel} selected date ${range ? "range" : ""}`} /> : null}
+  <div class="moo-datepicker__popover" id={popoverId} data-datepicker-popover role="dialog" aria-modal="false" aria-label={`${accessibleLabel} calendar`} hidden><div class="moo-calendar" id={`${id}-calendar`} data-calendar data-calendar-mode={range ? "range" : "single"} data-calendar-locale={locale} data-calendar-value={!range && value ? value : undefined} data-calendar-start-value={range && startValue ? startValue : undefined} data-calendar-end-value={range && endValue ? endValue : undefined} data-calendar-min-date={minDate || undefined} data-calendar-max-date={maxDate || undefined} data-calendar-disabled-dates={disabledDates.length || typeof disabledDates === "string" ? serializedDisabledDates : undefined} data-calendar-caption-layout={captionLayout || undefined} data-calendar-show-presets={showPresets ? "true" : undefined} aria-label={`${accessibleLabel} calendar`} tabindex="-1"></div></div>
+</div>
