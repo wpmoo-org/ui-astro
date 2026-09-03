@@ -1,5 +1,5 @@
 ---
-import Floating from "../layouts/Floating.astro";
+import Layout from "../layouts/Layout.astro";
 import Alert from "../components/Alert.astro";
 import Badge from "../components/Badge.astro";
 import Button from "../components/Button.astro";
@@ -18,7 +18,7 @@ import Select from "../components/Select.astro";
 import Typography from "../components/Typography.astro";
 ---
 
-<Floating
+<Layout
   title="Moo UI Astro"
   description="Astro theme foundation powered by Moo UI."
 >
@@ -124,4 +124,20 @@ import Typography from "../components/Typography.astro";
       class="mt-4"
     />
   </Card>
-</Floating>
+</Layout>
+
+<script>
+  import MooDatepicker from "@wpmoo/ui/datepicker.js";
+  import MooChart from "@wpmoo/ui/chart.js";
+  import DataTable from "@wpmoo/ui/datatable.js";
+
+  document.querySelectorAll("[data-datepicker]").forEach((root) => {
+    MooDatepicker.getOrCreateInstance(root);
+  });
+  document.querySelectorAll(".chart").forEach((root) => {
+    MooChart.getOrCreateInstance(root);
+  });
+  document.querySelectorAll(".datatable").forEach((root) => {
+    DataTable.getOrCreateInstance(root);
+  });
+</script>

@@ -16,28 +16,30 @@ npm install @wpmoo/ui-astro
 The package brings the compatible `@wpmoo/ui`, Astro, and Bootstrap runtime
 dependencies with it.
 
-## Use Layouts
+## Use the Layout
 
-For pages with an application shell, import one layout instead of composing the
-Sidebar anatomy by hand:
+For pages with an application shell, import the single `Layout` and pick the
+sidebar variant instead of composing the Sidebar anatomy by hand:
 
 ```astro
 ---
-import Inset from "@wpmoo/ui-astro/layouts/Inset.astro";
+import Layout from "@wpmoo/ui-astro/Layout.astro";
 ---
 
-<Inset
+<Layout
   title="Dashboard"
+  sidebar="sidebar"
   groups={[{ label: "Workspace", items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }]}
 >
   <h1>Dashboard</h1>
-</Inset>
+</Layout>
 ```
 
-Public starter layouts are exported from `@wpmoo/ui-astro/layouts/Default.astro`,
-`@wpmoo/ui-astro/layouts/Sidebar.astro`,
-`@wpmoo/ui-astro/layouts/Inset.astro`, and
-`@wpmoo/ui-astro/layouts/Floating.astro`.
+`sidebar` accepts `none` (plain header page, no sidebar), `sidebar` (fixed edge
+sidebar), `floating`, or `inset`. The fixed `sidebar` variant is the default.
+Layout variants mirror the Moo UI catalog's sidebar variants; the sidebar
+rendering lives inside `Layout`, so pages never import sidebar anatomy
+themselves. `Layout` is exported from `@wpmoo/ui-astro/Layout.astro`.
 
 ## Use Components
 
@@ -111,8 +113,8 @@ astro/
   package.json
   src/
     components/       # Public wrappers, one PascalCase file per component
-    layouts/           # Shared document and theme shell
-    pages/             # Astro routes
+    layouts/          # Layout.astro: the single page/theme shell
+    pages/            # Astro routes
 ```
 
 All public component wrappers are exported from direct paths such as
@@ -123,10 +125,10 @@ String content is escaped by default. Components that accept structured rich
 content expose `trustedHtml`; set it to `true` only for caller-owned, precomposed
 markup. Never pass user-controlled or remote text through that option.
 
-The `Default`, `Sidebar`, `Inset`, and `Floating` layouts are the recommended
-Sidebar application-shell API. The lower-level `Sidebar` component remains
-available for custom shells and renders a runtime-compatible sidebar primitive
-from `groups` or the shorter `items` prop:
+The `Layout` shell is the recommended application-shell API. The lower-level
+`Sidebar` component remains available for custom shells that need to compose
+sidebar anatomy outside a page shell and renders a runtime-compatible sidebar
+primitive from `groups` or the shorter `items` prop:
 
 ```astro
 ---
@@ -137,7 +139,6 @@ import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
   id="main-sidebar"
   brand="Moo UI"
   groups={[{ label: "Workspace", items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }]}
-  footerText="Theme foundation"
 />
 ```
 

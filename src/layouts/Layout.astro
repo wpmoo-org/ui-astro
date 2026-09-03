@@ -21,10 +21,10 @@ interface SidebarGroup {
 interface Props {
   title: string;
   description?: string;
+  sidebar?: "none" | "sidebar" | "floating" | "inset";
   sidebarId?: string;
   sidebarLabel?: string;
   brand?: string;
-  footerText?: string;
   groups?: SidebarGroup[];
   side?: "left" | "right";
   defaultOpen?: boolean;
@@ -44,16 +44,18 @@ const defaultGroups: SidebarGroup[] = [{
 const {
   title,
   description = "Moo UI components for Astro themes.",
+  sidebar = "sidebar",
   sidebarId = "app-sidebar",
   sidebarLabel = "Application navigation",
   brand = "Moo UI Astro",
-  footerText = "Theme foundation",
   groups = defaultGroups,
   side = "left",
   defaultOpen = true,
   storageKey = "",
   contentClass = "container py-5",
 } = Astro.props;
+
+const hasSidebar = sidebar !== "none";
 ---
 
 <!doctype html>
@@ -65,34 +67,45 @@ const {
     <link rel="icon" href="data:," />
     <title>{title}</title>
   </head>
-  <body class="bg-body-tertiary" data-layout="inset">
-    <SidebarPrimitive
-      id={sidebarId}
-      ariaLabel={sidebarLabel}
-      brand={brand}
-      footerText={footerText}
-      groups={groups}
-      variant="inset"
-      side={side}
-      defaultOpen={defaultOpen}
-      storageKey={storageKey}
-      showTrigger={false}
-    >
-      <div slot="main" class="sidebar-inset" data-slot="sidebar-inset">
-        <header class="sidebar-inset__header">
-          <button class="btn btn-ghost btn-icon-sm sidebar-trigger" type="button" data-sidebar-trigger data-bs-target={`#${sidebarId}`} aria-label="Toggle sidebar" aria-controls={sidebarId} aria-expanded={defaultOpen ? "true" : "false"}>
-            <Icon name="panel-left" />
-          </button>
-          <a class="fw-semibold text-decoration-none text-body" href="/">{brand}</a>
-          <span class="ms-auto small text-body-secondary">{footerText}</span>
-        </header>
-        <main class="sidebar-inset__content">
-          <div class={contentClass}>
-            <slot />
+  <body class="bg-body-tertiary">
+    {hasSidebar ? (
+      <SidebarPrimitive
+        id={sidebarId}
+        ariaLabel={sidebarLabel}
+        brand={brand}
+        groups={groups}
+        variant={sidebar}
+        side={side}
+        defaultOpen={defaultOpen}
+        storageKey={storageKey}
+        showTrigger={false}
+      >
+        <div slot="main" class="sidebar-inset" data-slot="sidebar-inset">
+          <header class="sidebar-inset__header">
+            <button class="btn btn-ghost btn-icon-sm sidebar-trigger" type="button" data-sidebar-trigger data-bs-target={`#${sidebarId}`} aria-label="Toggle sidebar" aria-controls={sidebarId} aria-expanded={defaultOpen ? "true" : "false"}>
+              <Icon name="panel-left" />
+            </button>
+            <a class="fw-semibold text-decoration-none text-body" href="/">{brand}</a>
+          </header>
+          <main class="sidebar-inset__content">
+            <div class={contentClass}>
+              <slot />
+            </div>
+          </main>
+        </div>
+      </SidebarPrimitive>
+    ) : (
+      <>
+        <header class="border-bottom bg-body">
+          <div class="container d-flex align-items-center py-3">
+            <a class="fw-semibold text-decoration-none text-body" href="/">{brand}</a>
           </div>
+        </header>
+        <main class="container py-5">
+          <slot />
         </main>
-      </div>
-    </SidebarPrimitive>
+      </>
+    )}
     <script>
       import "bootstrap/dist/js/bootstrap.bundle.min.js";
       import SidebarRuntime from "@wpmoo/ui/sidebar.js";

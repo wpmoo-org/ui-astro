@@ -64,10 +64,7 @@
     "./components/ToggleGroup.astro": "./src/components/ToggleGroup.astro",
     "./components/Tooltip.astro": "./src/components/Tooltip.astro",
     "./components/Typography.astro": "./src/components/Typography.astro",
-    "./layouts/Default.astro": "./src/layouts/Default.astro",
-    "./layouts/Floating.astro": "./src/layouts/Floating.astro",
-    "./layouts/Inset.astro": "./src/layouts/Inset.astro",
-    "./layouts/Sidebar.astro": "./src/layouts/Sidebar.astro",
+    "./Layout.astro": "./src/layouts/Layout.astro",
     "./package.json": "./package.json"
   },
   "dependencies": {
