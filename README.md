@@ -18,28 +18,41 @@ dependencies with it.
 
 ## Use the Layout
 
-For pages with an application shell, import the single `Layout` and pick the
-sidebar variant instead of composing the Sidebar anatomy by hand:
+For pages with an application shell, import `Layout` and explicitly choose the
+navigation topology. A sidebar page supplies the public `Sidebar` component in
+Layout's named `sidebar` slot:
 
 ```astro
 ---
 import Layout from "@wpmoo/ui-astro/Layout.astro";
+import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
 ---
 
 <Layout
   title="Dashboard"
-  sidebar="sidebar"
-  groups={[{ label: "Workspace", items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }]}
+  navigation="sidebar"
+  theme="dark"
+  sidebarKey="dashboard"
+  sidebarId="dashboard-sidebar"
 >
+  <Sidebar
+    slot="sidebar"
+    id="dashboard-sidebar"
+    brand="Moo UI"
+    groups={[{ label: "Workspace", items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }]}
+  />
   <h1>Dashboard</h1>
 </Layout>
 ```
 
-`sidebar` accepts `none` (plain header page, no sidebar), `sidebar` (fixed edge
-sidebar), `floating`, or `inset`. The fixed `sidebar` variant is the default.
-Layout variants mirror the Moo UI catalog's sidebar variants; the sidebar
-rendering lives inside `Layout`, so pages never import sidebar anatomy
-themselves. `Layout` is exported from `@wpmoo/ui-astro/Layout.astro`.
+Use `navigation="none"` when a page does not need navigation; that topology
+renders only the page branch and rejects a `sidebar` slot. Sidebar pages use
+the closed `side`, `variant`, `collapsible`, `rail`, and `shellMode` values from
+the Moo UI app contract. `Layout` owns the app root, trigger, page regions, and
+runtime state. Set `theme="light"` or `theme="dark"` on the document owner;
+the default is `light`. `Sidebar` owns only the direct `<aside>` branch. Astro does not
+ship Odoo routes or application pages—consumers supply their own page content
+through the slots.
 
 ## Use Components
 
@@ -125,24 +138,25 @@ String content is escaped by default. Components that accept structured rich
 content expose `trustedHtml`; set it to `true` only for caller-owned, precomposed
 markup. Never pass user-controlled or remote text through that option.
 
-The `Layout` shell is the recommended application-shell API. The lower-level
-`Sidebar` component remains available for custom shells that need to compose
-sidebar anatomy outside a page shell and renders a runtime-compatible sidebar
-primitive from `groups` or the shorter `items` prop:
+The `Layout` shell is the application-shell API. `Sidebar` remains public as
+the direct sidebar branch used by `Layout`; it is not a standalone runtime
+shell. It renders a runtime-compatible sidebar primitive from `groups` or the
+shorter `items` prop:
 
 ```astro
 ---
+import Layout from "@wpmoo/ui-astro/Layout.astro";
 import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
 ---
 
-<Sidebar
-  id="main-sidebar"
-  brand="Moo UI"
-  groups={[{ label: "Workspace", items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }]}
-/>
+<Layout title="Workspace" navigation="sidebar" sidebarKey="workspace" sidebarId="main-sidebar">
+  <Sidebar slot="sidebar" id="main-sidebar" brand="Moo UI" />
+  <h1>Workspace</h1>
+</Layout>
 ```
 
-Use the `header`, `content`, and `footer` slots only when custom regions are
+Use Layout's `header` and `footer` slots for page chrome. Use Sidebar's
+`header`, `content`, and `footer` slots only when custom sidebar regions are
 needed; menu controls supplied through slots must retain the documented
 `data-sidebar-*` hooks.
 

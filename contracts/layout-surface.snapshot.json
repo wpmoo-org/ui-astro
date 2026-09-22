@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "package": "@wpmoo/ui",
+    "version": "1.0.0-rc.8"
+  },
+  "source": {
+    "repository": "projects/ui/html",
+    "commit": "922cf1c64a3d73e80f7c152a20608207babe343c",
+    "files": {
+      "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
+      "src/layouts/app.html.jinja": "9b3089fe802c42feee2ee316f07367264e31f4e2d0dc13a9045b9adea3dbd1ec",
+      "src/layouts/page.html.jinja": "77d6202b7fcff685d8d84254dba4bd9a8699a52d850b826bff550014f16f35cb"
+    }
+  },
+  "registry": [
+    {
+      "slug": "app",
+      "label": "App",
+      "status": "preview",
+      "description": "Compose a direct application shell with an optional Sidebar sibling and one independent Page sibling.",
+      "source": "src/layouts/app.html.jinja",
+      "parts": [
+        "sidebar"
+      ],
+      "layoutParts": [
+        "page"
+      ]
+    },
+    {
+      "slug": "page",
+      "label": "Page",
+      "status": "preview",
+      "description": "Provide a full-width page surface with semantic header, main, and footer regions, each using one native Bootstrap content rail.",
+      "source": "src/layouts/page.html.jinja",
+      "parts": [],
+      "layoutParts": []
+    }
+  ],
+  "layout_surface": {
+    "app": {
+      "navigation": [
+        "sidebar",
+        "none"
+      ],
+      "shell_mode": [
+        "viewport",
+        "contained"
+      ],
+      "side": [
+        "left",
+        "right"
+      ],
+      "variant": [
+        "sidebar",
+        "floating",
+        "inset"
+      ],
+      "collapsible": [
+        "icon",
+        "offcanvas",
+        "none"
+      ],
+      "root": {
+        "class": "wrapper",
+        "data_layout": "app",
+        "data_shell_mode": "viewport|contained"
+      },
+      "direct_children": [
+        "sidebar",
+        "page"
+      ],
+      "named_slots": [
+        "sidebar",
+        "page"
+      ]
+    },
+    "page": {
+      "width": {
+        "base": "container",
+        "sm": "container-sm",
+        "md": "container-md",
+        "lg": "container-lg",
+        "xl": "container-xl",
+        "xxl": "container-xxl",
+        "fluid": "container-fluid"
+      },
+      "regions": [
+        "header",
+        "main",
+        "footer"
+      ],
+      "root": {
+        "data_slot": "page"
+      },
+      "main": {
+        "id": "main-content",
+        "tabindex": "-1",
+        "class": [
+          "scroll-fade-y",
+          "no-scrollbar"
+        ]
+      }
+    }
+  }
+}

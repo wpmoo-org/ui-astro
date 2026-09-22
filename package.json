@@ -11,10 +11,14 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "test": "node --test tests/*.test.mjs",
+    "layout-contract:sync": "node scripts/sync_layout_contract.mjs --write --html-root ../html",
+    "layout-contract:check": "node scripts/sync_layout_contract.mjs --check --html-root ../html",
     "preview": "astro preview"
   },
   "files": [
     "src",
+    "contracts",
     "README.md",
     "LICENSE"
   ],

@@ -1,65 +1,111 @@
 ---
 import "@wpmoo/ui/moo-ui.css";
-import SidebarPrimitive from "../components/Sidebar.astro";
 import Icon from "../components/internal/Icon.astro";
 
-interface SidebarItem {
-  title: string;
-  href?: string;
-  icon?: string;
-  badge?: string | number;
-  active?: boolean;
-  disabled?: boolean;
-  tooltip?: string;
-}
-
-interface SidebarGroup {
-  label?: string;
-  items: SidebarItem[];
-}
+type Navigation = "sidebar" | "none";
+type ShellMode = "viewport" | "contained";
+type Theme = "light" | "dark";
+type PageWidth = "base" | "sm" | "md" | "lg" | "xl" | "xxl" | "fluid";
 
 interface Props {
   title: string;
   description?: string;
-  sidebar?: "none" | "sidebar" | "floating" | "inset";
-  sidebarId?: string;
-  sidebarLabel?: string;
-  brand?: string;
-  groups?: SidebarGroup[];
-  side?: "left" | "right";
+  navigation: Navigation;
+  shellMode?: ShellMode;
+  theme?: Theme;
+  sidebarKey?: string;
   defaultOpen?: boolean;
-  storageKey?: string;
-  contentClass?: string;
+  sidebarId?: string;
+  ariaLabel?: string;
+  id?: string;
+  pageWidth?: PageWidth;
+  headerWidth?: PageWidth | null;
 }
 
-const defaultGroups: SidebarGroup[] = [{
-  label: "Workspace",
-  items: [
-    { title: "Overview", href: "/", icon: "panel-left", active: true },
-    { title: "Calendar", href: "#calendar", icon: "calendar", badge: 2 },
-    { title: "About", href: "#about", icon: "circle-info" },
-  ],
-}];
+const containerClasses: Record<PageWidth, string> = {
+  base: "container",
+  sm: "container-sm",
+  md: "container-md",
+  lg: "container-lg",
+  xl: "container-xl",
+  xxl: "container-xxl",
+  fluid: "container-fluid",
+};
+const identifierPattern = /^[A-Za-z][A-Za-z0-9_-]*$/;
+const navigationValues: Navigation[] = ["sidebar", "none"];
+const shellModeValues: ShellMode[] = ["viewport", "contained"];
+const themeValues: Theme[] = ["light", "dark"];
 
 const {
   title,
   description = "Moo UI components for Astro themes.",
-  sidebar = "sidebar",
-  sidebarId = "app-sidebar",
-  sidebarLabel = "Application navigation",
-  brand = "Moo UI Astro",
-  groups = defaultGroups,
-  side = "left",
+  navigation,
+  shellMode = "viewport",
+  theme = "light",
+  sidebarKey = "",
   defaultOpen = true,
-  storageKey = "",
-  contentClass = "container py-5",
+  sidebarId = "",
+  ariaLabel = "Toggle sidebar",
+  id = "",
+  pageWidth = "xl",
+  headerWidth = null,
 } = Astro.props;
 
-const hasSidebar = sidebar !== "none";
+if (!navigationValues.includes(navigation)) {
+  throw new TypeError(`Unknown Layout navigation: ${String(navigation)}`);
+}
+if (!shellModeValues.includes(shellMode)) {
+  throw new TypeError(`Unknown Layout shell mode: ${String(shellMode)}`);
+}
+if (!themeValues.includes(theme)) {
+  throw new TypeError(`Unknown Layout theme: ${String(theme)}`);
+}
+if (typeof defaultOpen !== "boolean") {
+  throw new TypeError("Layout defaultOpen must be boolean");
+}
+if (typeof ariaLabel !== "string") {
+  throw new TypeError("Layout trigger label must be a string");
+}
+if (headerWidth !== null && !Object.hasOwn(containerClasses, headerWidth)) {
+  throw new TypeError(`Unknown Layout header width: ${String(headerWidth)}`);
+}
+if (!Object.hasOwn(containerClasses, pageWidth)) {
+  throw new TypeError(`Unknown Layout page width: ${String(pageWidth)}`);
+}
+if (id && (id === "main-content" || !identifierPattern.test(id))) {
+  throw new TypeError("Invalid Layout id");
+}
+if (navigation === "sidebar") {
+  if (!sidebarId || sidebarId === "main-content" || !identifierPattern.test(sidebarId)) {
+    throw new TypeError("Invalid Layout sidebarId");
+  }
+  if (!sidebarKey || !identifierPattern.test(sidebarKey)) {
+    throw new TypeError("Invalid Layout sidebarKey");
+  }
+  if (id && id === sidebarId) {
+    throw new TypeError("Layout id and sidebarId must differ");
+  }
+}
+
+const hasSidebarSlot = Astro.slots.has("sidebar");
+if (navigation === "sidebar" && !hasSidebarSlot) {
+  throw new TypeError('Layout navigation="sidebar" requires a sidebar slot');
+}
+if (navigation === "none" && hasSidebarSlot) {
+  throw new TypeError('Layout navigation="none" does not accept a sidebar slot');
+}
+if (!Astro.slots.has("default")) {
+  throw new TypeError("Layout requires default page content");
+}
+
+const resolvedHeaderWidth = headerWidth || pageWidth;
+const hasHeader = navigation === "sidebar" || Astro.slots.has("header");
+const pageClass = containerClasses[pageWidth];
+const headerClass = containerClasses[resolvedHeaderWidth];
 ---
 
 <!doctype html>
-<html lang="en" data-bs-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -67,45 +113,17 @@ const hasSidebar = sidebar !== "none";
     <link rel="icon" href="data:," />
     <title>{title}</title>
   </head>
-  <body class="bg-body-tertiary">
-    {hasSidebar ? (
-      <SidebarPrimitive
-        id={sidebarId}
-        ariaLabel={sidebarLabel}
-        brand={brand}
-        groups={groups}
-        variant={sidebar}
-        side={side}
-        defaultOpen={defaultOpen}
-        storageKey={storageKey}
-        showTrigger={false}
-      >
-        <div slot="main" class="sidebar-inset" data-slot="sidebar-inset">
-          <header class="sidebar-inset__header">
-            <button class="btn btn-ghost btn-icon-sm sidebar-trigger" type="button" data-sidebar-trigger data-bs-target={`#${sidebarId}`} aria-label="Toggle sidebar" aria-controls={sidebarId} aria-expanded={defaultOpen ? "true" : "false"}>
-              <Icon name="panel-left" />
-            </button>
-            <a class="fw-semibold text-decoration-none text-body" href="/">{brand}</a>
-          </header>
-          <main class="sidebar-inset__content">
-            <div class={contentClass}>
-              <slot />
-            </div>
-          </main>
+  <body>
+    <div class="moo-ui" data-bs-theme={theme} data-moo-document-owner="true">
+      <div class="wrapper" data-layout="app" data-shell-mode={shellMode} id={id || undefined} data-slot={navigation === "sidebar" ? "sidebar-wrapper" : undefined} data-sidebar-state={navigation === "sidebar" ? (defaultOpen ? "expanded" : "collapsed") : undefined} data-sidebar-key={navigation === "sidebar" ? sidebarKey : undefined}>
+        {navigation === "sidebar" ? <slot name="sidebar" /> : null}
+        <div data-slot="page">
+          {hasHeader ? <header><div class={headerClass}>{navigation === "sidebar" ? <button class="btn btn-ghost btn-icon-sm sidebar-trigger" type="button" data-sidebar-trigger data-bs-target={`#${sidebarId}`} aria-label={ariaLabel} aria-controls={sidebarId} aria-expanded={defaultOpen ? "true" : "false"}><Icon name="panel-left" /></button> : null}<slot name="header" /></div></header> : null}
+          <main id="main-content" tabindex="-1" class="scroll-fade-y no-scrollbar"><div class={pageClass}><slot /></div></main>
+          {Astro.slots.has("footer") ? <footer><div class={pageClass}><slot name="footer" /></div></footer> : null}
         </div>
-      </SidebarPrimitive>
-    ) : (
-      <>
-        <header class="border-bottom bg-body">
-          <div class="container d-flex align-items-center py-3">
-            <a class="fw-semibold text-decoration-none text-body" href="/">{brand}</a>
-          </div>
-        </header>
-        <main class="container py-5">
-          <slot />
-        </main>
-      </>
-    )}
+      </div>
+    </div>
     <script>
       import "bootstrap/dist/js/bootstrap.bundle.min.js";
       import SidebarRuntime from "@wpmoo/ui/sidebar.js";
