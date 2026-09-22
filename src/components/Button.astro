@@ -23,6 +23,8 @@ interface Props {
   class?: string;
   element?: "button" | "input" | "a";
   ariaLabel?: string;
+  ariaControls?: string;
+  ariaExpanded?: boolean;
   toggle?: boolean;
   dropdown?: boolean;
   dropdownOffset?: string;
@@ -57,6 +59,8 @@ const {
   class: className = "",
   element = href ? "a" : "button",
   ariaLabel = "",
+  ariaControls = "",
+  ariaExpanded,
   toggle = false,
   dropdown = false,
   dropdownOffset = "",
@@ -164,6 +168,8 @@ const buttonAttributes = {
     role="button"
     href={disabled ? undefined : href}
     aria-label={ariaLabel || undefined}
+    aria-controls={ariaControls || undefined}
+    aria-expanded={ariaExpanded === undefined ? undefined : String(ariaExpanded)}
     aria-disabled={disabled ? "true" : undefined}
     tabindex={disabled ? -1 : undefined}
   >
@@ -189,9 +195,10 @@ const buttonAttributes = {
     type={type}
     disabled={disabled}
     aria-label={ariaLabel || undefined}
+    aria-controls={ariaControls || undefined}
+    aria-expanded={ariaExpanded === undefined ? (dropdown || collapseTarget ? (collapseTarget ? String(collapseOpen) : "false") : undefined) : String(ariaExpanded)}
     aria-pressed={toggle ? "false" : undefined}
-    aria-expanded={dropdown || collapseTarget ? (collapseTarget ? String(collapseOpen) : "false") : undefined}
-    aria-controls={collapseTarget || undefined}
+    aria-controls={ariaControls || collapseTarget || undefined}
     aria-busy={loading ? "true" : undefined}
   >
     {loading ? <slot name="loading-icon"><Icon name="loader-circle" /></slot> : <slot name="icon-start" />}

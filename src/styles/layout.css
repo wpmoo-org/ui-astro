@@ -1,0 +1,103 @@
+/*
+ * The generic HTML app macro provides the page/main topology. The Astro
+ * adapter owns the consuming shell, so the main region is its scroll owner,
+ * matching the Moo UI catalog without copying the catalog-private wrapper.
+ */
+.wrapper[data-layout="app"] > [data-slot="page"] > main {
+  --scroll-fade-size: min(6%, 2rem);
+  --scroll-fade-reveal: 4rem;
+  overflow-y: auto;
+}
+
+.wrapper[data-layout="app"] > [data-slot="page"] > header {
+  position: sticky;
+  z-index: 1030;
+  top: 0;
+  min-height: 4rem;
+  background: color-mix(in srgb, var(--bs-body-bg) 94%, transparent);
+  backdrop-filter: blur(0.75rem);
+}
+
+.astro-layout__navbar {
+  min-height: 4rem;
+}
+
+.astro-layout__search-trigger {
+  min-width: 9.5rem;
+  justify-content: space-between;
+}
+
+.astro-layout__search-trigger .search-trigger__label,
+.astro-layout__search-trigger .search-trigger__shortcut {
+  display: inline-flex;
+  align-items: center;
+}
+
+.astro-layout__search-trigger .search-trigger__shortcut {
+  gap: 0.125rem;
+  margin-inline-start: 1rem;
+}
+
+.astro-layout__search-trigger .search-trigger__shortcut kbd {
+  min-width: 1.125rem;
+  padding-inline: 0.25rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius-sm);
+  color: var(--bs-secondary-color);
+  font-size: 0.6875rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.astro-layout__theme-toggle {
+  border-radius: 50%;
+}
+
+.astro-layout__theme-icon {
+  display: none;
+  width: 1rem;
+  height: 1rem;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.astro-layout__theme-icon [data-icon] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.moo-ui[data-bs-theme="light"] .astro-layout__theme-icon[data-theme-icon="light"],
+.moo-ui[data-bs-theme="dark"] .astro-layout__theme-icon[data-theme-icon="dark"] {
+  display: inline-flex;
+}
+
+.astro-layout__github-link {
+  --bs-btn-color: var(--bs-body-bg);
+  --bs-btn-bg: color-mix(in srgb, var(--bs-body-color) 88%, var(--bs-body-bg));
+  --bs-btn-border-color: var(--bs-btn-bg);
+  --bs-btn-hover-color: var(--bs-body-bg);
+  --bs-btn-hover-bg: var(--bs-body-color);
+  --bs-btn-hover-border-color: var(--bs-body-color);
+  --bs-btn-active-color: var(--bs-body-bg);
+  --bs-btn-active-bg: var(--bs-body-color);
+  --bs-btn-active-border-color: var(--bs-body-color);
+
+  min-height: 2rem;
+  padding-inline: 0.75rem;
+  color: var(--bs-btn-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.astro-layout__github-link [data-icon] {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (max-width: 991.98px) {
+  .astro-layout__github-link:has(> [data-icon]) {
+    padding-inline: 0.5rem;
+  }
+}

@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const [layout, sidebar, index, snapshot] = await Promise.all([
+const [layout, layoutStyles, sidebar, index, icon, snapshot] = await Promise.all([
   readFile(new URL("../src/layouts/Layout.astro", import.meta.url), "utf8"),
+  readFile(new URL("../src/styles/layout.css", import.meta.url), "utf8"),
   readFile(new URL("../src/components/Sidebar.astro", import.meta.url), "utf8"),
   readFile(new URL("../src/pages/index.astro", import.meta.url), "utf8"),
+  readFile(new URL("../src/components/internal/Icon.astro", import.meta.url), "utf8"),
   readFile(new URL("../contracts/layout-surface.snapshot.json", import.meta.url), "utf8"),
 ]);
 
@@ -45,8 +47,38 @@ test("Layout implements the stamped HTML app/page surface", () => {
   assert.match(layout, /data-slot="page"/);
   assert.match(layout, /<main id="main-content" tabindex="-1"/);
   assert.match(layout, /ariaLabel = "Toggle sidebar"/);
-  assert.match(layout, /aria-label=\{ariaLabel\}/);
+  assert.match(layout, /ariaLabel=\{ariaLabel\}/);
   assert.doesNotMatch(layout, /sidebar-inset/);
+});
+
+test("Astro owns the application main scroll region", () => {
+  assert.match(layout, /import "\.\.\/styles\/layout\.css"/);
+  assert.match(
+    layoutStyles,
+    /\.wrapper\[data-layout="app"\] > \[data-slot="page"\] > main\s*\{\s*--scroll-fade-size: min\(6%, 2rem\);\s*--scroll-fade-reveal: 4rem;\s*overflow-y: auto;/
+  );
+});
+
+test("Layout provides the Moo UI fluid header controls", () => {
+  assert.match(layout, /headerWidth = "fluid"/);
+  assert.match(layout, /import Button from "\.\.\/components\/Button\.astro"/);
+  assert.match(layout, /import Kbd from "\.\.\/components\/Kbd\.astro"/);
+  assert.match(layout, /class="navbar astro-layout__navbar/);
+  assert.match(layout, /data-sidebar-trigger/);
+  assert.match(layout, /data-search-trigger/);
+  assert.match(layout, /data-theme-toggle/);
+  assert.match(layout, /https:\/\/github\.com\/wpmoo-org\/ui/);
+  assert.match(
+    layoutStyles,
+    /\.wrapper\[data-layout="app"\] > \[data-slot="page"\] > header\s*\{[\s\S]*position:\s*sticky;[\s\S]*min-height:\s*4rem;/
+  );
+});
+
+test("Layout exposes the icon set required by the header", () => {
+  assert.match(icon, /name === "sun"/);
+  assert.match(icon, /name === "moon-star"/);
+  assert.match(icon, /name === "github"/);
+  assert.match(icon, /viewBox=\{name === "github" \? "0 0 438\.549 438\.549" : "0 0 24 24"\}/);
 });
 
 test("Sidebar is only the direct aside branch", () => {
