@@ -198,3 +198,16 @@ node scripts/sync_package_baseline.mjs --check-release
 Development installation clears only the local `node_modules/.vite` cache.
 The semantic layout snapshot remains a separately reviewed contract and is not
 rewritten by package synchronization.
+
+An immutable release synchronization uses the registry-pinned package lock and
+does not install a local tarball or rewrite the semantic layout snapshot:
+
+```bash
+cd /path/to/workspace
+make sync MODE=release UI_PACKAGE_TARBALL=/absolute/path/to/wpmoo-ui.tgz
+node projects/ui/astro/scripts/sync_package_baseline.mjs --check-release
+```
+
+Development provenance is suitable for local integration only; its Odoo and
+PHP locks, and the workspace release gates, must reject it until an immutable
+release tarball is synchronized.
