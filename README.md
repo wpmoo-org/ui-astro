@@ -169,3 +169,32 @@ npm run build
 Moo UI remains the CSS owner. Astro owns composition, routing, and theme
 layouts; Bootstrap owns its native browser behavior; Moo ESM modules remain
 optional and must be initialized explicitly when a wrapper needs them.
+
+## Adapter synchronization
+
+The workspace root owns cross-adapter synchronization. `make sync` builds one
+temporary `@wpmoo/ui` development tarball and supplies the same package bytes
+to Astro, Odoo, and PHP. Astro's local install is deliberately no-save and
+does not change `package.json` or `package-lock.json`:
+
+```bash
+cd /path/to/workspace
+make sync
+```
+
+For a direct Astro development install from an already verified tarball:
+
+```bash
+node scripts/sync_package_baseline.mjs --mode dev --package-tarball /absolute/path/to/ui.tgz
+```
+
+Release readiness is read-only and requires the registry-pinned package lock;
+a local `file:` dependency is not release-valid:
+
+```bash
+node scripts/sync_package_baseline.mjs --check-release
+```
+
+Development installation clears only the local `node_modules/.vite` cache.
+The semantic layout snapshot remains a separately reviewed contract and is not
+rewritten by package synchronization.
