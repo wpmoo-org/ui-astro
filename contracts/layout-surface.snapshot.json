@@ -6,7 +6,7 @@
   },
   "source": {
     "repository": "projects/ui/html",
-    "commit": "fb12511d640f7a708635ff381f17623d9d133fa7",
+    "commit": "0a460053a336b4139efd0c16090e4354c78b7be8",
     "files": {
       "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
       "src/layouts/app.html.jinja": "9b3089fe802c42feee2ee316f07367264e31f4e2d0dc13a9045b9adea3dbd1ec",
