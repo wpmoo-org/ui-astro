@@ -54,6 +54,15 @@ the default is `light`. `Sidebar` owns only the direct `<aside>` branch. Astro d
 ship Odoo routes or application pages—consumers supply their own page content
 through the slots.
 
+The Page main rail exposes `data-page-container`. To make a Bootstrap row
+respond to that rail's available width instead of the browser viewport, opt in
+with `data-layout="page-grid"`, keep a base `col-N` on each direct item, and
+add `data-page-col-lg="3"` (or another valid 1–12 span and `sm`/`md`/`lg`/`xl`/`xxl`
+breakpoint). `data-page-show-from="lg"` and `data-page-hide-from="lg"` switch
+companion content at the same threshold. The canonical `@wpmoo/ui/moo-ui.css`
+handles Sidebar open, closed, overlay, and absent states without an Astro
+resize script. See `src/pages/index.astro` for a small example.
+
 ## Use Components
 
 Load Moo UI CSS from the consuming theme layout, then import the wrappers you

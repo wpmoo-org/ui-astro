@@ -154,7 +154,7 @@ const headerClass = containerClasses[resolvedHeaderWidth];
               </div>
             </header>
           ) : null}
-          <main id="main-content" tabindex="-1" class="scroll-fade-y no-scrollbar"><div class={pageClass}><slot /></div></main>
+          <main id="main-content" tabindex="-1" class="scroll-fade-y no-scrollbar"><div class={pageClass} data-page-container><slot /></div></main>
           {Astro.slots.has("footer") ? <footer><div class={pageClass}><slot name="footer" /></div></footer> : null}
         </div>
       </div>

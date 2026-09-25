@@ -43,9 +43,11 @@ test("Layout implements the stamped HTML app/page surface", () => {
   assert.deepEqual(layoutSnapshot.layout_surface.app.navigation, ["sidebar", "none"]);
   assert.deepEqual(layoutSnapshot.layout_surface.app.shell_mode, ["viewport", "contained"]);
   assert.deepEqual(layoutSnapshot.layout_surface.page.regions, ["header", "main", "footer"]);
+  assert.equal(layoutSnapshot.layout_surface.page.main.rail_attribute, "data-page-container");
   assert.match(layout, /data-slot="sidebar-wrapper"/);
   assert.match(layout, /data-slot="page"/);
   assert.match(layout, /<main id="main-content" tabindex="-1"/);
+  assert.match(layout, /<main id="main-content"[^>]*><div class=\{pageClass\} data-page-container>/);
   assert.match(layout, /ariaLabel = "Toggle sidebar"/);
   assert.match(layout, /ariaLabel=\{ariaLabel\}/);
   assert.doesNotMatch(layout, /sidebar-inset/);
@@ -95,4 +97,9 @@ test("the smoke page composes the public Sidebar through Layout", () => {
   assert.match(index, /theme="dark"/);
   assert.match(index, /<Sidebar[\s\S]*slot="sidebar"/);
   assert.doesNotMatch(index, /sidebar="(?:none|sidebar|floating|inset)"/);
+  assert.match(index, /data-layout="page-grid"/);
+  assert.match(index, /data-page-col-lg="3"/);
+  assert.match(index, /data-page-col-lg="9"/);
+  assert.match(index, /data-page-show-from="lg"/);
+  assert.match(index, /data-page-hide-from="lg"/);
 });

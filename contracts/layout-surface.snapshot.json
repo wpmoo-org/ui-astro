@@ -6,11 +6,11 @@
   },
   "source": {
     "repository": "projects/ui/html",
-    "commit": "0a460053a336b4139efd0c16090e4354c78b7be8",
+    "commit": "6a57090dcdaee0ad3a8630c560b62d1f2375cb99",
     "files": {
       "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
       "src/layouts/app.html.jinja": "9b3089fe802c42feee2ee316f07367264e31f4e2d0dc13a9045b9adea3dbd1ec",
-      "src/layouts/page.html.jinja": "77d6202b7fcff685d8d84254dba4bd9a8699a52d850b826bff550014f16f35cb"
+      "src/layouts/page.html.jinja": "b3072f00df72651abc30efae0cd165a9843efb6d8d84c23b4cf2994e1d434deb"
     }
   },
   "registry": [
@@ -99,7 +99,8 @@
         "class": [
           "scroll-fade-y",
           "no-scrollbar"
-        ]
+        ],
+        "rail_attribute": "data-page-container"
       }
     }
   }

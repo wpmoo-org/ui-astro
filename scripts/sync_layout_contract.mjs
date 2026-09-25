@@ -112,6 +112,9 @@ export async function buildSnapshot(htmlRoot) {
   );
   const appSource = appFile.source;
   const pageSource = pageFile.source;
+  if (!/<main\b[^>]*>\s*<div\b[^>]*data-page-container/.test(pageSource)) {
+    throw new Error("HTML Page main rail must expose data-page-container");
+  }
 
   return {
     schema_version: 1,
@@ -150,6 +153,7 @@ export async function buildSnapshot(htmlRoot) {
           id: "main-content",
           tabindex: "-1",
           class: ["scroll-fade-y", "no-scrollbar"],
+          rail_attribute: "data-page-container",
         },
       },
     },
