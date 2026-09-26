@@ -61,7 +61,9 @@ add `data-page-col-lg="3"` (or another valid 1–12 span and `sm`/`md`/`lg`/`xl`
 breakpoint). `data-page-show-from="lg"` and `data-page-hide-from="lg"` switch
 companion content at the same threshold. The canonical `@wpmoo/ui/moo-ui.css`
 handles Sidebar open, closed, overlay, and absent states without an Astro
-resize script. See `src/pages/index.astro` for a small example.
+resize script. Put visibility markers on neutral block wrappers, then apply
+flex/grid display to their children so the wrapper's shown state does not
+replace that layout. See `src/pages/index.astro` for a small example.
 
 ## Use Components
 
