@@ -13,7 +13,7 @@ const [layout, layoutStyles, sidebar, index, icon, snapshot] = await Promise.all
 
 const layoutSnapshot = JSON.parse(snapshot);
 
-test("Layout exposes the RC8 app/page sibling topology", () => {
+test("Layout exposes the published app/page sibling topology", () => {
   assert.doesNotMatch(layout, /import .*Sidebar\.astro/);
   assert.doesNotMatch(layout, /sidebar-inset/);
   assert.match(layout, /type Navigation = "sidebar" \| "none"/);

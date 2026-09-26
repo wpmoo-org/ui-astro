@@ -211,7 +211,8 @@ The semantic layout snapshot remains a separately reviewed contract and is not
 rewritten by package synchronization.
 
 An immutable release synchronization uses the registry-pinned package lock and
-does not install a local tarball or rewrite the semantic layout snapshot:
+does not install a local tarball or rewrite the semantic layout snapshot. The
+current exact release pin is `@wpmoo/ui@1.0.0-rc.9`:
 
 ```bash
 cd /path/to/workspace

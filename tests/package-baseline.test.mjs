@@ -5,12 +5,25 @@ import { join } from "node:path";
 import test from "node:test";
 
 import {
+  ASTRO_ROOT,
   assertPackageCompatibility,
   assertReleasePin,
   developmentInstallCommand,
   installDevelopmentPackage,
   checkRelease,
 } from "../scripts/sync_package_baseline.mjs";
+
+test("workspace release pin uses the published RC9 registry package", async () => {
+  const declared = JSON.parse(await readFile(join(ASTRO_ROOT, "package.json"), "utf8"));
+  const lock = JSON.parse(await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"));
+  assert.equal(declared.dependencies["@wpmoo/ui"], "1.0.0-rc.9");
+  assert.equal(lock.packages[""].dependencies["@wpmoo/ui"], "1.0.0-rc.9");
+  assert.equal(lock.packages["node_modules/@wpmoo/ui"].version, "1.0.0-rc.9");
+  assert.equal(
+    lock.packages["node_modules/@wpmoo/ui"].resolved,
+    "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.9.tgz",
+  );
+});
 
 const packageJson = {
   dependencies: {

@@ -72,7 +72,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.0.0-rc.8",
+    "@wpmoo/ui": "1.0.0-rc.9",
     "astro": "7.3.3",
     "bootstrap": "5.3.8"
   }
