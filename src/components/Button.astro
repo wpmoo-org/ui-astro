@@ -16,7 +16,7 @@ interface Props {
     | "outline-primary"
     | "outline-success"
     | "outline-danger";
-  size?: "default" | "xs" | "sm" | "lg";
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   type?: "button" | "submit" | "reset";
   href?: string;
   disabled?: boolean;
@@ -195,7 +195,6 @@ const buttonAttributes = {
     type={type}
     disabled={disabled}
     aria-label={ariaLabel || undefined}
-    aria-controls={ariaControls || undefined}
     aria-expanded={ariaExpanded === undefined ? (dropdown || collapseTarget ? (collapseTarget ? String(collapseOpen) : "false") : undefined) : String(ariaExpanded)}
     aria-pressed={toggle ? "false" : undefined}
     aria-controls={ariaControls || collapseTarget || undefined}

@@ -139,7 +139,7 @@ const headerClass = containerClasses[resolvedHeaderWidth];
               <div class={headerClass}>
                 <div class="d-flex align-items-center gap-2 py-2">
                   {navigation === "sidebar" ? (
-                    <Button variant="ghost" class="btn-icon-sm sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
+                    <Button variant="ghost" size="icon-sm" class="sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
                       <Icon name="panel-left" />
                     </Button>
                   ) : null}
