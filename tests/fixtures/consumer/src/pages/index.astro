@@ -1,0 +1,74 @@
+---
+import Layout from "@wpmoo/ui-astro/Layout.astro";
+import Accordion from "@wpmoo/ui-astro/components/Accordion.astro";
+import Alert from "@wpmoo/ui-astro/components/Alert.astro";
+import AlertDialog from "@wpmoo/ui-astro/components/AlertDialog.astro";
+import Avatar from "@wpmoo/ui-astro/components/Avatar.astro";
+import Badge from "@wpmoo/ui-astro/components/Badge.astro";
+import Button from "@wpmoo/ui-astro/components/Button.astro";
+import ButtonGroup from "@wpmoo/ui-astro/components/ButtonGroup.astro";
+import Breadcrumb from "@wpmoo/ui-astro/components/Breadcrumb.astro";
+import Card from "@wpmoo/ui-astro/components/Card.astro";
+import Chart from "@wpmoo/ui-astro/components/Chart.astro";
+import Checkbox from "@wpmoo/ui-astro/components/Checkbox.astro";
+import CloseButton from "@wpmoo/ui-astro/components/CloseButton.astro";
+import Collapsible from "@wpmoo/ui-astro/components/Collapsible.astro";
+import Combobox from "@wpmoo/ui-astro/components/Combobox.astro";
+import ContextMenu from "@wpmoo/ui-astro/components/ContextMenu.astro";
+import DataTable from "@wpmoo/ui-astro/components/DataTable.astro";
+import DatePicker from "@wpmoo/ui-astro/components/DatePicker.astro";
+import Dialog from "@wpmoo/ui-astro/components/Dialog.astro";
+import DropdownMenu from "@wpmoo/ui-astro/components/DropdownMenu.astro";
+import Field from "@wpmoo/ui-astro/components/Field.astro";
+import Form from "@wpmoo/ui-astro/components/Form.astro";
+import Input from "@wpmoo/ui-astro/components/Input.astro";
+import InputGroup from "@wpmoo/ui-astro/components/InputGroup.astro";
+import Kbd from "@wpmoo/ui-astro/components/Kbd.astro";
+import Menubar from "@wpmoo/ui-astro/components/Menubar.astro";
+import Navigation from "@wpmoo/ui-astro/components/Navigation.astro";
+import Popover from "@wpmoo/ui-astro/components/Popover.astro";
+import Pagination from "@wpmoo/ui-astro/components/Pagination.astro";
+import Progress from "@wpmoo/ui-astro/components/Progress.astro";
+import RadioGroup from "@wpmoo/ui-astro/components/RadioGroup.astro";
+import Select from "@wpmoo/ui-astro/components/Select.astro";
+import Separator from "@wpmoo/ui-astro/components/Separator.astro";
+import Sheet from "@wpmoo/ui-astro/components/Sheet.astro";
+import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
+import Skeleton from "@wpmoo/ui-astro/components/Skeleton.astro";
+import Slider from "@wpmoo/ui-astro/components/Slider.astro";
+import Spinner from "@wpmoo/ui-astro/components/Spinner.astro";
+import Switch from "@wpmoo/ui-astro/components/Switch.astro";
+import Table from "@wpmoo/ui-astro/components/Table.astro";
+import Tabs from "@wpmoo/ui-astro/components/Tabs.astro";
+import Textarea from "@wpmoo/ui-astro/components/Textarea.astro";
+import Toast from "@wpmoo/ui-astro/components/Toast.astro";
+import ToggleGroup from "@wpmoo/ui-astro/components/ToggleGroup.astro";
+import Tooltip from "@wpmoo/ui-astro/components/Tooltip.astro";
+import Typography from "@wpmoo/ui-astro/components/Typography.astro";
+import "@wpmoo/ui-astro/styles.css";
+
+const publicWrappers = [Accordion, Alert, AlertDialog, Avatar, Badge, Button, ButtonGroup, Breadcrumb, Card, Chart, Checkbox, CloseButton, Collapsible, Combobox, ContextMenu, DataTable, DatePicker, Dialog, DropdownMenu, Field, Form, Input, InputGroup, Kbd, Menubar, Navigation, Popover, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toast, ToggleGroup, Tooltip, Typography];
+const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }];
+---
+
+<Layout title="Packed consumer" navigation="sidebar" theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
+  <Sidebar slot="sidebar" id="packed-sidebar" brand="Packed consumer" groups={groups} />
+  <h1>Independent package consumer</h1>
+  <p data-public-wrapper-count={publicWrappers.length}>All public wrapper imports resolve from the packed adapter.</p>
+  <Card title="Public components">
+    <Badge label="Ready" variant="success" />
+    <Button size="icon-sm" ariaLabel="Open actions">+</Button>
+    <Alert title="Escaped input" description={"<img src=x onerror=alert(1)>"} variant="info" />
+    <Input id="consumer-input" label="Theme name" name="theme" value="Moo" />
+  </Card>
+  <section class="row g-3" data-layout="page-grid" aria-label="Package Page grid">
+    <div class="col-12" data-page-col-lg="3">Navigation</div>
+    <div class="col-12" data-page-col-lg="9">Content</div>
+  </section>
+</Layout>
+
+<script>
+  import "@wpmoo/ui-astro/runtime/bootstrap.js";
+  import MooUI from "@wpmoo/ui-astro/runtime/moo-ui.js";
+  void MooUI.Sidebar;
+</script>

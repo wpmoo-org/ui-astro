@@ -1,0 +1,12 @@
+{
+  "name": "astro-rc9-packed-consumer-proof",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build"
+  },
+  "dependencies": {
+    "@wpmoo/ui-astro": "file:../wpmoo-ui-astro-0.1.0.tgz",
+    "astro": "7.3.3"
+  }
+}

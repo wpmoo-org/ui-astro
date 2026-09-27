@@ -83,6 +83,14 @@ test("a public target must exist in the packed archive", async () => {
   );
 });
 
+test("the Moo ESM facade must be present in the packed archive", async () => {
+  const files = record.files.filter((path) => path !== "src/runtime/moo-ui.js");
+  await assert.rejects(
+    () => assertAstroSurface({ root, manifest, record, files }),
+    /runtime\/moo-ui\.js.*public target.*archive/,
+  );
+});
+
 test("the archive rejects an unrecorded file", async () => {
   await assert.rejects(
     () => assertAstroSurface({ root, manifest, record, files: [...record.files, "src/unregistered.astro"] }),
