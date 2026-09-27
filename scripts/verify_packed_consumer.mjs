@@ -75,6 +75,10 @@ export function assertConsumerOutput(html) {
     ['data-layout="page-grid"', "Page grid"],
     ['data-public-wrapper-count="45"', "45 public wrapper imports"],
     ['btn-icon-sm', "published icon button size"],
+    ['data-toast-show-on-load="true"', "published Toast startup hook"],
+    ['aria-label="Dismiss saved toast"', "published Toast action label"],
+    ['&lt;svg onload=alert(2)&gt;', "Toast untrusted body must be escaped"],
+    ['<strong>Approved</strong>', "trusted caller markup opt-in"],
     ['&lt;img src=x onerror=alert(1)&gt;', "untrusted text must be escaped"],
   ];
   for (const [marker, label] of required) {
@@ -82,6 +86,9 @@ export function assertConsumerOutput(html) {
   }
   if (html.includes("<img src=x onerror=alert(1)>")) {
     throw new Error("untrusted text must be escaped");
+  }
+  if (html.includes("<svg onload=alert(2)>")) {
+    throw new Error("Toast untrusted body must be escaped");
   }
 }
 

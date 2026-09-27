@@ -31,10 +31,12 @@ test("consumer lock keeps the published RC9 URL and integrity while pinning the 
 });
 
 test("packed consumer HTML must show public wrappers, Layout, Page grid, and escaped text", () => {
-  const html = '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><section data-layout="page-grid"></section></div></main></div></div></div>';
+  const html = '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
   assert.doesNotThrow(() => assertConsumerOutput(html));
   assert.throws(() => assertConsumerOutput(html.replace('data-public-wrapper-count="45"', 'data-public-wrapper-count="44"')), /45 public wrapper imports/);
   assert.throws(() => assertConsumerOutput(html.replace('&lt;img src=x onerror=alert(1)&gt;', '<img src=x onerror=alert(1)>')), /untrusted text must be escaped/);
+  assert.throws(() => assertConsumerOutput(html.replace('data-toast-show-on-load="true"', 'data-toast-show-on-load="false"')), /published Toast startup hook/);
+  assert.throws(() => assertConsumerOutput(html.replace('&lt;svg onload=alert(2)&gt;', '<svg onload=alert(2)>')), /Toast untrusted body must be escaped/);
 });
 
 test("private deep imports must fail at the package exports boundary", () => {

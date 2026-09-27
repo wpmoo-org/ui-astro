@@ -60,6 +60,8 @@ const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", ac
     <Button size="icon-sm" ariaLabel="Open actions">+</Button>
     <Alert title="Escaped input" description={"<img src=x onerror=alert(1)>"} variant="info" />
     <Input id="consumer-input" label="Theme name" name="theme" value="Moo" />
+    <Toast id="consumer-toast" title="Saved" body={"<svg onload=alert(2)>"} showOnLoad={true} actionLabel="Close" actionAriaLabel="Dismiss saved toast" />
+    <Toast id="consumer-trusted-toast" title="Trusted" body="<strong>Approved</strong>" trustedHtml={true} />
   </Card>
   <section class="row g-3" data-layout="page-grid" aria-label="Package Page grid">
     <div class="col-12" data-page-col-lg="3">Navigation</div>
