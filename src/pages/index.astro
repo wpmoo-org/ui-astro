@@ -38,6 +38,15 @@ const sidebarGroups = [{
 >
   <Sidebar slot="sidebar" id="astro-sidebar" brand="Moo UI Astro" groups={sidebarGroups} />
 
+  <nav slot="header" class="d-flex align-items-center gap-2 w-100" aria-label="Demo controls">
+    <Button element="a" href="#components" variant="ghost" size="sm" class="d-none d-sm-inline-flex">Components</Button>
+    <div class="d-flex align-items-center gap-2 ms-auto">
+      <Button variant="ghost" size="sm" data-theme-toggle ariaLabel="Switch to light mode">Light mode</Button>
+      <Button variant="ghost" size="sm" data-direction-toggle ariaLabel="Switch to RTL">RTL</Button>
+      <Button element="a" href="https://github.com/wpmoo-org/ui" variant="outline" size="sm" class="d-none d-md-inline-flex" target="_blank" rel="noopener noreferrer" ariaLabel="Open Moo UI on GitHub">GitHub</Button>
+    </div>
+  </nav>
+
   <div class="py-5">
     <Badge label="Astro foundation" variant="outline" pill />
     <Typography
@@ -155,17 +164,49 @@ const sidebarGroups = [{
 </Layout>
 
 <script>
-  import MooDatepicker from "@wpmoo/ui/datepicker.js";
-  import MooChart from "@wpmoo/ui/chart.js";
-  import DataTable from "@wpmoo/ui/datatable.js";
+  import { Datepicker, Chart, DataTable } from "../runtime/moo-ui.js";
 
   document.querySelectorAll("[data-datepicker]").forEach((root) => {
-    MooDatepicker.getOrCreateInstance(root);
+    Datepicker.getOrCreateInstance(root);
   });
   document.querySelectorAll(".chart").forEach((root) => {
-    MooChart.getOrCreateInstance(root);
+    Chart.getOrCreateInstance(root);
   });
   document.querySelectorAll(".datatable").forEach((root) => {
     DataTable.getOrCreateInstance(root);
   });
+
+  const owner = document.querySelector("[data-moo-document-owner]");
+  const themeToggle = document.querySelector("[data-theme-toggle]");
+  const directionToggle = document.querySelector("[data-direction-toggle]");
+
+  function updateHostControls() {
+    const nextTheme = owner?.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+    const nextDirection = document.documentElement.dir === "rtl" ? "LTR" : "RTL";
+    if (themeToggle) {
+      themeToggle.textContent = `${nextTheme[0].toUpperCase()}${nextTheme.slice(1)} mode`;
+      themeToggle.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
+    }
+    if (directionToggle) {
+      directionToggle.textContent = nextDirection;
+      directionToggle.setAttribute("aria-label", `Switch to ${nextDirection}`);
+    }
+  }
+
+  themeToggle?.addEventListener("click", () => {
+    if (!owner) return;
+    const nextTheme = owner.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+    owner.setAttribute("data-bs-theme", nextTheme);
+    try { localStorage.setItem("moo:theme", nextTheme); } catch (_) { /* Storage can be unavailable. */ }
+    updateHostControls();
+  });
+
+  directionToggle?.addEventListener("click", () => {
+    const nextDirection = document.documentElement.dir === "rtl" ? "ltr" : "rtl";
+    document.documentElement.dir = nextDirection;
+    try { localStorage.setItem("moo:direction", nextDirection); } catch (_) { /* Storage can be unavailable. */ }
+    updateHostControls();
+  });
+
+  updateHostControls();
 </script>

@@ -49,13 +49,15 @@
     "./components/Tooltip.astro": "./src/components/Tooltip.astro",
     "./components/Typography.astro": "./src/components/Typography.astro",
     "./Layout.astro": "./src/layouts/Layout.astro",
+    "./styles.css": "./src/styles.css",
+    "./runtime/bootstrap.js": "./src/runtime/bootstrap.js",
+    "./runtime/moo-ui.js": "./src/runtime/moo-ui.js",
     "./package.json": "./package.json"
   },
   "files": [
     "LICENSE",
     "README.md",
     "contracts/astro-public-surface.json",
-    "contracts/layout-surface.snapshot.json",
     "contracts/rc9-package.json",
     "package.json",
     "src/components/Accordion.astro",
@@ -105,8 +107,9 @@
     "src/components/Typography.astro",
     "src/components/internal/Icon.astro",
     "src/layouts/Layout.astro",
-    "src/pages/index.astro",
-    "src/styles/layout.css"
+    "src/runtime/bootstrap.js",
+    "src/runtime/moo-ui.js",
+    "src/styles.css"
   ],
   "private_transitives": [
     "src/components/internal/Icon.astro"

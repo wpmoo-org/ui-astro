@@ -72,9 +72,13 @@ export async function assertAstroSurface({
   return files;
 }
 
-export async function assertSourceClosure({ root = ASTRO_ROOT, files = archiveFiles(root) } = {}) {
+export async function assertSourceClosure({
+  root = ASTRO_ROOT,
+  files = archiveFiles(root),
+  coreExports,
+} = {}) {
   const packed = new Set(files);
-  const core = await readJson(join(ASTRO_ROOT, "contracts/rc9-package.json"));
+  const exports = coreExports ?? (await readJson(join(ASTRO_ROOT, "contracts/rc9-package.json"))).exports;
   for (const file of files.filter((path) => /^src\/.+\.(?:astro|js|css)$/.test(path))) {
     const source = await readFile(join(root, file), "utf8");
     const imports = [
@@ -83,9 +87,13 @@ export async function assertSourceClosure({ root = ASTRO_ROOT, files = archiveFi
     ].map((match) => match[1]);
     for (const specifier of imports) {
       if (specifier.startsWith("@wpmoo/ui/")) {
-        const coreExport = `./${specifier.slice("@wpmoo/ui/".length)}`;
-        if (!(coreExport in core.exports)) {
-          throw new Error(`${file} source import ${specifier} is not a published RC9 export`);
+        const [corePath, query] = specifier.slice("@wpmoo/ui/".length).split("?");
+        const coreExport = `./${corePath}`;
+        if (query && !(coreExport === "./state.js" && query === "raw")) {
+          throw new Error(`${file} source import ${specifier} uses an unregistered transform`);
+        }
+        if (!(coreExport in exports)) {
+          throw new Error(`${file} source import ${specifier} is not in the active Moo export registry`);
         }
       } else if (specifier.startsWith(".")) {
         const target = relative(root, resolve(root, dirname(file), specifier));
@@ -119,7 +127,10 @@ export async function verifyBoundary({ mode = "release", root = ASTRO_ROOT } = {
   }
   const files = archiveFiles(root);
   await assertAstroSurface({ root, files });
-  await assertSourceClosure({ root, files });
+  const coreExports = mode === "dev"
+    ? (await readJson(join(root, "node_modules/@wpmoo/ui/package.json"))).exports
+    : undefined;
+  await assertSourceClosure({ root, files, coreExports });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

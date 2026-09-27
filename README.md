@@ -1,225 +1,74 @@
-# Moo UI Astro
+# Moo UI Astro adapter
 
-`@wpmoo/ui-astro` is the Astro starter template and component package for themes
-that use Moo UI. It consumes the published `@wpmoo/ui` CSS and Bootstrap
-JavaScript contracts; it does not copy the HTML catalog or its Jinja build
-templates.
+`@wpmoo/ui-astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, and three CSS/runtime entrypoints. The demonstration route stays in this repository and is not packed.
 
-## Install
+## Install and compose a page
 
-Install the package in an Astro project:
+After the adapter is published, install it in an Astro application:
 
 ```bash
 npm install @wpmoo/ui-astro
 ```
 
-The package brings the compatible `@wpmoo/ui`, Astro, and Bootstrap runtime
-dependencies with it.
-
-## Use the Layout
-
-For pages with an application shell, import `Layout` and explicitly choose the
-navigation topology. A sidebar page supplies the public `Sidebar` component in
-Layout's named `sidebar` slot:
+The dependency pins `@wpmoo/ui` to `1.0.0-rc.9` and carries Astro and Bootstrap. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 ```astro
 ---
 import Layout from "@wpmoo/ui-astro/Layout.astro";
 import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
----
-
-<Layout
-  title="Dashboard"
-  navigation="sidebar"
-  theme="dark"
-  sidebarKey="dashboard"
-  sidebarId="dashboard-sidebar"
->
-  <Sidebar
-    slot="sidebar"
-    id="dashboard-sidebar"
-    brand="Moo UI"
-    groups={[{ label: "Workspace", items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }]}
-  />
-  <h1>Dashboard</h1>
-</Layout>
-```
-
-Use `navigation="none"` when a page does not need navigation; that topology
-renders only the page branch and rejects a `sidebar` slot. Sidebar pages use
-the closed `side`, `variant`, `collapsible`, `rail`, and `shellMode` values from
-the Moo UI app contract. `Layout` owns the app root, trigger, page regions, and
-runtime state. Set `theme="light"` or `theme="dark"` on the document owner;
-the default is `light`. `Sidebar` owns only the direct `<aside>` branch. Astro does not
-ship Odoo routes or application pages—consumers supply their own page content
-through the slots.
-
-The Page main rail exposes `data-page-container`. To make a Bootstrap row
-respond to that rail's available width instead of the browser viewport, opt in
-with `data-layout="page-grid"`, keep a base `col-N` on each direct item, and
-add `data-page-col-lg="3"` (or another valid 1–12 span and `sm`/`md`/`lg`/`xl`/`xxl`
-breakpoint). `data-page-show-from="lg"` and `data-page-hide-from="lg"` switch
-companion content at the same threshold. The canonical `@wpmoo/ui/moo-ui.css`
-handles Sidebar open, closed, overlay, and absent states without an Astro
-resize script. Put visibility markers on neutral block wrappers, then apply
-flex/grid display to their children so the wrapper's shown state does not
-replace that layout. See `src/pages/index.astro` for a small example.
-
-## Use Components
-
-Load Moo UI CSS from the consuming theme layout, then import the wrappers you
-need:
-
-```astro
----
-import "@wpmoo/ui/moo-ui.css";
 import Button from "@wpmoo/ui-astro/components/Button.astro";
-import Card from "@wpmoo/ui-astro/components/Card.astro";
-import Badge from "@wpmoo/ui-astro/components/Badge.astro";
-import Input from "@wpmoo/ui-astro/components/Input.astro";
+
+const groups = [{
+  label: "Workspace",
+  items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }],
+}];
 ---
 
-<Card title="Account">
-  <Button type="submit">Save changes</Button>
-  <Badge label="Ready" variant="success" />
-  <Input label="Email" id="email" name="email" type="email" />
-</Card>
-```
-
-Every public wrapper is a direct file under `src/components/`; the package does
-not provide a namespace directory or copy the HTML catalog. Consumers own their
-page routes and theme shell.
-
-Bootstrap's bundle owns native dropdown, collapse, modal, offcanvas, tab,
-popover, tooltip, toast, and button behavior. Load it from the consuming layout
-when those components are used:
-
-```astro
-<script>
-  import "bootstrap/dist/js/bootstrap.bundle.min.js";
-</script>
-```
-
-Combobox, standalone Sidebar components, Data Table, Chart, and Date Picker use
-optional Moo ESM modules. These modules are side-effect-free and never scan the
-document; pass the roots owned by the theme to their documented initializers
-explicitly:
-
-```astro
-<script>
-  import MooUI from "@wpmoo/ui/moo-ui.js";
-
-  for (const root of document.querySelectorAll(".combobox")) {
-    MooUI.Combobox.getOrCreateInstance(root);
-  }
-</script>
-```
-
-Use the focused entrypoint instead when only one Moo-owned behavior is needed,
-for example `@wpmoo/ui/chart.js` or `@wpmoo/ui/datepicker.js`.
-
-## Package Development
-
-Install the package's development dependencies and start its smoke surface:
-
-```bash
-npm install
-npm run dev -- --host 0.0.0.0 --port 4322
-```
-
-Open `http://localhost:4322` in the browser.
-
-## Layout
-
-```text
-astro/
-  astro.config.mjs
-  package.json
-  src/
-    components/       # Public wrappers, one PascalCase file per component
-    layouts/          # Layout.astro: the single page/theme shell
-    pages/            # Astro routes
-```
-
-All public component wrappers are exported from direct paths such as
-`@wpmoo/ui-astro/components/Button.astro` and
-`@wpmoo/ui-astro/components/DataTable.astro`.
-
-String content is escaped by default. Components that accept structured rich
-content expose `trustedHtml`; set it to `true` only for caller-owned, precomposed
-markup. Never pass user-controlled or remote text through that option.
-
-The `Layout` shell is the application-shell API. `Sidebar` remains public as
-the direct sidebar branch used by `Layout`; it is not a standalone runtime
-shell. It renders a runtime-compatible sidebar primitive from `groups` or the
-shorter `items` prop:
-
-```astro
----
-import Layout from "@wpmoo/ui-astro/Layout.astro";
-import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
----
-
-<Layout title="Workspace" navigation="sidebar" sidebarKey="workspace" sidebarId="main-sidebar">
-  <Sidebar slot="sidebar" id="main-sidebar" brand="Moo UI" />
-  <h1>Workspace</h1>
+<Layout title="Dashboard" navigation="sidebar" theme="dark" sidebarKey="dashboard" sidebarId="dashboard-sidebar">
+  <Sidebar slot="sidebar" id="dashboard-sidebar" brand="Moo UI" groups={groups} />
+  <h1>Dashboard</h1>
+  <Button href="/settings">Settings</Button>
 </Layout>
 ```
 
-Use Layout's `header` and `footer` slots for page chrome. Use Sidebar's
-`header`, `content`, and `footer` slots only when custom sidebar regions are
-needed; menu controls supplied through slots must retain the documented
-`data-sidebar-*` hooks.
+Use `navigation="none"` for a page without a Sidebar slot. For Sidebar pages, the slot is required and its `id` must match `sidebarId`. Layout supports the registered `shellMode`, `pageWidth`, `headerWidth`, `theme`, and `dir` values. Use its `header` and `footer` slots for page regions. `Sidebar` contributes the direct `<aside>` branch, while Layout supplies the app wrapper, Page rail, trigger, and initialization.
 
-## Build
+The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `src/pages/index.astro` demonstrates this composition; it is not part of the package.
+
+## Public files and behavior
+
+Each wrapper has a direct public entrypoint such as `@wpmoo/ui-astro/components/Button.astro`. Import only published subpaths from another application. The following entrypoints let a custom theme use the same shared presentation and behavior outside Layout:
+
+```astro
+---
+import "@wpmoo/ui-astro/styles.css";
+---
+<script>
+  import "@wpmoo/ui-astro/runtime/bootstrap.js";
+  import { Chart } from "@wpmoo/ui-astro/runtime/moo-ui.js";
+  document.querySelectorAll(".chart").forEach((root) => Chart.getOrCreateInstance(root));
+</script>
+```
+
+The Bootstrap facade exposes the installed Bootstrap ESM namespace to the published Moo Sidebar runtime. The Moo facade re-exports the published Core ESM module; its optional components are initialized on caller-owned roots. Layout already loads both facades and initializes its own Sidebar.
+
+String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
+
+## Develop and verify
+
+From the workspace root, `make ui-astro` serves the local demonstration on port 4322. `make sync` follows the HTML `dev` branch for local integration and leaves the release pin in `package.json` and `package-lock.json` intact. Do not treat the local development package as the published RC9 release.
+
+From this package directory:
 
 ```bash
+npm test
 npm run build
-```
-
-Moo UI remains the CSS owner. Astro owns composition, routing, and theme
-layouts; Bootstrap owns its native browser behavior; Moo ESM modules remain
-optional and must be initialized explicitly when a wrapper needs them.
-
-## Adapter synchronization
-
-The workspace root owns cross-adapter synchronization. `make sync` builds one
-temporary `@wpmoo/ui` development tarball and supplies the same package bytes
-to Astro, Odoo, and PHP. Astro's local install is deliberately no-save and
-does not change `package.json` or `package-lock.json`:
-
-```bash
-cd /path/to/workspace
-make sync
-```
-
-For a direct Astro development install from an already verified tarball:
-
-```bash
-node scripts/sync_package_baseline.mjs --mode dev --package-tarball /absolute/path/to/ui.tgz
-```
-
-Release readiness is read-only and requires the registry-pinned package lock;
-a local `file:` dependency is not release-valid:
-
-```bash
+npm pack --dry-run
 node scripts/sync_package_baseline.mjs --check-release
+node scripts/verify_astro_boundary.mjs --mode release
+python3 tests/test_visual_acceptance.py -v
 ```
 
-Development installation clears only the local `node_modules/.vite` cache.
-The semantic layout snapshot remains a separately reviewed contract and is not
-rewritten by package synchronization.
+The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
-An immutable release synchronization uses the registry-pinned package lock and
-does not install a local tarball or rewrite the semantic layout snapshot. The
-current exact release pin is `@wpmoo/ui@1.0.0-rc.9`:
-
-```bash
-cd /path/to/workspace
-make sync MODE=release UI_PACKAGE_TARBALL=/absolute/path/to/wpmoo-ui.tgz
-node projects/ui/astro/scripts/sync_package_baseline.mjs --check-release
-```
-
-Development provenance is suitable for local integration only; its Odoo and
-PHP locks, and the workspace release gates, must reject it until an immutable
-release tarball is synchronized.
+The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc9-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.

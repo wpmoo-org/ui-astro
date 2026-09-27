@@ -1,13 +1,13 @@
 ---
-import "@wpmoo/ui/moo-ui.css";
-import "../styles/layout.css";
+import "../styles.css";
+import stateSource from "@wpmoo/ui/state.js?raw";
 import Button from "../components/Button.astro";
 import Icon from "../components/internal/Icon.astro";
-import Kbd from "../components/Kbd.astro";
 
 type Navigation = "sidebar" | "none";
 type ShellMode = "viewport" | "contained";
 type Theme = "light" | "dark";
+type Direction = "ltr" | "rtl";
 type PageWidth = "base" | "sm" | "md" | "lg" | "xl" | "xxl" | "fluid";
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   navigation: Navigation;
   shellMode?: ShellMode;
   theme?: Theme;
+  lang?: string;
+  dir?: Direction;
   sidebarKey?: string;
   defaultOpen?: boolean;
   sidebarId?: string;
@@ -38,6 +40,7 @@ const identifierPattern = /^[A-Za-z][A-Za-z0-9_-]*$/;
 const navigationValues: Navigation[] = ["sidebar", "none"];
 const shellModeValues: ShellMode[] = ["viewport", "contained"];
 const themeValues: Theme[] = ["light", "dark"];
+const directionValues: Direction[] = ["ltr", "rtl"];
 
 const {
   title,
@@ -45,6 +48,8 @@ const {
   navigation,
   shellMode = "viewport",
   theme = "light",
+  lang = "en",
+  dir = "ltr",
   sidebarKey = "",
   defaultOpen = true,
   sidebarId = "",
@@ -62,6 +67,12 @@ if (!shellModeValues.includes(shellMode)) {
 }
 if (!themeValues.includes(theme)) {
   throw new TypeError(`Unknown Layout theme: ${String(theme)}`);
+}
+if (!directionValues.includes(dir)) {
+  throw new TypeError(`Unknown Layout direction: ${String(dir)}`);
+}
+if (typeof lang !== "string" || !lang.trim()) {
+  throw new TypeError("Invalid Layout language");
 }
 if (typeof defaultOpen !== "boolean") {
   throw new TypeError("Layout defaultOpen must be boolean");
@@ -108,7 +119,7 @@ const headerClass = containerClasses[resolvedHeaderWidth];
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang} dir={dir}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -118,39 +129,22 @@ const headerClass = containerClasses[resolvedHeaderWidth];
   </head>
   <body>
     <div class="moo-ui" data-bs-theme={theme} data-moo-document-owner="true">
+      <script is:inline set:html={stateSource}></script>
       <div class="wrapper" data-layout="app" data-shell-mode={shellMode} id={id || undefined} data-slot={navigation === "sidebar" ? "sidebar-wrapper" : undefined} data-sidebar-state={navigation === "sidebar" ? (defaultOpen ? "expanded" : "collapsed") : undefined} data-sidebar-key={navigation === "sidebar" ? sidebarKey : undefined}>
+        {navigation === "sidebar" ? <script is:inline set:html={stateSource}></script> : null}
         {navigation === "sidebar" ? <slot name="sidebar" /> : null}
         <div data-slot="page">
           {hasHeader ? (
-            <header>
+            <header class="bg-body border-bottom">
               <div class={headerClass}>
-                <nav class="navbar astro-layout__navbar d-flex align-items-center gap-2" aria-label="Layout controls">
-                  <div class="d-flex align-items-center gap-3 flex-grow-1">
-                    {navigation === "sidebar" ? (
-                      <Button variant="ghost" class="btn-icon-sm sidebar-trigger astro-layout__sidebar-toggle" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
-                        <Icon name="panel-left" />
-                      </Button>
-                    ) : null}
-                    <Button variant="ghost" class="astro-layout__search-trigger search-trigger" data-search-trigger ariaLabel="Search documentation">
-                      <span class="search-trigger__label d-inline-flex align-items-center gap-2">
-                        <Icon name="search" />
-                        <span>Search</span>
-                      </span>
-                      <span class="search-trigger__shortcut"><Kbd text="⌘" /><Kbd text="K" /></span>
+                <div class="d-flex align-items-center gap-2 py-2">
+                  {navigation === "sidebar" ? (
+                    <Button variant="ghost" class="btn-icon-sm sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
+                      <Icon name="panel-left" />
                     </Button>
-                    <slot name="header" />
-                  </div>
-                  <div class="d-flex align-items-center gap-3 flex-shrink-0 ms-auto">
-                    <Button variant="ghost" class="btn-icon astro-layout__theme-toggle" data-theme-toggle ariaLabel={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-                      <span class="astro-layout__theme-icon" data-theme-icon="light"><Icon name="sun" /></span>
-                      <span class="astro-layout__theme-icon" data-theme-icon="dark"><Icon name="moon-star" /></span>
-                    </Button>
-                    <Button element="a" href="https://github.com/wpmoo-org/ui" variant="default" class="astro-layout__github-link" target="_blank" rel="noopener noreferrer" ariaLabel="Open Moo UI on GitHub">
-                      <Icon name="github" />
-                      <span class="astro-layout__github-label d-none d-lg-inline">wpmoo-org/ui</span>
-                    </Button>
-                  </div>
-                </nav>
+                  ) : null}
+                  <slot name="header" />
+                </div>
               </div>
             </header>
           ) : null}
@@ -160,22 +154,12 @@ const headerClass = containerClasses[resolvedHeaderWidth];
       </div>
     </div>
     <script>
-      import "bootstrap/dist/js/bootstrap.bundle.min.js";
-      import SidebarRuntime from "@wpmoo/ui/sidebar.js";
+      import "../runtime/bootstrap.js";
+      import { Sidebar } from "../runtime/moo-ui.js";
 
       document
         .querySelectorAll('[data-slot="sidebar-wrapper"]')
-        .forEach((root) => SidebarRuntime.getOrCreateInstance(root));
-
-      const themeOwner = document.querySelector("[data-moo-document-owner]");
-      const themeToggle = document.querySelector("[data-theme-toggle]");
-
-      themeToggle?.addEventListener("click", () => {
-        if (!themeOwner) return;
-        const nextTheme = themeOwner.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
-        themeOwner.setAttribute("data-bs-theme", nextTheme);
-        themeToggle.setAttribute("aria-label", nextTheme === "dark" ? "Switch to light mode" : "Switch to dark mode");
-      });
+        .forEach((root) => Sidebar.getOrCreateInstance(root));
     </script>
   </body>
 </html>

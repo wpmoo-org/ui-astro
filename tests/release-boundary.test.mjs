@@ -42,6 +42,28 @@ test("the adapter rejects an added or missing public export", async () => {
   }
 });
 
+test("the accepted CSS and runtime facades are exact public entrypoints", async () => {
+  const facades = {
+    "./styles.css": "./src/styles.css",
+    "./runtime/moo-ui.js": "./src/runtime/moo-ui.js",
+    "./runtime/bootstrap.js": "./src/runtime/bootstrap.js",
+  };
+  for (const [specifier, target] of Object.entries(facades)) {
+    assert.equal(manifest.exports[specifier], target);
+    const changed = {
+      ...manifest,
+      exports: { ...manifest.exports, [specifier]: "./src/components/Badge.astro" },
+    };
+    await assert.rejects(
+      () => assertAstroSurface({ root, manifest: changed, record, files: record.files }),
+      /public export map/,
+    );
+  }
+  for (const privatePath of ["src/pages/index.astro", "src/styles/layout.css", "contracts/layout-surface.snapshot.json"]) {
+    assert.equal(record.files.includes(privatePath), false, `${privatePath} must stay outside the published archive`);
+  }
+});
+
 test("a private transitive component cannot become a public export", async () => {
   const changed = {
     ...manifest,
@@ -77,6 +99,32 @@ test("packed source imports must resolve to packed files", async () => {
       () => boundaryModule.assertSourceClosure({ root: fixture, files: ["src/Test.astro"] }),
       /Test\.astro.*source import.*Missing\.astro.*packed/,
     );
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
+});
+
+test("Vite raw import resolves the published classic state script export", async () => {
+  const fixture = await mkdtemp(join(tmpdir(), "moo-astro-state-import-"));
+  try {
+    await mkdir(join(fixture, "src"));
+    await writeFile(join(fixture, "src/Test.astro"), '---\nimport state from "@wpmoo/ui/state.js?raw";\n---\n<script is:inline set:html={state} />\n');
+    await boundaryModule.assertSourceClosure({ root: fixture, files: ["src/Test.astro"] });
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
+});
+
+test("development source closure can use an explicit local dev export registry", async () => {
+  const fixture = await mkdtemp(join(tmpdir(), "moo-astro-dev-import-"));
+  try {
+    await mkdir(join(fixture, "src"));
+    await writeFile(join(fixture, "src/Test.astro"), '---\nimport "@wpmoo/ui/dev-only.js";\n---\n<main>Dev</main>\n');
+    await boundaryModule.assertSourceClosure({
+      root: fixture,
+      files: ["src/Test.astro"],
+      coreExports: { "./dev-only.js": "./dist/js/dev-only.js" },
+    });
   } finally {
     await rm(fixture, { recursive: true, force: true });
   }
