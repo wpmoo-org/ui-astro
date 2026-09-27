@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 
 const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
 export const ASTRO_ROOT = resolve(SCRIPT_ROOT, "..");
 export const MOO_PACKAGE_NAME = "@wpmoo/ui";
+const RELEASE_RECORD = JSON.parse(
+  readFileSync(new URL("../contracts/rc9-package.json", import.meta.url), "utf8"),
+);
 
 function declaredPackageVersion(packageJson) {
   const version = packageJson?.dependencies?.[MOO_PACKAGE_NAME];
@@ -42,8 +47,11 @@ export function assertPackageCompatibility({ packageName, packageVersion, packag
 
 export function assertReleasePin({ packageJson, packageLock }) {
   const expectedVersion = declaredPackageVersion(packageJson);
-  if (!/^\d+\.\d+\.\d+-rc\.\d+$/.test(expectedVersion)) {
-    throw new Error(`declared ${MOO_PACKAGE_NAME} version is not an RC release pin`);
+  if (expectedVersion !== RELEASE_RECORD.version) {
+    throw new Error(`declared ${MOO_PACKAGE_NAME} version must be ${RELEASE_RECORD.version}`);
+  }
+  if (packageLock?.packages?.[""]?.dependencies?.[MOO_PACKAGE_NAME] !== expectedVersion) {
+    throw new Error("package-lock.json root dependency differs from the release pin");
   }
   const installed = packageLock?.packages?.[`node_modules/${MOO_PACKAGE_NAME}`];
   if (!installed || typeof installed !== "object") {
@@ -57,8 +65,35 @@ export function assertReleasePin({ packageJson, packageLock }) {
   if (String(installed.resolved ?? "").startsWith("file:")) {
     throw new Error("file dependency is not release-valid");
   }
-  if (typeof installed.resolved !== "string" || installed.resolved.length === 0) {
-    throw new Error("release package lock must contain a registry resolved URL");
+  if (installed.resolved !== RELEASE_RECORD.registry_url) {
+    throw new Error("release package lock registry URL differs from RC9");
+  }
+  if (installed.integrity !== RELEASE_RECORD.integrity) {
+    throw new Error("release package lock integrity differs from RC9");
+  }
+}
+
+export async function assertCoreArtifact({ astroRoot = ASTRO_ROOT } = {}) {
+  const coreRoot = join(astroRoot, "node_modules/@wpmoo/ui");
+  const installed = await readJson(join(coreRoot, "package.json"));
+  if (installed.name !== RELEASE_RECORD.package || installed.version !== RELEASE_RECORD.version) {
+    throw new Error("installed Moo UI package identity differs from RC9");
+  }
+  const expectedExports = Object.fromEntries(
+    Object.entries(RELEASE_RECORD.exports).map(([name, entry]) => [name, entry.target]),
+  );
+  if (JSON.stringify(installed.exports) !== JSON.stringify(expectedExports)) {
+    throw new Error("installed Moo UI public export map differs from RC9");
+  }
+  for (const [name, entry] of Object.entries(RELEASE_RECORD.exports)) {
+    const target = join(coreRoot, entry.target);
+    const bytes = await readFile(target).catch(() => {
+      throw new Error(`installed Moo UI ${name} target is missing`);
+    });
+    const actualHash = createHash("sha256").update(bytes).digest("hex");
+    if (actualHash !== entry.sha256) {
+      throw new Error(`installed Moo UI ${name} artifact hash differs from RC9`);
+    }
   }
 }
 
@@ -121,6 +156,7 @@ export async function checkPackage({
 export async function checkRelease({ astroRoot = ASTRO_ROOT } = {}) {
   const { packageJson, packageLock } = await projectMetadata(astroRoot);
   assertReleasePin({ packageJson, packageLock });
+  await assertCoreArtifact({ astroRoot });
 }
 
 function argumentValue(args, name) {

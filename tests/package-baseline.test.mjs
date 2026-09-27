@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -27,7 +27,7 @@ test("workspace release pin uses the published RC9 registry package", async () =
 
 const packageJson = {
   dependencies: {
-    "@wpmoo/ui": "1.0.0-rc.8",
+    "@wpmoo/ui": "1.0.0-rc.9",
   },
 };
 
@@ -36,9 +36,9 @@ const packageLock = {
   packages: {
     "": packageJson,
     "node_modules/@wpmoo/ui": {
-      version: "1.0.0-rc.8",
-      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.8.tgz",
-      integrity: "sha512-test",
+      version: "1.0.0-rc.9",
+      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.9.tgz",
+      integrity: "sha512-gSRNTKA6dfh0RpJ4+KFjQZX9KAHOqxSEMMVG0vHwuAPd+UcNj0TtpDoKMa8xYA++/ZyDDtccYEYIZ5FwJ7UASg==",
     },
   },
 };
@@ -57,6 +57,14 @@ const fileLock = {
 async function writeProject(root, lock = packageLock) {
   await writeFile(join(root, "package.json"), `${JSON.stringify(packageJson)}\n`);
   await writeFile(join(root, "package-lock.json"), `${JSON.stringify(lock)}\n`);
+}
+
+async function writeReleaseFixture(root) {
+  await writeProject(root);
+  await mkdir(join(root, "node_modules/@wpmoo"), { recursive: true });
+  await cp(join(ASTRO_ROOT, "node_modules/@wpmoo/ui"), join(root, "node_modules/@wpmoo/ui"), {
+    recursive: true,
+  });
 }
 
 test("development install never rewrites tracked dependency inputs", async () => {
@@ -108,11 +116,23 @@ test("release pin accepts the exact registry package lock", () => {
   assert.doesNotThrow(() => assertReleasePin({ packageJson, packageLock }));
 });
 
+test("release pin rejects a registry URL or integrity drift", () => {
+  const core = packageLock.packages["node_modules/@wpmoo/ui"];
+  for (const [field, value, reason] of [
+    ["resolved", "https://example.invalid/ui.tgz", /registry URL/],
+    ["integrity", "sha512-test", /integrity/],
+  ]) {
+    const changed = structuredClone(packageLock);
+    changed.packages["node_modules/@wpmoo/ui"] = { ...core, [field]: value };
+    assert.throws(() => assertReleasePin({ packageJson, packageLock: changed }), reason);
+  }
+});
+
 test("package compatibility rejects a different package name or version", () => {
   assert.doesNotThrow(() =>
     assertPackageCompatibility({
       packageName: "@wpmoo/ui",
-      packageVersion: "1.0.0-rc.8",
+      packageVersion: "1.0.0-rc.9",
       packageJson,
     }),
   );
@@ -120,7 +140,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@other/ui",
-        packageVersion: "1.0.0-rc.8",
+        packageVersion: "1.0.0-rc.9",
         packageJson,
       }),
     /package name/,
@@ -129,7 +149,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@wpmoo/ui",
-        packageVersion: "1.0.0-rc.7",
+        packageVersion: "1.0.0-rc.8",
         packageJson,
       }),
     /package version/,
@@ -139,7 +159,7 @@ test("package compatibility rejects a different package name or version", () => 
 test("release checking is read-only and never runs npm or a layout writer", async () => {
   const root = await mkdtemp(join(tmpdir(), "moo-astro-release-"));
   try {
-    await writeProject(root);
+    await writeReleaseFixture(root);
     let invoked = false;
     await checkRelease({
       astroRoot: root,
@@ -151,5 +171,22 @@ test("release checking is read-only and never runs npm or a layout writer", asyn
     assert.equal(invoked, false);
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("release checking rejects changed manifest and browser artifacts after lock resolution", async () => {
+  for (const [target, reason] of [
+    ["dist/release-manifest.json", /release-manifest\.json.*artifact hash/],
+    ["dist/js/sidebar.js", /sidebar\.js.*artifact hash/],
+  ]) {
+    const root = await mkdtemp(join(tmpdir(), "moo-astro-artifact-"));
+    try {
+      await writeReleaseFixture(root);
+      const path = join(root, "node_modules/@wpmoo/ui", target);
+      await writeFile(path, `${await readFile(path, "utf8")}\n `);
+      await assert.rejects(() => checkRelease({ astroRoot: root }), reason);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   }
 });

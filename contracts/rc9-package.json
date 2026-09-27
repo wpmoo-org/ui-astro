@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "package": "@wpmoo/ui",
+  "version": "1.0.0-rc.9",
+  "registry_url": "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.9.tgz",
+  "integrity": "sha512-gSRNTKA6dfh0RpJ4+KFjQZX9KAHOqxSEMMVG0vHwuAPd+UcNj0TtpDoKMa8xYA++/ZyDDtccYEYIZ5FwJ7UASg==",
+  "tarball_sha256": "8b73f2692d8f51d91a3a22a13267369949ea31c2eb42eae9afdca2a7719055f4",
+  "git_head": "e38971fc425b0eb62b190a51868f35f0110e6496",
+  "exports": {
+    "./moo-ui.css": {
+      "target": "./dist/assets/css/moo-ui.css",
+      "sha256": "ca54a5ff1e8a1fa2ac704e3b55e63aa4517353aede35c0bf509c485e6d04a2c6"
+    },
+    "./moo-ui.min.css": {
+      "target": "./dist/assets/css/moo-ui.min.css",
+      "sha256": "3aa84a569334ef5287da2af151407bcb45c0c1d44517be9491a7bdbf2092c4ad"
+    },
+    "./moo.css": {
+      "target": "./dist/assets/css/moo.css",
+      "sha256": "9f5228c6387b728efe2f341aea9ff09c193f621e778ac413fee9f1cd84992791"
+    },
+    "./moo.min.css": {
+      "target": "./dist/assets/css/moo.min.css",
+      "sha256": "8d32e0f0e183c7d0168e5ddaf45b4367e5826d3e9cb2413ecd1fb57dd24b6ff1"
+    },
+    "./moo-ui.js": {
+      "target": "./dist/js/moo-ui.js",
+      "sha256": "72ca963aa1c48b8b3800ecabe71bddab9306d6bbf4705c747bf8434cf7da2121"
+    },
+    "./moo-ui.min.js": {
+      "target": "./dist/js/moo-ui.min.js",
+      "sha256": "097811698b8a893f276742f78012bd6368effde033adff53cd9993b3fdd0d15b"
+    },
+    "./combobox.js": {
+      "target": "./dist/js/combobox.js",
+      "sha256": "b8139dcd7d539ee9f1a88d0562d19696ddfc683e6d4fd017b115c08c762d0c58"
+    },
+    "./sidebar.js": {
+      "target": "./dist/js/sidebar.js",
+      "sha256": "62a62b927099cba7893c58bc9efbb6ad8f6bdc824acea61eddf862b6c0a85884"
+    },
+    "./context-menu.js": {
+      "target": "./dist/js/context-menu.js",
+      "sha256": "761c093af681507ba1041ca5d34c01681c773e9bca27955558daf78ed7ad74e0"
+    },
+    "./datatable.js": {
+      "target": "./dist/js/datatable.js",
+      "sha256": "8fbbfc00589d6513d96907efdb068dba1c5b00c0b5136ce400a35fa366187eca"
+    },
+    "./slider.js": {
+      "target": "./dist/js/slider.js",
+      "sha256": "df67667bb614229576e17eaab8a40fc4a70fb4b432fe4d1be82ef9525a049ba5"
+    },
+    "./chart.js": {
+      "target": "./dist/js/chart.js",
+      "sha256": "0415ad70e3530a4d2726bb32507ce778ad4e6c37d6e17fc622e25cc3fc823ec5"
+    },
+    "./chart.min.js": {
+      "target": "./dist/js/chart.min.js",
+      "sha256": "488ba263a3bedb877e0a40751e488c0c369c591b1db299a5eac8306e5717e554"
+    },
+    "./datepicker.js": {
+      "target": "./dist/js/datepicker.js",
+      "sha256": "f03470710af17a92f5b6cb812a8cabe41597a9cfecf9dd26f8e7e5b84947d90e"
+    },
+    "./datepicker.min.js": {
+      "target": "./dist/js/datepicker.min.js",
+      "sha256": "efcaa774610f8a6a43dfae3c49934026235bfcc1f51a61d221de1742b9fde4fd"
+    },
+    "./state.js": {
+      "target": "./dist/js/state.js",
+      "sha256": "094cc7bdce8934b846d77476727fd7627062538612f7fcfa8fbd873e44c5e264"
+    },
+    "./release-manifest.json": {
+      "target": "./dist/release-manifest.json",
+      "sha256": "34265271bf51534999321c14d3db1421c1fc8990062e69e94cd95194e965520e"
+    },
+    "./scss/config": {
+      "target": "./scss/_config.scss",
+      "sha256": "3ed9f671e0c5d44fb16b418d8f6a849767f7b7c892f36e36c57533e06415a826"
+    },
+    "./scss/moo-ui": {
+      "target": "./scss/moo-ui.scss",
+      "sha256": "cccf5877f57a2844b86f16423f45c176510b6433799157d430503634f86bab27"
+    },
+    "./scss/moo-core": {
+      "target": "./scss/moo-core.scss",
+      "sha256": "15ea2be7fbcb6b9ecdc89f6ff52f70d5b23c44e5a809a348305ec7992737dfdf"
+    },
+    "./scss/components": {
+      "target": "./scss/_components.scss",
+      "sha256": "1cc1eddb158cacc2afebdb4d46211badc95a595ce3bb3f2cc9dfd63e0701bffa"
+    },
+    "./scss/settings": {
+      "target": "./scss/_settings.scss",
+      "sha256": "1ca052c7760603654a21c68dfefea02437eb503e530692bc022143d3e486e0cb"
+    },
+    "./certification.json": {
+      "target": "./certification.json",
+      "sha256": "70f5c359afc4c7434b8d15dca841cf7b9744944a5e4955a25f438ea81e74b74f"
+    },
+    "./package.json": {
+      "target": "./package.json",
+      "sha256": "488f662fdf2647e0f6a9320a3a3c84f28eeb6d5e13fec9665d8c54dd6d5f6df2"
+    }
+  }
+}
