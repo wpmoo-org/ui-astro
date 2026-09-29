@@ -136,6 +136,7 @@ export async function verifyPackedConsumer({ cache, output }) {
   const fixtureManifest = JSON.parse(await readFile(join(FIXTURE_ROOT, "package.json"), "utf8"));
   const fixtureLock = JSON.parse(await readFile(join(FIXTURE_ROOT, "package-lock.json"), "utf8"));
   const core = JSON.parse(await readFile(join(ASTRO_ROOT, "contracts/rc9-package.json"), "utf8"));
+  const surface = JSON.parse(await readFile(join(ASTRO_ROOT, "contracts/astro-public-surface.json"), "utf8"));
   const importCount = validateConsumerFixture({ source: fixtureSource, manifest });
   validateConsumerLock({ fixtureManifest, fixtureLock, manifest, core });
   await mkdir(outputPath, { recursive: true });
@@ -169,12 +170,16 @@ export async function verifyPackedConsumer({ cache, output }) {
     cwd: consumerPath,
     env: offlineEnv,
   });
-  const privateProbe = spawnSync(process.execPath, [
-    "--input-type=module",
-    "-e",
-    "import.meta.resolve('@wpmoo/astro/components/internal/Icon.astro')",
-  ], { cwd: consumerPath, encoding: "utf8", env: offlineEnv });
-  assertPrivateSubpathError(privateProbe);
+  const privateSubpaths = Object.fromEntries(surface.private_transitives.map((path) => [path, "ERR_PACKAGE_PATH_NOT_EXPORTED"]));
+  for (const path of surface.private_transitives) {
+    const specifier = `${manifest.name}/${path}`;
+    const privateProbe = spawnSync(process.execPath, [
+      "--input-type=module",
+      "-e",
+      `import.meta.resolve(${JSON.stringify(specifier)})`,
+    ], { cwd: consumerPath, encoding: "utf8", env: offlineEnv });
+    assertPrivateSubpathError(privateProbe);
+  }
   run("npm", ["run", "build"], { cwd: consumerPath, env: offlineEnv });
   const htmlPath = join(consumerPath, "dist/index.html");
   const html = await readFile(htmlPath, "utf8");
@@ -205,6 +210,7 @@ export async function verifyPackedConsumer({ cache, output }) {
     public_source_imports: importCount,
     installation: "npm ci --offline; container network disabled",
     private_subpath: "ERR_PACKAGE_PATH_NOT_EXPORTED",
+    private_subpaths: privateSubpaths,
   };
   await writeFile(join(outputPath, "proof.json"), `${JSON.stringify(proof, null, 2)}\n`);
   return proof;

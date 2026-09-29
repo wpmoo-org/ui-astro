@@ -1,6 +1,6 @@
 import { getCollection } from "astro:content";
 import context, { collections } from "virtual:wpmoo-astro/routes";
-import { validateMarkdownSource, validateSelectedCollections } from "../content/integrity.js";
+import { validateJsonDirectorySource, validateJsonFileSource, validateMarkdownSource, validateSelectedCollections } from "../content/integrity.js";
 import { siteHref } from "../content/paths.js";
 import { navigationFromPages } from "../integration/navigation.js";
 import { pageHrefFromEntry } from "../plugins/page/paths.js";
@@ -47,15 +47,19 @@ export async function getSiteNavigation(currentPath) {
 export async function validateSiteContent() {
   validateSelectedCollections(collections, context.sources.map((source) => source.collection));
   for (const source of context.sources) {
-    if (source.kind !== "markdown") {
-      throw new TypeError(`${source.collection} source kind ${source.kind} is unsupported by this integrity gate`);
-    }
-    await validateMarkdownSource({
+    const common = {
       collection: source.collection,
       root: new URL(context.root),
-      base: new URL(source.base),
-      formats: source.formats,
       entries: await getCollection(source.collection),
-    });
+    };
+    if (source.kind === "markdown") {
+      await validateMarkdownSource({ ...common, base: new URL(source.base), formats: source.formats });
+    } else if (source.kind === "json-directory") {
+      await validateJsonDirectorySource({ ...common, base: new URL(source.base), schema: collections[source.collection].schema });
+    } else if (source.kind === "json") {
+      await validateJsonFileSource({ ...common, file: new URL(source.file), schema: collections[source.collection].schema });
+    } else {
+      throw new TypeError(`${source.collection} source kind ${source.kind} is unsupported by this integrity gate`);
+    }
   }
 }

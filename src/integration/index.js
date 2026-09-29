@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { defineSite } from "../config/index.js";
 import { page } from "../plugins/page/index.js";
+import { buildRegistry, validateResolvedRoutes } from "./registry.js";
 
 const virtualId = "virtual:wpmoo-astro/routes";
 const resolvedVirtualId = "\0virtual:wpmoo-astro/routes";
@@ -21,38 +22,17 @@ export default function moo(input = {}) {
   }
   const site = defineSite(input.site);
   const plugins = input.plugins ?? [page()];
-  if (!Array.isArray(plugins)) throw new TypeError("moo.plugins must be an array");
-  const ids = new Set();
-  const routes = [];
-  for (const plugin of plugins) {
-    if (!plugin || plugin.apiVersion !== 1 || typeof plugin.id !== "string") {
-      throw new TypeError("moo.plugins requires version 1 plugin descriptors");
-    }
-    if (ids.has(plugin.id)) throw new TypeError(`moo.plugins has duplicate plugin ${plugin.id}`);
-    ids.add(plugin.id);
-    for (const route of plugin.routes) {
-      if (route.owner === "plugin") {
-        routes.push({
-          owner: plugin.id,
-          pattern: plugin.basePath === "/" ? route.pattern : `${plugin.basePath}${route.pattern}`,
-          entrypoint: new URL(route.entrypoint),
-          prerender: true,
-        });
-      }
-    }
-  }
-  const finalPatterns = new Set();
-  for (const route of routes) {
-    if (finalPatterns.has(route.pattern)) throw new TypeError(`moo route pattern ${route.pattern} has multiple owners`);
-    finalPatterns.add(route.pattern);
-  }
+  const registry = buildRegistry(plugins);
   let context = null;
   return {
     name: "@wpmoo/astro",
     hooks: {
-      "astro:config:setup": ({ injectRoute, updateConfig }) => {
-        for (const route of routes) injectRoute({ pattern: route.pattern, entrypoint: route.entrypoint, prerender: route.prerender });
+      "astro:config:setup": ({ command, injectRoute, updateConfig, addMiddleware }) => {
+        for (const route of registry.routes) injectRoute({ pattern: route.pattern, entrypoint: route.entrypoint, prerender: route.prerender });
         if (!plugins.length) return;
+        if (command === "dev") {
+          addMiddleware({ entrypoint: new URL("./middleware.js", import.meta.url), order: "pre" });
+        }
         updateConfig({ vite: { plugins: [{
           name: "wpmoo-astro-context",
           resolveId(source, importer, options) {
@@ -73,6 +53,9 @@ export default function moo(input = {}) {
           prerender: true,
         });
       },
+      "astro:routes:resolved": ({ routes }) => {
+        validateResolvedRoutes(registry, routes);
+      },
       "astro:config:done": ({ config }) => {
         const files = ["content.config.ts", "content.config.mts", "content.config.js", "content.config.mjs"]
           .map((name) => new URL(name, config.srcDir))
@@ -82,12 +65,14 @@ export default function moo(input = {}) {
         }
         context = { hostContentConfig: files.length ? fileURLToPath(files[0]) : null, privateData: {
           root: config.root.href,
-          sources: plugins.flatMap((plugin) => plugin.contentTypes.map((type) => ({
+          sources: registry.contentTypes.map((type) => ({
             collection: type.collection,
             kind: type.source.kind,
-            base: type.source.base ?? new URL(`content/${type.collection}/`, config.srcDir).href,
+            ...(type.source.kind === "json"
+              ? { file: type.source.file }
+              : { base: type.source.base ?? new URL(`content/${type.collection}/`, config.srcDir).href }),
             formats: type.source.formats ?? [],
-          }))),
+          })),
           site,
           base: config.base,
           trailingSlash: config.trailingSlash,
