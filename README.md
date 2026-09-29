@@ -2,6 +2,8 @@
 
 `@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page content/schema/query helpers, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
+`@wpmoo/astro` is intended to be a commercial product. Its distribution terms are still undecided, so the package is currently marked `private` and `UNLICENSED`; no Astro package release is authorized yet. The upstream `@wpmoo/ui` dependency retains its own MIT license.
+
 ## Install and compose a page
 
 After the adapter is published, install it in an Astro application:

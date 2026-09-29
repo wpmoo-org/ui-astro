@@ -25,6 +25,20 @@ test("workspace release pin uses the published RC9 registry package", async () =
   );
 });
 
+test("the commercial Astro package stays unpublished until distribution terms are chosen", async () => {
+  const declared = JSON.parse(await readFile(join(ASTRO_ROOT, "package.json"), "utf8"));
+  const lock = JSON.parse(await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"));
+  const consumerLock = JSON.parse(await readFile(join(ASTRO_ROOT, "tests/fixtures/consumer/package-lock.json"), "utf8"));
+  const surface = JSON.parse(await readFile(join(ASTRO_ROOT, "contracts/astro-public-surface.json"), "utf8"));
+
+  assert.equal(declared.private, true);
+  assert.equal(declared.license, "UNLICENSED");
+  assert.equal(lock.packages[""].license, declared.license);
+  assert.equal(consumerLock.packages[`node_modules/${declared.name}`].license, declared.license);
+  assert.equal(declared.files.includes("LICENSE"), false);
+  assert.equal(surface.files.includes("LICENSE"), false);
+});
+
 test("package retains all 45 public wrappers and the explicit integration and Page surface", async () => {
   const declared = JSON.parse(await readFile(join(ASTRO_ROOT, "package.json"), "utf8"));
   const lock = JSON.parse(await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"));
