@@ -65,7 +65,7 @@ export function pageLoopItems(entries, options = {}) {
     ...(entry.data.description === undefined ? {} : { description: entry.data.description }),
     ...(entry.data.published_at === undefined ? {} : { date: entry.data.published_at }),
     href: siteHref(pageHrefFromEntry(entry, { lang, reservedPrefixes }), { base, trailingSlash }),
-    entryContext: { type: "page", id: entry.id, source: "markdown" },
+    entryContext: { type: "page", id: entry.id, source: /** @type {const} */ ("markdown") },
   }));
 }
 
