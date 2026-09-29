@@ -46,7 +46,11 @@ import ToggleGroup from "@wpmoo/astro/components/ToggleGroup.astro";
 import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
+import { entrySchema, sourceEntryId } from "@wpmoo/astro/content";
 import { definePlugin } from "@wpmoo/astro/plugins";
+import { page } from "@wpmoo/astro/plugins/page";
+import { pageSchema } from "@wpmoo/astro/plugins/page/content";
+import { getPagePaths, getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
 import Header from "@wpmoo/astro/includes/Header.astro";
 import SidebarInclude from "@wpmoo/astro/includes/Sidebar.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
@@ -67,6 +71,11 @@ const pagePlugin = definePlugin({
   contentTypes: [{ id: "page", collection: "page", singleRoute: "single", source: { kind: "markdown", formats: ["md"] } }],
   routes: [{ id: "single", pattern: "/[...slug]", prerender: true, owner: "host" }],
 });
+const configuredPage = page({ routes: { single: "host" } });
+const sourceId = sourceEntryId({ entry: "contact.md" });
+const entryTitle = entrySchema.parse({ title: "Contact", status: "draft" }).title;
+const pageTitle = pageSchema.parse({ title: "Contact", status: "draft" }).title;
+void [getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle];
 ---
 
 <Layout title="Packed consumer" sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">

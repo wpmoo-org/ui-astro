@@ -1,6 +1,6 @@
 # Moo UI Astro adapter
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page content/schema/query helpers, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 ## Install and compose a page
 
@@ -70,6 +70,24 @@ Here `options.sidebar` is `null` and `slug` is `"iletisim"`. An omitted Sidebar 
 
 `@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The integration that activates descriptors is a separate feature and is not available in this build.
 
+`@wpmoo/astro/content` provides `sourceEntryId`, `jsonEntryId`, and the shared strict `entrySchema`. `@wpmoo/astro/plugins/page` provides the pure `page()` descriptor; its `/content` and `/queries` subpaths provide `pageSchema`, `getPublishedPages()`, and `getPagePaths()`. The host declares its native Astro collection with `defineCollection()` and `glob()`:
+
+```ts
+import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
+import { sourceEntryId } from "@wpmoo/astro/content";
+import { pageSchema } from "@wpmoo/astro/plugins/page/content";
+
+export const collections = {
+  page: defineCollection({
+    loader: glob({ base: new URL("./content/page/", import.meta.url), pattern: "**/*.md", generateId: sourceEntryId }),
+    schema: pageSchema,
+  }),
+};
+```
+
+Page frontmatter requires `title` and `status: publish|draft|pending|future`; `slug`, three authored dates, navigation labels/order, and `layout` preferences are optional. Source IDs retain their exact relative `.md` or `.mdx` filenames. The slug controls only the URL. Only published Pages appear in the query results and paths; scheduled Pages reserve their canonical URL. These helpers do not register routes or enforce the full source-integrity contract yet.
+
 String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
 
 ## Develop and verify
@@ -84,12 +102,13 @@ npm run build
 npm pack --dry-run
 node scripts/sync_package_baseline.mjs --check-release
 node scripts/verify_astro_boundary.mjs --mode release
+python3 tests/test_page_collection.py -v
 python3 tests/test_visual_acceptance.py -v
 python3 tests/test_shared_parts_acceptance.py -v
 ```
 
 The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
-For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs `npm ci --offline` outside the workspace, resolves all 58 source entrypoints from the package, rejects a private deep import, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
+For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs `npm ci --offline` outside the workspace, resolves all 62 source entrypoints from the package, rejects a private deep import, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
 
 The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc9-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.

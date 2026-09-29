@@ -34,10 +34,14 @@ test("package retains all 45 public wrappers and seven explicit include and view
   assert.equal(lock.name, declared.name);
   assert.equal(lock.packages[""].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 59);
+  assert.equal(Object.keys(declared.exports).length, 63);
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./components/")).length, 45);
   assert.equal(declared.exports["./config"], "./src/config/index.js");
   assert.equal(declared.exports["./plugins"], "./src/plugins/index.js");
+  assert.equal(declared.exports["./content"], "./src/content/index.js");
+  assert.equal(declared.exports["./plugins/page"], "./src/plugins/page/index.js");
+  assert.equal(declared.exports["./plugins/page/content"], "./src/plugins/page/content.js");
+  assert.equal(declared.exports["./plugins/page/queries"], "./src/plugins/page/queries.js");
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./includes/")).length, 4);
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./views/")).length, 3);
   assert.deepEqual(declared.exports, surface.exports);
