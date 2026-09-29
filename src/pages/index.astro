@@ -165,7 +165,8 @@ const sidebarGroups = [{
 </Layout>
 
 <script>
-  import { Datepicker, Chart, DataTable } from "../runtime/moo-ui.js";
+  import MooUI from "../runtime/moo-ui.js";
+  const { Datepicker, Chart, DataTable } = MooUI;
 
   document.querySelectorAll("[data-datepicker]").forEach((root) => {
     Datepicker.getOrCreateInstance(root);
