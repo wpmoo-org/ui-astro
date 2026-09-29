@@ -18,7 +18,7 @@ const core = JSON.parse(await readFile(new URL("../contracts/rc9-package.json", 
 test("the independent fixture resolves every published Astro source entrypoint", () => {
   assert.equal(validateConsumerFixture({ source: fixture, manifest }), 49);
   assert.throws(
-    () => validateConsumerFixture({ source: fixture.replace('import "@wpmoo/ui-astro/styles.css";', 'import "@wpmoo/ui/moo-ui.css";'), manifest }),
+    () => validateConsumerFixture({ source: fixture.replace('import "@wpmoo/astro/styles.css";', 'import "@wpmoo/ui/moo-ui.css";'), manifest }),
     /consumer imports must use exact Astro public entrypoints/,
   );
 });

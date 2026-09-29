@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "package": "@wpmoo/ui-astro",
+  "package": "@wpmoo/astro",
   "version": "0.1.0",
   "exports": {
     "./components/Accordion.astro": "./src/components/Accordion.astro",

@@ -6,7 +6,7 @@
     "build": "astro build"
   },
   "dependencies": {
-    "@wpmoo/ui-astro": "file:../wpmoo-ui-astro-0.1.0.tgz",
+    "@wpmoo/astro": "file:../wpmoo-astro-0.1.0.tgz",
     "astro": "7.3.3"
   }
 }

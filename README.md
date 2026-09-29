@@ -1,22 +1,22 @@
 # Moo UI Astro adapter
 
-`@wpmoo/ui-astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, and three CSS/runtime entrypoints. The demonstration route stays in this repository and is not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, and three CSS/runtime entrypoints. The demonstration route stays in this repository and is not packed.
 
 ## Install and compose a page
 
 After the adapter is published, install it in an Astro application:
 
 ```bash
-npm install @wpmoo/ui-astro
+npm install @wpmoo/astro
 ```
 
 The dependency pins `@wpmoo/ui` to `1.0.0-rc.9` and carries Astro and Bootstrap. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 ```astro
 ---
-import Layout from "@wpmoo/ui-astro/Layout.astro";
-import Sidebar from "@wpmoo/ui-astro/components/Sidebar.astro";
-import Button from "@wpmoo/ui-astro/components/Button.astro";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Sidebar from "@wpmoo/astro/components/Sidebar.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
 
 const groups = [{
   label: "Workspace",
@@ -37,15 +37,15 @@ The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Mo
 
 ## Public files and behavior
 
-Each wrapper has a direct public entrypoint such as `@wpmoo/ui-astro/components/Button.astro`. Import only published subpaths from another application. The following entrypoints let a custom theme use the same shared presentation and behavior outside Layout:
+Each wrapper has a direct public entrypoint such as `@wpmoo/astro/components/Button.astro`. Import only published subpaths from another application. The following entrypoints let a custom theme use the same shared presentation and behavior outside Layout:
 
 ```astro
 ---
-import "@wpmoo/ui-astro/styles.css";
+import "@wpmoo/astro/styles.css";
 ---
 <script>
-  import "@wpmoo/ui-astro/runtime/bootstrap.js";
-  import { Chart } from "@wpmoo/ui-astro/runtime/moo-ui.js";
+  import "@wpmoo/astro/runtime/bootstrap.js";
+  import { Chart } from "@wpmoo/astro/runtime/moo-ui.js";
   document.querySelectorAll(".chart").forEach((root) => Chart.getOrCreateInstance(root));
 </script>
 ```

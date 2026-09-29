@@ -46,7 +46,7 @@ export function validateConsumerFixture({ source, manifest }) {
 }
 
 export function validateConsumerLock({ fixtureManifest, fixtureLock, manifest, core }) {
-  const archive = `file:../wpmoo-ui-astro-${manifest.version}.tgz`;
+  const archive = `file:../wpmoo-astro-${manifest.version}.tgz`;
   const direct = fixtureManifest.dependencies;
   const root = fixtureLock.packages?.[""];
   const adapter = fixtureLock.packages?.[`node_modules/${manifest.name}`];
@@ -142,7 +142,7 @@ export async function verifyPackedConsumer({ cache, output }) {
   const privateProbe = spawnSync(process.execPath, [
     "--input-type=module",
     "-e",
-    "import.meta.resolve('@wpmoo/ui-astro/components/internal/Icon.astro')",
+    "import.meta.resolve('@wpmoo/astro/components/internal/Icon.astro')",
   ], { cwd: consumerPath, encoding: "utf8", env: offlineEnv });
   assertPrivateSubpathError(privateProbe);
   run("npm", ["run", "build"], { cwd: consumerPath, env: offlineEnv });

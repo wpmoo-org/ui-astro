@@ -1,9 +1,13 @@
 {
-  "name": "@wpmoo/ui-astro",
+  "name": "@wpmoo/astro",
   "version": "0.1.0",
   "private": false,
   "description": "Astro component and Layout adapter for Moo UI themes.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wpmoo-org/ui-astro.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.12.0"

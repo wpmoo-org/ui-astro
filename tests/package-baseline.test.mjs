@@ -25,6 +25,21 @@ test("workspace release pin uses the published RC9 registry package", async () =
   );
 });
 
+test("renamed package retains the exact 50 public UI entrypoints", async () => {
+  const declared = JSON.parse(await readFile(join(ASTRO_ROOT, "package.json"), "utf8"));
+  const lock = JSON.parse(await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"));
+  const surface = JSON.parse(await readFile(join(ASTRO_ROOT, "contracts/astro-public-surface.json"), "utf8"));
+  assert.equal(declared.name, "@wpmoo/astro");
+  assert.equal(declared.repository?.url, "https://github.com/wpmoo-org/ui-astro.git");
+  assert.equal(lock.name, declared.name);
+  assert.equal(lock.packages[""].name, declared.name);
+  assert.equal(surface.package, declared.name);
+  assert.equal(Object.keys(declared.exports).length, 50);
+  assert.deepEqual(declared.exports, surface.exports);
+  assert.deepEqual(Object.keys(declared.exports).sort(), Object.keys(surface.exports).sort());
+  assert.equal(declared.exports["./components/internal/Icon.astro"], undefined);
+});
+
 const packageJson = {
   dependencies: {
     "@wpmoo/ui": "1.0.0-rc.9",
