@@ -90,6 +90,32 @@ Page frontmatter requires `title` and `status: publish|draft|pending|future`; `s
 
 String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
 
+## Theme language and visible copy
+
+The host theme owns its translations. Resolve the language of a route, then pass translated text through the public component props. This includes empty states, headings, breadcrumbs, button labels, placeholders, and ARIA labels; changing `<html lang>` alone does not translate them. For a one-language site, `site.defaults.lang` is the fallback. When the host configures Astro's native i18n, `Astro.currentLocale` supplies the route language:
+
+```astro
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Loop from "@wpmoo/astro/views/Loop.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getMessages } from "../messages.js"; // owned by the theme
+
+const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
+const copy = getMessages(lang);
+const items = [];
+---
+
+<Layout title={copy.title} lang={lang}>
+  <h1>{copy.title}</h1>
+  <Loop items={items} emptyText={copy.emptyItems} />
+</Layout>
+```
+
+The repository-only `/preview/i18n-empty` route demonstrates this with Turkish, German, and English theme copy and the generic/Page Loop empty-state props. The existing English defaults are fallbacks for callers that do not supply copy; multilingual themes should always supply it. Built-in content routing still uses one configured language. Locale-specific content URLs, translated entry links, and per-route built-in labels require the planned native Astro i18n work before a multilingual site can be certified.
+
+Published Moo UI RC9 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
+
 ## Develop and verify
 
 From the workspace root, `make ui-astro` serves the local demonstration on port 4322. `make sync` follows the HTML `dev` branch for local integration and leaves the release pin in `package.json` and `package-lock.json` intact. Do not treat the local development package as the published RC9 release.

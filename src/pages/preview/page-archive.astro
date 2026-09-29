@@ -4,12 +4,16 @@ import Header from "../../includes/Header.astro";
 import Footer from "../../includes/Footer.astro";
 import PageArchive from "../../plugins/page/views/Archive.astro";
 import { getPublishedPages } from "../../plugins/page/queries.js";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoMessages } from "../../demo/messages.js";
 
 const entries = await getPublishedPages();
+const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
+const copy = getDemoMessages(lang);
 ---
 
-<Layout title="Page archive preview" pageContext={{ view: "archive", type: "page" }} lang="tr">
+<Layout title="Page archive preview" pageContext={{ view: "archive", type: "page" }} lang={lang}>
   <Header slot="header" breadcrumbs={[{ label: "Contact", href: "/iletisim" }, { label: "Pages" }]} />
-  <PageArchive title="Pages" entries={entries} lang="tr" />
+  <PageArchive title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages} />
   <Footer slot="footer" brand="Moo UI" homeHref="/iletisim" />
 </Layout>
