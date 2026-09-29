@@ -5,8 +5,8 @@ import Footer from "../../includes/Footer.astro";
 import Archive from "../../views/Archive.astro";
 
 const items = [
-  { id: "duyuru.md", title: "A sample post", href: "/preview/single", description: "A reusable semantic Loop entry.", entryContext: { type: "post", id: "duyuru.md", source: "markdown", taxonomies: { category: ["kurumsal"] } } },
-  { id: "guide.md", title: "Another post", href: "/preview/single", date: new Date("2026-09-28T12:00:00Z"), entryContext: { type: "post", id: "guide.md", source: "markdown" } },
+  { id: "duyuru.md", title: "A sample post", href: "/preview/single", description: "A reusable semantic Loop entry.", entryContext: { type: "post", id: "duyuru.md", source: "markdown" as const, taxonomies: { category: ["kurumsal"] } } },
+  { id: "guide.md", title: "Another post", href: "/preview/single", date: new Date("2026-09-28T12:00:00Z"), entryContext: { type: "post", id: "guide.md", source: "markdown" as const } },
 ];
 ---
 

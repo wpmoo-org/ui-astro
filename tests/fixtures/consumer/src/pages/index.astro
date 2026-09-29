@@ -85,6 +85,7 @@ const pageTitle = pageSchema.parse({ title: "Contact", status: "draft" }).title;
 const siteContext = getSiteContext();
 const pageNavigation = await getSiteNavigation("/iletisim");
 const packedContact = (await getCollection("page")).find((entry) => entry.id === "contact.md");
+if (!packedContact) throw new Error("Packed consumer Page contact.md is missing");
 const packedContactHref = getEntryHref("page", packedContact);
 void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle];
 ---
