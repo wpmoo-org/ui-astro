@@ -9,5 +9,6 @@ export const GET: APIRoute = async () => {
     paths: paths.map(({ params, props }) => ({ id: props.entry.id, slug: params.slug })),
     contactLayout: published[0]?.data.layout,
     contactDate: published[0]?.data.published_at?.toISOString(),
+    filePaths: published.map((entry) => entry.filePath),
   }), { headers: { "Content-Type": "application/json; charset=utf-8" } });
 };

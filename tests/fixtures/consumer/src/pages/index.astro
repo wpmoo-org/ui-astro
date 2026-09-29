@@ -1,4 +1,6 @@
 ---
+import { getCollection } from "astro:content";
+import MooIntegration from "@wpmoo/astro";
 import Layout from "@wpmoo/astro/Layout.astro";
 import Accordion from "@wpmoo/astro/components/Accordion.astro";
 import Alert from "@wpmoo/astro/components/Alert.astro";
@@ -47,10 +49,14 @@ import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
 import { entrySchema, sourceEntryId } from "@wpmoo/astro/content";
+import { getEntryHref, getSiteContext, getSiteNavigation } from "@wpmoo/astro/context";
 import { definePlugin } from "@wpmoo/astro/plugins";
 import { page } from "@wpmoo/astro/plugins/page";
 import { pageSchema } from "@wpmoo/astro/plugins/page/content";
 import { getPagePaths, getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
+import PageArchive from "@wpmoo/astro/plugins/page/views/Archive.astro";
+import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
+import PageSingle from "@wpmoo/astro/plugins/page/views/Single.astro";
 import Header from "@wpmoo/astro/includes/Header.astro";
 import SidebarInclude from "@wpmoo/astro/includes/Sidebar.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
@@ -62,6 +68,7 @@ import "@wpmoo/astro/styles.css";
 
 const publicWrappers = [Accordion, Alert, AlertDialog, Avatar, Badge, Button, ButtonGroup, Breadcrumb, Card, Chart, Checkbox, CloseButton, Collapsible, Combobox, ContextMenu, DataTable, DatePicker, Dialog, DropdownMenu, Field, Form, Input, InputGroup, Kbd, Menubar, Navigation, Popover, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toast, ToggleGroup, Tooltip, Typography];
 const publicParts = [Header, SidebarInclude, PageHeader, Footer, Single, Archive, Loop];
+const pageViews = [PageArchive, PageLoop, PageSingle];
 const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }];
 const site = defineSite();
 const configuredPostSidebar = resolvePageOptions(site, "post", "single").sidebar;
@@ -75,13 +82,17 @@ const configuredPage = page({ routes: { single: "host" } });
 const sourceId = sourceEntryId({ entry: "contact.md" });
 const entryTitle = entrySchema.parse({ title: "Contact", status: "draft" }).title;
 const pageTitle = pageSchema.parse({ title: "Contact", status: "draft" }).title;
-void [getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle];
+const siteContext = getSiteContext();
+const pageNavigation = await getSiteNavigation("/iletisim");
+const packedContact = (await getCollection("page")).find((entry) => entry.id === "contact.md");
+const packedContactHref = getEntryHref("page", packedContact);
+void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle];
 ---
 
 <Layout title="Packed consumer" sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
   <Sidebar slot="sidebar" id="packed-sidebar" brand="Packed consumer" groups={groups} />
   <h1>Independent package consumer</h1>
-  <p data-public-wrapper-count={publicWrappers.length} data-public-part-count={publicParts.length} data-config-sidebar={configuredPostSidebar === null ? "none" : "enabled"} data-config-slug={normalizedContactSlug} data-plugin-id={pagePlugin.id}>All public wrapper imports resolve from the packed adapter.</p>
+  <p data-public-wrapper-count={publicWrappers.length} data-public-part-count={publicParts.length} data-public-page-view-count={pageViews.length} data-context-plugin={siteContext.plugins[0]?.id} data-context-link={packedContactHref} data-navigation-count={pageNavigation.length} data-config-sidebar={configuredPostSidebar === null ? "none" : "enabled"} data-config-slug={normalizedContactSlug} data-plugin-id={pagePlugin.id}>All public wrapper imports resolve from the packed adapter.</p>
   <Card title="Public components">
     <Badge label="Ready" variant="success" />
     <Button size="icon-sm" ariaLabel="Open actions">+</Button>

@@ -1,0 +1,9 @@
+---
+import { validateSiteContent } from "../../context/index.js";
+
+export const prerender = true;
+export async function getStaticPaths() {
+  await validateSiteContent();
+  return [];
+}
+---

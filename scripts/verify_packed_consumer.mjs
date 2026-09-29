@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { cp, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,10 +33,12 @@ function assertOutsideWorkspace(path, label) {
 }
 
 export function validateConsumerFixture({ source, manifest }) {
-  const importPaths = [...source.matchAll(/\bimport(?:\s+[^;\n]*?\s+from)?\s*["']([^"']+)["']/g)].map((match) => match[1]);
+  const importPaths = [...source.matchAll(/\bimport(?:\s+[^;\n]*?\s+from)?\s*["']([^"']+)["']/g)]
+    .map((match) => match[1])
+    .filter((path) => path === manifest.name || path.startsWith(`${manifest.name}/`));
   const expected = Object.keys(manifest.exports)
     .filter((path) => path !== "./package.json")
-    .map((path) => `${manifest.name}/${path.slice(2)}`);
+    .map((path) => path === "." ? manifest.name : `${manifest.name}/${path.slice(2)}`);
   if (importPaths.length !== expected.length ||
       new Set(importPaths).size !== expected.length ||
       expected.some((path) => !importPaths.includes(path))) {
@@ -75,6 +77,10 @@ export function assertConsumerOutput(html) {
     ['data-layout="page-grid"', "Page grid"],
     ['data-public-wrapper-count="45"', "45 public wrapper imports"],
     ['data-public-part-count="7"', "seven public include and view imports"],
+    ['data-public-page-view-count="3"', "three public Page view imports"],
+    ['data-context-plugin="page"', "public Page route context"],
+    ['data-context-link="/iletisim"', "canonical Page context link"],
+    ['data-navigation-count="2"', "public Page navigation"],
     ['data-config-sidebar="none"', "public site preference resolution"],
     ['data-config-slug="iletisim"', "public Turkish slug normalization"],
     ['data-plugin-id="page"', "public plugin descriptor"],
@@ -94,6 +100,26 @@ export function assertConsumerOutput(html) {
   if (html.includes("<svg onload=alert(2)>")) {
     throw new Error("Toast untrusted body must be escaped");
   }
+}
+
+export function assertPackedPageOutput({ contact, guide, draftExists }) {
+  for (const [html, title, body] of [
+    [contact, "Contact", "Independent Page content."],
+    [guide, "Setup guide", "Independent guide content."],
+  ]) {
+    if (!html.includes(`<title>${title}</title>`) || !html.includes(body) ||
+        [...html.matchAll(/<h1(?:\s|>)/gu)].length !== 1) {
+      throw new Error(`${title} Page route must render its published title and Markdown once`);
+    }
+  }
+  if (!contact.includes('page page-contact') || !contact.includes('href="/iletisim"')) {
+    throw new Error("Contact Page route must preserve its exact entry identity and canonical href");
+  }
+  if (!guide.includes('data-slot="sidebar"') || !guide.includes('href="/kilavuz/kurulum"') ||
+      !guide.includes('aria-current="page"')) {
+    throw new Error("Guide Page route must inherit the public Sidebar and active canonical link");
+  }
+  if (draftExists) throw new Error("Draft Page must not be published by the packed consumer");
 }
 
 export function assertPrivateSubpathError(result) {
@@ -153,6 +179,16 @@ export async function verifyPackedConsumer({ cache, output }) {
   const htmlPath = join(consumerPath, "dist/index.html");
   const html = await readFile(htmlPath, "utf8");
   assertConsumerOutput(html);
+  const contactPath = join(consumerPath, "dist/iletisim/index.html");
+  const guidePath = join(consumerPath, "dist/kilavuz/kurulum/index.html");
+  const contact = await readFile(contactPath, "utf8");
+  const guide = await readFile(guidePath, "utf8");
+  const draftExists = await stat(join(consumerPath, "dist/draft/index.html"))
+    .then(() => true, (error) => {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    });
+  assertPackedPageOutput({ contact, guide, draftExists });
 
   const proof = {
     schema_version: 1,
@@ -162,6 +198,10 @@ export async function verifyPackedConsumer({ cache, output }) {
     archive_sha256: sha256(await readFile(archivePath)),
     built_html: "consumer/dist/index.html",
     built_html_sha256: sha256(Buffer.from(html)),
+    built_pages: {
+      contact: { path: "consumer/dist/iletisim/index.html", sha256: sha256(Buffer.from(contact)) },
+      guide: { path: "consumer/dist/kilavuz/kurulum/index.html", sha256: sha256(Buffer.from(guide)) },
+    },
     public_source_imports: importCount,
     installation: "npm ci --offline; container network disabled",
     private_subpath: "ERR_PACKAGE_PATH_NOT_EXPORTED",

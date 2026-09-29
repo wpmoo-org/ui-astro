@@ -1,5 +1,6 @@
 import { normalizeSlug } from "../../config/index.js";
 import { sourceEntryId } from "../../content/index.js";
+import { siteHref } from "../../content/paths.js";
 
 const reservedRoots = new Set(["404", "_astro", "_server_islands", "_actions", "__moo_content_integrity"]);
 const canonicalPath = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*)?$/u;
@@ -45,6 +46,27 @@ function pagePath(entry, options, mounts) {
     }
   }
   return { slug: slug || undefined, href, raw };
+}
+
+export function pageHrefFromEntry(entry, options) {
+  const path = pagePath(entry, options, prefixes(options));
+  if (entry.data.status !== "publish") {
+    throw new TypeError(`Page entry ${entry.id} must be publish to have a public href`);
+  }
+  return path.href;
+}
+
+export function pageLoopItems(entries, options = {}) {
+  if (!Array.isArray(entries)) throw new TypeError("Page Loop entries must be an array");
+  const { lang, reservedPrefixes, base, trailingSlash } = options;
+  return entries.map((entry) => ({
+    id: entry.id,
+    title: entry.data.title,
+    ...(entry.data.description === undefined ? {} : { description: entry.data.description }),
+    ...(entry.data.published_at === undefined ? {} : { date: entry.data.published_at }),
+    href: siteHref(pageHrefFromEntry(entry, { lang, reservedPrefixes }), { base, trailingSlash }),
+    entryContext: { type: "page", id: entry.id, source: "markdown" },
+  }));
 }
 
 export function pagePathsFromEntries(entries, options) {

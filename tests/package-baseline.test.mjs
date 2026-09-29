@@ -25,7 +25,7 @@ test("workspace release pin uses the published RC9 registry package", async () =
   );
 });
 
-test("package retains all 45 public wrappers and seven explicit include and view paths", async () => {
+test("package retains all 45 public wrappers and the explicit integration and Page surface", async () => {
   const declared = JSON.parse(await readFile(join(ASTRO_ROOT, "package.json"), "utf8"));
   const lock = JSON.parse(await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"));
   const surface = JSON.parse(await readFile(join(ASTRO_ROOT, "contracts/astro-public-surface.json"), "utf8"));
@@ -34,7 +34,7 @@ test("package retains all 45 public wrappers and seven explicit include and view
   assert.equal(lock.name, declared.name);
   assert.equal(lock.packages[""].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 63);
+  assert.equal(Object.keys(declared.exports).length, 68);
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./components/")).length, 45);
   assert.equal(declared.exports["./config"], "./src/config/index.js");
   assert.equal(declared.exports["./plugins"], "./src/plugins/index.js");
@@ -42,6 +42,14 @@ test("package retains all 45 public wrappers and seven explicit include and view
   assert.equal(declared.exports["./plugins/page"], "./src/plugins/page/index.js");
   assert.equal(declared.exports["./plugins/page/content"], "./src/plugins/page/content.js");
   assert.equal(declared.exports["./plugins/page/queries"], "./src/plugins/page/queries.js");
+  assert.equal(declared.exports["."], "./src/integration/index.js");
+  assert.equal(declared.exports["./context"], "./src/context/index.js");
+  for (const view of ["Single", "Archive", "Loop"]) {
+    assert.equal(
+      declared.exports[`./plugins/page/views/${view}.astro`],
+      `./src/plugins/page/views/${view}.astro`,
+    );
+  }
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./includes/")).length, 4);
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./views/")).length, 3);
   assert.deepEqual(declared.exports, surface.exports);

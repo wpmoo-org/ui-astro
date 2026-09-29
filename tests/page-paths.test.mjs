@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { pagePathsFromEntries } from "../src/plugins/page/paths.js";
+import { pageHrefFromEntry, pageLoopItems, pagePathsFromEntries } from "../src/plugins/page/paths.js";
 
 function page(id, status = "publish", extra = {}) {
   return { id, collection: "page", data: { title: id, status, ...extra } };
@@ -19,6 +19,33 @@ test("Page URLs convert source stems without changing source identity", () => {
   ]);
   assert.equal(paths[4].props.entry, entries[1]);
   assert.deepEqual(pagePathsFromEntries([page("Über uns.md")], { lang: "de-DE" }).map((path) => path.params.slug), ["ueber-uns"]);
+});
+
+test("one Page href uses the same canonical mapping as its native route", () => {
+  for (const [entry, lang] of [
+    [page("index.md"), "tr"],
+    [page("İletişim.md"), "tr"],
+    [page("Kılavuz/Kurulum.md"), "tr"],
+    [page("Über uns.md"), "de"],
+  ]) {
+    const [{ params }] = pagePathsFromEntries([entry], { lang });
+    assert.equal(pageHrefFromEntry(entry, { lang }), params.slug ? `/${params.slug}` : "/");
+  }
+  assert.throws(() => pageHrefFromEntry(page("draft.md", "draft")), /publish/i);
+  assert.throws(() => pageHrefFromEntry(page("future.md", "future")), /publish/i);
+  assert.throws(() => pageHrefFromEntry(page("Aktuelles/news.md"), { reservedPrefixes: ["/aktuelles"] }), /reserved|namespace/i);
+});
+
+test("Page Loop data keeps exact entry identity and follows the same host URL policy", () => {
+  const entry = page("Kılavuz/Kurulum.md", "publish", {
+    title: "Kurulum", description: "Yönerge", published_at: new Date("2026-09-28T16:25:03Z"),
+  });
+  assert.deepEqual(pageLoopItems([entry], { lang: "tr", base: "/docs", trailingSlash: "always" }), [{
+    id: "Kılavuz/Kurulum.md", title: "Kurulum", description: "Yönerge",
+    date: new Date("2026-09-28T16:25:03Z"), href: "/docs/kilavuz/kurulum/",
+    entryContext: { type: "page", id: "Kılavuz/Kurulum.md", source: "markdown" },
+  }]);
+  assert.throws(() => pageLoopItems([page("draft.md", "draft")], { base: "/" }), /publish/i);
 });
 
 test("Page path list emits publish only while reserving scheduled URLs", () => {

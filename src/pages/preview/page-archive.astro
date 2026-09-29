@@ -1,0 +1,15 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../includes/Header.astro";
+import Footer from "../../includes/Footer.astro";
+import PageArchive from "../../plugins/page/views/Archive.astro";
+import { getPublishedPages } from "../../plugins/page/queries.js";
+
+const entries = await getPublishedPages();
+---
+
+<Layout title="Page archive preview" pageContext={{ view: "archive", type: "page" }} lang="tr">
+  <Header slot="header" breadcrumbs={[{ label: "Contact", href: "/iletisim" }, { label: "Pages" }]} />
+  <PageArchive title="Pages" entries={entries} lang="tr" />
+  <Footer slot="footer" brand="Moo UI" homeHref="/iletisim" />
+</Layout>

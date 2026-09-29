@@ -1,0 +1,20 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Loop from "../../../views/Loop.astro";
+import { pageLoopItems } from "../paths.js";
+
+interface Props {
+  entries: CollectionEntry<"page">[];
+  base?: string;
+  trailingSlash?: "always" | "never" | "ignore";
+  lang?: string;
+  reservedPrefixes?: readonly string[];
+  emptyText?: string;
+  titleVariant?: "section-title" | "subsection-title";
+}
+
+const { entries, base = "/", trailingSlash = "ignore", lang = "en", reservedPrefixes = [], emptyText = "No pages yet.", titleVariant = "section-title" } = Astro.props;
+const items = pageLoopItems(entries, { base, trailingSlash, lang, reservedPrefixes });
+---
+
+<Loop items={items} emptyText={emptyText} titleVariant={titleVariant} />

@@ -18,6 +18,24 @@ class NativePageCollection(unittest.TestCase):
         ])
         self.assertEqual(data["contactLayout"], {"sidebar": None, "pageWidth": "lg"})
         self.assertEqual(data["contactDate"], "2026-09-28T16:25:03.000Z")
+        self.assertEqual(data["filePaths"], [
+            "src/content/page/contact.md",
+            "src/content/page/guide/setup.md",
+        ])
+
+    def test_public_site_context_exposes_preferences_without_host_source_paths(self):
+        source = (DIST / "preview/site-context.json").read_text(encoding="utf-8")
+        data = json.loads(source)
+        self.assertEqual(data["site"]["defaults"]["lang"], "tr")
+        self.assertEqual(data["base"], "/")
+        self.assertEqual(data["plugins"][0]["contentTypes"][0]["collection"], "page")
+        self.assertEqual(data["contactHref"], "/iletisim")
+        self.assertEqual(data["navigation"], [
+            {"label": "Contact", "href": "/iletisim", "active": True},
+            {"label": "Setup guide", "href": "/kilavuz/kurulum", "active": False},
+        ])
+        self.assertNotIn("file:", source)
+        self.assertNotIn("src/content/page", source)
 
 
 if __name__ == "__main__":
