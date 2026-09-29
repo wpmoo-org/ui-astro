@@ -4,8 +4,9 @@ import Header from "../../includes/Header.astro";
 import Sidebar from "../../includes/Sidebar.astro";
 import Footer from "../../includes/Footer.astro";
 import Single from "../../views/Single.astro";
+import type { EntryClassContext } from "../../config/index.js";
 
-const entryContext = {
+const entryContext: EntryClassContext = {
   type: "post", id: "duyuru.md", source: "markdown",
   taxonomies: { category: ["kurumsal"], tag: ["astro"] },
 };
