@@ -11,8 +11,11 @@ import Single from "../views/Single.astro";
 
 export const prerender = true;
 export async function getStaticPaths() {
-  const { site } = getSiteContext();
-  return getPagePaths({ lang: site.defaults.lang });
+  const { site, plugins } = getSiteContext();
+  const reservedPrefixes = plugins
+    .filter((plugin) => plugin.id !== "page" && plugin.basePath !== "/")
+    .map((plugin) => plugin.basePath);
+  return getPagePaths({ lang: site.defaults.lang, reservedPrefixes });
 }
 
 const { entry } = Astro.props;
