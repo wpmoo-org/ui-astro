@@ -157,11 +157,11 @@ const pageClasses = getPageClasses(pageContext);
     </div>
     <script>
       import "../runtime/bootstrap.js";
-      import { Sidebar } from "../runtime/moo-ui.js";
+      import MooUI from "../runtime/moo-ui.js";
 
       document
         .querySelectorAll('[data-slot="sidebar-wrapper"]')
-        .forEach((root) => Sidebar.getOrCreateInstance(root));
+        .forEach((root) => MooUI.Sidebar.getOrCreateInstance(root));
     </script>
   </body>
 </html>
