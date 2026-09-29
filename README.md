@@ -1,6 +1,6 @@
 # Moo UI Astro adapter
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, and three CSS/runtime entrypoints. The demonstration route stays in this repository and is not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, a pure configuration entrypoint, and three CSS/runtime entrypoints. The demonstration route stays in this repository and is not packed.
 
 ## Install and compose a page
 
@@ -52,6 +52,20 @@ import "@wpmoo/astro/styles.css";
 
 The Bootstrap facade exposes the installed Bootstrap ESM namespace to the published Moo Sidebar runtime. The Moo facade re-exports the published Core ESM module; its optional components are initialized on caller-owned roots. Layout already loads both facades and initializes its own Sidebar.
 
+`@wpmoo/astro/config` exports `defineSite`, `resolvePageOptions`, `layoutSchema`, `getEntryClasses`, `getPageClasses`, and `normalizeSlug`. It resolves partial site, content-type, view, and page preferences without loading content or registering routes. For example:
+
+```js
+import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
+
+const site = defineSite({
+  types: { post: { views: { single: { navigation: "none" } } } },
+});
+const options = resolvePageOptions(site, "post", "single");
+const slug = normalizeSlug("İletişim", { lang: "tr" });
+```
+
+Here `options.navigation` is `"none"` and `slug` is `"iletisim"`. The config entrypoint does not activate Page/Post plugins or add routes; those features are separate work.
+
 String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
 
 ## Develop and verify
@@ -71,6 +85,6 @@ python3 tests/test_visual_acceptance.py -v
 
 The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
-For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs `npm ci --offline` outside the workspace, resolves all 49 source entrypoints from the package, rejects a private deep import, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
+For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs `npm ci --offline` outside the workspace, resolves all 50 source entrypoints from the package, rejects a private deep import, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
 
 The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc9-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.

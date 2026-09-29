@@ -45,16 +45,20 @@ import Toast from "@wpmoo/astro/components/Toast.astro";
 import ToggleGroup from "@wpmoo/astro/components/ToggleGroup.astro";
 import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
+import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
 import "@wpmoo/astro/styles.css";
 
 const publicWrappers = [Accordion, Alert, AlertDialog, Avatar, Badge, Button, ButtonGroup, Breadcrumb, Card, Chart, Checkbox, CloseButton, Collapsible, Combobox, ContextMenu, DataTable, DatePicker, Dialog, DropdownMenu, Field, Form, Input, InputGroup, Kbd, Menubar, Navigation, Popover, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toast, ToggleGroup, Tooltip, Typography];
 const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }];
+const site = defineSite({ types: { post: { views: { single: { navigation: "none" } } } } });
+const configuredPostNavigation = resolvePageOptions(site, "post", "single").navigation;
+const normalizedContactSlug = normalizeSlug("İletişim", { lang: "tr" });
 ---
 
 <Layout title="Packed consumer" navigation="sidebar" theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
   <Sidebar slot="sidebar" id="packed-sidebar" brand="Packed consumer" groups={groups} />
   <h1>Independent package consumer</h1>
-  <p data-public-wrapper-count={publicWrappers.length}>All public wrapper imports resolve from the packed adapter.</p>
+  <p data-public-wrapper-count={publicWrappers.length} data-config-navigation={configuredPostNavigation} data-config-slug={normalizedContactSlug}>All public wrapper imports resolve from the packed adapter.</p>
   <Card title="Public components">
     <Badge label="Ready" variant="success" />
     <Button size="icon-sm" ariaLabel="Open actions">+</Button>

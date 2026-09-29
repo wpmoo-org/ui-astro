@@ -74,6 +74,8 @@ export function assertConsumerOutput(html) {
     ['data-page-container', "Page rail"],
     ['data-layout="page-grid"', "Page grid"],
     ['data-public-wrapper-count="45"', "45 public wrapper imports"],
+    ['data-config-navigation="none"', "public site preference resolution"],
+    ['data-config-slug="iletisim"', "public Turkish slug normalization"],
     ['btn-icon-sm', "published icon button size"],
     ['data-toast-show-on-load="true"', "published Toast startup hook"],
     ['aria-label="Dismiss saved toast"', "published Toast action label"],
