@@ -1,0 +1,25 @@
+---
+import PageHeader from "../includes/PageHeader.astro";
+import { getEntryClasses, type EntryClassContext } from "../config/index.js";
+
+interface Props {
+  title: string;
+  description?: string;
+  entryContext?: EntryClassContext;
+}
+
+const { title, description, entryContext } = Astro.props;
+if (!Astro.slots.has("default")) throw new TypeError("Single requires its content slot");
+const entryClasses = entryContext ? getEntryClasses(entryContext) : [];
+---
+
+<article class:list={entryClasses}>
+  {Astro.slots.has("page-header") ? <slot name="page-header" /> : (
+    <PageHeader title={title} description={description}>
+      {Astro.slots.has("metadata") ? <slot name="metadata" slot="metadata" /> : null}
+      {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
+    </PageHeader>
+  )}
+  <slot />
+  {Astro.slots.has("after-content") ? <slot name="after-content" /> : null}
+</article>

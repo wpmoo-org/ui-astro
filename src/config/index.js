@@ -10,14 +10,13 @@ const sidebarSchema = z.strictObject({
 });
 
 export const layoutSchema = z.strictObject({
-  navigation: z.enum(["sidebar", "none"]).optional(),
   shellMode: z.enum(["viewport", "contained"]).optional(),
   pageWidth: width.optional(),
   headerWidth: width.nullable().optional(),
   theme: z.enum(["light", "dark"]).optional(),
   lang: z.string().trim().min(1).optional(),
   dir: z.enum(["ltr", "rtl"]).optional(),
-  sidebar: sidebarSchema.optional(),
+  sidebar: sidebarSchema.nullable().optional(),
 });
 
 const typeSchema = layoutSchema.extend({
@@ -34,21 +33,21 @@ const siteSchema = z.strictObject({
 });
 
 const typeIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const sidebarDefaults = Object.freeze({
+  side: "left",
+  variant: "sidebar",
+  collapsible: "icon",
+  rail: true,
+  defaultOpen: true,
+});
 const builtIn = Object.freeze({
-  navigation: "sidebar",
   shellMode: "viewport",
   pageWidth: "xl",
   headerWidth: null,
   theme: "light",
   lang: "en",
   dir: "ltr",
-  sidebar: Object.freeze({
-    side: "left",
-    variant: "sidebar",
-    collapsible: "icon",
-    rail: true,
-    defaultOpen: true,
-  }),
+  sidebar: null,
 });
 
 function plainRecord(value) {
@@ -82,11 +81,18 @@ function freezeLayout(options) {
 }
 
 function mergeLayout(...layers) {
-  const output = { ...builtIn, sidebar: { ...builtIn.sidebar } };
+  const output = { ...builtIn };
+  const sidebar = { ...sidebarDefaults };
   for (const layer of layers) {
     if (!layer) continue;
     for (const [key, value] of Object.entries(layer)) {
-      if (key === "sidebar") Object.assign(output.sidebar, value);
+      if (key === "sidebar") {
+        if (value === null) output.sidebar = null;
+        else {
+          Object.assign(sidebar, value);
+          output.sidebar = { ...sidebar };
+        }
+      }
       else if (key === "views") continue;
       else output[key] = value;
     }

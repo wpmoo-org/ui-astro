@@ -12,25 +12,23 @@ export interface SidebarOptionsInput {
 }
 
 export interface PageOptionsInput {
-  navigation?: "sidebar" | "none";
   shellMode?: "viewport" | "contained";
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
   theme?: "light" | "dark";
   lang?: string;
   dir?: "ltr" | "rtl";
-  sidebar?: SidebarOptionsInput;
+  sidebar?: SidebarOptionsInput | null;
 }
 
 export interface PageOptions {
-  navigation: "sidebar" | "none";
   shellMode: "viewport" | "contained";
   pageWidth: PageWidth;
   headerWidth: PageWidth | null;
   theme: "light" | "dark";
   lang: string;
   dir: "ltr" | "rtl";
-  sidebar: Required<SidebarOptionsInput>;
+  sidebar: Required<SidebarOptionsInput> | null;
 }
 
 export interface TypeOptionsInput extends PageOptionsInput {

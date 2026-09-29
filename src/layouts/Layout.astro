@@ -3,8 +3,8 @@ import "../styles.css";
 import stateSource from "@wpmoo/ui/state.js?raw";
 import Button from "../components/Button.astro";
 import Icon from "../components/internal/Icon.astro";
+import { getPageClasses, type PageClassContext } from "../config/index.js";
 
-type Navigation = "sidebar" | "none";
 type ShellMode = "viewport" | "contained";
 type Theme = "light" | "dark";
 type Direction = "ltr" | "rtl";
@@ -13,7 +13,7 @@ type PageWidth = "base" | "sm" | "md" | "lg" | "xl" | "xxl" | "fluid";
 interface Props {
   title: string;
   description?: string;
-  navigation: Navigation;
+  sidebar?: boolean;
   shellMode?: ShellMode;
   theme?: Theme;
   lang?: string;
@@ -25,6 +25,7 @@ interface Props {
   id?: string;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
+  pageContext?: PageClassContext;
 }
 
 const containerClasses: Record<PageWidth, string> = {
@@ -37,7 +38,6 @@ const containerClasses: Record<PageWidth, string> = {
   fluid: "container-fluid",
 };
 const identifierPattern = /^[A-Za-z][A-Za-z0-9_-]*$/;
-const navigationValues: Navigation[] = ["sidebar", "none"];
 const shellModeValues: ShellMode[] = ["viewport", "contained"];
 const themeValues: Theme[] = ["light", "dark"];
 const directionValues: Direction[] = ["ltr", "rtl"];
@@ -45,7 +45,7 @@ const directionValues: Direction[] = ["ltr", "rtl"];
 const {
   title,
   description = "Moo UI components for Astro themes.",
-  navigation,
+  sidebar = false,
   shellMode = "viewport",
   theme = "light",
   lang = "en",
@@ -56,11 +56,12 @@ const {
   ariaLabel = "Toggle sidebar",
   id = "",
   pageWidth = "xl",
-  headerWidth = "fluid",
+  headerWidth = null,
+  pageContext,
 } = Astro.props;
 
-if (!navigationValues.includes(navigation)) {
-  throw new TypeError(`Unknown Layout navigation: ${String(navigation)}`);
+if (typeof sidebar !== "boolean") {
+  throw new TypeError("Layout sidebar must be boolean");
 }
 if (!shellModeValues.includes(shellMode)) {
   throw new TypeError(`Unknown Layout shell mode: ${String(shellMode)}`);
@@ -89,7 +90,7 @@ if (!Object.hasOwn(containerClasses, pageWidth)) {
 if (id && (id === "main-content" || !identifierPattern.test(id))) {
   throw new TypeError("Invalid Layout id");
 }
-if (navigation === "sidebar") {
+if (sidebar) {
   if (!sidebarId || sidebarId === "main-content" || !identifierPattern.test(sidebarId)) {
     throw new TypeError("Invalid Layout sidebarId");
   }
@@ -102,20 +103,21 @@ if (navigation === "sidebar") {
 }
 
 const hasSidebarSlot = Astro.slots.has("sidebar");
-if (navigation === "sidebar" && !hasSidebarSlot) {
-  throw new TypeError('Layout navigation="sidebar" requires a sidebar slot');
+if (sidebar && !hasSidebarSlot) {
+  throw new TypeError("Layout sidebar requires a sidebar slot");
 }
-if (navigation === "none" && hasSidebarSlot) {
-  throw new TypeError('Layout navigation="none" does not accept a sidebar slot');
+if (!sidebar && hasSidebarSlot) {
+  throw new TypeError("Layout without sidebar does not accept a sidebar slot");
 }
 if (!Astro.slots.has("default")) {
   throw new TypeError("Layout requires default page content");
 }
 
 const resolvedHeaderWidth = headerWidth || pageWidth;
-const hasHeader = navigation === "sidebar" || Astro.slots.has("header");
+const hasHeader = sidebar || Astro.slots.has("header");
 const pageClass = containerClasses[pageWidth];
 const headerClass = containerClasses[resolvedHeaderWidth];
+const pageClasses = getPageClasses(pageContext);
 ---
 
 <!doctype html>
@@ -128,17 +130,17 @@ const headerClass = containerClasses[resolvedHeaderWidth];
     <title>{title}</title>
   </head>
   <body>
-    <div class="moo-ui" data-bs-theme={theme} data-moo-document-owner="true">
+    <div class:list={["moo-ui", pageClasses]} data-bs-theme={theme} data-moo-document-owner="true">
       <script is:inline set:html={stateSource}></script>
-      <div class="wrapper" data-layout="app" data-shell-mode={shellMode} id={id || undefined} data-slot={navigation === "sidebar" ? "sidebar-wrapper" : undefined} data-sidebar-state={navigation === "sidebar" ? (defaultOpen ? "expanded" : "collapsed") : undefined} data-sidebar-key={navigation === "sidebar" ? sidebarKey : undefined}>
-        {navigation === "sidebar" ? <script is:inline set:html={stateSource}></script> : null}
-        {navigation === "sidebar" ? <slot name="sidebar" /> : null}
+      <div class="wrapper" data-layout="app" data-shell-mode={shellMode} id={id || undefined} data-slot={sidebar ? "sidebar-wrapper" : undefined} data-sidebar-state={sidebar ? (defaultOpen ? "expanded" : "collapsed") : undefined} data-sidebar-key={sidebar ? sidebarKey : undefined}>
+        {sidebar ? <script is:inline set:html={stateSource}></script> : null}
+        {sidebar ? <slot name="sidebar" /> : null}
         <div data-slot="page">
           {hasHeader ? (
             <header class="bg-body border-bottom">
               <div class={headerClass}>
                 <div class="d-flex align-items-center gap-2 py-2">
-                  {navigation === "sidebar" ? (
+                  {sidebar ? (
                     <Button variant="ghost" size="icon-sm" class="sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
                       <Icon name="panel-left" />
                     </Button>

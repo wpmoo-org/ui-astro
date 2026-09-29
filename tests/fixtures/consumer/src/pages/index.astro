@@ -47,12 +47,20 @@ import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
 import { definePlugin } from "@wpmoo/astro/plugins";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import SidebarInclude from "@wpmoo/astro/includes/Sidebar.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+import Loop from "@wpmoo/astro/views/Loop.astro";
 import "@wpmoo/astro/styles.css";
 
 const publicWrappers = [Accordion, Alert, AlertDialog, Avatar, Badge, Button, ButtonGroup, Breadcrumb, Card, Chart, Checkbox, CloseButton, Collapsible, Combobox, ContextMenu, DataTable, DatePicker, Dialog, DropdownMenu, Field, Form, Input, InputGroup, Kbd, Menubar, Navigation, Popover, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toast, ToggleGroup, Tooltip, Typography];
+const publicParts = [Header, SidebarInclude, PageHeader, Footer, Single, Archive, Loop];
 const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }];
-const site = defineSite({ types: { post: { views: { single: { navigation: "none" } } } } });
-const configuredPostNavigation = resolvePageOptions(site, "post", "single").navigation;
+const site = defineSite();
+const configuredPostSidebar = resolvePageOptions(site, "post", "single").sidebar;
 const normalizedContactSlug = normalizeSlug("İletişim", { lang: "tr" });
 const pagePlugin = definePlugin({
   apiVersion: 1, id: "page", label: "Pages", basePath: "/",
@@ -61,10 +69,10 @@ const pagePlugin = definePlugin({
 });
 ---
 
-<Layout title="Packed consumer" navigation="sidebar" theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
+<Layout title="Packed consumer" sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
   <Sidebar slot="sidebar" id="packed-sidebar" brand="Packed consumer" groups={groups} />
   <h1>Independent package consumer</h1>
-  <p data-public-wrapper-count={publicWrappers.length} data-config-navigation={configuredPostNavigation} data-config-slug={normalizedContactSlug} data-plugin-id={pagePlugin.id}>All public wrapper imports resolve from the packed adapter.</p>
+  <p data-public-wrapper-count={publicWrappers.length} data-public-part-count={publicParts.length} data-config-sidebar={configuredPostSidebar === null ? "none" : "enabled"} data-config-slug={normalizedContactSlug} data-plugin-id={pagePlugin.id}>All public wrapper imports resolve from the packed adapter.</p>
   <Card title="Public components">
     <Badge label="Ready" variant="success" />
     <Button size="icon-sm" ariaLabel="Open actions">+</Button>

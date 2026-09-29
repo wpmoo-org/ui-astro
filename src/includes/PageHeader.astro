@@ -1,0 +1,19 @@
+---
+import Typography from "../components/Typography.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+if (typeof title !== "string" || !title.trim()) throw new TypeError("PageHeader title is required");
+if (description !== undefined && typeof description !== "string") {
+  throw new TypeError("PageHeader description must be text");
+}
+---
+
+<Typography variant="page-title" content={title} />
+{description ? <Typography variant="page-description" content={description} /> : null}
+{Astro.slots.has("metadata") ? <slot name="metadata" /> : null}
+{Astro.slots.has("actions") ? <slot name="actions" /> : null}

@@ -1,0 +1,24 @@
+---
+import Breadcrumb from "../components/Breadcrumb.astro";
+import { navigationHref } from "../internal/href.js";
+
+interface BreadcrumbItem { label: string; href?: string }
+interface Props {
+  breadcrumbs: BreadcrumbItem[];
+  ariaLabel?: string;
+}
+
+const { breadcrumbs, ariaLabel = "Breadcrumb" } = Astro.props;
+if (!Array.isArray(breadcrumbs) || !breadcrumbs.length) {
+  throw new TypeError("Header breadcrumbs must be a nonempty array");
+}
+for (const [index, item] of breadcrumbs.entries()) {
+  if (typeof item.label !== "string" || !item.label.trim()) {
+    throw new TypeError(`Header breadcrumbs[${index}].label must be nonempty text`);
+  }
+  if (item.href !== undefined) navigationHref(item.href, `Header breadcrumbs[${index}].href`);
+}
+---
+
+<Breadcrumb items={breadcrumbs} ariaLabel={ariaLabel} />
+{Astro.slots.has("actions") ? <slot name="actions" /> : null}

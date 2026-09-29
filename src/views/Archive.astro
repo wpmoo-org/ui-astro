@@ -1,0 +1,31 @@
+---
+import PageHeader from "../includes/PageHeader.astro";
+import Loop from "./Loop.astro";
+import type { EntryClassContext } from "../config/index.js";
+
+interface LoopItem {
+  id: string;
+  title: string;
+  href: string;
+  description?: string;
+  date?: Date;
+  entryContext?: EntryClassContext;
+}
+interface Props {
+  title: string;
+  description?: string;
+  items?: LoopItem[];
+  emptyText?: string;
+  titleVariant?: "section-title" | "subsection-title";
+}
+
+const { title, description, items = [], emptyText = "No items yet.", titleVariant = "section-title" } = Astro.props;
+---
+
+{Astro.slots.has("page-header") ? <slot name="page-header" /> : (
+  <PageHeader title={title} description={description}>
+    {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
+  </PageHeader>
+)}
+{Astro.slots.has("loop") ? <slot name="loop" /> : <Loop items={items} emptyText={emptyText} titleVariant={titleVariant} />}
+{Astro.slots.has("after-list") ? <slot name="after-list" /> : null}

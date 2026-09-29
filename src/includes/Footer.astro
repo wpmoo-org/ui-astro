@@ -1,0 +1,14 @@
+---
+import { navigationHref } from "../internal/href.js";
+
+interface Props {
+  homeHref: string;
+  brand?: string;
+}
+
+const { homeHref, brand = "Moo UI" } = Astro.props;
+navigationHref(homeHref, "Footer homeHref");
+if (typeof brand !== "string" || !brand.trim()) throw new TypeError("Footer brand must be nonempty text");
+---
+
+<slot><a class="link-body-emphasis" href={homeHref}>{brand}</a></slot>

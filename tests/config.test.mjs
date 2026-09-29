@@ -17,9 +17,8 @@ test("layout options are strict partial data and five layers preserve false and 
     defaults: { pageWidth: "lg", sidebar: { side: "right", rail: true } },
     types: {
       post: {
-        navigation: "sidebar",
         sidebar: { variant: "inset" },
-        views: { single: { navigation: "none", sidebar: { rail: false } } },
+        views: { single: { sidebar: null } },
       },
     },
   };
@@ -28,13 +27,11 @@ test("layout options are strict partial data and five layers preserve false and 
   const single = resolvePageOptions(site, "post", "single");
   const archive = resolvePageOptions(site, "post", "archive");
   const oneEntry = resolvePageOptions(site, "post", "single", {
-    navigation: "sidebar", headerWidth: null, sidebar: { defaultOpen: false },
+    headerWidth: null, sidebar: { defaultOpen: false, rail: false },
   });
   assert.deepEqual(input, original);
   assert.equal(site.brand, "Example");
-  assert.equal(single.navigation, "none");
-  assert.equal(archive.navigation, "sidebar");
-  assert.equal(oneEntry.navigation, "sidebar");
+  assert.equal(single.sidebar, null);
   assert.equal(oneEntry.headerWidth, null);
   assert.equal(Object.hasOwn(oneEntry, "views"), false);
   assert.deepEqual(oneEntry.sidebar, {
@@ -44,6 +41,10 @@ test("layout options are strict partial data and five layers preserve false and 
   assert.equal(archive.sidebar.rail, true);
   assert.equal(resolvePageOptions(site, "page", "single").pageWidth, "lg");
   assert.equal(resolvePageOptions(defineSite(), "page", "single").headerWidth, null);
+  assert.equal(resolvePageOptions(defineSite(), "page", "single").sidebar, null);
+  assert.deepEqual(resolvePageOptions(defineSite({ types: { post: { sidebar: {} } } }), "post", "archive").sidebar, {
+    side: "left", variant: "sidebar", collapsible: "icon", rail: true, defaultOpen: true,
+  });
 });
 
 test("layout configuration rejects unknown fields and unsupported views", () => {

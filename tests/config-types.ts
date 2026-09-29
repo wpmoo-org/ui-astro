@@ -17,11 +17,11 @@ import {
 
 const inputs: SiteInput = {
   defaults: { headerWidth: null, sidebar: { rail: false } },
-  types: { post: { views: { single: { navigation: "none" } } } },
+  types: { post: { views: { single: { sidebar: null } } } },
 };
 const site: SiteConfig = defineSite(inputs);
 const view: ViewKind = "single";
-const override: PageOptionsInput = { navigation: "sidebar", sidebar: { defaultOpen: false } };
+const override: PageOptionsInput = { sidebar: { defaultOpen: false } };
 const resolved: Readonly<PageOptions> = resolvePageOptions(site, "post", view, override);
 const typeInput: TypeOptionsInput = { views: { archive: { pageWidth: "lg" } } };
 const entry: EntryClassContext = { type: "post", source: "markdown", id: "news.md" };

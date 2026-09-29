@@ -1,0 +1,51 @@
+---
+import Typography from "../components/Typography.astro";
+import { getEntryClasses, type EntryClassContext } from "../config/index.js";
+import { navigationHref } from "../internal/href.js";
+
+interface LoopItem {
+  id: string;
+  title: string;
+  href: string;
+  description?: string;
+  date?: Date;
+  entryContext?: EntryClassContext;
+}
+interface Props {
+  items: LoopItem[];
+  emptyText?: string;
+  titleVariant?: "section-title" | "subsection-title";
+}
+
+const { items, emptyText = "No items yet.", titleVariant = "section-title" } = Astro.props;
+if (!Array.isArray(items)) throw new TypeError("Loop items must be an array");
+if (titleVariant !== "section-title" && titleVariant !== "subsection-title") {
+  throw new TypeError("Loop titleVariant must be section-title or subsection-title");
+}
+if (typeof emptyText !== "string") throw new TypeError("Loop emptyText must be text");
+const checkedItems = items.map((item, index) => {
+  if (!item || typeof item.id !== "string" || !item.id || typeof item.title !== "string" || !item.title.trim()) {
+    throw new TypeError(`Loop items[${index}] needs an id and title`);
+  }
+  navigationHref(item.href, `Loop items[${index}].href`);
+  if (item.description !== undefined && typeof item.description !== "string") {
+    throw new TypeError(`Loop items[${index}].description must be text`);
+  }
+  if (item.date !== undefined && (!(item.date instanceof Date) || !Number.isFinite(item.date.getTime()))) {
+    throw new TypeError(`Loop items[${index}].date must be a valid Date`);
+  }
+  return { ...item, entryClasses: item.entryContext ? getEntryClasses(item.entryContext) : [] };
+});
+---
+
+{checkedItems.length ? (
+  <ul class="list-unstyled">
+    {checkedItems.map((item) => (
+      <li class:list={[item.entryClasses, "mb-3"]}>
+        <Typography variant={titleVariant} content={item.title}><a href={item.href}>{item.title}</a></Typography>
+        {item.description ? <p class="text-body-secondary">{item.description}</p> : null}
+        {item.date ? <time datetime={item.date.toISOString()}>{item.date.toISOString().slice(0, 10)}</time> : null}
+      </li>
+    ))}
+  </ul>
+) : <p class="text-body-secondary">{emptyText}</p>}

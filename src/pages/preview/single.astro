@@ -1,0 +1,30 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../includes/Header.astro";
+import Sidebar from "../../includes/Sidebar.astro";
+import Footer from "../../includes/Footer.astro";
+import Single from "../../views/Single.astro";
+
+const entryContext = {
+  type: "post", id: "duyuru.md", source: "markdown",
+  taxonomies: { category: ["kurumsal"], tag: ["astro"] },
+};
+const groups = [{
+  label: "Preview",
+  items: [
+    { title: "Single", href: "/preview/single", active: true, icon: "file-text" },
+    { title: "Archive", href: "/preview/archive", icon: "layout-grid" },
+  ],
+}];
+---
+
+<Layout title="Single preview" sidebar sidebarKey="preview-single" sidebarId="preview-sidebar" pageContext={{ view: "single", entry: entryContext }}>
+  <Sidebar slot="sidebar" id="preview-sidebar" brand="Moo UI" brandHref="/" groups={groups}>
+    <span slot="footer" class="small text-body-secondary">Preview footer</span>
+  </Sidebar>
+  <Header slot="header" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Single" }]} />
+  <Single title="A sample post" description="A common Single view composed with published Moo UI components." entryContext={entryContext}>
+    <p>This paragraph is site-owned content in the generic Single view.</p>
+  </Single>
+  <Footer slot="footer" homeHref="/" brand="Moo UI" />
+</Layout>
