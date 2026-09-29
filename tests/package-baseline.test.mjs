@@ -25,7 +25,7 @@ test("workspace release pin uses the published RC9 registry package", async () =
   );
 });
 
-test("package retains all 45 public wrappers while adding config", async () => {
+test("package retains all 45 public wrappers while adding pure config and plugin contracts", async () => {
   const declared = JSON.parse(await readFile(join(ASTRO_ROOT, "package.json"), "utf8"));
   const lock = JSON.parse(await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"));
   const surface = JSON.parse(await readFile(join(ASTRO_ROOT, "contracts/astro-public-surface.json"), "utf8"));
@@ -34,9 +34,10 @@ test("package retains all 45 public wrappers while adding config", async () => {
   assert.equal(lock.name, declared.name);
   assert.equal(lock.packages[""].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 51);
+  assert.equal(Object.keys(declared.exports).length, 52);
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./components/")).length, 45);
   assert.equal(declared.exports["./config"], "./src/config/index.js");
+  assert.equal(declared.exports["./plugins"], "./src/plugins/index.js");
   assert.deepEqual(declared.exports, surface.exports);
   assert.deepEqual(Object.keys(declared.exports).sort(), Object.keys(surface.exports).sort());
   assert.equal(declared.exports["./components/internal/Icon.astro"], undefined);

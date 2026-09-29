@@ -49,6 +49,7 @@
     "./components/Tooltip.astro": "./src/components/Tooltip.astro",
     "./components/Typography.astro": "./src/components/Typography.astro",
     "./config": "./src/config/index.js",
+    "./plugins": "./src/plugins/index.js",
     "./Layout.astro": "./src/layouts/Layout.astro",
     "./styles.css": "./src/styles.css",
     "./runtime/bootstrap.js": "./src/runtime/bootstrap.js",
@@ -110,6 +111,8 @@
     "src/config/index.d.ts",
     "src/config/index.js",
     "src/layouts/Layout.astro",
+    "src/plugins/index.d.ts",
+    "src/plugins/index.js",
     "src/runtime/bootstrap.js",
     "src/runtime/moo-ui.js",
     "src/styles.css"
