@@ -73,6 +73,7 @@
     "./package.json": "./package.json"
   },
   "files": [
+    "LICENSE",
     "README.md",
     "contracts/astro-public-surface.json",
     "contracts/rc9-package.json",
