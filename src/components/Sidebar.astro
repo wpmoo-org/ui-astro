@@ -54,6 +54,16 @@ const {
 
 const navigationGroups = groups.length ? groups : items.length ? [{ items }] : [];
 const resolvedBrandHref = navigationHref(brandHref, "Sidebar brandHref");
+if (!["left", "right"].includes(side)) throw new TypeError("Sidebar side is unsupported");
+if (!["sidebar", "floating", "inset"].includes(variant)) throw new TypeError("Sidebar variant is unsupported");
+if (!["icon", "offcanvas", "none"].includes(collapsible)) throw new TypeError("Sidebar collapsible is unsupported");
+if (typeof rail !== "boolean") throw new TypeError("Sidebar rail must be boolean");
+if (typeof id !== "string" || id === "main-content" || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(id)) {
+  throw new TypeError("Sidebar id is invalid");
+}
+if (typeof ariaLabel !== "string" || typeof ariaLabelledBy !== "string") {
+  throw new TypeError("Sidebar accessibility labels must be strings");
+}
 ---
 
 <aside {...rest} id={id} class:list={["sidebar", "offcanvas-lg", side === "right" ? "offcanvas-end" : "offcanvas-start", className]} tabindex="-1" data-slot="sidebar" aria-label={ariaLabelledBy ? undefined : ariaLabel} aria-labelledby={ariaLabelledBy || undefined} data-side={side} data-variant={variant} data-collapsible={collapsible}>
