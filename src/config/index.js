@@ -86,10 +86,13 @@ function mergeLayout(...layers) {
   for (const layer of layers) {
     if (!layer) continue;
     for (const [key, value] of Object.entries(layer)) {
+      if (value === undefined) continue;
       if (key === "sidebar") {
         if (value === null) output.sidebar = null;
         else {
-          Object.assign(sidebar, value);
+          for (const [field, option] of Object.entries(value)) {
+            if (option !== undefined) sidebar[field] = option;
+          }
           output.sidebar = { ...sidebar };
         }
       }
@@ -114,10 +117,12 @@ export function defineSite(input = {}) {
     const type = copyLayout(value);
     if (value.views) {
       type.views = Object.freeze(Object.fromEntries(
-        Object.entries(value.views).map(([view, options]) => [view, freezeLayout(copyLayout(options))]),
+        Object.entries(value.views)
+          .filter(([, options]) => options !== undefined)
+          .map(([view, options]) => [view, freezeLayout(copyLayout(options))]),
       ));
     }
-    types[key] = Object.freeze(type);
+    types[key] = freezeLayout(type);
   }
   return Object.freeze({
     brand: parsed.brand ?? "Moo UI",
@@ -127,7 +132,7 @@ export function defineSite(input = {}) {
 }
 
 export function resolvePageOptions(site, type, view, page) {
-  if (!typeIdPattern.test(type)) throw new TypeError(`Invalid content type: ${String(type)}`);
+  validIdentifier(type, "type");
   if (view !== "single" && view !== "archive") throw new TypeError(`Invalid view: ${String(view)}`);
   requireRecord(site, "site", ["brand", "defaults", "types"]);
   const parsedPage = parse(layoutSchema, page ?? {}, "page");

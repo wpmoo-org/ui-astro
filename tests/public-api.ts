@@ -60,3 +60,11 @@ export const invalidTemplate: PageOptionsInput = { template: "Single.astro" };
 export const invalidHostRoute: PluginInput["routes"][number] = { id: "single", pattern: "/[...slug]", owner: "host", prerender: true, entrypoint: new URL("file:///tmp/single.astro") };
 // @ts-expect-error The published RC9 runtime has no private component export.
 export const invalidRuntime = MooUI.PrivateComponent;
+// @ts-expect-error Normalized type Sidebar settings cannot mutate shared site state.
+site.types.page.sidebar!.rail = true;
+// @ts-expect-error Normalized view Sidebar settings are also immutable.
+site.types.page.views!.single!.sidebar!.side = "left";
+// @ts-expect-error Resolved Sidebar preferences are immutable.
+resolved.sidebar!.defaultOpen = true;
+// @ts-expect-error Every preference resolution selects a view explicitly.
+resolvePageOptions(site, "page");

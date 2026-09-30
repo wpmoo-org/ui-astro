@@ -28,7 +28,7 @@ export interface PageOptions {
   theme: "light" | "dark";
   lang: string;
   dir: "ltr" | "rtl";
-  sidebar: Required<SidebarOptionsInput> | null;
+  sidebar: Readonly<Required<SidebarOptionsInput>> | null;
 }
 
 export interface TypeOptionsInput extends PageOptionsInput {
@@ -44,8 +44,16 @@ export interface SiteInput {
 export interface SiteConfig {
   readonly brand: string;
   readonly defaults: Readonly<PageOptions>;
-  readonly types: Readonly<Record<string, Readonly<TypeOptionsInput>>>;
+  readonly types: Readonly<Record<string, NormalizedTypeOptions>>;
 }
+
+type NormalizedPageOptionsInput = Readonly<Omit<PageOptionsInput, "sidebar">> & {
+  readonly sidebar?: Readonly<SidebarOptionsInput> | null;
+};
+
+type NormalizedTypeOptions = NormalizedPageOptionsInput & {
+  readonly views?: Readonly<Partial<Record<ViewKind, NormalizedPageOptionsInput>>>;
+};
 
 export interface EntryClassContext {
   type: string;

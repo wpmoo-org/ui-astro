@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import {
@@ -127,4 +128,169 @@ test("config resolves through its exact public package entrypoint", async () => 
   const publicConfig = await import("@wpmoo/astro/config");
   assert.equal(publicConfig.defineSite, defineSite);
   assert.equal(publicConfig.normalizeSlug, normalizeSlug);
+});
+
+test("omitted and undefined layout fields preserve complete inherited preferences", () => {
+  const empty = resolvePageOptions(defineSite(), "page", "single");
+  const site = defineSite({
+    defaults: { pageWidth: undefined, sidebar: { rail: undefined, side: "right" } },
+    types: { post: { sidebar: { variant: "inset", side: undefined } } },
+  });
+  const resolved = resolvePageOptions(site, "post", "single", {
+    theme: undefined, headerWidth: undefined,
+    sidebar: { rail: false, defaultOpen: undefined },
+  });
+  assert.deepEqual(resolved, {
+    ...empty, sidebar: {
+      side: "right", variant: "inset", collapsible: "icon", rail: false,
+      defaultOpen: true,
+    },
+  });
+  assert.deepEqual(layoutSchema.parse({}), {});
+  assert.deepEqual(resolvePageOptions(defineSite(), "page", "single", {}), empty);
+});
+
+test("normalized type, view and Sidebar records are owned immutable preferences", () => {
+  const input = { types: { post: {
+    sidebar: { rail: false }, views: { single: { sidebar: { side: "right" } } },
+  } } };
+  const original = structuredClone(input);
+  const site = defineSite(input);
+  assert.ok(Object.isFrozen(site.types.post.sidebar));
+  assert.ok(Object.isFrozen(site.types.post.views.single.sidebar));
+  assert.throws(() => { site.types.post.sidebar.rail = true; }, TypeError);
+  input.types.post.sidebar.rail = true;
+  input.types.post.views.single.sidebar.side = "left";
+  const resolved = resolvePageOptions(site, "post", "single");
+  assert.equal(resolved.sidebar.rail, false);
+  assert.equal(resolved.sidebar.side, "right");
+  assert.deepEqual(site.types.post.sidebar, original.types.post.sidebar);
+});
+
+test("five preference layers isolate Single, Archive and per-entry Sidebar overrides", () => {
+  const site = defineSite({
+    defaults: { pageWidth: "lg", sidebar: { side: "right", defaultOpen: false } },
+    types: { post: {
+      sidebar: { variant: "floating" },
+      views: { single: { theme: "dark", sidebar: null } },
+    } },
+  });
+  const retained = structuredClone(site);
+  assert.equal(resolvePageOptions(site, "post", "single").sidebar, null);
+  const restored = resolvePageOptions(site, "post", "single", { sidebar: {} });
+  assert.deepEqual(restored.sidebar, {
+    side: "right", variant: "floating", collapsible: "icon", rail: true,
+    defaultOpen: false,
+  });
+  assert.equal(restored.theme, "dark");
+  assert.equal(resolvePageOptions(site, "post", "archive").theme, "light");
+  assert.deepEqual(resolvePageOptions(site, "post", "archive").sidebar, restored.sidebar);
+  assert.equal(resolvePageOptions(site, "post", "single", { pageWidth: "sm" }).pageWidth, "sm");
+  assert.equal(resolvePageOptions(site, "post", "single").pageWidth, "lg");
+  assert.deepEqual(resolvePageOptions(site, "unknown", "single"), site.defaults);
+  assert.deepEqual(structuredClone(site), retained);
+});
+
+test("finite layout errors identify defaults, view and Sidebar fields", () => {
+  for (const [input, field] of [
+    [{ defaults: { views: {} } }, "site.defaults.views"],
+    [{ types: { post: { views: { singel: {} } } } }, "site.types.post.views.singel"],
+    [{ types: { post: { views: { archive: { views: {} } } } } }, "site.types.post.views.archive.views"],
+    [{ defaults: { sidebar: { rail: "false" } } }, "site.defaults.sidebar.rail"],
+    [{ defaults: { sidebar: { id: "owned-by-route" } } }, "site.defaults.sidebar.id"],
+  ]) {
+    assert.throws(() => defineSite(input), (error) => error.message.includes(field), field);
+  }
+  assert.throws(() => resolvePageOptions(defineSite(), "post", "single", { views: {} }), /page\.views/);
+});
+
+test("class keys preserve every identity distinction and source enumeration order", () => {
+  const inputs = [
+    ["contact.md", "markdown", "contact"],
+    ["guide/contact.md", "markdown", "id--guide_002f_contact_002e_md"],
+    ["guide-contact.md", "markdown", "guide-contact"],
+    ["contact.mdx", "markdown", "id--contact_002e_mdx"],
+    ["Contact.md", "markdown", "id--Contact_002e_md"],
+    ["cng", "json", "cng"],
+    ["cng_1", "json", "id--cng_005f_1"],
+    ["id--contact_002e_md", "json", "id--id--contact_005f_002e_005f_md"],
+    ["ç.md", "markdown", "id--_00e7__002e_md"],
+    ["😀.md", "markdown", "id--_d83d__de00__002e_md"],
+  ];
+  const output = ([id, source]) => getEntryClasses({ type: "page", id, source })[1];
+  for (const [id, source, expected] of inputs) assert.equal(output([id, source]), `page-${expected}`);
+  assert.deepEqual(inputs.toReversed().map(output).toReversed(), inputs.map(output));
+  assert.deepEqual(getEntryClasses({ type: "card", id: "cng", source: "json" }), ["type-card", "entry-card--cng"]);
+  assert.deepEqual(getPageClasses({ view: "taxonomy", taxonomy: "tag", term: "astro" }), ["archive", "tag", "tag-astro"]);
+});
+
+test("class arrays are fresh, frozen and sorted independently of supplied memberships", () => {
+  const context = { type: "post", id: "news.md", source: "markdown", taxonomies: {
+    tag: ["zebra", "astro"], category: ["news"], sector: ["education"],
+  } };
+  const original = structuredClone(context);
+  const classes = getEntryClasses(context);
+  assert.deepEqual(classes, ["post", "post-news", "category-news", "tax-sector--education", "tag-astro", "tag-zebra"]);
+  assert.notEqual(getEntryClasses(context), classes);
+  assert.ok(Object.isFrozen(classes));
+  assert.deepEqual(context, original);
+  assert.throws(() => getEntryClasses({ ...context, slug: "new-title" }), /entryContext\.slug/);
+  assert.throws(() => getPageClasses({ view: "archive", type: "post", entry: context }), /pageContext\.entry/);
+  assert.throws(() => getEntryClasses({ ...context, taxonomies: { tag: ["not a term"] } }), /taxonomies\.tag/);
+});
+
+test("slug mapping is Unicode-equivalent and independent of the process locale", () => {
+  const cases = [
+    ["Äpfel", "de-AT", "aepfel"], ["Über uns", "de-CH", "ueber-uns"],
+    ["Ü Ö Ä ß", "en", "u-o-a-ss"],
+    ["Łódź Æsir Œuvre Þing Đorđe", "en", "lodz-aesir-oeuvre-thing-dorde"],
+    [" A -- B  ", "en", "a-b"],
+  ];
+  for (const [input, lang, expected] of cases) {
+    assert.equal(normalizeSlug(input, { lang }), expected);
+    assert.equal(normalizeSlug(input.normalize("NFD"), { lang }), expected);
+  }
+  const script = "import { normalizeSlug } from '@wpmoo/astro/config'; console.log(JSON.stringify(['İletişim','Äpfel','Straße'].map(x => normalizeSlug(x,{lang:'de'}))));";
+  const outputs = ["C", "tr_TR.UTF-8", "de_DE.UTF-8"].map((locale) => {
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+      env: { ...process.env, LANG: locale, LC_ALL: locale }, encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout);
+  });
+  for (const output of outputs) assert.deepEqual(output, ["iletisim", "aepfel", "strasse"]);
+  for (const input of ["\ud800", "a\udc00", "\ud800x", "a/../b", "a\u007fb", "---"]) {
+    assert.throws(() => normalizeSlug(input), /slug|segment|ASCII/i);
+  }
+  assert.equal(normalizeSlug("zhong-wen"), "zhong-wen");
+});
+
+test("one-language permalink mapping uses the normalized site's default locale", () => {
+  const defaultSite = defineSite();
+  const germanSite = defineSite({ defaults: { lang: "de-DE" }, types: {
+    post: { views: { single: { theme: "dark" } } },
+  } });
+  const slug = (site) => normalizeSlug("Über uns", { lang: site.defaults.lang });
+  assert.equal(defaultSite.defaults.lang, "en");
+  assert.equal(slug(defaultSite), "uber-uns");
+  assert.equal(slug(germanSite), "ueber-uns");
+  assert.equal(resolvePageOptions(germanSite, "post", "single").lang, "de-DE");
+  assert.equal(slug(germanSite), "ueber-uns");
+});
+
+test("undefined optional view records behave like omitted view overrides", () => {
+  const input = { types: { post: {
+    sidebar: {}, views: { single: undefined, archive: undefined },
+  } } };
+  const site = defineSite(input);
+  assert.deepEqual(site.types.post.views, {});
+  assert.deepEqual(resolvePageOptions(site, "post", "single"), resolvePageOptions(site, "post", "archive"));
+  assert.equal(resolvePageOptions(site, "post", "single").sidebar.rail, true);
+  assert.equal(input.types.post.views.single, undefined);
+});
+
+test("preference resolver requires a literal string content type ID", () => {
+  for (const type of [42, true, { toString: () => "post" }]) {
+    assert.throws(() => resolvePageOptions(defineSite(), type, "single"), /type/i);
+  }
 });
