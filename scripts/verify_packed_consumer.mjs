@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { cp, mkdir, readFile, realpath, stat, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,11 +54,20 @@ export function validateConsumerLock({ fixtureManifest, fixtureLock, manifest, c
   const root = fixtureLock.packages?.[""];
   const adapter = fixtureLock.packages?.[`node_modules/${manifest.name}`];
   const installedCore = fixtureLock.packages?.[`node_modules/${core.package}`];
-  if (direct?.[manifest.name] !== archive || direct.astro !== manifest.dependencies.astro ||
+  if (direct?.[manifest.name] !== archive || direct.astro !== manifest.peerDependencies.astro ||
       root?.dependencies?.[manifest.name] !== archive || root.dependencies.astro !== direct.astro ||
       adapter?.version !== manifest.version || adapter.resolved !== archive ||
-      JSON.stringify(adapter.dependencies) !== JSON.stringify(manifest.dependencies)) {
+      JSON.stringify(adapter.dependencies) !== JSON.stringify(manifest.dependencies) ||
+      JSON.stringify(adapter.peerDependencies) !== JSON.stringify(manifest.peerDependencies)) {
     throw new Error("consumer lock must pin the local adapter and its exact dependencies");
+  }
+  const astroPaths = Object.keys(fixtureLock.packages).filter((path) => path.endsWith("node_modules/astro"));
+  if (astroPaths.length !== 1 || astroPaths[0] !== "node_modules/astro" ||
+      fixtureLock.packages[astroPaths[0]].version !== manifest.peerDependencies.astro) {
+    throw new Error("consumer lock must contain one certified host Astro peer");
+  }
+  if (Object.keys(fixtureLock.packages).some((path) => path.endsWith("node_modules/@astrojs/mdx"))) {
+    throw new Error("MD-only consumer must install without MDX");
   }
   if (installedCore?.version !== core.version ||
       installedCore.resolved !== core.registry_url ||
@@ -128,6 +138,13 @@ export function assertPrivateSubpathError(result) {
   }
 }
 
+export function assertPeerConflict(result, certifiedVersion) {
+  if (result.status === 0 || !result.stderr.includes("ERESOLVE") ||
+      !result.stderr.includes(`peer astro@"${certifiedVersion}"`)) {
+    throw new Error("incompatible host must fail with npm ERESOLVE for the certified Astro peer");
+  }
+}
+
 export async function verifyPackedConsumer({ cache, output }) {
   const cachePath = assertOutsideWorkspace(cache, "cache");
   const outputPath = assertOutsideWorkspace(output, "output");
@@ -166,10 +183,20 @@ export async function verifyPackedConsumer({ cache, output }) {
     npm_config_audit: "false",
     npm_config_fund: "false",
   };
-  run("npm", ["ci", "--offline", "--no-audit", "--no-fund"], {
+  run("npm", ["ci", "--offline", "--strict-peer-deps", "--no-audit", "--no-fund"], {
     cwd: consumerPath,
     env: offlineEnv,
   });
+  const consumerRequire = createRequire(join(consumerPath, "package.json"));
+  const consumerAstro = await realpath(consumerRequire.resolve("astro/package.json"));
+  const adapterAstro = await realpath(createRequire(join(consumerPath, "node_modules", manifest.name, "package.json")).resolve("astro/package.json"));
+  if (consumerAstro !== adapterAstro) throw new Error("consumer and adapter must resolve the same Astro host");
+  try {
+    consumerRequire.resolve("@astrojs/mdx");
+    throw new Error("MD-only consumer installed MDX");
+  } catch (error) {
+    if (error.code !== "MODULE_NOT_FOUND") throw error;
+  }
   const privateSubpaths = Object.fromEntries(surface.private_transitives.map((path) => [path, "ERR_PACKAGE_PATH_NOT_EXPORTED"]));
   for (const path of surface.private_transitives) {
     const specifier = `${manifest.name}/${path}`;
@@ -180,7 +207,28 @@ export async function verifyPackedConsumer({ cache, output }) {
     ], { cwd: consumerPath, encoding: "utf8", env: offlineEnv });
     assertPrivateSubpathError(privateProbe);
   }
+  const typeOutput = run("npm", ["run", "check"], { cwd: consumerPath, env: offlineEnv });
+  await writeFile(join(outputPath, "type-check.log"), typeOutput);
   run("npm", ["run", "build"], { cwd: consumerPath, env: offlineEnv });
+
+  // This fixture is official registry metadata, never installed: npm must reject
+  // the unsupported host before fetching or running that version.
+  const incompatible = JSON.parse(await readFile(join(ASTRO_ROOT, "tests/fixtures/incompatible-astro-peer.json"), "utf8"));
+  const incompatiblePath = join(outputPath, "consumer-incompatible");
+  await mkdir(incompatiblePath);
+  const incompatibleManifest = structuredClone(fixtureManifest);
+  const incompatibleLock = structuredClone(executionLock);
+  incompatibleManifest.dependencies.astro = incompatible.version;
+  incompatibleLock.packages[""].dependencies.astro = incompatible.version;
+  incompatibleLock.packages["node_modules/astro"] = incompatible;
+  await writeFile(join(incompatiblePath, "package.json"), JSON.stringify(incompatibleManifest));
+  await writeFile(join(incompatiblePath, "package-lock.json"), JSON.stringify(incompatibleLock));
+  const peerResult = spawnSync("npm", ["ci", "--offline", "--strict-peer-deps", "--no-audit", "--no-fund"], {
+    cwd: incompatiblePath, env: offlineEnv, encoding: "utf8",
+  });
+  assertPeerConflict(peerResult, manifest.peerDependencies.astro);
+  const peerOutput = peerResult.stderr + peerResult.stdout;
+  await writeFile(join(outputPath, "peer-conflict.log"), peerOutput);
   const htmlPath = join(consumerPath, "dist/index.html");
   const html = await readFile(htmlPath, "utf8");
   assertConsumerOutput(html);
@@ -208,7 +256,12 @@ export async function verifyPackedConsumer({ cache, output }) {
       guide: { path: "consumer/dist/kilavuz/kurulum/index.html", sha256: sha256(Buffer.from(guide)) },
     },
     public_source_imports: importCount,
-    installation: "npm ci --offline; container network disabled",
+    host_astro: { version: manifest.peerDependencies.astro, single_resolved_path: relative(outputPath, consumerAstro) },
+    mdx_installed: false,
+    type_check: "npm run check",
+    type_check_output: { path: "type-check.log", sha256: sha256(Buffer.from(typeOutput)) },
+    incompatible_peer: { host_version: incompatible.version, exit_code: peerResult.status, code: "ERESOLVE", path: "peer-conflict.log", sha256: sha256(Buffer.from(peerOutput)) },
+    installation: "npm ci --offline --strict-peer-deps; container network disabled",
     private_subpath: "ERR_PACKAGE_PATH_NOT_EXPORTED",
     private_subpaths: privateSubpaths,
   };

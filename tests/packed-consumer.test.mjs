@@ -6,6 +6,7 @@ import {
   assertConsumerOutput,
   assertPackedPageOutput,
   assertPrivateSubpathError,
+  assertPeerConflict,
   validateConsumerLock,
   validateConsumerFixture,
 } from "../scripts/verify_packed_consumer.mjs";
@@ -29,6 +30,27 @@ test("consumer lock keeps the published RC9 URL and integrity while pinning the 
   const changed = structuredClone(fixtureLock);
   changed.packages["node_modules/@wpmoo/ui"].integrity = "sha512-wrong";
   assert.throws(() => validateConsumerLock({ fixtureManifest, fixtureLock: changed, manifest, core }), /consumer Core release pin/);
+});
+
+test("the MD-only consumer lock certifies one host peer and no MDX integration", () => {
+  const duplicate = structuredClone(fixtureLock);
+  duplicate.packages["node_modules/@wpmoo/astro/node_modules/astro"] = duplicate.packages["node_modules/astro"];
+  assert.throws(() => validateConsumerLock({ fixtureManifest, fixtureLock: duplicate, manifest, core }), /one certified host Astro peer/);
+  const mdx = structuredClone(fixtureLock);
+  mdx.packages["node_modules/@astrojs/mdx"] = { version: "8.0.2" };
+  assert.throws(() => validateConsumerLock({ fixtureManifest, fixtureLock: mdx, manifest, core }), /without MDX/);
+});
+
+test("incompatible peer evidence must be npm ERESOLVE for the exact certified Astro peer", () => {
+  assert.doesNotThrow(() => assertPeerConflict({ status: 1, stderr: 'npm error ERESOLVE\nnpm error peer astro@"7.3.3" from @wpmoo/astro' }, "7.3.3"));
+  for (const result of [
+    { status: 0, stderr: "" },
+    { status: 1, stderr: "npm error ENOTCACHED" },
+    { status: 1, stderr: "npm error EUSAGE" },
+    { status: 1, stderr: 'npm error ERESOLVE peer astro@"7.3.4"' },
+  ]) {
+    assert.throws(() => assertPeerConflict(result, "7.3.3"), /incompatible host must fail/);
+  }
 });
 
 test("packed consumer HTML must show public wrappers, Layout, Page grid, and escaped text", () => {

@@ -169,7 +169,7 @@ const buttonAttributes = {
     href={disabled ? undefined : href}
     aria-label={ariaLabel || undefined}
     aria-controls={ariaControls || undefined}
-    aria-expanded={ariaExpanded === undefined ? undefined : String(ariaExpanded)}
+    aria-expanded={ariaExpanded === undefined ? undefined : ariaExpanded ? "true" : "false"}
     aria-disabled={disabled ? "true" : undefined}
     tabindex={disabled ? -1 : undefined}
   >
@@ -195,7 +195,7 @@ const buttonAttributes = {
     type={type}
     disabled={disabled}
     aria-label={ariaLabel || undefined}
-    aria-expanded={ariaExpanded === undefined ? (dropdown || collapseTarget ? (collapseTarget ? String(collapseOpen) : "false") : undefined) : String(ariaExpanded)}
+    aria-expanded={ariaExpanded === undefined ? (dropdown || collapseTarget ? (collapseTarget ? (collapseOpen ? "true" : "false") : "false") : undefined) : ariaExpanded ? "true" : "false"}
     aria-pressed={toggle ? "false" : undefined}
     aria-controls={ariaControls || collapseTarget || undefined}
     aria-busy={loading ? "true" : undefined}

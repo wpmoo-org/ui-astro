@@ -15,6 +15,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "check": "astro check",
     "test": "node --test tests/*.test.mjs",
     "layout-contract:sync": "node scripts/sync_layout_contract.mjs --write --html-root ../html",
     "layout-contract:check": "node scripts/sync_layout_contract.mjs --check --html-root ../html",
@@ -101,6 +102,7 @@
     "src/plugins/page/views/Loop.astro",
     "src/plugins/page/views/Single.astro",
     "src/runtime/bootstrap.js",
+    "src/runtime/moo-ui.d.ts",
     "src/runtime/moo-ui.js",
     "src/styles.css",
     "src/views/Archive.astro",
@@ -183,7 +185,15 @@
   },
   "dependencies": {
     "@wpmoo/ui": "1.0.0-rc.9",
-    "astro": "7.3.3",
     "bootstrap": "5.3.8"
+  },
+  "peerDependencies": {
+    "astro": "7.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@astrojs/mdx": "8.0.2",
+    "astro": "7.3.3",
+    "typescript": "6.0.3"
   }
 }

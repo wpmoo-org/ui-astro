@@ -158,6 +158,7 @@
     "src/plugins/page/views/Loop.astro",
     "src/plugins/page/views/Single.astro",
     "src/runtime/bootstrap.js",
+    "src/runtime/moo-ui.d.ts",
     "src/runtime/moo-ui.js",
     "src/styles.css",
     "src/views/Archive.astro",
@@ -174,6 +175,7 @@
     "src/integration/routes/[...probe].astro",
     "src/internal/href.js",
     "src/plugins/page/paths.js",
-    "src/plugins/page/routes/[...slug].astro"
+    "src/plugins/page/routes/[...slug].astro",
+    "src/runtime/moo-ui.d.ts"
   ]
 }
