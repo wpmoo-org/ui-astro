@@ -3,7 +3,9 @@
 from html.parser import HTMLParser
 import json
 from pathlib import Path
+import shutil
 import subprocess
+import tarfile
 import tempfile
 import unittest
 
@@ -55,9 +57,49 @@ class SharedPartStructure(unittest.TestCase):
 
 
 class PublicComponentRendering(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.package_directory = tempfile.TemporaryDirectory(prefix="astro-render-package-")
+        archive_root = Path(cls.package_directory.name)
+        packed = subprocess.run(["npm", "pack", "--json", "--pack-destination", str(archive_root)],
+                                cwd=ROOT, text=True, capture_output=True)
+        if packed.returncode != 0:
+            cls.package_directory.cleanup()
+            raise RuntimeError(packed.stdout + packed.stderr)
+        filename = json.loads(packed.stdout)[0]["filename"]
+        cls.package_root = archive_root / "package"
+        with tarfile.open(archive_root / filename) as archive:
+            for member in archive.getmembers():
+                if not member.isfile():
+                    continue
+                parts = Path(member.name).parts
+                if not parts or parts[0] != "package" or ".." in parts:
+                    raise RuntimeError(f"Unexpected npm archive member: {member.name}")
+                target = archive_root / member.name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with archive.extractfile(member) as content:
+                    target.write_bytes(content.read())
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.package_directory.cleanup()
+
     def build(self, source):
-        with tempfile.TemporaryDirectory(prefix="render-contract-", dir=ROOT / "tests/fixtures") as directory:
+        # Native render fixtures must not trigger the live host's config watcher.
+        with tempfile.TemporaryDirectory(prefix="astro-render-contract-") as directory:
             root = Path(directory)
+            modules = root / "node_modules"
+            (modules / "@wpmoo").mkdir(parents=True)
+            (modules / "astro").symlink_to(ROOT / "node_modules/astro", target_is_directory=True)
+            (modules / "bootstrap").symlink_to(ROOT / "node_modules/bootstrap", target_is_directory=True)
+            (modules / "@wpmoo/ui").symlink_to(ROOT / "node_modules/@wpmoo/ui", target_is_directory=True)
+            shutil.copytree(self.package_root, modules / "@wpmoo/astro")
+            manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+            (root / "package.json").write_text(json.dumps({
+                "name": "public-render-contract", "private": True, "type": "module",
+                "dependencies": {"astro": manifest["peerDependencies"]["astro"],
+                                 manifest["name"]: manifest["version"]},
+            }), encoding="utf-8")
             (root / "src/pages").mkdir(parents=True)
             (root / "src/pages/index.astro").write_text(source, encoding="utf-8")
             (root / "astro.config.mjs").write_text(
@@ -134,6 +176,70 @@ class PublicComponentRendering(unittest.TestCase):
             self.assertEqual(attrs["data-variant"], expected["variant"])
             self.assertEqual(attrs["data-collapsible"], expected["collapsible"])
         self.assertEqual(len([attrs for tag, attrs in parsed.elements if tag == "button" and "data-sidebar-rail" in attrs]), 6)
+
+    def test_generic_loop_rejects_unsafe_hrefs_during_native_render(self):
+        for href in ["javascript:alert(1)", " data:text/html,unsafe", "VBScript:unsafe", "java\nscript:unsafe"]:
+            with self.subTest(href=href):
+                result, _ = self.build(
+                    '---\nimport Loop from "@wpmoo/astro/views/Loop.astro";\n'
+                    f'const items = [{{ id: "entry", title: "Entry", href: {json.dumps(href)} }}];\n'
+                    '---\n<Loop items={items} />'
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn("Loop items[0].href", result.stdout + result.stderr)
+
+    def test_shared_views_keep_page_and_entry_classes_on_their_existing_owners(self):
+        source = '''---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+const items = [
+  { id: "news.md", title: "News <text>", href: "/news", entryContext: {
+    type: "post", id: "news.md", source: "markdown", taxonomies: { tag: ["astro"] },
+  } },
+  { id: "cng", title: "Team", href: "https://example.test/team", entryContext: {
+    type: "team", id: "cng", source: "json",
+  } },
+  { id: "contact", title: "Contact", href: "mailto:hello@example.test" },
+  { id: "phone", title: "Phone", href: "tel:+491234" },
+];
+const context = { type: "page", id: "contact.mdx", source: "markdown" } as const;
+---
+<Layout title="Ownership" pageContext={{ view: "archive", type: "post" }}>
+  <Header slot="header" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Ownership" }]} />
+  <Archive title="Entries" items={items} />
+  <Single title="Hidden fallback" entryContext={context}>
+    <Fragment slot="page-header" />
+    <p>Caller-owned content</p>
+  </Single>
+  <Footer slot="footer" homeHref="/" brand="Brand <text>" />
+</Layout>'''
+        result, html = self.build(source)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        parsed = Markup()
+        parsed.feed(html)
+        owners = with_attribute(parsed.elements, "data-moo-document-owner", "true")
+        self.assertEqual(len(owners), 1)
+        self.assertEqual(owners[0][1]["class"].split(), ["moo-ui", "archive", "post"])
+        self.assertEqual(len(with_attribute(parsed.elements, "data-layout", "app")), 1)
+        self.assertEqual(len(with_attribute(parsed.elements, "data-slot", "page")), 1)
+        self.assertEqual(len([attrs for _, attrs in parsed.elements if "data-page-container" in attrs]), 1)
+        self.assertEqual(len([tag for tag, _ in parsed.elements if tag == "main"]), 1)
+        self.assertEqual(with_attribute(parsed.elements, "id", "main-content")[0][1]["tabindex"], "-1")
+        self.assertEqual(len([tag for tag, _ in parsed.elements if tag == "h1"]), 1)
+        articles = [attrs for tag, attrs in parsed.elements if tag == "article"]
+        self.assertEqual([attrs.get("class", "").split() for attrs in articles], [["page", "page-id--contact_002e_mdx"]])
+        lists = [attrs.get("class", "").split() for tag, attrs in parsed.elements
+                 if tag == "li" and ("post-news" in attrs.get("class", "") or "entry-team--cng" in attrs.get("class", ""))]
+        self.assertEqual(lists, [["post", "post-news", "tag-astro", "mb-3"], ["type-team", "entry-team--cng", "mb-3"]])
+        links = [attrs["href"] for tag, attrs in parsed.elements if tag == "a"]
+        for href in ["/news", "https://example.test/team", "mailto:hello@example.test", "tel:+491234"]:
+            self.assertIn(href, links)
+        self.assertIn("News &lt;text&gt;", html)
+        self.assertIn("Brand &lt;text&gt;", html)
+        self.assertNotIn("Hidden fallback", html)
 
 
 if __name__ == "__main__":
