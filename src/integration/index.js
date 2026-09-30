@@ -27,7 +27,12 @@ export default function moo(input = {}) {
   return {
     name: "@wpmoo/astro",
     hooks: {
-      "astro:config:setup": ({ command, injectRoute, updateConfig, addMiddleware }) => {
+      "astro:config:setup": ({ config, command, injectRoute, updateConfig, addMiddleware }) => {
+        // Content sync starts a temporary Vite server during build and sync.
+        // Its optimizer must not replace files used by a running dev server.
+        if ((command === "build" || command === "sync") && !config.vite.cacheDir) {
+          updateConfig({ vite: { cacheDir: fileURLToPath(new URL(`node_modules/.vite/wpmoo-${command}/`, config.root)) } });
+        }
         for (const route of registry.routes) injectRoute({ pattern: route.pattern, entrypoint: route.entrypoint, prerender: route.prerender });
         if (!plugins.length) return;
         if (command === "dev") {

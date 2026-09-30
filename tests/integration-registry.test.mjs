@@ -60,6 +60,7 @@ test("the Page integration registers a private pre-middleware only for developme
     const middleware = [];
     moo().hooks["astro:config:setup"]({
       command,
+      config: { root: new URL("./fixtures/consumer/", import.meta.url), vite: {} },
       injectRoute() {},
       updateConfig() {},
       addMiddleware(value) { middleware.push(value); },
@@ -70,4 +71,37 @@ test("the Page integration registers a private pre-middleware only for developme
       assert.match(middleware[0].entrypoint.href, /\/src\/integration\/middleware\.js$/);
     }
   }
+});
+
+test("build and sync use a separate cache from the running development server", () => {
+  const root = new URL("./fixtures/consumer/", import.meta.url);
+  const devCache = new URL("node_modules/.vite/", root).pathname;
+  for (const command of ["dev", "build", "sync", "preview"]) {
+    const updates = [];
+    moo({ plugins: [] }).hooks["astro:config:setup"]({
+      command,
+      config: { root, vite: {} },
+      injectRoute() {},
+      addMiddleware() {},
+      updateConfig(value) { updates.push(value); },
+    });
+    const cache = updates.find((value) => value.vite?.cacheDir)?.vite.cacheDir ?? devCache;
+    if (command === "dev" || command === "preview") assert.equal(cache, devCache);
+    else {
+      assert.notEqual(cache, devCache, `${command} must preserve dev optimizer files`);
+      assert.ok(cache.startsWith(new URL("node_modules/", root).pathname));
+    }
+  }
+});
+
+test("an explicit host Vite cache directory remains host-owned", () => {
+  const updates = [];
+  moo({ plugins: [] }).hooks["astro:config:setup"]({
+    command: "build",
+    config: { root: new URL("./fixtures/consumer/", import.meta.url), vite: { cacheDir: "/tmp/site-vite-cache" } },
+    injectRoute() {},
+    addMiddleware() {},
+    updateConfig(value) { updates.push(value); },
+  });
+  assert.ok(updates.every((value) => value.vite?.cacheDir === undefined));
 });
