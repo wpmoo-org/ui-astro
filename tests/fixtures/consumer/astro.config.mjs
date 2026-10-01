@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import moo from "@wpmoo/astro";
+import { page } from "@wpmoo/astro/plugins/page";
 import { defineSite, resolvePageOptions } from "@wpmoo/astro/config";
 
 const options = resolvePageOptions(
@@ -13,5 +14,5 @@ if (options.headerWidth !== null || options.sidebar.rail !== false) {
 
 export default defineConfig({
   site: "https://example.test",
-  integrations: [moo({ site: { types: { page: { sidebar: {} } } } })],
+  integrations: [moo({ plugins: [page()], site: { types: { page: { sidebar: {} } } } })],
 });

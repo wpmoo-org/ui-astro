@@ -1,6 +1,6 @@
 # Moo UI Astro adapter
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page content/schema/query helpers, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -72,11 +72,21 @@ const options = resolvePageOptions(site, "post", "single");
 const slug = normalizeSlug("Contact Us", { lang: "en" });
 ```
 
-Here `options.sidebar` is `null` and `slug` is `"contact-us"`. An omitted Sidebar option defaults to `null`; `sidebar: {}` enables Moo's default Sidebar preferences; `sidebar: null` disables an inherited Sidebar for a type, view, or individual page without erasing its field preferences. A later `sidebar: {}` re-enables those preferences. A route passes `sidebar={options.sidebar !== null}` to Layout and supplies the Sidebar slot only when enabled. The config entrypoint does not activate Page/Post plugins or add routes; those features are separate work.
+Here `options.sidebar` is `null` and `slug` is `"contact-us"`. An omitted Sidebar option defaults to `null`; `sidebar: {}` enables Moo's default Sidebar preferences; `sidebar: null` disables an inherited Sidebar for a type, view, or individual page without erasing its field preferences. A later `sidebar: {}` re-enables those preferences. A route passes `sidebar={options.sidebar !== null}` to Layout and supplies the Sidebar slot only when enabled. The config entrypoint does not activate Page/Post plugins or add routes; the root integration selects those features.
 
-`@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors; `page()` is the default. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers. The local demo uses this documented boundary to compose its example Sidebar; demo files stay outside the package.
+`@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors. Omitting `plugins` selects `page()` plus `post()` and requires both native collections. An explicit list replaces the defaults: `[page()]` needs only Page, `[post()]` needs only Post, and `[]` adds no content routes or collection requirements. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers. The local demo uses this documented boundary to compose its example Sidebar; demo files stay outside the package.
 
-`@wpmoo/astro/content` provides `sourceEntryId`, `jsonEntryId`, and the shared strict `entrySchema`. `@wpmoo/astro/plugins/page` provides the pure `page()` descriptor; its `/content` and `/queries` subpaths provide `pageSchema`, `getPublishedPages()`, and `getPagePaths()`. The host declares its native Astro collection with `defineCollection()` and `glob()`:
+`@wpmoo/astro/content` provides `sourceEntryId`, `jsonEntryId`, and the shared strict `entrySchema`. `@wpmoo/astro/plugins/page` provides the pure `page()` descriptor; its `/content` and `/queries` subpaths provide `pageSchema`, `getPublishedPages()`, and `getPagePaths()`. A Page-only host selects that descriptor in `astro.config.mjs`:
+
+```js
+import { defineConfig } from "astro/config";
+import moo from "@wpmoo/astro";
+import { page } from "@wpmoo/astro/plugins/page";
+
+export default defineConfig({ integrations: [moo({ plugins: [page()] })] });
+```
+
+The host declares its native Astro collection with `defineCollection()` and `glob()`:
 
 ```ts
 import { defineCollection } from "astro:content";
@@ -92,7 +102,46 @@ export const collections = {
 };
 ```
 
-Page frontmatter requires `title` and `status: publish|draft|pending|future`; `slug`, three authored dates, navigation labels/order, and `layout` preferences are optional. Source IDs retain their exact relative `.md` or `.mdx` filenames. The slug controls only the URL. Only published Pages appear in the query results and paths; scheduled Pages reserve their canonical URL. The integration validates source identity and data before rendering. Post, taxonomy, SEO and native multilingual routing remain implementation tasks.
+Page frontmatter requires `title` and `status: publish|draft|pending|future`; `slug`, three authored dates, navigation labels/order, and `layout` preferences are optional. Source IDs retain their exact relative `.md` or `.mdx` filenames. The slug controls only the URL. Only published Pages appear in the query results and paths; scheduled Pages reserve their canonical URL. The integration validates source identity and data before rendering. Taxonomy, SEO and native multilingual routing remain implementation tasks.
+
+### Post content and routes
+
+`@wpmoo/astro/plugins/post` exports `post()`. Its `/content` and `/queries` subpaths export `postSchema`, `getPublishedPosts()` and `getPostPaths({ basePath?, lang? })`. The specialized `/views/Single.astro`, `/views/Archive.astro` and `/views/Loop.astro` accept supplied native Post entries and forward the generic named slots; they add no queries or document owner. The default mount is `/posts` with the label `Posts`. A different label leaves type, collection and source identity as `post`; a mount change changes public URLs and creates no automatic redirects.
+
+For example, add Post to a Page site and make its Single Sidebar optional:
+
+```js
+import { defineConfig } from "astro/config";
+import moo from "@wpmoo/astro";
+import { page } from "@wpmoo/astro/plugins/page";
+import { post } from "@wpmoo/astro/plugins/post";
+
+export default defineConfig({
+  integrations: [moo({
+    plugins: [page(), post({ label: "News", basePath: "/news" })],
+    site: { types: { post: { sidebar: {}, views: { single: { sidebar: null } } } } },
+  })],
+});
+```
+
+Add a `post` collection beside `page` in the host content config:
+
+```ts
+import { postSchema } from "@wpmoo/astro/plugins/post/content";
+
+// Use defineCollection, glob and sourceEntryId from the Page example.
+const post = defineCollection({
+  loader: glob({ base: new URL("./content/post/", import.meta.url), pattern: "**/*.md", generateId: sourceEntryId }),
+  schema: postSchema,
+});
+// Include this collection in the exported collections object.
+```
+
+A Post needs a nonempty `title` and explicit `status`. Published Posts and all `future` entries also need a quoted, timezone-qualified `published_at`, such as `"2026-09-20T12:00:00Z"`. `description`, `slug`, `created_at`, `updated_at` and `layout` are optional. Invalid dates, ambiguous local timestamps and a future timestamp with `status: publish` fail validation. Draft, pending and future content stays out of public routes and lists; an elapsed future timestamp alone does not change its status. Queries sort published Posts by newest timestamp, then exact source ID; default metadata shows the UTC date.
+
+`layout: { sidebar: {} }` on one Post restores its Single Sidebar without changing another Single or the Archive. Native routes resolve these preferences separately. A custom Single or Archive route selects `routes: { single: "host" }` or `routes: { archive: "host" }` and supplies the matching native prerendered route; missing or duplicate ownership fails with a named diagnostic. Query/view callers outside those routes pass the configured mount, language, host base and slash policy explicitly. Standalone UI composition remains valid without the root integration.
+
+The Post examples at `/posts`, `/posts/announcement` and `/posts/layout-options` have layout acceptance. Positive browser contracts preserve their region ownership, independent Sidebar preferences and canonical links. Padding and final theme styling remain open; these are foundation examples, not a finished theme or a release claim.
 
 String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
 
@@ -118,7 +167,7 @@ const items = [];
 </Layout>
 ```
 
-The repository-only `/preview/i18n-empty` route demonstrates this with Turkish, German, and English theme copy and the generic/Page Loop empty-state props. The existing English defaults are fallbacks for callers that do not supply copy; multilingual themes should always supply it. Built-in content routing still uses one configured language. Locale-specific content URLs, translated entry links, and per-route built-in labels require the planned native Astro i18n work before a multilingual site can be certified.
+The repository-only `/preview/i18n-empty` route demonstrates this with English defaults, an explicit German translation probe and the generic/Page Loop empty-state props. The existing English defaults are fallbacks for callers that do not supply copy; multilingual themes should always supply it. Built-in content routing still uses one configured language. Locale-specific content URLs, translated entry links, and per-route built-in labels require the planned native Astro i18n work before a multilingual site can be certified.
 
 Published Moo UI RC9 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
 
@@ -126,12 +175,13 @@ Published Moo UI RC9 still writes English labels from its DataTable runtime (for
 
 From the workspace root, `make ui-astro` serves the local demonstration on port 4322. `make sync` follows the HTML `dev` branch for local integration and leaves the release pin in `package.json` and `package-lock.json` intact. Do not treat the local development package as the published RC9 release.
 
-The `moo()` integration separates the default build and sync Vite caches from the development cache, so these commands can run while the existing development server stays open. An explicit host `vite.cacheDir` remains unchanged; a host choosing its own cache must keep concurrent commands isolated. After a runtime upgrade, reload the browser to request the current modules. The live regression `python3 tests/test_dev_runtime_build.py` uses the existing 4322 server and checks that a build preserves both public runtime responses.
+The `moo()` integration separates the default build and sync Vite caches from the development cache, so these commands can run while the existing development server stays open. An explicit host `vite.cacheDir` remains unchanged; a host choosing its own cache must keep concurrent commands isolated. After a runtime upgrade, reload the browser to request the current modules. The live regression `python3 tests/test_dev_runtime_build.py` uses the existing 4322 server and checks that a build preserves public runtime responses and selected Page/Post routes.
 
 From this package directory:
 
 ```bash
 npm test
+npm run check
 npm run build
 npm pack --dry-run
 node scripts/sync_package_baseline.mjs --check-release
@@ -143,6 +193,6 @@ python3 tests/test_shared_parts_acceptance.py -v
 
 The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
-For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs `npm ci --offline` outside the workspace, resolves all 62 source entrypoints from the package, rejects a private deep import, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
+For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs strict `npm ci --offline` outside the workspace, resolves all 73 source entrypoints from the package, checks types, rejects the fifteen recorded private subpaths and unsupported Astro peer, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. The current primary fixture selects Page only; separate native packed fixtures exercise active Post behavior, while the full independent feature matrix remains planned work. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
 
 The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc9-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.

@@ -1,4 +1,4 @@
-"""The existing 4322 server must keep serving its runtime after a build."""
+"""The existing 4322 server must keep serving content and runtime after a build."""
 import os
 from pathlib import Path
 import re
@@ -32,9 +32,25 @@ class DevRuntimeBuild(unittest.TestCase):
             except HTTPError as error:
                 self.fail(f"{url}: HTTP {error.code} {error.reason}")
 
+    def assert_selected_content_served(self):
+        for path, title in (
+            ("/guide/setup", "Setup guide"),
+            ("/posts", "Posts"),
+            ("/posts/announcement", "A published announcement"),
+            ("/posts/layout-options", "One Post with a Sidebar"),
+        ):
+            try:
+                with urlopen(f"{BASE}{path}", timeout=15) as response:
+                    self.assertEqual(response.status, 200, path)
+                    source = response.read().decode("utf-8")
+                self.assertIn(f"<title>{title}</title>", source, path)
+            except HTTPError as error:
+                self.fail(f"{path}: HTTP {error.code} {error.reason}")
+
     def test_build_preserves_warm_dev_runtime_dependencies(self):
         urls = self.runtime_urls()
         self.assert_runtime_served(urls)
+        self.assert_selected_content_served()
         result = subprocess.run(
             ["npm", "run", "build"], cwd=ROOT, text=True,
             capture_output=True, timeout=120,
@@ -42,6 +58,7 @@ class DevRuntimeBuild(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assert_runtime_served(urls)
         self.assert_runtime_served(self.runtime_urls())
+        self.assert_selected_content_served()
 
 
 if __name__ == "__main__":

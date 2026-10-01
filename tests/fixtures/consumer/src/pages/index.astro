@@ -57,6 +57,12 @@ import { getPagePaths, getPublishedPages } from "@wpmoo/astro/plugins/page/queri
 import PageArchive from "@wpmoo/astro/plugins/page/views/Archive.astro";
 import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
 import PageSingle from "@wpmoo/astro/plugins/page/views/Single.astro";
+import { post } from "@wpmoo/astro/plugins/post";
+import { postSchema } from "@wpmoo/astro/plugins/post/content";
+import { getPostPaths, getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
+import PostArchive from "@wpmoo/astro/plugins/post/views/Archive.astro";
+import PostLoop from "@wpmoo/astro/plugins/post/views/Loop.astro";
+import PostSingle from "@wpmoo/astro/plugins/post/views/Single.astro";
 import Header from "@wpmoo/astro/includes/Header.astro";
 import SidebarInclude from "@wpmoo/astro/includes/Sidebar.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
@@ -69,6 +75,7 @@ import "@wpmoo/astro/styles.css";
 const publicWrappers = [Accordion, Alert, AlertDialog, Avatar, Badge, Button, ButtonGroup, Breadcrumb, Card, Chart, Checkbox, CloseButton, Collapsible, Combobox, ContextMenu, DataTable, DatePicker, Dialog, DropdownMenu, Field, Form, Input, InputGroup, Kbd, Menubar, Navigation, Popover, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toast, ToggleGroup, Tooltip, Typography];
 const publicParts = [Header, SidebarInclude, PageHeader, Footer, Single, Archive, Loop];
 const pageViews = [PageArchive, PageLoop, PageSingle];
+const postViews = [PostArchive, PostLoop, PostSingle];
 const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }];
 const site = defineSite();
 const configuredPostSidebar = resolvePageOptions(site, "post", "single").sidebar;
@@ -87,7 +94,7 @@ const pageNavigation = await getSiteNavigation("/contact");
 const packedContact = (await getCollection("page")).find((entry) => entry.id === "contact.md");
 if (!packedContact) throw new Error("Packed consumer Page contact.md is missing");
 const packedContactHref = getEntryHref("page", packedContact);
-void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle];
+void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle, post, postSchema, getPostPaths, getPublishedPosts, postViews];
 ---
 
 <Layout title="Packed consumer" sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">

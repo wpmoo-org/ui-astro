@@ -70,7 +70,13 @@
     "./styles.css": "./src/styles.css",
     "./runtime/bootstrap.js": "./src/runtime/bootstrap.js",
     "./runtime/moo-ui.js": "./src/runtime/moo-ui.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./plugins/post": "./src/plugins/post/index.js",
+    "./plugins/post/content": "./src/plugins/post/content.js",
+    "./plugins/post/queries": "./src/plugins/post/queries.js",
+    "./plugins/post/views/Archive.astro": "./src/plugins/post/views/Archive.astro",
+    "./plugins/post/views/Loop.astro": "./src/plugins/post/views/Loop.astro",
+    "./plugins/post/views/Single.astro": "./src/plugins/post/views/Single.astro"
   },
   "files": [
     "LICENSE",
@@ -126,6 +132,7 @@
     "src/components/internal/Icon.astro",
     "src/config/index.d.ts",
     "src/config/index.js",
+    "src/content/dates.js",
     "src/content/index.d.ts",
     "src/content/index.js",
     "src/content/integrity.js",
@@ -157,6 +164,18 @@
     "src/plugins/page/views/Archive.astro",
     "src/plugins/page/views/Loop.astro",
     "src/plugins/page/views/Single.astro",
+    "src/plugins/post/content.d.ts",
+    "src/plugins/post/content.js",
+    "src/plugins/post/index.d.ts",
+    "src/plugins/post/index.js",
+    "src/plugins/post/paths.js",
+    "src/plugins/post/queries.d.ts",
+    "src/plugins/post/queries.js",
+    "src/plugins/post/routes/[...slug].astro",
+    "src/plugins/post/routes/index.astro",
+    "src/plugins/post/views/Archive.astro",
+    "src/plugins/post/views/Loop.astro",
+    "src/plugins/post/views/Single.astro",
     "src/runtime/bootstrap.js",
     "src/runtime/moo-ui.d.ts",
     "src/runtime/moo-ui.js",
@@ -167,6 +186,7 @@
   ],
   "private_transitives": [
     "src/components/internal/Icon.astro",
+    "src/content/dates.js",
     "src/content/integrity.js",
     "src/content/paths.js",
     "src/integration/middleware.js",
@@ -176,6 +196,9 @@
     "src/internal/href.js",
     "src/plugins/page/paths.js",
     "src/plugins/page/routes/[...slug].astro",
+    "src/plugins/post/paths.js",
+    "src/plugins/post/routes/[...slug].astro",
+    "src/plugins/post/routes/index.astro",
     "src/runtime/moo-ui.d.ts"
   ]
 }

@@ -5,6 +5,7 @@ import Header from "../../../includes/Header.astro";
 import Footer from "../../../includes/Footer.astro";
 import Sidebar from "../../../includes/Sidebar.astro";
 import { resolvePageOptions } from "../../../config/index.js";
+import { siteHref } from "../../../content/paths.js";
 import { getEntryHref, getSiteContext, getSiteNavigation } from "../../../context/index.js";
 import { getPagePaths } from "../queries.js";
 import Single from "../views/Single.astro";
@@ -19,11 +20,12 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { site } = getSiteContext();
+const routeContext = getSiteContext();
+const { site } = routeContext;
 const options = resolvePageOptions(site, "page", "single", entry.data.layout);
 const href = getEntryHref("page", entry);
 const navigation = await getSiteNavigation(href);
-const homeHref = navigation.find((item) => item.href === "/")?.href ?? navigation[0]?.href ?? href;
+const homeHref = navigation.find((item) => item.href === siteHref("/", routeContext))?.href ?? navigation[0]?.href ?? href;
 const breadcrumbs = href === homeHref
   ? [{ label: entry.data.title }]
   : [{ label: site.brand, href: homeHref }, { label: entry.data.title }];

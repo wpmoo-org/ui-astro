@@ -33,6 +33,7 @@ class NativePageCollection(unittest.TestCase):
         self.assertEqual(data["navigation"], [
             {"label": "Contact", "href": "/contact", "active": True},
             {"label": "Setup guide", "href": "/guide/setup", "active": False},
+            {"label": "Posts", "href": "/posts", "active": False},
         ])
         self.assertNotIn("file:", source)
         self.assertNotIn("src/content/page", source)

@@ -1,0 +1,26 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Archive from "../../../views/Archive.astro";
+import Loop from "./Loop.astro";
+
+interface Props {
+  entries: CollectionEntry<"post">[];
+  title?: string;
+  description?: string;
+  basePath?: string;
+  base?: string;
+  trailingSlash?: "always" | "never" | "ignore";
+  lang?: string;
+  emptyText?: string;
+  titleVariant?: "section-title" | "subsection-title";
+}
+
+const { entries, title = "Posts", description, basePath = "/posts", base = "/", trailingSlash = "ignore", lang = "en", emptyText = "No posts yet.", titleVariant = "section-title" } = Astro.props;
+---
+
+<Archive title={title} description={description} emptyText={emptyText} titleVariant={titleVariant} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), actions: Astro.slots.has("actions"), loop: true, afterList: Astro.slots.has("after-list") }}>
+  {Astro.slots.has("page-header") ? <slot name="page-header" slot="page-header" /> : null}
+  {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
+  {Astro.slots.has("loop") ? <slot name="loop" slot="loop" /> : <Loop slot="loop" entries={entries} basePath={basePath} base={base} trailingSlash={trailingSlash} lang={lang} emptyText={emptyText} titleVariant={titleVariant} />}
+  {Astro.slots.has("after-list") ? <slot name="after-list" slot="after-list" /> : null}
+</Archive>

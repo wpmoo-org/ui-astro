@@ -1,0 +1,58 @@
+---
+import { render } from "astro:content";
+import Layout from "../../../layouts/Layout.astro";
+import Header from "../../../includes/Header.astro";
+import Footer from "../../../includes/Footer.astro";
+import Sidebar from "../../../includes/Sidebar.astro";
+import { resolvePageOptions } from "../../../config/index.js";
+import { siteHref } from "../../../content/paths.js";
+import { getEntryHref, getSiteContext, getSiteNavigation } from "../../../context/index.js";
+import { getPostPaths } from "../queries.js";
+import Single from "../views/Single.astro";
+
+export const prerender = true;
+export async function getStaticPaths() {
+  const { site, plugins } = getSiteContext();
+  const plugin = plugins.find(item => item.id === "post");
+  if (!plugin) throw new TypeError("Post route requires the active post plugin");
+  return getPostPaths({ lang: site.defaults.lang, basePath: plugin.basePath });
+}
+
+const { entry } = Astro.props;
+const routeContext = getSiteContext();
+const { site, plugins } = routeContext;
+const plugin = plugins.find(item => item.id === "post");
+if (!plugin) throw new TypeError("Post route requires the active post plugin");
+const archiveHref = siteHref(plugin.basePath, routeContext);
+const options = resolvePageOptions(site, "post", "single", entry.data.layout);
+const href = getEntryHref("post", entry);
+const navigation = await getSiteNavigation(href);
+const homeHref = navigation.find(item => item.href === siteHref("/", routeContext))?.href ?? navigation[0]?.href ?? archiveHref;
+const breadcrumbs = [
+  { label: homeHref === archiveHref ? plugin.label : site.brand, href: homeHref },
+  ...(homeHref === archiveHref ? [] : [{ label: plugin.label, href: archiveHref }]),
+  { label: entry.data.title },
+];
+const layoutProps = {
+  title: entry.data.title, description: entry.data.description,
+  pageContext: { view: "single" as const, entry: { type: "post", id: entry.id, source: "markdown" as const } },
+  shellMode: options.shellMode, pageWidth: options.pageWidth, headerWidth: options.headerWidth,
+  theme: options.theme, lang: options.lang, dir: options.dir,
+};
+const { Content } = await render(entry);
+---
+
+{options.sidebar ? (
+  <Layout {...layoutProps} sidebar sidebarId="moo-site-sidebar" sidebarKey="moo-site" defaultOpen={options.sidebar.defaultOpen}>
+    <Sidebar slot="sidebar" id="moo-site-sidebar" brand={site.brand} brandHref={homeHref} groups={[{ items: navigation.map(item => ({ title: item.label, href: item.href, active: item.active })) }]} side={options.sidebar.side} variant={options.sidebar.variant} collapsible={options.sidebar.collapsible} rail={options.sidebar.rail} ariaLabel="Site navigation" />
+    <Header slot="header" breadcrumbs={breadcrumbs} />
+    <Single entry={entry}><Content /></Single>
+    <Footer slot="footer" brand={site.brand} homeHref={homeHref} />
+  </Layout>
+) : (
+  <Layout {...layoutProps}>
+    <Header slot="header" breadcrumbs={breadcrumbs} />
+    <Single entry={entry}><Content /></Single>
+    <Footer slot="footer" brand={site.brand} homeHref={homeHref} />
+  </Layout>
+)}

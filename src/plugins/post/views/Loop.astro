@@ -1,0 +1,20 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Loop from "../../../views/Loop.astro";
+import { postLoopItems } from "../paths.js";
+
+interface Props {
+  entries: CollectionEntry<"post">[];
+  basePath?: string;
+  base?: string;
+  trailingSlash?: "always" | "never" | "ignore";
+  lang?: string;
+  emptyText?: string;
+  titleVariant?: "section-title" | "subsection-title";
+}
+
+const { entries, basePath = "/posts", base = "/", trailingSlash = "ignore", lang = "en", emptyText = "No posts yet.", titleVariant = "section-title" } = Astro.props;
+const items = postLoopItems(entries, { basePath, base, trailingSlash, lang });
+---
+
+<Loop items={items} emptyText={emptyText} titleVariant={titleVariant} />

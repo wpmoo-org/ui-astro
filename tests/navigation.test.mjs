@@ -1,9 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { navigationFromPages } from "../src/integration/navigation.js";
+import { navigationFromPages, navigationFromDescriptors } from "../src/integration/navigation.js";
 
 const page = (id, status, data = {}) => ({ collection: "page", id, data: { title: id, status, ...data } });
+
+test("declared archive navigation uses its host mount and an exact namespace boundary", () => {
+  const declared = [{ label: "News", path: "/news", match: "prefix" }];
+  assert.deepEqual(navigationFromDescriptors(declared, "/docs/news/first/", { base: "/docs", trailingSlash: "always" }),
+    [{ label: "News", href: "/docs/news/", active: true }]);
+  assert.deepEqual(navigationFromDescriptors(declared, "/docs/news-other", { base: "/docs", trailingSlash: "never" }),
+    [{ label: "News", href: "/docs/news", active: false }]);
+});
 
 test("Page navigation uses route hrefs, host base, order, and exact active path", () => {
   const pages = [

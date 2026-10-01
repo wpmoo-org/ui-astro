@@ -107,7 +107,7 @@ class PublicComponentRendering(unittest.TestCase):
     def tearDownClass(cls):
         cls.package_directory.cleanup()
 
-    def build(self, source):
+    def build(self, source, *, configuration="", config_imports="", files=None, check=False):
         # Native render fixtures must not trigger the live host's config watcher.
         with tempfile.TemporaryDirectory(prefix="astro-render-contract-") as directory:
             root = Path(directory)
@@ -116,6 +116,10 @@ class PublicComponentRendering(unittest.TestCase):
             (modules / "astro").symlink_to(ROOT / "node_modules/astro", target_is_directory=True)
             (modules / "bootstrap").symlink_to(ROOT / "node_modules/bootstrap", target_is_directory=True)
             (modules / "@wpmoo/ui").symlink_to(ROOT / "node_modules/@wpmoo/ui", target_is_directory=True)
+            if check:
+                (modules / "@astrojs").mkdir()
+                (modules / "@astrojs/check").symlink_to(ROOT / "node_modules/@astrojs/check", target_is_directory=True)
+                (modules / "typescript").symlink_to(ROOT / "node_modules/typescript", target_is_directory=True)
             shutil.copytree(self.package_root, modules / "@wpmoo/astro")
             manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
             (root / "package.json").write_text(json.dumps({
@@ -124,16 +128,183 @@ class PublicComponentRendering(unittest.TestCase):
                                  manifest["name"]: manifest["version"]},
             }), encoding="utf-8")
             (root / "src/pages").mkdir(parents=True)
-            (root / "src/pages/index.astro").write_text(source, encoding="utf-8")
+            if source is not None:
+                (root / "src/pages/index.astro").write_text(source, encoding="utf-8")
+            for path, content in (files or {}).items():
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding="utf-8")
             (root / "astro.config.mjs").write_text(
                 'import { defineConfig } from "astro/config";\n'
-                'export default defineConfig({ vite: { cacheDir: new URL("./.vite", import.meta.url).pathname } });\n',
+                'import moo from "@wpmoo/astro";\n'
+                'import { page } from "@wpmoo/astro/plugins/page";\n'
+                + config_imports + '\n'
+                +
+                'export default defineConfig({ vite: { cacheDir: new URL("./.vite", import.meta.url).pathname }, '
+                + configuration + ' });\n',
                 encoding="utf-8",
             )
             result = subprocess.run([str(ROOT / "node_modules/.bin/astro"), "build"],
                                     cwd=root, text=True, capture_output=True)
             output = root / "dist/index.html"
+            result.generated_files = [str(path.relative_to(root / "dist")) for path in (root / "dist").rglob("*") if path.is_file()]
+            generated_html = {str(path.relative_to(root / "dist")): path.read_text(encoding="utf-8")
+                              for path in (root / "dist").rglob("*.html")}
+            if result.returncode == 0 and check:
+                result = subprocess.run([str(ROOT / "node_modules/.bin/astro"), "check"],
+                                        cwd=root, text=True, capture_output=True)
+            result.generated_html = generated_html
             return result, output.read_text(encoding="utf-8") if output.exists() else ""
+
+    def integrated_files(self):
+        return {
+            "src/content.config.mjs": (
+                'import { defineCollection } from "astro:content";\n'
+                'import { glob } from "astro/loaders";\n'
+                'import { sourceEntryId } from "@wpmoo/astro/content";\n'
+                'import { pageSchema } from "@wpmoo/astro/plugins/page/content";\n'
+                'export const collections = { page: defineCollection({\n'
+                'loader: glob({ base: new URL("./content/page/", import.meta.url), pattern: "**/*.md", generateId: sourceEntryId }),\n'
+                'schema: pageSchema }) };\n'
+            ),
+            "src/content/page/entry.md": "---\ntitle: Content entry\nstatus: publish\n---\nContent body.\n",
+        }
+
+    def test_native_page_literals_require_canonical_urls_but_endpoint_paths_do_not(self):
+        for filename, valid in [("About.astro", False), ("about.astro", True)]:
+            with self.subTest(filename=filename):
+                files = self.integrated_files()
+                files[f"src/pages/{filename}"] = "<h1>Native page</h1>"
+                files["src/pages/Metadata.json.ts"] = 'export const GET = () => Response.json({ available: true });'
+                result, _ = self.build("<h1>Home</h1>", configuration="integrations: [moo({ plugins: [page()] })]", files=files)
+                if valid:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertRegex(result.stdout + result.stderr, r"(?s)About\.astro.*canonical|canonical.*About\.astro")
+
+    def test_native_dynamic_page_values_require_canonical_concrete_urls(self):
+        for value, valid in [("Widget", False), ("ä", False), ("widget", True)]:
+            with self.subTest(value=value):
+                files = self.integrated_files()
+                files["src/pages/product-[ID].astro"] = (
+                    '---\nexport function getStaticPaths() { return [{ params: { ID: '
+                    + json.dumps(value) + ' } }]; }\n---\n<h1>Product</h1>'
+                )
+                result, _ = self.build("<h1>Home</h1>", configuration="integrations: [moo({ plugins: [page()] })]", files=files)
+                if valid:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn("product-[ID].astro", result.stdout + result.stderr)
+                    self.assertIn("canonical", result.stdout + result.stderr)
+
+    def test_native_and_content_concrete_path_conflicts_are_fatal(self):
+        files = self.integrated_files()
+        files["src/content/page/about.md"] = "---\ntitle: About\nstatus: publish\n---\nAbout content.\n"
+        files["src/pages/about.astro"] = "<h1>Native About</h1>"
+        result, _ = self.build("<h1>Home</h1>", configuration="integrations: [moo({ plugins: [page()] })]", files=files)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("about", result.stdout + result.stderr)
+        self.assertRegex(result.stdout + result.stderr, r"[Cc]onflict|[Dd]uplicate")
+
+    def test_ui_only_native_urls_are_host_owned(self):
+        files = {"src/pages/About.astro": "<h1>Native page</h1>"}
+        result, _ = self.build("<h1>Home</h1>", configuration="integrations: [moo({ plugins: [] })]", files=files)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_public_site_context_cannot_mutate_another_route_preferences(self):
+        source = '''---
+import { getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+const first = getSiteContext();
+if (!Object.isFrozen(first.site.defaults) || !Object.isFrozen(first.site.types.page.sidebar)
+    || !Object.isFrozen(first.plugins[0].contentTypes[0].formats)) {
+  throw new Error("Public site context exposes mutable route preferences");
+}
+for (const [record, key, value] of [
+  [first.site.defaults, "pageWidth", "fluid"],
+  [first.site.types.page.sidebar, "side", "right"],
+  [first.plugins[0].contentTypes[0].formats, "0", "mdx"],
+]) {
+  let rejected = false;
+  try { record[key] = value; } catch { rejected = true; }
+  if (!rejected) throw new Error("A public context mutation escaped the readonly boundary");
+}
+const second = getSiteContext();
+const options = resolvePageOptions(second.site, "page", "single");
+if (options.pageWidth !== "xl" || options.sidebar.side !== "left") {
+  throw new Error("A later route received changed preferences");
+}
+if ("root" in second || "sources" in second) throw new Error("Private source locations leaked");
+---
+<h1>Immutable public context</h1>'''
+        result, _ = self.build(source, configuration='integrations: [moo({ plugins: [page()], site: { types: { page: { sidebar: {} } } } })]',
+                               files=self.integrated_files())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_route_context_enforces_server_and_integration_boundaries(self):
+        for source, configuration, diagnostic in [
+            ('<h1>Client context</h1><script>import { getSiteContext } from "@wpmoo/astro/context"; console.log(getSiteContext());</script>',
+             'integrations: [moo({ plugins: [page()] })]', "server-only"),
+            ('---\nimport { getSiteContext } from "@wpmoo/astro/context"; const context = getSiteContext();\n---\n<h1>{context.site.brand}</h1>',
+             '', "virtual:wpmoo-astro/routes"),
+            ('---\nimport context from "virtual:wpmoo-astro/routes";\n---\n<h1>{context.site.brand}</h1>',
+             'integrations: [moo({ plugins: [page()] })]', "private to @wpmoo/astro/context"),
+        ]:
+            with self.subTest(diagnostic=diagnostic):
+                result, _ = self.build(source, configuration=configuration, files=self.integrated_files())
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(diagnostic, result.stdout + result.stderr)
+
+    def test_native_concrete_path_guard_preserves_the_host_subpath(self):
+        for value, valid in [("Widget", False), ("widget", True)]:
+            with self.subTest(value=value):
+                files = self.integrated_files()
+                files["src/pages/product-[ID].astro"] = (
+                    '---\nexport function getStaticPaths() { return [{ params: { ID: '
+                    + json.dumps(value) + ' } }]; }\n---\n<h1>Product</h1>'
+                )
+                result, _ = self.build("<h1>Home</h1>", configuration='base: "/docs", integrations: [moo({ plugins: [page()] })]', files=files)
+                if valid:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                else:
+                    self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn("product-[ID].astro", result.stdout + result.stderr)
+                    self.assertIn("canonical", result.stdout + result.stderr)
+
+    def test_integration_generates_types_for_its_private_route_context(self):
+        files = self.integrated_files()
+        files["tsconfig.json"] = json.dumps({"extends": "astro/tsconfigs/strict", "include": [".astro/types.d.ts", "**/*"], "exclude": ["dist"]})
+        files["src/context-types.ts"] = '''import type context from "virtual:wpmoo-astro/routes";
+import type { SiteContext, NavigationItem } from "@wpmoo/astro/context";
+export const publicContext: SiteContext = {} as typeof context;
+export const privateRoot: string = ({} as typeof context).root;
+export const navigation: NavigationItem = { label: "Contact", href: "/contact", active: true };
+// @ts-expect-error Public metadata must not expose private source locations.
+publicContext.root;
+// @ts-expect-error Resolved defaults are readonly.
+publicContext.site.defaults.pageWidth = "fluid";
+// @ts-expect-error Nested plugin metadata is readonly.
+publicContext.plugins[0].contentTypes[0].formats[0] = "mdx";
+'''
+        result, _ = self.build("<h1>Typed route context</h1>", configuration="integrations: [moo({ plugins: [page()] })]", files=files, check=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("0 errors", result.stdout + result.stderr)
+
+    def test_published_page_index_remains_home_under_a_subpath_regardless_of_navigation_order(self):
+        files = self.integrated_files()
+        files["src/content/page/index.md"] = "---\ntitle: Home\nstatus: publish\nnavOrder: 99\n---\nHome content.\n"
+        files["src/content/page/entry.md"] = "---\ntitle: Content entry\nstatus: publish\nnavOrder: 1\n---\nContent body.\n"
+        for trailing, expected in [("always", "/docs/"), ("never", "/docs"), ("ignore", "/docs/")]:
+            with self.subTest(trailing=trailing):
+                result, html = self.build(None, configuration=f'base: "/docs", trailingSlash: "{trailing}", integrations: [moo({{ plugins: [page()] }})]', files=files)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                parsed = Markup()
+                parsed.feed(html)
+                footer = next(index for index, (tag, _) in enumerate(parsed.elements) if tag == "footer")
+                footer_hrefs = [attrs["href"] for tag, attrs in parsed.elements[footer:] if tag == "a"]
+                self.assertEqual(footer_hrefs, [expected])
 
     def test_sidebar_rejects_values_outside_the_published_app_contract(self):
         for props, diagnostic in [

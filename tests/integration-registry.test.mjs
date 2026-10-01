@@ -6,6 +6,21 @@ import { definePlugin } from "../src/plugins/index.js";
 import { page } from "../src/plugins/page/index.js";
 import moo from "../src/integration/index.js";
 
+test("omitted plugin selection registers Page and Post, while an explicit list replaces it", () => {
+  for (const [input, expected] of [
+    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]"]],
+    [{ plugins: [page()] }, ["/[...slug]"]],
+    [{ plugins: [] }, []],
+  ]) {
+    const routes = [];
+    moo(input).hooks["astro:config:setup"]({
+      command: "dev", config: { root: new URL("./fixtures/consumer/", import.meta.url), vite: {} },
+      injectRoute(value) { routes.push(value.pattern); }, updateConfig() {}, addMiddleware() {},
+    });
+    assert.deepEqual(routes.filter(pattern => !pattern.startsWith("/__moo_content_integrity")), expected);
+  }
+});
+
 function external(id, basePath, { collection = id, type = id } = {}) {
   return definePlugin({
     apiVersion: 1,
@@ -104,4 +119,52 @@ test("an explicit host Vite cache directory remains host-owned", () => {
     updateConfig(value) { updates.push(value); },
   });
   assert.ok(updates.every((value) => value.vite?.cacheDir === undefined));
+});
+
+function finalConfig(integration, overrides = {}) {
+  const root = new URL("./fixtures/page-base/", import.meta.url);
+  return {
+    root, srcDir: new URL("src/", root), base: "/docs", trailingSlash: "ignore",
+    output: "static", prerenderConflictBehavior: "error", integrations: [integration],
+    ...overrides,
+  };
+}
+
+test("active content makes concrete prerender conflicts fatal", () => {
+  const updates = [];
+  moo().hooks["astro:config:setup"]({
+    command: "build",
+    config: { root: new URL("./fixtures/page-base/", import.meta.url), vite: {} },
+    injectRoute() {}, addMiddleware() {},
+    updateConfig(value) { updates.push(value); },
+  });
+  assert.ok(updates.some(value => value.prerenderConflictBehavior === "error"));
+});
+
+test("the final content profile rejects weakened conflicts, server output, and a noncanonical base", () => {
+  for (const [overrides, diagnostic] of [
+    [{ prerenderConflictBehavior: "warn" }, /prerenderConflictBehavior.*error/],
+    [{ prerenderConflictBehavior: "ignore" }, /prerenderConflictBehavior.*error/],
+    [{ output: "server" }, /output.*static/],
+    [{ base: "/Docs" }, /base.*canonical.*Docs/],
+  ]) {
+    const integration = moo();
+    assert.throws(() => integration.hooks["astro:config:done"]({ config: finalConfig(integration, overrides) }), diagnostic);
+  }
+  const integration = moo();
+  assert.doesNotThrow(() => integration.hooks["astro:config:done"]({ config: finalConfig(integration), injectTypes() {} }));
+});
+
+test("one host cannot register the Moo integration twice", () => {
+  const integration = moo();
+  assert.throws(() => integration.hooks["astro:config:done"]({
+    config: finalConfig(integration, { integrations: [integration, moo()] }),
+  }), /@wpmoo\/astro.*once|duplicate.*@wpmoo\/astro/);
+});
+
+test("UI-only composition owns its output mode, base, and route policy", () => {
+  const integration = moo({ plugins: [] });
+  assert.doesNotThrow(() => integration.hooks["astro:config:done"]({
+    config: finalConfig(integration, { output: "server", base: "/Docs", prerenderConflictBehavior: "warn" }),
+  }));
 });

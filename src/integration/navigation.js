@@ -10,6 +10,18 @@ function normalizedPath(path) {
   return path.replace(/\/$/u, "") || "/";
 }
 
+export function navigationFromDescriptors(items, currentPath, options) {
+  const current = normalizedPath(currentPath);
+  return Object.freeze(items.map(item => {
+    const href = siteHref(item.path, options);
+    const path = normalizedPath(href);
+    return Object.freeze({
+      label: item.label, href,
+      active: current === path || (item.match === "prefix" && current.startsWith(`${path}/`)),
+    });
+  }));
+}
+
 export function navigationFromPages(entries, currentPath, options) {
   const current = normalizedPath(currentPath);
   const { lang, reservedPrefixes, base, trailingSlash } = options;

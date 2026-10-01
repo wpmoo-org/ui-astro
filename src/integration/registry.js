@@ -1,3 +1,5 @@
+import { siteHref } from "../content/paths.js";
+
 function fullPattern(basePath, pattern) {
   return basePath === "/" ? pattern : pattern === "/" ? basePath : `${basePath}${pattern}`;
 }
@@ -77,6 +79,35 @@ export function validateResolvedRoutes(registry, resolved) {
     }
     if (matches[0].isPrerendered !== true) {
       throw new TypeError(`moo ${claim.owner} route ${claim.pattern} must prerender`);
+    }
+  }
+}
+
+export function validateNativePageRoutes(routes, integrityEntrypoint, root) {
+  for (const route of routes) {
+    if (route.type !== "page" || route.origin === "internal") continue;
+    if (route.pattern === "/__moo_content_integrity/[...probe]" &&
+        route.origin === "external" && new URL(route.entrypoint, root).href === integrityEntrypoint.href) continue;
+    for (const segment of route.segments) {
+      const dynamic = segment.some(part => part.dynamic);
+      const literal = segment.filter(part => !part.dynamic).map(part => part.content).join("");
+      const valid = dynamic ? /^[a-z0-9-]*$/u.test(literal) : /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(literal);
+      if (!valid) {
+        throw new TypeError(`moo native page ${route.entrypoint} requires canonical URL literals: ${route.pattern}`);
+      }
+    }
+  }
+}
+
+export function validateBuiltPagePaths(pages, routes) {
+  for (const { pathname } of pages) {
+    const path = `/${pathname.replace(/^\//u, "")}`.replace(/\/$/u, "") || "/";
+    const owner = routes.find(route => route.type === "page" && route.patternRegex.test(path));
+    if (owner?.origin === "internal") continue;
+    try {
+      siteHref(path);
+    } catch {
+      throw new TypeError(`moo native page ${owner?.entrypoint ?? "(unresolved owner)"} generated a noncanonical URL: ${path}`);
     }
   }
 }
