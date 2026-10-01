@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import moo from "../../../src/integration/index.js";
+import { page } from "@wpmoo/astro/plugins/page";
 
 const mode = process.env.ASTRO_PAGE_BASE_MODE ?? "directory";
 if (!["directory", "file", "ignore"].includes(mode)) throw new Error("Unsupported Page fixture mode");
@@ -10,6 +11,7 @@ export default defineConfig({
   trailingSlash: mode === "directory" ? "always" : mode === "file" ? "never" : "ignore",
   build: { format },
   integrations: [moo({
+    plugins: [page()],
     site: {
       brand: "Moo",
       defaults: { lang: "tr" },

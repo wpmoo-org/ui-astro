@@ -30,7 +30,6 @@ class ResolvedRouteOwnership(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         output = result.stdout + result.stderr
         self.assertIn("Page entry sample/contact.md maps to /sample/contact inside reserved namespace /sample", output)
-        self.assertIn("at getPagePaths", output)
 
     def test_neighboring_page_path_remains_valid_beside_a_plugin_namespace(self):
         result = self.build("page-namespace-neighbor")

@@ -16,7 +16,9 @@ class NativePageCollection(unittest.TestCase):
             {"id": "contact.md", "slug": "contact"},
             {"id": "guide/setup.md", "slug": "guide/setup"},
         ])
-        self.assertEqual(data["contactLayout"], {"sidebar": None, "pageWidth": "lg"})
+        self.assertEqual(data["contactLayout"], {
+            "sidebar": None, "pageWidth": "lg", "parts": {"content": {"utilities": ["py-2"]}},
+        })
         self.assertEqual(data["contactDate"], "2026-09-28T16:25:03.000Z")
         self.assertEqual(data["filePaths"], [
             "src/content/page/contact.md",

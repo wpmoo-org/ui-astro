@@ -7,7 +7,6 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 
 import * as boundaryModule from "../scripts/verify_astro_boundary.mjs";
-import { buildSnapshot } from "../scripts/sync_layout_contract.mjs";
 
 const { assertAstroSurface } = boundaryModule;
 
@@ -140,7 +139,7 @@ test("development source closure can use an explicit local dev export registry",
 
 test("development snapshot rejects a moved HTML dev commit until reviewed sync", async () => {
   const stored = JSON.parse(await readFile(join(root, "contracts/layout-surface.snapshot.json"), "utf8"));
-  const current = await buildSnapshot(join(root, "../html"));
+  const current = structuredClone(stored);
   current.source.commit = "0".repeat(40);
   assert.throws(
     () => boundaryModule.assertDevelopmentSnapshot({ stored, current }),
