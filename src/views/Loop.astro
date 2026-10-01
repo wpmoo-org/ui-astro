@@ -39,11 +39,11 @@ const checkedItems = items.map((item, index) => {
 ---
 
 {checkedItems.length ? (
-  <ul class="list-unstyled">
+  <ul class="list-unstyled d-flex flex-column gap-4">
     {checkedItems.map((item) => (
-      <li class:list={[item.entryClasses, "mb-3"]}>
-        <Typography variant={titleVariant} content={item.title}><a href={item.href}>{item.title}</a></Typography>
-        {item.description ? <p class="text-body-secondary">{item.description}</p> : null}
+      <li class:list={[item.entryClasses, "d-flex flex-column gap-2"]}>
+        <Typography variant={titleVariant} content={item.title} class="mb-0"><a href={item.href}>{item.title}</a></Typography>
+        {item.description ? <p class="text-body-secondary mb-0">{item.description}</p> : null}
         {item.date ? <time datetime={item.date.toISOString()}>{item.date.toISOString().slice(0, 10)}</time> : null}
       </li>
     ))}

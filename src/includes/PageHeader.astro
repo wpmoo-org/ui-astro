@@ -13,7 +13,9 @@ if (description !== undefined && typeof description !== "string") {
 }
 ---
 
-<Typography variant="page-title" content={title} />
-{description ? <Typography variant="page-description" content={description} /> : null}
-{Astro.slots.has("metadata") ? <slot name="metadata" /> : null}
-{Astro.slots.has("actions") ? <slot name="actions" /> : null}
+<header class="d-flex flex-column gap-2 mb-4">
+  <Typography variant="page-title" content={title} class="mb-0" />
+  {description ? <Typography variant="page-description" content={description} /> : null}
+  {Astro.slots.has("metadata") ? <slot name="metadata" /> : null}
+  {Astro.slots.has("actions") ? <slot name="actions" /> : null}
+</header>

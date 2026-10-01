@@ -1,4 +1,8 @@
-"""Positive browser contracts for the accepted Single and Archive previews."""
+"""Positive browser contracts for the accepted Single and Archive previews.
+
+The shared content spacing was accepted on 2026-10-01. Geometry assertions
+protect its Bootstrap spacing scale across width, theme and direction.
+"""
 
 import os
 import unittest
@@ -44,6 +48,16 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertAlmostEqual(header["width"], main["width"], delta=1)
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
+    def select_fresh_visual_state(self, width, theme, direction):
+        self.context.close()
+        self.context = self.browser.new_context(viewport={"width": width, "height": 844})
+        self.context.add_init_script(
+            f"localStorage.setItem('moo:theme', '{theme}'); "
+            f"localStorage.setItem('moo:direction', '{direction}')"
+        )
+        self.page = self.context.new_page()
+        self.page.on("pageerror", lambda error: self.errors.append(str(error)))
+
     def test_single_uses_the_selected_sidebar_and_shared_page_rail(self):
         self.open_preview("preview/single")
         self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state-ready]').wait_for()
@@ -67,6 +81,58 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
         self.assertEqual(self.page.locator("[data-sidebar-trigger]").count(), 0)
         self.assert_region_rails_align()
+
+    def test_shared_views_preserve_accepted_content_spacing(self):
+        for width in [1440, 390]:
+            for theme in ["light", "dark"]:
+                for direction in ["ltr", "rtl"]:
+                    self.select_fresh_visual_state(width, theme, direction)
+                    for path in ["preview/single", "preview/archive"]:
+                        with self.subTest(width=width, theme=theme, direction=direction, path=path):
+                            self.open_preview(path)
+                            geometry = self.page.evaluate("""() => {
+                                const main = document.querySelector('main');
+                                const title = main.querySelector('h1');
+                                const description = main.querySelector('.moo-page-description');
+                                const content = main.querySelector('ul') ?? main.querySelector('article > p');
+                                const box = element => element.getBoundingClientRect();
+                                return {
+                                    rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+                                    top: box(title).top - box(main).top,
+                                    titleToDescription: box(description).top - box(title).bottom,
+                                    headerToContent: box(content).top - box(description).bottom,
+                                    bottomPadding: parseFloat(getComputedStyle(title.closest('article, section')).paddingBottom),
+                                    theme: document.querySelector('.moo-ui').dataset.bsTheme,
+                                    direction: document.documentElement.dir,
+                                    overflow: document.documentElement.scrollWidth > innerWidth,
+                                };
+                            }""")
+                            self.assertAlmostEqual(geometry["top"], 1.5 * geometry["rem"], delta=1)
+                            self.assertAlmostEqual(geometry["titleToDescription"], 0.5 * geometry["rem"], delta=1)
+                            self.assertAlmostEqual(geometry["headerToContent"], 1.5 * geometry["rem"], delta=1)
+                            self.assertAlmostEqual(geometry["bottomPadding"], 1.5 * geometry["rem"], delta=1)
+                            self.assertEqual(geometry["theme"], theme)
+                            self.assertEqual(geometry["direction"], direction)
+                            self.assertFalse(geometry["overflow"])
+
+    def test_archive_loop_preserves_accepted_entry_spacing(self):
+        for width, theme, direction in [(1440, "light", "ltr"), (390, "dark", "rtl")]:
+            with self.subTest(width=width, theme=theme, direction=direction):
+                self.select_fresh_visual_state(width, theme, direction)
+                self.open_preview("preview/archive")
+                geometry = self.page.evaluate("""() => {
+                    const entries = document.querySelectorAll('main ul > li');
+                    const box = element => element.getBoundingClientRect();
+                    return {
+                        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+                        betweenEntries: box(entries[1]).top - box(entries[0]).bottom,
+                        titleToDescription: box(entries[0].querySelector('p')).top - box(entries[0].querySelector('h2')).bottom,
+                        titleToDate: box(entries[1].querySelector('time')).top - box(entries[1].querySelector('h2')).bottom,
+                    };
+                }""")
+                self.assertAlmostEqual(geometry["betweenEntries"], 1.5 * geometry["rem"], delta=1)
+                self.assertAlmostEqual(geometry["titleToDescription"], 0.5 * geometry["rem"], delta=1)
+                self.assertAlmostEqual(geometry["titleToDate"], 0.5 * geometry["rem"], delta=1)
 
     def test_mobile_sidebar_opens_with_aria_and_returns_keyboard_focus(self):
         self.page.set_viewport_size({"width": 390, "height": 844})
