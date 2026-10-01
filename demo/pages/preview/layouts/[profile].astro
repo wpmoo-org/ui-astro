@@ -1,12 +1,12 @@
 ---
-import { getDemoOptions } from "../../../demo/settings.js";
-import Layout from "../../../demo/Layout.astro";
+import { getDemoOptions } from "../../../settings.js";
+import Layout from "../../../layouts/Layout.astro";
 import Single from "@wpmoo/astro/views/Single.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
 import Card from "@wpmoo/astro/components/Card.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
 import type { PageOptions } from "@wpmoo/astro/config";
-import { getDemoMessages } from "../../../demo/messages.js";
+import { getDemoMessages } from "../../../messages.js";
 
 export function getStaticPaths() {
   return [

@@ -1,12 +1,12 @@
 ---
 import { getSiteContext } from "@wpmoo/astro/context";
-import { getDemoOptions } from "../../demo/settings.js";
-import Layout from "../../demo/Layout.astro";
-import PageHeader from "../../includes/PageHeader.astro";
-import Typography from "../../components/Typography.astro";
-import Loop from "../../views/Loop.astro";
-import PageLoop from "../../plugins/page/views/Loop.astro";
-import { getDemoMessages } from "../../demo/messages.js";
+import { getDemoOptions } from "../../settings.js";
+import Layout from "../../layouts/Layout.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import Typography from "@wpmoo/astro/components/Typography.astro";
+import Loop from "@wpmoo/astro/views/Loop.astro";
+import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
+import { getDemoMessages } from "../../messages.js";
 
 const { site } = getSiteContext();
 const lang = Astro.currentLocale ?? site.defaults.lang;

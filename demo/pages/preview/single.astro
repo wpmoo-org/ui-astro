@@ -1,8 +1,8 @@
 ---
-import { getDemoOptions } from "../../demo/settings.js";
-import Layout from "../../demo/Layout.astro";
-import Single from "../../views/Single.astro";
-import type { EntryClassContext } from "../../config/index.js";
+import { getDemoOptions } from "../../settings.js";
+import Layout from "../../layouts/Layout.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import type { EntryClassContext } from "@wpmoo/astro/config";
 
 const entryContext: EntryClassContext = {
   type: "post", id: "announcement.md", source: "markdown",

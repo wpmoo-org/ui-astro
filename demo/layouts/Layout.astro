@@ -7,9 +7,9 @@ import Footer from "@wpmoo/astro/includes/Footer.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
 import type { PageOptions } from "@wpmoo/astro/config";
-import { getDemoMessages } from "./messages.js";
-import { getDemoNavigation } from "./navigation.js";
-import { demoControls, getDemoOptions } from "./settings.js";
+import { getDemoMessages } from "../messages.js";
+import { getDemoNavigation } from "../navigation.js";
+import { demoControls, getDemoOptions } from "../settings.js";
 
 type Props = ComponentProps<typeof Layout> & {
   sidebarOptions?: PageOptions["sidebar"];

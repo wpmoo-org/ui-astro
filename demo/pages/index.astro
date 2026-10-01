@@ -1,24 +1,24 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import Alert from "../components/Alert.astro";
-import Badge from "../components/Badge.astro";
-import Button from "../components/Button.astro";
-import ButtonGroup from "../components/ButtonGroup.astro";
-import Card from "../components/Card.astro";
-import Chart from "../components/Chart.astro";
-import DataTable from "../components/DataTable.astro";
-import DatePicker from "../components/DatePicker.astro";
-import DropdownMenu from "../components/DropdownMenu.astro";
-import Field from "../components/Field.astro";
-import Form from "../components/Form.astro";
-import Input from "../components/Input.astro";
-import Navigation from "../components/Navigation.astro";
-import Progress from "../components/Progress.astro";
-import Select from "../components/Select.astro";
-import Sidebar from "../components/Sidebar.astro";
-import Typography from "../components/Typography.astro";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Alert from "@wpmoo/astro/components/Alert.astro";
+import Badge from "@wpmoo/astro/components/Badge.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import ButtonGroup from "@wpmoo/astro/components/ButtonGroup.astro";
+import Card from "@wpmoo/astro/components/Card.astro";
+import Chart from "@wpmoo/astro/components/Chart.astro";
+import DataTable from "@wpmoo/astro/components/DataTable.astro";
+import DatePicker from "@wpmoo/astro/components/DatePicker.astro";
+import DropdownMenu from "@wpmoo/astro/components/DropdownMenu.astro";
+import Field from "@wpmoo/astro/components/Field.astro";
+import Form from "@wpmoo/astro/components/Form.astro";
+import Input from "@wpmoo/astro/components/Input.astro";
+import Navigation from "@wpmoo/astro/components/Navigation.astro";
+import Progress from "@wpmoo/astro/components/Progress.astro";
+import Select from "@wpmoo/astro/components/Select.astro";
+import Sidebar from "@wpmoo/astro/components/Sidebar.astro";
+import Typography from "@wpmoo/astro/components/Typography.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
-import { getDemoNavigation } from "../demo/navigation.js";
+import { getDemoNavigation } from "../navigation.js";
 
 const { site } = getSiteContext();
 const { lang, parts, theme, pageWidth, headerWidth, dir, shellMode } = site.defaults;
@@ -173,7 +173,7 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
 </Layout>
 
 <script>
-  import MooUI from "../runtime/moo-ui.js";
+  import MooUI from "@wpmoo/astro/runtime/moo-ui.js";
   const { Datepicker, Chart, DataTable } = MooUI;
 
   document.querySelectorAll("[data-datepicker]").forEach((root) => {

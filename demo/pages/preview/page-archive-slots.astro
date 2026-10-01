@@ -1,12 +1,12 @@
 ---
-import { getDemoOptions } from "../../demo/settings.js";
-import Layout from "../../demo/Layout.astro";
-import PageHeader from "../../includes/PageHeader.astro";
-import PageArchive from "../../plugins/page/views/Archive.astro";
-import PageLoop from "../../plugins/page/views/Loop.astro";
-import { getPublishedPages } from "../../plugins/page/queries.js";
+import { getDemoOptions } from "../../settings.js";
+import Layout from "../../layouts/Layout.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import PageArchive from "@wpmoo/astro/plugins/page/views/Archive.astro";
+import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
+import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
 import { getSiteContext } from "@wpmoo/astro/context";
-import { getDemoMessages } from "../../demo/messages.js";
+import { getDemoMessages } from "../../messages.js";
 
 const entries = await getPublishedPages();
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;

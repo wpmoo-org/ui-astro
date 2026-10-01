@@ -4,6 +4,7 @@ import { page } from "@wpmoo/astro/plugins/page";
 import { post } from "@wpmoo/astro/plugins/post";
 
 export default defineConfig({
+  srcDir: "./demo",
   integrations: [moo({
     site: { brand: "Moo UI Astro", defaults: { theme: "dark" }, types: { page: { sidebar: {} }, post: { sidebar: {}, views: { single: { sidebar: null } } } } },
     plugins: [page({ routes: { single: "host" } }), post()],

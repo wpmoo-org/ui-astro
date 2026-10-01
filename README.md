@@ -41,7 +41,7 @@ Layout also supplies a Moo Button link to `#main-content`, hidden until keyboard
 
 The current RC9 `contained` shell forces its Sidebar into document flow below 992 px. The long-navigation mobile example is rejected and is not an accepted regression baseline. Correct mobile drawer behavior requires a Moo Core contract correction; the adapter does not override the published CSS or substitute a controller. Desktop containment and the `viewport` mobile drawer are separate verified behaviors.
 
-The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `src/pages/index.astro` demonstrates this composition; it is not part of the package.
+The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `demo/pages/index.astro` demonstrates this composition; it is not part of the package.
 
 The running demo also exposes `/preview/single` with an explicit Sidebar and `/preview/archive` without a Sidebar option. Both routes compose the public includes and generic views; these preview pages are excluded from the package archive.
 
@@ -220,6 +220,30 @@ The repository-only `/preview/i18n-empty` route demonstrates this with English d
 Published Moo UI RC9 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
 
 ## Develop and verify
+
+This repository maintains one npm package. `src/` contains its product source;
+the closed `package.json` file list also selects the README, licenses and
+contract records. `demo/` is a separate example host that imports the public
+`@wpmoo/astro` entrypoints. Demo routes, content, configuration and helpers are
+excluded from the npm archive.
+
+```text
+ui-astro/
+├── src/                  # Published source and required private transitives
+├── demo/
+│   ├── content.config.ts # Native example collections
+│   ├── content/          # Authored Page and Post Markdown
+│   ├── layouts/          # Host composition using public includes and Layout
+│   ├── pages/            # Example routes and preview endpoints
+│   └── *.js              # Host navigation, copy and settings
+├── contracts/            # Closed exports/files and immutable RC9 provenance
+├── scripts/              # Nonpacked verification tools
+└── tests/                # Nonpacked unit, native and consumer fixtures
+```
+
+The root Astro config uses `srcDir: "./demo"`. Existing npm/Make commands run
+this host; package export paths remain under `src/`. Consumer fixtures keep
+their own source directories and install the packed package independently.
 
 The npm archive contains the public adapter source, its private transitive
 helpers and injected routes, declarations, the CSS/runtime facades, the

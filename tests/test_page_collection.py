@@ -21,8 +21,8 @@ class NativePageCollection(unittest.TestCase):
         })
         self.assertEqual(data["contactDate"], "2026-09-28T16:25:03.000Z")
         self.assertEqual(data["filePaths"], [
-            "src/content/page/contact.md",
-            "src/content/page/guide/setup.md",
+            "demo/content/page/contact.md",
+            "demo/content/page/guide/setup.md",
         ])
 
     def test_public_site_context_exposes_preferences_without_host_source_paths(self):
@@ -39,6 +39,7 @@ class NativePageCollection(unittest.TestCase):
         ])
         self.assertNotIn("file:", source)
         self.assertNotIn("src/content/page", source)
+        self.assertNotIn("demo/content/page", source)
 
 
 if __name__ == "__main__":

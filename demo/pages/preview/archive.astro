@@ -1,7 +1,7 @@
 ---
-import { getDemoOptions } from "../../demo/settings.js";
-import Layout from "../../demo/Layout.astro";
-import Archive from "../../views/Archive.astro";
+import { getDemoOptions } from "../../settings.js";
+import Layout from "../../layouts/Layout.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
 
 const items = [
   { id: "announcement.md", title: "A sample post", href: "/preview/single", description: "A reusable semantic Loop entry.", entryContext: { type: "post", id: "announcement.md", source: "markdown" as const, taxonomies: { category: ["company"] } } },

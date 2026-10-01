@@ -58,7 +58,7 @@ test("the accepted CSS and runtime facades are exact public entrypoints", async 
       /public export map/,
     );
   }
-  for (const privatePath of ["src/pages/index.astro", "src/styles/layout.css", "contracts/layout-surface.snapshot.json"]) {
+  for (const privatePath of ["demo/pages/index.astro", "demo/content.config.ts", "demo/content/page/contact.md", "src/styles/layout.css", "contracts/layout-surface.snapshot.json"]) {
     assert.equal(record.files.includes(privatePath), false, `${privatePath} must stay outside the published archive`);
   }
 });
