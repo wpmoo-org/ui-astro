@@ -26,7 +26,6 @@ export function developmentInstallCommand(tarball) {
   return [
     "install",
     "--no-save",
-    "--package-lock=false",
     "--ignore-scripts",
     "--force",
     tarball,

@@ -121,7 +121,6 @@ test("development install never rewrites tracked dependency inputs", async () =>
   assert.deepEqual(developmentInstallCommand("/tmp/ui.tgz"), [
     "install",
     "--no-save",
-    "--package-lock=false",
     "--ignore-scripts",
     "--force",
     "/tmp/ui.tgz",
