@@ -221,6 +221,31 @@ Published Moo UI RC9 still writes English labels from its DataTable runtime (for
 
 ## Develop and verify
 
+The npm archive contains the public adapter source, its private transitive
+helpers and injected routes, declarations, the CSS/runtime facades, the
+closed export/file ledger, immutable RC9 provenance, this README, `LICENSE`
+and `THIRD_PARTY_NOTICES.md`. Demo pages, example Markdown, host content
+configuration, tests, development scripts, caches and built demo output are
+not shipped. Packed private helpers remain inaccessible as package subpaths.
+
+Sidebar menu links keep explicit accessible names when the published icon
+collapse hides their visual text. Each name defaults to its item `title`;
+an explicit nonempty `ariaLabel` can replace it. The brand link uses `brand`.
+The embedded `file-text` and `layout-grid` geometry follows the RC9 icon
+registry. That registry is not a public npm export; the adapter does not read
+a sibling checkout at runtime or provide the entire Lucide catalog.
+
+Accessible `parts.header` labels and Layout's direct `ariaLabel` require
+nonempty plain text. Empty-state copy can still be explicitly empty.
+
+The source integrity gate parses current Markdown frontmatter through the
+certified Astro host's public `astro/markdown` export, validates it with the
+declared static schema and compares normalized data and retained body with
+the native entry. Use the native `glob` default `retainBody: true`. Invalid
+warm edits fail every development request even if Astro's watcher retains
+the last valid record; valid edits recover after the native collection syncs.
+This adds no replacement loader, private Astro import or parser dependency.
+
 From the workspace root, `make ui-astro` serves the local demonstration on port 4322. `make sync` follows the HTML `dev` branch for local integration and leaves the release pin in `package.json` and `package-lock.json` intact. Do not treat the local development package as the published RC9 release.
 
 For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_PACKAGE_TARBALL=/absolute/path/to/ui.tgz`. The native npm install keeps lockfile resolution enabled and uses `--no-save` so unrelated locked dependencies and tracked release inputs stay unchanged. A local correction candidate may intentionally differ from RC9's recorded CSS bytes; the release artifact guard must reject it. Restore the published package with `npm ci` for release checks.

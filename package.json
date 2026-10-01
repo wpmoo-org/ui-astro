@@ -123,6 +123,7 @@
     "contracts/astro-public-surface.json",
     "contracts/rc9-package.json",
     "README.md",
+    "THIRD_PARTY_NOTICES.md",
     "LICENSE"
   ],
   "exports": {

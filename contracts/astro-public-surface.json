@@ -81,6 +81,7 @@
   "files": [
     "LICENSE",
     "README.md",
+    "THIRD_PARTY_NOTICES.md",
     "contracts/astro-public-surface.json",
     "contracts/rc9-package.json",
     "package.json",

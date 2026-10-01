@@ -170,6 +170,64 @@ class PublicComponentRendering(unittest.TestCase):
             "src/content/page/entry.md": "---\ntitle: Content entry\nstatus: publish\n---\nContent body.\n",
         }
 
+    def test_sidebar_links_keep_explicit_names_when_their_visual_text_is_hidden(self):
+        source = '''---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
+const groups = [{ items: [
+  { title: "Contact", href: "/contact", icon: "file-text" },
+  { title: "Archive", href: "/archive", icon: "layout-grid", ariaLabel: "Browse archive" },
+] }];
+---
+<Layout title="Sidebar names" sidebar sidebarKey="names" sidebarId="names-sidebar">
+  <Sidebar slot="sidebar" id="names-sidebar" brand="Example" brandHref="/" groups={groups} />
+  <h1>Sidebar names</h1>
+</Layout>
+'''
+        result, html = self.build(source)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        markup = Markup()
+        markup.feed(html)
+        links = [attrs for tag, attrs in markup.elements if tag == "a" and attrs.get("data-slot") == "sidebar-menu-button"]
+        self.assertEqual([(item["href"], item.get("aria-label")) for item in links],
+                         [("/", "Example"), ("/contact", "Contact"), ("/archive", "Browse archive")])
+        class Glyphs(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.current = None
+                self.shapes = {}
+
+            def handle_starttag(self, tag, attrs):
+                if tag == "svg":
+                    self.current = dict(attrs).get("data-lucide")
+                    if self.current:
+                        self.shapes[self.current] = []
+                elif self.current and tag in {"path", "rect", "circle", "line", "polyline", "polygon", "ellipse"}:
+                    self.shapes[self.current].append(tag)
+
+            def handle_endtag(self, tag):
+                if tag == "svg":
+                    self.current = None
+
+        glyphs = Glyphs()
+        glyphs.feed(html)
+        self.assertEqual(glyphs.shapes["file-text"], ["path", "path"])
+        self.assertEqual(glyphs.shapes["layout-grid"], ["rect"] * 4)
+
+    def test_layout_rejects_an_empty_direct_trigger_name(self):
+        source = '''---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
+---
+<Layout title="Direct label" sidebar sidebarKey="direct" sidebarId="direct-sidebar" ariaLabel=" ">
+  <Sidebar slot="sidebar" id="direct-sidebar" brandHref="/" />
+  <h1>Direct label</h1>
+</Layout>
+'''
+        result, _ = self.build(source)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Layout trigger label must be nonempty plain text", result.stdout + result.stderr)
+
     def test_public_parts_reach_layout_includes_and_context_free_views(self):
         source = '''---
 import Layout from "@wpmoo/astro/Layout.astro";

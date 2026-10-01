@@ -3,7 +3,7 @@ import MooSidebar from "../components/Sidebar.astro";
 import { navigationHref } from "../internal/href.js";
 import { defineSite, resolveParts, type PartsInput } from "../config/index.js";
 
-interface SidebarItem { title: string; href?: string; icon?: string; badge?: string | number; active?: boolean; disabled?: boolean; tooltip?: string }
+interface SidebarItem { title: string; href?: string; icon?: string; badge?: string | number; active?: boolean; disabled?: boolean; tooltip?: string; ariaLabel?: string }
 interface SidebarGroup { label?: string; items: SidebarItem[] }
 interface Props {
   id: string;

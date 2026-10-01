@@ -24,6 +24,7 @@ const descriptionUtilities = utilities.refine((tokens) => tokens.every((token) =
   !/^text-(?:body(?:-secondary|-tertiary|-emphasis)?|primary|secondary|success|danger|warning|info|light|dark)$/u.test(token) || token === "text-body-secondary"),
 { message: "Published Moo description variants fix text color to text-body-secondary" });
 const text = z.string();
+const accessibleLabel = z.string().trim().min(1).refine((value) => !/[\x00-\x1f\x7f]/u.test(value), "must be plain text");
 const partsSchema = z.strictObject({
   content: z.strictObject({
     utilities: utilities.optional(),
@@ -36,8 +37,8 @@ const partsSchema = z.strictObject({
       size: z.enum(["icon", "icon-xs", "icon-sm", "icon-lg"]).optional(),
       icon: z.enum(["panel-left", "chevrons-left", "chevrons-right", "ellipsis", "list-filter"]).optional(),
     }).optional(),
-    toggleLabel: text.optional(), navigationLabel: text.optional(), breadcrumbLabel: text.optional(),
-    skipLabel: z.string().trim().min(1).optional(),
+    toggleLabel: accessibleLabel.optional(), navigationLabel: accessibleLabel.optional(), breadcrumbLabel: accessibleLabel.optional(),
+    skipLabel: accessibleLabel.optional(),
   }).optional(),
   pageHeader: z.strictObject({
     utilities: utilities.optional(), titleUtilities: titleUtilities.optional(), descriptionUtilities: descriptionUtilities.optional(),

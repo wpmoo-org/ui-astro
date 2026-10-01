@@ -29,6 +29,17 @@ test("shared part defaults have one owned immutable fallback", () => {
   assert.deepEqual(layoutSchema.parse({ parts: {} }), { parts: {} });
 });
 
+test("accessible part labels require nonempty plain text without restricting empty-state copy", () => {
+  for (const field of ["toggleLabel", "navigationLabel", "breadcrumbLabel", "skipLabel"]) {
+    for (const value of ["", "   ", "Menu\u0000"]) {
+      assert.throws(() => resolveParts({ header: { [field]: value } }),
+        (error) => error.message.includes(`header.${field}`));
+    }
+  }
+  assert.equal(resolveParts({ header: { toggleLabel: " Menu " }, loop: { emptyText: "" } }).header.toggleLabel, "Menu");
+  assert.equal(resolveParts({ loop: { emptyText: "" } }).loop.emptyText, "");
+});
+
 test("part preferences inherit five layers and replace only explicit leaf arrays", () => {
   const input = {
     defaults: { parts: { content: { utilities: ["py-3", "py-md-5"] }, header: { toggleLabel: "Menu" } } },

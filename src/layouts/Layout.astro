@@ -83,8 +83,8 @@ if (typeof lang !== "string" || !lang.trim()) {
 if (typeof defaultOpen !== "boolean") {
   throw new TypeError("Layout defaultOpen must be boolean");
 }
-if (typeof ariaLabel !== "string") {
-  throw new TypeError("Layout trigger label must be a string");
+if (typeof ariaLabel !== "string" || !ariaLabel.trim() || /[\x00-\x1f\x7f]/u.test(ariaLabel)) {
+  throw new TypeError("Layout trigger label must be nonempty plain text");
 }
 if (typeof skipText !== "string" || !skipText.trim()) {
   throw new TypeError("Layout skipText must be nonempty text");

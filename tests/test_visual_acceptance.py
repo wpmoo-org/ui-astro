@@ -7,7 +7,7 @@ ASTRO_BASE_URL to inspect the same accepted surface from a packed consumer.
 import os
 import unittest
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 
 BASE_URL = os.environ.get("ASTRO_BASE_URL", "http://127.0.0.1:4322/")
@@ -97,6 +97,37 @@ class AcceptedAstroSurface(unittest.TestCase):
         self.page.keyboard.press("Escape")
         self.page.wait_for_function("!document.querySelector('[data-slot=sidebar]').classList.contains('show')")
         self.assertTrue(trigger.evaluate("element => document.activeElement === element"))
+
+    def test_sidebar_names_and_registered_glyphs_survive_collapse_and_mobile(self):
+        sidebar = self.page.locator('[data-slot="sidebar"]')
+        trigger = self.page.locator('[data-sidebar-trigger]')
+
+        def named_links():
+            for name in ("Moo UI Astro", "Overview", "Single", "Archive"):
+                expect(sidebar.get_by_role("link", name=name, exact=True)).to_have_accessible_name(name)
+            for name in ("Single", "Archive"):
+                glyph = sidebar.get_by_role("link", name=name, exact=True).locator("svg")
+                bounds = glyph.evaluate("e => { const b = e.getBBox(); return { width: b.width, height: b.height }; }")
+                self.assertGreater(bounds["width"], 0)
+                self.assertGreater(bounds["height"], 0)
+
+        named_links()
+        trigger.click()
+        self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state="collapsed"]').wait_for()
+        self.assertEqual(sidebar.locator('a[href="/preview/single"] .sidebar-menu-button__text')
+                         .evaluate("e => getComputedStyle(e).display"), "none")
+        named_links()
+        self.page.locator('[data-theme-toggle]').click()
+        self.page.locator('[data-direction-toggle]').click()
+        named_links()
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        trigger.click()
+        self.page.wait_for_function("document.querySelector('[data-slot=sidebar]').classList.contains('show')")
+        self.assertEqual(sidebar.get_attribute("aria-modal"), "true")
+        named_links()
+        self.page.keyboard.press("Escape")
+        self.page.wait_for_function("!document.querySelector('[data-slot=sidebar]').classList.contains('show')")
+        expect(trigger).to_be_focused()
 
     def test_theme_direction_persist_and_keyboard_focus_is_visible(self):
         trigger = self.page.locator("[data-sidebar-trigger]")
