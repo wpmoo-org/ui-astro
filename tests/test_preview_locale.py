@@ -14,6 +14,10 @@ EMPTY_TEXT = {
     "en": ("No items yet.", "No pages yet."),
     "de": ("Noch keine Einträge.", "Noch keine Seiten."),
 }
+SKIP_TEXT = {
+    "en": "Skip to main content",
+    "de": "Zum Hauptinhalt springen",
+}
 
 
 class Markup(HTMLParser):
@@ -50,6 +54,11 @@ class PreviewLocale(unittest.TestCase):
     def test_preview_page_query_uses_the_selected_language(self):
         data = json.loads((DIST / "preview/page-data.json").read_text(encoding="utf-8"))
         self.assertEqual(data["lang"], LOCALE)
+
+    def test_skip_label_follows_the_host_language(self):
+        markup = page("preview/i18n-empty/index.html")
+        self.assertEqual(markup.lang, LOCALE)
+        self.assertIn(SKIP_TEXT[LOCALE], " ".join(markup.text))
 
 
 if __name__ == "__main__":

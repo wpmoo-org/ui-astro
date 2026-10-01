@@ -22,6 +22,7 @@ interface Props {
   defaultOpen?: boolean;
   sidebarId?: string;
   ariaLabel?: string;
+  skipText?: string;
   id?: string;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
@@ -54,6 +55,7 @@ const {
   defaultOpen = true,
   sidebarId = "",
   ariaLabel = "Toggle sidebar",
+  skipText = "Skip to main content",
   id = "",
   pageWidth = "xl",
   headerWidth = null,
@@ -80,6 +82,9 @@ if (typeof defaultOpen !== "boolean") {
 }
 if (typeof ariaLabel !== "string") {
   throw new TypeError("Layout trigger label must be a string");
+}
+if (typeof skipText !== "string" || !skipText.trim()) {
+  throw new TypeError("Layout skipText must be nonempty text");
 }
 if (headerWidth !== null && !Object.hasOwn(containerClasses, headerWidth)) {
   throw new TypeError(`Unknown Layout header width: ${String(headerWidth)}`);
@@ -132,6 +137,7 @@ const pageClasses = getPageClasses(pageContext);
   <body>
     <div class:list={["moo-ui", pageClasses]} data-bs-theme={theme} data-moo-document-owner="true">
       <script is:inline set:html={stateSource}></script>
+      <Button element="a" href="#main-content" class="visually-hidden-focusable position-absolute top-0 start-0 z-3">{skipText}</Button>
       <div class="wrapper" data-layout="app" data-shell-mode={shellMode} id={id || undefined} data-slot={sidebar ? "sidebar-wrapper" : undefined} data-sidebar-state={sidebar ? (defaultOpen ? "expanded" : "collapsed") : undefined} data-sidebar-key={sidebar ? sidebarKey : undefined}>
         {sidebar ? <script is:inline set:html={stateSource}></script> : null}
         {sidebar ? <slot name="sidebar" /> : null}

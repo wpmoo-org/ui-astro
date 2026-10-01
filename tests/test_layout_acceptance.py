@@ -8,7 +8,7 @@ import os
 import unittest
 from urllib.parse import urljoin
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 
 BASE_URL = os.environ.get("ASTRO_BASE_URL", "http://127.0.0.1:4322/")
@@ -94,6 +94,55 @@ class AcceptedLayouts(unittest.TestCase):
         self.assertLess(self.page.locator('[data-layout="app"]').bounding_box()["height"], 900)
         self.assertTrue(self.page.locator("main").evaluate("element => element.scrollHeight > element.clientHeight"))
         self.assertTrue(self.page.locator('[data-sidebar-trigger]').is_visible())
+
+    def test_mobile_contained_sidebar_preserves_page_and_keyboard_drawer_behavior(self):
+        for width in (390, 991):
+            for theme, direction in (("light", "ltr"), ("dark", "rtl")):
+                with self.subTest(width=width, theme=theme, direction=direction):
+                    self.page.set_viewport_size({"width": width, "height": 480})
+                    self.context.add_init_script(
+                        f"localStorage.setItem('moo:theme', '{theme}');"
+                        f"localStorage.setItem('moo:direction', '{direction}');"
+                    )
+                    self.open_page("preview/layouts/contained")
+                    sidebar = self.page.locator('[data-slot="sidebar"]')
+                    trigger = self.page.locator('[data-slot="page"] [data-sidebar-trigger]')
+                    self.assertFalse(sidebar.is_visible())
+                    self.assertAlmostEqual(self.page.locator('[data-slot="page"] > header').bounding_box()["y"], 1, delta=1)
+                    trigger.press("Enter")
+                    self.page.wait_for_function("document.querySelector('[data-slot=sidebar]').classList.contains('show') && !document.querySelector('[data-slot=sidebar]').classList.contains('showing')")
+                    self.assertEqual(sidebar.get_attribute("role"), "dialog")
+                    self.assertEqual(sidebar.get_attribute("aria-modal"), "true")
+                    self.assertEqual(trigger.get_attribute("aria-expanded"), "true")
+                    self.assertAlmostEqual(sidebar.bounding_box()["height"], 480, delta=1)
+                    content = sidebar.locator('[data-slot="sidebar-content"]')
+                    self.assertTrue(content.evaluate("e => e.scrollHeight > e.clientHeight"))
+                    content.evaluate("e => e.scrollTop = e.scrollHeight")
+                    self.assertGreater(content.evaluate("e => e.scrollTop"), 0)
+                    sidebar.locator('a[href]').first.focus()
+                    self.page.keyboard.press("Shift+Tab")
+                    self.assertTrue(sidebar.evaluate("e => e.contains(document.activeElement)"))
+                    sidebar.locator('a[href]').last.focus()
+                    self.page.keyboard.press("Tab")
+                    self.assertTrue(sidebar.evaluate("e => e.contains(document.activeElement)"))
+                    self.page.keyboard.press("Escape")
+                    expect(sidebar).to_be_hidden()
+                    expect(trigger).to_be_focused()
+                    expect(trigger).to_have_attribute("aria-expanded", "false")
+                    self.assertEqual(self.page.locator("main").evaluate("e => getComputedStyle(e).overflowY"), "visible")
+                    self.page.evaluate("window.scrollTo(0, 320)")
+                    self.page.wait_for_function("window.scrollY > 0")
+                    self.assertGreater(self.page.evaluate("window.scrollY"), 0)
+                    self.assertEqual(self.page.locator("main").evaluate("e => e.scrollTop"), 0)
+
+    def test_skip_control_moves_keyboard_focus_to_main_content(self):
+        self.open_page("preview/i18n-empty")
+        skip = self.page.get_by_role("button", name="Skip to main content", exact=True)
+        self.assertEqual(skip.get_attribute("href"), "#main-content")
+        self.page.keyboard.press("Tab")
+        expect(skip).to_be_focused()
+        skip.press("Enter")
+        expect(self.page.locator("main")).to_be_focused()
 
     def test_page_grid_reflows_when_the_sidebar_changes_usable_width(self):
         self.page.set_viewport_size({"width": 1024, "height": 900})

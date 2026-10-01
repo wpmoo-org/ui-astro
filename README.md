@@ -37,6 +37,8 @@ const groups = [{
 
 Omit `sidebar` and the Sidebar slot for a page without a Sidebar. When `sidebar` is present, the slot is required and its `id` must match `sidebarId`. Layout supports the registered `shellMode`, `pageWidth`, `headerWidth`, `theme`, and `dir` values. Use its `header` and `footer` slots for page regions. `Sidebar` contributes the direct `<aside>` branch, while Layout supplies the app wrapper, Page rail, trigger, and initialization.
 
+Layout also supplies a Moo Button link to `#main-content`, hidden until keyboard focus by Bootstrap's registered `visually-hidden-focusable` helper. Its nonempty `skipText` defaults to `"Skip to main content"`; a multilingual theme supplies translated text through this prop. The link provides direct keyboard access to the main region and preserves Bootstrap's reverse-Tab loop when a mobile Sidebar is open.
+
 The current RC9 `contained` shell forces its Sidebar into document flow below 992 px. The long-navigation mobile example is rejected and is not an accepted regression baseline. Correct mobile drawer behavior requires a Moo Core contract correction; the adapter does not override the published CSS or substitute a controller. Desktop containment and the `viewport` mobile drawer are separate verified behaviors.
 
 The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `src/pages/index.astro` demonstrates this composition; it is not part of the package.
@@ -161,7 +163,7 @@ const copy = getMessages(lang);
 const items = [];
 ---
 
-<Layout title={copy.title} lang={lang}>
+<Layout title={copy.title} lang={lang} skipText={copy.skipToContent}>
   <h1>{copy.title}</h1>
   <Loop items={items} emptyText={copy.emptyItems} />
 </Layout>
@@ -174,6 +176,8 @@ Published Moo UI RC9 still writes English labels from its DataTable runtime (for
 ## Develop and verify
 
 From the workspace root, `make ui-astro` serves the local demonstration on port 4322. `make sync` follows the HTML `dev` branch for local integration and leaves the release pin in `package.json` and `package-lock.json` intact. Do not treat the local development package as the published RC9 release.
+
+For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_PACKAGE_TARBALL=/absolute/path/to/ui.tgz`. The native npm install keeps lockfile resolution enabled and uses `--no-save` so unrelated locked dependencies and tracked release inputs stay unchanged. A local correction candidate may intentionally differ from RC9's recorded CSS bytes; the release artifact guard must reject it. Restore the published package with `npm ci` for release checks.
 
 The `moo()` integration separates the default build and sync Vite caches from the development cache, so these commands can run while the existing development server stays open. An explicit host `vite.cacheDir` remains unchanged; a host choosing its own cache must keep concurrent commands isolated. After a runtime upgrade, reload the browser to request the current modules. The live regression `python3 tests/test_dev_runtime_build.py` uses the existing 4322 server and checks that a build preserves public runtime responses and selected Page/Post routes.
 

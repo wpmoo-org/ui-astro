@@ -17,7 +17,7 @@ const { title, sidebar = false, lang = getSiteContext().site.defaults.lang, side
 const copy = getDemoMessages(lang);
 const groups = getDemoNavigation(Astro.url.pathname, lang);
 const breadcrumbs = [{ label: "Moo UI Astro", href: "/" }, { label: title }];
-const layoutProps = { ...options, title, lang };
+const layoutProps = { ...options, title, lang, skipText: options.skipText ?? copy.skipToContent };
 const sidebarId = options.sidebarId ?? "demo-sidebar";
 const sidebarKey = options.sidebarKey ?? "astro-demo";
 ---
