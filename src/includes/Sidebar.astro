@@ -1,6 +1,7 @@
 ---
 import MooSidebar from "../components/Sidebar.astro";
 import { navigationHref } from "../internal/href.js";
+import { defineSite, resolveParts, type PartsInput } from "../config/index.js";
 
 interface SidebarItem { title: string; href?: string; icon?: string; badge?: string | number; active?: boolean; disabled?: boolean; tooltip?: string }
 interface SidebarGroup { label?: string; items: SidebarItem[] }
@@ -16,9 +17,12 @@ interface Props {
   ariaLabel?: string;
   ariaLabelledBy?: string;
   footerText?: string;
+  parts?: PartsInput;
 }
 
-const { id, brandHref, groups = [], ...rest } = Astro.props;
+const parts = resolveParts(Astro.props.parts);
+const { id, brandHref, groups = [], parts: _parts, brand = defineSite().brand, ariaLabel = parts.header.navigationLabel, ...options } = Astro.props;
+const rest = { ...options, brand, ariaLabel };
 if (typeof id !== "string" || !id.trim()) throw new TypeError("Sidebar include id is required");
 navigationHref(brandHref, "Sidebar include brandHref");
 const header = Astro.slots.has("header");

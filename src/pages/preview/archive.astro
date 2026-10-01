@@ -1,4 +1,5 @@
 ---
+import { getDemoOptions } from "../../demo/settings.js";
 import Layout from "../../demo/Layout.astro";
 import Archive from "../../views/Archive.astro";
 
@@ -6,8 +7,9 @@ const items = [
   { id: "announcement.md", title: "A sample post", href: "/preview/single", description: "A reusable semantic Loop entry.", entryContext: { type: "post", id: "announcement.md", source: "markdown" as const, taxonomies: { category: ["company"] } } },
   { id: "guide.md", title: "Another post", href: "/preview/single", date: new Date("2026-09-28T12:00:00Z"), entryContext: { type: "post", id: "guide.md", source: "markdown" as const } },
 ];
+const preferences = getDemoOptions("post", "archive");
 ---
 
-<Layout title="Archive preview" pageContext={{ view: "archive", type: "post" }}>
-  <Archive title="Posts" description="A common Archive view with a supplied Loop." items={items} />
+<Layout parts={preferences.parts} title="Archive preview" pageContext={{ view: "archive", type: "post" }}>
+  <Archive lang={preferences.lang} parts={preferences.parts} title="Posts" description="A common Archive view with a supplied Loop." items={items} />
 </Layout>

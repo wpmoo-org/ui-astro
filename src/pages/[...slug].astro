@@ -34,7 +34,8 @@ const { Content } = await render(entry);
   theme={options.theme}
   lang={options.lang}
   dir={options.dir}
+  parts={options.parts}
   pageContext={{ view: "single", entry: { type: "page", id: entry.id, source: "markdown" } }}
 >
-  <Single entry={entry}><Content /></Single>
+  <Single parts={options.parts} entry={entry}><Content /></Single>
 </Layout>

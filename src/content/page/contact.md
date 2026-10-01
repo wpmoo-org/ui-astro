@@ -9,6 +9,12 @@ navOrder: 1
 layout:
   sidebar: null
   pageWidth: lg
+  parts:
+    content:
+      utilities: [py-2]
 ---
 
 Contact page body.
+
+This entry replaces the shared Layout content spacing with Bootstrap `py-2`.
+Other entries and archives retain their inherited theme preferences.

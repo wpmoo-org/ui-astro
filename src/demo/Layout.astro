@@ -9,36 +9,46 @@ import { getSiteContext } from "@wpmoo/astro/context";
 import type { PageOptions } from "@wpmoo/astro/config";
 import { getDemoMessages } from "./messages.js";
 import { getDemoNavigation } from "./navigation.js";
+import { demoControls, getDemoOptions } from "./settings.js";
 
 type Props = ComponentProps<typeof Layout> & {
   sidebarOptions?: PageOptions["sidebar"];
 };
-const { title, sidebar = false, lang = getSiteContext().site.defaults.lang, sidebarOptions, ...options } = Astro.props;
+const { title, sidebar = false, sidebarOptions, ...options } = Astro.props;
+const context = getSiteContext();
+const pageContext = options.pageContext;
+const type = pageContext?.view === "single" ? pageContext.entry.type : pageContext?.view === "archive" ? pageContext.type : "page";
+const view = pageContext?.view === "archive" ? "archive" : "single";
+const defaults = getDemoOptions(type, view, { parts: options.parts, lang: options.lang });
+const { lang, parts } = defaults;
+const selectedSidebar = sidebarOptions === undefined ? defaults.sidebar : sidebarOptions;
 const copy = getDemoMessages(lang);
 const groups = getDemoNavigation(Astro.url.pathname, lang);
-const breadcrumbs = [{ label: "Moo UI Astro", href: "/" }, { label: title }];
-const layoutProps = { ...options, title, lang, skipText: options.skipText ?? copy.skipToContent };
+const homeHref = context.base;
+const breadcrumbs = [{ label: context.site.brand, href: homeHref }, { label: title }];
+const { sidebar: _sidebar, ...layoutDefaults } = defaults;
+const layoutProps = { ...layoutDefaults, ...options, title, lang, parts, skipText: options.skipText ?? parts.header.skipLabel };
 const sidebarId = options.sidebarId ?? "demo-sidebar";
 const sidebarKey = options.sidebarKey ?? "astro-demo";
 ---
 
 {sidebar ? (
-  <Layout {...layoutProps} sidebar sidebarId={sidebarId} sidebarKey={sidebarKey} defaultOpen={sidebarOptions?.defaultOpen ?? options.defaultOpen ?? true}>
-    <Sidebar slot="sidebar" id={sidebarId} brand="Moo UI Astro" brandHref="/" groups={groups} side={sidebarOptions?.side} variant={sidebarOptions?.variant} collapsible={sidebarOptions?.collapsible} rail={sidebarOptions?.rail} ariaLabel={copy.examples}>
-      <span slot="footer" class="small text-body-secondary">Moo UI · Astro</span>
+  <Layout {...layoutProps} sidebar sidebarId={sidebarId} sidebarKey={sidebarKey} defaultOpen={options.defaultOpen ?? selectedSidebar?.defaultOpen ?? true}>
+    <Sidebar slot="sidebar" id={sidebarId} brand={context.site.brand} brandHref={homeHref} parts={parts} groups={groups} side={selectedSidebar?.side} variant={selectedSidebar?.variant} collapsible={selectedSidebar?.collapsible} rail={selectedSidebar?.rail} ariaLabel={copy.examples}>
+      <span slot="footer" class:list={demoControls.sidebarFooterUtilities}>{context.site.brand}</span>
     </Sidebar>
-    <Header slot="header" breadcrumbs={breadcrumbs} ariaLabel={copy.breadcrumb}>
-      <Button slot="actions" element="a" href="/" variant="ghost" size="sm" class="ms-auto">{copy.overview}</Button>
+    <Header slot="header" parts={parts} breadcrumbs={breadcrumbs} ariaLabel={parts.header.breadcrumbLabel}>
+      <Button slot="actions" element="a" href={homeHref} {...demoControls.action}>{copy.overview}</Button>
     </Header>
     <slot />
-    <Footer slot="footer" homeHref="/" brand="Moo UI Astro" />
+    <Footer slot="footer" parts={parts} homeHref={homeHref} brand={context.site.brand} />
   </Layout>
 ) : (
   <Layout {...layoutProps}>
-    <Header slot="header" breadcrumbs={breadcrumbs} ariaLabel={copy.breadcrumb}>
-      <Button slot="actions" element="a" href="/" variant="ghost" size="sm" class="ms-auto">{copy.overview}</Button>
+    <Header slot="header" parts={parts} breadcrumbs={breadcrumbs} ariaLabel={parts.header.breadcrumbLabel}>
+      <Button slot="actions" element="a" href={homeHref} {...demoControls.action}>{copy.overview}</Button>
     </Header>
     <slot />
-    <Footer slot="footer" homeHref="/" brand="Moo UI Astro" />
+    <Footer slot="footer" parts={parts} homeHref={homeHref} brand={context.site.brand} />
   </Layout>
 )}

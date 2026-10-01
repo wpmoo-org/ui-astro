@@ -1,4 +1,8 @@
-"""Positive browser contracts for the accepted Single and Archive previews."""
+"""Positive contracts for accepted shared regions and Layout-owned spacing.
+
+The maintainer accepted the configurable spacing candidate on 2026-10-01.
+These measurements protect that foundation, not a finished theme design.
+"""
 
 import os
 import unittest
@@ -67,6 +71,61 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
         self.assertEqual(self.page.locator("[data-sidebar-trigger]").count(), 0)
         self.assert_region_rails_align()
+
+    def test_layout_spacing_is_inherited_and_one_page_can_replace_it(self):
+        for width, theme, direction in [(1440, "dark", "ltr"), (390, "light", "rtl")]:
+            with self.subTest(width=width, theme=theme, direction=direction):
+                self.page.set_viewport_size({"width": width, "height": 844})
+                self.context.add_init_script(
+                    f"localStorage.setItem('moo:theme', '{theme}'); "
+                    f"localStorage.setItem('moo:direction', '{direction}')"
+                )
+                for path, inset_rem in [("preview/archive", 1.5), ("preview/single", 1.5),
+                                        ("guide/setup", 1.5), ("posts", 1.5),
+                                        ("posts/announcement", 1.5), ("contact", 0.5)]:
+                    with self.subTest(path=path):
+                        self.open_preview(path)
+                        rail = self.page.locator('main#main-content > [data-page-container]')
+                        metrics = rail.evaluate("""element => {
+                            const style = getComputedStyle(element);
+                            const title = element.querySelector('h1').getBoundingClientRect();
+                            return {
+                                rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+                                top: parseFloat(style.paddingTop),
+                                bottom: parseFloat(style.paddingBottom),
+                                titleInset: title.top - element.getBoundingClientRect().top,
+                            };
+                        }""")
+                        inset = metrics["rem"] * inset_rem
+                        self.assertAlmostEqual(metrics["top"], inset, delta=1)
+                        self.assertAlmostEqual(metrics["bottom"], inset, delta=1)
+                        self.assertAlmostEqual(metrics["titleInset"], inset, delta=1)
+                        self.assert_region_rails_align()
+
+    def test_archive_heading_and_items_keep_the_accepted_internal_spacing(self):
+        for width in [1440, 390]:
+            with self.subTest(width=width):
+                self.page.set_viewport_size({"width": width, "height": 844})
+                self.open_preview("preview/archive")
+                metrics = self.page.locator("main").evaluate("""element => {
+                    const heading = element.querySelector('h1');
+                    const header = heading.closest('header');
+                    const description = header.querySelector('p');
+                    const list = element.querySelector('ul');
+                    const [first, second] = list.children;
+                    const itemHeading = first.querySelector('h2');
+                    const itemDescription = first.querySelector('p');
+                    return {
+                        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+                        headingGap: description.getBoundingClientRect().top - heading.getBoundingClientRect().bottom,
+                        listInset: list.getBoundingClientRect().top - header.getBoundingClientRect().bottom,
+                        itemGap: second.getBoundingClientRect().top - first.getBoundingClientRect().bottom,
+                        itemDescriptionGap: itemDescription.getBoundingClientRect().top - itemHeading.getBoundingClientRect().bottom,
+                    };
+                }""")
+                for key, gap_rem in [("headingGap", 0.5), ("listInset", 1.5),
+                                     ("itemGap", 1.5), ("itemDescriptionGap", 0.5)]:
+                    self.assertAlmostEqual(metrics[key], metrics["rem"] * gap_rem, delta=1)
 
     def test_mobile_sidebar_opens_with_aria_and_returns_keyboard_focus(self):
         self.page.set_viewport_size({"width": 390, "height": 844})

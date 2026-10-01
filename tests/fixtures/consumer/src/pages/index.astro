@@ -47,7 +47,7 @@ import Toast from "@wpmoo/astro/components/Toast.astro";
 import ToggleGroup from "@wpmoo/astro/components/ToggleGroup.astro";
 import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
-import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
+import { defineSite, formatDate, normalizeSlug, resolvePageOptions, resolveParts } from "@wpmoo/astro/config";
 import { entrySchema, sourceEntryId } from "@wpmoo/astro/content";
 import { getEntryHref, getSiteContext, getSiteNavigation } from "@wpmoo/astro/context";
 import { definePlugin } from "@wpmoo/astro/plugins";
@@ -90,6 +90,8 @@ const sourceId = sourceEntryId({ entry: "contact.md" });
 const entryTitle = entrySchema.parse({ title: "Contact", status: "draft" }).title;
 const pageTitle = pageSchema.parse({ title: "Contact", status: "draft" }).title;
 const siteContext = getSiteContext();
+const parts = resolveParts(siteContext.site.defaults.parts);
+if (formatDate(new Date("2026-09-28T12:00:00Z"), { style: parts.loop.dateStyle }) !== "2026-09-28") throw new Error("Public date formatting differs");
 const pageNavigation = await getSiteNavigation("/contact");
 const packedContact = (await getCollection("page")).find((entry) => entry.id === "contact.md");
 if (!packedContact) throw new Error("Packed consumer Page contact.md is missing");
@@ -97,7 +99,7 @@ const packedContactHref = getEntryHref("page", packedContact);
 void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle, post, postSchema, getPostPaths, getPublishedPosts, postViews];
 ---
 
-<Layout title="Packed consumer" sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
+<Layout title="Packed consumer" parts={parts} sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
   <Sidebar slot="sidebar" id="packed-sidebar" brand="Packed consumer" groups={groups} />
   <h1>Independent package consumer</h1>
   <p data-public-wrapper-count={publicWrappers.length} data-public-part-count={publicParts.length} data-public-page-view-count={pageViews.length} data-context-plugin={siteContext.plugins[0]?.id} data-context-link={packedContactHref} data-navigation-count={pageNavigation.length} data-config-sidebar={configuredPostSidebar === null ? "none" : "enabled"} data-config-slug={normalizedContactSlug} data-plugin-id={pagePlugin.id}>All public wrapper imports resolve from the packed adapter.</p>

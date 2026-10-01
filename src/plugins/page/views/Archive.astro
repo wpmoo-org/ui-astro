@@ -1,26 +1,31 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { defineSite, resolveParts, type DateFormatter, type PartsInput } from "../../../config/index.js";
 import Archive from "../../../views/Archive.astro";
 import Loop from "./Loop.astro";
 
 interface Props {
+  parts?: PartsInput;
+  dateFormatter?: DateFormatter;
   entries: CollectionEntry<"page">[];
   title?: string;
   description?: string;
   base?: string;
   trailingSlash?: "always" | "never" | "ignore";
   lang?: string;
+  dateLang?: string;
   reservedPrefixes?: readonly string[];
   emptyText?: string;
   titleVariant?: "section-title" | "subsection-title";
 }
 
-const { entries, title = "Pages", description, base = "/", trailingSlash = "ignore", lang = "en", reservedPrefixes = [], emptyText = "No pages yet.", titleVariant = "section-title" } = Astro.props;
+const parts = resolveParts(Astro.props.parts);
+const { entries, title = parts.loop.pageTitle, description, base = "/", trailingSlash = "ignore", lang = defineSite().defaults.lang, dateLang = lang, reservedPrefixes = [], emptyText = parts.loop.pageEmptyText, titleVariant, dateFormatter } = Astro.props;
 ---
 
-<Archive title={title} description={description} emptyText={emptyText} titleVariant={titleVariant} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), actions: Astro.slots.has("actions"), loop: true, afterList: Astro.slots.has("after-list") }}>
+<Archive parts={parts} lang={dateLang} dateFormatter={dateFormatter} title={title} description={description} emptyText={emptyText} titleVariant={titleVariant} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), actions: Astro.slots.has("actions"), loop: true, afterList: Astro.slots.has("after-list") }}>
   {Astro.slots.has("page-header") ? <slot name="page-header" slot="page-header" /> : null}
   {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
-  {Astro.slots.has("loop") ? <slot name="loop" slot="loop" /> : <Loop slot="loop" entries={entries} base={base} trailingSlash={trailingSlash} lang={lang} reservedPrefixes={reservedPrefixes} emptyText={emptyText} titleVariant={titleVariant} />}
+  {Astro.slots.has("loop") ? <slot name="loop" slot="loop" /> : <Loop parts={parts} dateFormatter={dateFormatter} slot="loop" entries={entries} base={base} trailingSlash={trailingSlash} lang={lang} dateLang={dateLang} reservedPrefixes={reservedPrefixes} emptyText={emptyText} titleVariant={titleVariant} />}
   {Astro.slots.has("after-list") ? <slot name="after-list" slot="after-list" /> : null}
 </Archive>

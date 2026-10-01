@@ -138,6 +138,25 @@ export function assertPrivateSubpathError(result) {
   }
 }
 
+export function assertThemeOutput({ home, contact, guide }) {
+  for (const [name, html, expected] of [
+    ["home", home, ["container-xl", "py-3", "py-md-5"]],
+    ["contact", contact, ["container-lg"]],
+    ["guide", guide, ["container-xl", "py-3", "py-md-5"]],
+  ]) {
+    const rails = [...html.matchAll(/<div\b(?=[^>]*\bdata-page-container(?:\s|>|=))[^>]*>/gu)];
+    const actual = rails[0]?.[0].match(/\bclass="([^"]*)"/u)?.[1].split(/\s+/u).filter(Boolean).sort();
+    if (rails.length !== 1 || JSON.stringify(actual) !== JSON.stringify([...expected].sort())) {
+      throw new Error(`${name} must render its resolved theme preferences on one Page rail`);
+    }
+  }
+  for (const html of [contact, guide]) {
+    if (!html.includes('<header class="bg-body-tertiary border-bottom">')) {
+      throw new Error("Theme Header preferences must reach both built-in Page routes");
+    }
+  }
+}
+
 export function assertPeerConflict(result, certifiedVersion) {
   if (result.status === 0 || !result.stderr.includes("ERESOLVE") ||
       !result.stderr.includes(`peer astro@"${certifiedVersion}"`)) {
@@ -242,6 +261,7 @@ export async function verifyPackedConsumer({ cache, output }) {
       throw error;
     });
   assertPackedPageOutput({ contact, guide, draftExists });
+  assertThemeOutput({ home: html, contact, guide });
 
   const proof = {
     schema_version: 1,
@@ -258,6 +278,7 @@ export async function verifyPackedConsumer({ cache, output }) {
     public_source_imports: importCount,
     host_astro: { version: manifest.peerDependencies.astro, single_resolved_path: relative(outputPath, consumerAstro) },
     mdx_installed: false,
+    theme_preferences: "Shared Layout utilities and Header surface; isolated Contact utility replacement; public readonly types",
     type_check: "npm run check",
     type_check_output: { path: "type-check.log", sha256: sha256(Buffer.from(typeOutput)) },
     incompatible_peer: { host_version: incompatible.version, exit_code: peerResult.status, code: "ERESOLVE", path: "peer-conflict.log", sha256: sha256(Buffer.from(peerOutput)) },

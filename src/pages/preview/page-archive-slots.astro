@@ -1,4 +1,5 @@
 ---
+import { getDemoOptions } from "../../demo/settings.js";
 import Layout from "../../demo/Layout.astro";
 import PageHeader from "../../includes/PageHeader.astro";
 import PageArchive from "../../plugins/page/views/Archive.astro";
@@ -10,12 +11,13 @@ import { getDemoMessages } from "../../demo/messages.js";
 const entries = await getPublishedPages();
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
 const copy = getDemoMessages(lang);
+const preferences = getDemoOptions("page", "archive");
 ---
 
-<Layout title="Custom Page archive preview" sidebar pageContext={{ view: "archive", type: "page" }} lang={lang}>
-  <PageArchive title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages}>
-    <PageHeader slot="page-header" title="Custom Pages" description="A Page archive using explicit Moo UI slots." />
-    <PageLoop slot="loop" entries={[...entries].reverse()} lang={lang} emptyText={copy.emptyPages} />
+<Layout parts={preferences.parts} title="Custom Page archive preview" sidebar pageContext={{ view: "archive", type: "page" }} lang={lang}>
+  <PageArchive parts={preferences.parts} title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages}>
+    <PageHeader parts={preferences.parts} slot="page-header" title="Custom Pages" description="A Page archive using explicit Moo UI slots." />
+    <PageLoop parts={preferences.parts} slot="loop" entries={[...entries].reverse()} lang={lang} emptyText={copy.emptyPages} />
     <p slot="after-list" class="text-body-secondary">End of the published Page list.</p>
   </PageArchive>
 </Layout>

@@ -62,7 +62,7 @@ import "@wpmoo/astro/styles.css";
 
 The Bootstrap facade exposes the installed Bootstrap ESM namespace to the published Moo Sidebar runtime. The Moo facade re-exports the published Core ESM module; its optional components are initialized on caller-owned roots. Layout already loads both facades and initializes its own Sidebar. Its declaration covers the shared `getInstance`, `getOrCreateInstance`, construction and disposal lifecycle of the nine RC9 constructors; it does not advertise additional component-specific methods.
 
-`@wpmoo/astro/config` exports `defineSite`, `resolvePageOptions`, `layoutSchema`, `getEntryClasses`, `getPageClasses`, and `normalizeSlug`. It resolves partial site, content-type, view, and page preferences without loading content or registering routes. For example:
+`@wpmoo/astro/config` exports `defineSite`, `resolvePageOptions`, `resolveParts`, `formatDate`, `layoutSchema`, `getEntryClasses`, `getPageClasses`, and `normalizeSlug`. It resolves partial site, content-type, view, and page preferences without loading content or registering routes. For example:
 
 ```js
 import { defineSite, normalizeSlug, resolvePageOptions } from "@wpmoo/astro/config";
@@ -75,6 +75,52 @@ const slug = normalizeSlug("Contact Us", { lang: "en" });
 ```
 
 Here `options.sidebar` is `null` and `slug` is `"contact-us"`. An omitted Sidebar option defaults to `null`; `sidebar: {}` enables Moo's default Sidebar preferences; `sidebar: null` disables an inherited Sidebar for a type, view, or individual page without erasing its field preferences. A later `sidebar: {}` re-enables those preferences. A route passes `sidebar={options.sidebar !== null}` to Layout and supplies the Sidebar slot only when enabled. The config entrypoint does not activate Page/Post plugins or add routes; the root integration selects those features.
+
+### Theme preferences
+
+One `parts` record supplies shared appearance and display choices. Its precedence is package fallback → `site.defaults` → `site.types[type]` → the selected `views.single`/`views.archive` → the entry's `layout` or explicit route override. Known nested fields merge; arrays replace, including `[]`. Omitted/undefined fields inherit. Null is invalid for `parts`; Sidebar null still disables the Sidebar. Inputs are validated and copied; resolved records and arrays are readonly.
+
+```js
+const siteInput = {
+  defaults: { parts: {
+    content: { utilities: ["py-3", "py-md-5"] },
+    header: { utilities: ["bg-body-tertiary", "border-bottom"] },
+    loop: { dateStyle: "long" },
+  } },
+  types: { post: { views: { single: { parts: { content: { utilities: ["py-2"] } } } } } },
+};
+const site = defineSite(siteInput);
+```
+
+Use the authored object as `moo({ site: siteInput, plugins: [...] })` input. A single Markdown/MDX entry can replace its inherited content spacing without changing another entry or its archive:
+
+```yaml
+layout:
+  parts:
+    content:
+      utilities: []
+```
+
+Layout applies `parts.content.utilities` exactly once, on the existing `data-page-container`. Single, Archive and Loop add no outer page padding. Built-in routes pass resolved parts to the Layout, includes and views. A host-authored route or collection-free composition explicitly passes the same `parts={options.parts}` to its Layout and child includes/views; there is no implicit view context. `resolveParts()` provides the same fallback for standalone components.
+
+| Part | Options and fallback |
+| --- | --- |
+| `content` | `utilities: ['py-4']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar']` on the existing main owner |
+| `header` | Region `utilities: ['bg-body', 'border-bottom']`; `contentUtilities: ['d-flex', 'align-items-center', 'gap-2', 'py-2']`; `breadcrumbUtilities: ['mb-0']` |
+| `header.trigger` | Published Button `variant: 'ghost'`, `size: 'icon-sm'`, `icon: 'panel-left'` |
+| `header` copy | `toggleLabel`, `navigationLabel`, `breadcrumbLabel`, `skipLabel`; English fallback, explicit host translations |
+| `pageHeader` | `utilities: ['d-flex', 'flex-column', 'gap-2', 'mb-4']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: []`; `descriptionVariant: 'page-description'` or `'muted'` |
+| `loop` | `utilities: ['list-unstyled', 'd-flex', 'flex-column', 'gap-4']`; `itemUtilities: ['d-flex', 'flex-column', 'gap-2']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: ['text-body-secondary', 'mb-0']`; `emptyUtilities: ['text-body-secondary']` |
+| `loop` display | `titleVariant: 'section-title'` or `'subsection-title'`; `dateStyle: 'iso'` (default), `'short'`, `'medium'`, `'long'`, `'full'`; `emptyText`, `pageEmptyText`, `postEmptyText`, `pageTitle`, `postTitle` |
+| `footer` | `utilities: []` on the existing region; `linkUtilities: ['link-body-emphasis']` on its fallback link |
+
+The public `UtilityToken` type enumerates registered spacing (0–5 and responsive breakpoints), display/flex/alignment, text/background/link color, weight, border and rounded helpers. Custom classes, CSS values, HTML and file paths are rejected. PageHeader has narrower typed bounds because published Moo Typography owns some styles: `page-title` fixes `fw-semibold`; both description variants fix `text-body-secondary`; `page-description` fixes `mb-0`. Incompatible title weight, description color and nonzero bottom-margin utilities fail with their `parts.pageHeader` field. Responsive `m`/`my` utilities that change that bottom margin also fail. Alignment, title margins and description top margins remain configurable. An explicit `descriptionVariant: 'muted'` permits other description margins; repeat that variant in a layer that supplies them. Switching back to `page-description` also validates inherited utilities. RC9 has no public prop to replace the fixed weight/color mappings; this Core capability gap is retained instead of accepting an ineffective override.
+
+Public Typography semantic roles remain unchanged. Full content-region replacement uses the existing `page-header`, `metadata`, `actions`, `loop`, `after-list` and `after-content` slots. This setting does not add a stylesheet or replace a Moo controller.
+
+`formatDate(date, { lang, style, formatter? })` returns display text. Named styles use `Intl.DateTimeFormat` with UTC; `iso` returns `YYYY-MM-DD`. Generic Archive/Loop and Post Single accept display `lang` and a trusted caller `dateFormatter` function. Specialized Page/Post Archive and Loop retain `lang` for canonical URL normalization and add `dateLang` for display (default: `lang`). Built-in Post Archive passes the site's canonical default language to link generation and the resolved Archive language to date display. A view/entry display preference does not change generated route identity. The function receives a Date copy and must return text; Astro escapes that text. The original ISO `datetime`, publication instant and status remain unchanged. Functions are caller code, never frontmatter. Explicit legacy `emptyText`, `titleVariant`, ARIA text or date formatter props take precedence over the corresponding part fallback.
+
+This unpublished candidate adds `parts` to normalized output and changes the default outer content spacing from zero to `py-4`. Existing authored fields retain their meaning. The maintainer accepted the configurable spacing foundation on 2026-10-01; positive browser contracts cover inherited Layout spacing, a Contact-only override and independent heading/item gaps. This acceptance does not certify a finished theme design or release compatibility.
 
 `@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors. Omitting `plugins` selects `page()` plus `post()` and requires both native collections. An explicit list replaces the defaults: `[page()]` needs only Page, `[post()]` needs only Post, and `[]` adds no content routes or collection requirements. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers. The local demo uses this documented boundary to compose its example Sidebar; demo files stay outside the package.
 

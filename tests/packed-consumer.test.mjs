@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   assertConsumerOutput,
   assertPackedPageOutput,
+  assertThemeOutput,
   assertPrivateSubpathError,
   assertPeerConflict,
   validateConsumerLock,
@@ -74,4 +75,13 @@ test("independent Page output requires two published routes and excludes draft",
   assert.doesNotThrow(() => assertPackedPageOutput({ contact, guide, draftExists: false }));
   assert.throws(() => assertPackedPageOutput({ contact, guide, draftExists: true }), /Draft Page/);
   assert.throws(() => assertPackedPageOutput({ contact, guide: guide.replace('aria-current="page"', ''), draftExists: false }), /Guide Page route/);
+});
+
+test("independent theme evidence requires inherited utilities and one isolated replacement", () => {
+  const rail = (tokens) => `<div class="${tokens}" data-page-container></div>`;
+  const header = '<header class="bg-body-tertiary border-bottom">';
+  const output = { home: rail("container-xl py-3 py-md-5"),
+    contact: header + rail("container-lg"), guide: header + rail("container-xl py-3 py-md-5") };
+  assert.doesNotThrow(() => assertThemeOutput(output));
+  assert.throws(() => assertThemeOutput({ ...output, contact: header + rail("container-lg py-3 py-md-5") }), /contact.*resolved theme/);
 });

@@ -1,5 +1,6 @@
 ---
 import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoOptions } from "../../demo/settings.js";
 import Layout from "../../demo/Layout.astro";
 import PageHeader from "../../includes/PageHeader.astro";
 import Typography from "../../components/Typography.astro";
@@ -10,12 +11,13 @@ import { getDemoMessages } from "../../demo/messages.js";
 const { site } = getSiteContext();
 const lang = Astro.currentLocale ?? site.defaults.lang;
 const copy = getDemoMessages(lang);
+const preferences = getDemoOptions("page", "archive");
 ---
 
-<Layout title={copy.emptyStateTitle} lang={lang} dir={site.defaults.dir} pageContext={{ view: "archive", type: "page" }}>
-  <PageHeader title={copy.emptyStateTitle} />
+<Layout parts={preferences.parts} title={copy.emptyStateTitle} lang={lang} dir={site.defaults.dir} pageContext={{ view: "archive", type: "page" }}>
+  <PageHeader parts={preferences.parts} title={copy.emptyStateTitle} />
   <Typography variant="section-title" content={copy.items} />
-  <Loop items={[]} emptyText={copy.emptyItems} />
+  <Loop parts={preferences.parts} items={[]} emptyText={copy.emptyItems} />
   <Typography variant="section-title" content={copy.pages} />
-  <PageLoop entries={[]} lang={lang} emptyText={copy.emptyPages} />
+  <PageLoop parts={preferences.parts} entries={[]} lang={lang} emptyText={copy.emptyPages} />
 </Layout>

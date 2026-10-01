@@ -3,7 +3,7 @@ import "../styles.css";
 import stateSource from "@wpmoo/ui/state.js?raw";
 import Button from "../components/Button.astro";
 import Icon from "../components/internal/Icon.astro";
-import { getPageClasses, type PageClassContext } from "../config/index.js";
+import { defineSite, getPageClasses, resolveParts, type PageClassContext, type PartsInput } from "../config/index.js";
 
 type ShellMode = "viewport" | "contained";
 type Theme = "light" | "dark";
@@ -27,6 +27,7 @@ interface Props {
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
   pageContext?: PageClassContext;
+  parts?: PartsInput;
 }
 
 const containerClasses: Record<PageWidth, string> = {
@@ -43,22 +44,24 @@ const shellModeValues: ShellMode[] = ["viewport", "contained"];
 const themeValues: Theme[] = ["light", "dark"];
 const directionValues: Direction[] = ["ltr", "rtl"];
 
+const defaults = defineSite().defaults;
+const parts = resolveParts(Astro.props.parts);
 const {
   title,
-  description = "Moo UI components for Astro themes.",
+  description,
   sidebar = false,
-  shellMode = "viewport",
-  theme = "light",
-  lang = "en",
-  dir = "ltr",
+  shellMode = defaults.shellMode,
+  theme = defaults.theme,
+  lang = defaults.lang,
+  dir = defaults.dir,
   sidebarKey = "",
   defaultOpen = true,
   sidebarId = "",
-  ariaLabel = "Toggle sidebar",
-  skipText = "Skip to main content",
+  ariaLabel = parts.header.toggleLabel,
+  skipText = parts.header.skipLabel,
   id = "",
-  pageWidth = "xl",
-  headerWidth = null,
+  pageWidth = defaults.pageWidth,
+  headerWidth = defaults.headerWidth,
   pageContext,
 } = Astro.props;
 
@@ -130,7 +133,7 @@ const pageClasses = getPageClasses(pageContext);
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="description" content={description} />
+    {description ? <meta name="description" content={description} /> : null}
     <link rel="icon" href="data:," />
     <title>{title}</title>
   </head>
@@ -143,12 +146,12 @@ const pageClasses = getPageClasses(pageContext);
         {sidebar ? <slot name="sidebar" /> : null}
         <div data-slot="page">
           {hasHeader ? (
-            <header class="bg-body border-bottom">
+            <header class:list={parts.header.utilities}>
               <div class={headerClass}>
-                <div class="d-flex align-items-center gap-2 py-2">
+                <div class:list={parts.header.contentUtilities}>
                   {sidebar ? (
-                    <Button variant="ghost" size="icon-sm" class="sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
-                      <Icon name="panel-left" />
+                    <Button variant={parts.header.trigger.variant} size={parts.header.trigger.size} class="sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
+                      <Icon name={parts.header.trigger.icon} />
                     </Button>
                   ) : null}
                   <slot name="header" />
@@ -156,8 +159,8 @@ const pageClasses = getPageClasses(pageContext);
               </div>
             </header>
           ) : null}
-          <main id="main-content" tabindex="-1" class="scroll-fade-y no-scrollbar"><div class={pageClass} data-page-container><slot /></div></main>
-          {Astro.slots.has("footer") ? <footer><div class={pageClass}><slot name="footer" /></div></footer> : null}
+          <main id="main-content" tabindex="-1" class:list={parts.content.scrollUtilities}><div class:list={[pageClass, parts.content.utilities]} data-page-container><slot /></div></main>
+          {Astro.slots.has("footer") ? <footer class:list={parts.footer.utilities}><div class={pageClass}><slot name="footer" /></div></footer> : null}
         </div>
       </div>
     </div>

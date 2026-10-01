@@ -1,20 +1,25 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { defineSite, resolveParts, type DateFormatter, type PartsInput } from "../../../config/index.js";
 import Loop from "../../../views/Loop.astro";
 import { postLoopItems } from "../paths.js";
 
 interface Props {
+  parts?: PartsInput;
+  dateFormatter?: DateFormatter;
   entries: CollectionEntry<"post">[];
   basePath?: string;
   base?: string;
   trailingSlash?: "always" | "never" | "ignore";
   lang?: string;
+  dateLang?: string;
   emptyText?: string;
   titleVariant?: "section-title" | "subsection-title";
 }
 
-const { entries, basePath = "/posts", base = "/", trailingSlash = "ignore", lang = "en", emptyText = "No posts yet.", titleVariant = "section-title" } = Astro.props;
+const parts = resolveParts(Astro.props.parts);
+const { entries, basePath = "/posts", base = "/", trailingSlash = "ignore", lang = defineSite().defaults.lang, dateLang = lang, emptyText = parts.loop.postEmptyText, titleVariant, dateFormatter } = Astro.props;
 const items = postLoopItems(entries, { basePath, base, trailingSlash, lang });
 ---
 
-<Loop items={items} emptyText={emptyText} titleVariant={titleVariant} />
+<Loop items={items} emptyText={emptyText} titleVariant={titleVariant} parts={parts} lang={dateLang} dateFormatter={dateFormatter} />

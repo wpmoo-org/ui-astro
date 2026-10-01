@@ -1,6 +1,124 @@
 import { z } from "astro/zod";
 
 const width = z.enum(["base", "sm", "md", "lg", "xl", "xxl", "fluid"]);
+const utilityNames = [
+  "d-flex", "d-block", "d-inline-flex", "flex-column", "flex-row", "flex-wrap",
+  "align-items-center", "align-items-start", "align-items-end",
+  "justify-content-between", "justify-content-center", "justify-content-start", "justify-content-end",
+  "list-unstyled", "small", "text-start", "text-center", "text-end", "text-decoration-none",
+  "fw-normal", "fw-medium", "fw-semibold", "fw-bold",
+  "border", "border-0", "border-top", "border-bottom", "rounded", "rounded-0",
+  ...["body", "body-secondary", "body-tertiary", "primary", "secondary", "success", "danger", "warning", "info", "light", "dark"].map((color) => `bg-${color}`),
+  ...["body", "body-secondary", "body-tertiary", "body-emphasis", "primary", "secondary", "success", "danger", "warning", "info", "light", "dark"].map((color) => `text-${color}`),
+  ...["body-emphasis", "primary", "secondary", "success", "danger", "warning", "info", "light", "dark"].map((color) => `link-${color}`),
+  ...["p", "px", "py", "pt", "pb", "ps", "pe", "m", "mx", "my", "mt", "mb", "ms", "me", "gap", "row-gap", "column-gap"].flatMap((property) =>
+    ["", "sm-", "md-", "lg-", "xl-", "xxl-"].flatMap((breakpoint) =>
+      [0, 1, 2, 3, 4, 5].map((step) => `${property}-${breakpoint}${step}`))),
+  "ms-auto", "me-auto", "mx-auto",
+];
+const utilities = z.array(z.enum(utilityNames));
+const titleUtilities = utilities.refine((tokens) => tokens.every((token) =>
+  !token.startsWith("fw-") || token === "fw-semibold"),
+{ message: "Published Moo page-title fixes font weight to fw-semibold" });
+const descriptionUtilities = utilities.refine((tokens) => tokens.every((token) =>
+  !/^text-(?:body(?:-secondary|-tertiary|-emphasis)?|primary|secondary|success|danger|warning|info|light|dark)$/u.test(token) || token === "text-body-secondary"),
+{ message: "Published Moo description variants fix text color to text-body-secondary" });
+const text = z.string();
+const partsSchema = z.strictObject({
+  content: z.strictObject({
+    utilities: utilities.optional(),
+    scrollUtilities: z.array(z.enum(["scroll-fade-y", "no-scrollbar"])).optional(),
+  }).optional(),
+  header: z.strictObject({
+    utilities: utilities.optional(), contentUtilities: utilities.optional(), breadcrumbUtilities: utilities.optional(),
+    trigger: z.strictObject({
+      variant: z.enum(["default", "secondary", "outline", "ghost", "destructive", "link", "success", "warning", "info", "light", "dark", "outline-primary", "outline-success", "outline-danger"]).optional(),
+      size: z.enum(["icon", "icon-xs", "icon-sm", "icon-lg"]).optional(),
+      icon: z.enum(["panel-left", "chevrons-left", "chevrons-right", "ellipsis", "list-filter"]).optional(),
+    }).optional(),
+    toggleLabel: text.optional(), navigationLabel: text.optional(), breadcrumbLabel: text.optional(),
+    skipLabel: z.string().trim().min(1).optional(),
+  }).optional(),
+  pageHeader: z.strictObject({
+    utilities: utilities.optional(), titleUtilities: titleUtilities.optional(), descriptionUtilities: descriptionUtilities.optional(),
+    descriptionVariant: z.enum(["page-description", "muted"]).optional(),
+  }).superRefine((part, context) => {
+    if (part.descriptionVariant !== "muted" && part.descriptionUtilities?.some((token) =>
+      /^(?:m|my|mb)-(?:sm-|md-|lg-|xl-|xxl-)?[1-5]$/u.test(token))) {
+      context.addIssue({ code: "custom", path: ["descriptionUtilities"],
+        message: "Published Moo page-description fixes bottom margin to mb-0; use the muted variant for a different margin" });
+    }
+  }).optional(),
+  loop: z.strictObject({
+    utilities: utilities.optional(), itemUtilities: utilities.optional(), titleUtilities: utilities.optional(),
+    descriptionUtilities: utilities.optional(), emptyUtilities: utilities.optional(),
+    titleVariant: z.enum(["section-title", "subsection-title"]).optional(),
+    dateStyle: z.enum(["iso", "short", "medium", "long", "full"]).optional(),
+    emptyText: text.optional(), pageEmptyText: text.optional(), postEmptyText: text.optional(),
+    pageTitle: text.optional(), postTitle: text.optional(),
+  }).optional(),
+  footer: z.strictObject({ utilities: utilities.optional(), linkUtilities: utilities.optional() }).optional(),
+});
+const partDefaults = {
+  content: { utilities: ["py-4"], scrollUtilities: ["scroll-fade-y", "no-scrollbar"] },
+  header: {
+    utilities: ["bg-body", "border-bottom"],
+    contentUtilities: ["d-flex", "align-items-center", "gap-2", "py-2"], breadcrumbUtilities: ["mb-0"],
+    trigger: { variant: "ghost", size: "icon-sm", icon: "panel-left" },
+    toggleLabel: "Toggle sidebar", navigationLabel: "Site navigation", breadcrumbLabel: "Breadcrumb", skipLabel: "Skip to main content",
+  },
+  pageHeader: {
+    utilities: ["d-flex", "flex-column", "gap-2", "mb-4"], titleUtilities: ["mb-0"], descriptionUtilities: [], descriptionVariant: "page-description",
+  },
+  loop: {
+    utilities: ["list-unstyled", "d-flex", "flex-column", "gap-4"], itemUtilities: ["d-flex", "flex-column", "gap-2"],
+    titleUtilities: ["mb-0"], descriptionUtilities: ["text-body-secondary", "mb-0"], emptyUtilities: ["text-body-secondary"],
+    titleVariant: "section-title", dateStyle: "iso", emptyText: "No items yet.", pageEmptyText: "No pages yet.", postEmptyText: "No posts yet.",
+    pageTitle: "Pages", postTitle: "Posts",
+  },
+  footer: { utilities: [], linkUtilities: ["link-body-emphasis"] },
+};
+
+function freezeTree(value) {
+  for (const child of Object.values(value)) if (child && typeof child === "object") freezeTree(child);
+  return Object.freeze(value);
+}
+freezeTree(partDefaults);
+
+function mergeParts(output, input) {
+  for (const [key, value] of Object.entries(input ?? {})) {
+    if (value === undefined) continue;
+    if (Array.isArray(value)) output[key] = [...value];
+    else if (value && typeof value === "object") mergeParts(output[key] ??= {}, value);
+    else output[key] = value;
+  }
+  return output;
+}
+
+export function resolveParts(input = {}) {
+  const parsed = parse(partsSchema, input, "parts");
+  const output = mergeParts(structuredClone(partDefaults), parsed);
+  parse(partsSchema, output, "parts");
+  return freezeTree(output);
+}
+
+export function formatDate(date, options = {}) {
+  if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
+    throw new TypeError("date must be a valid Date");
+  }
+  requireRecord(options, "date options", ["lang", "style", "formatter"]);
+  const { lang = "en", style = "iso", formatter } = options;
+  if (typeof lang !== "string" || !lang.trim()) throw new TypeError("date lang must be nonempty text");
+  if (!["iso", "short", "medium", "long", "full"].includes(style)) throw new TypeError("Unknown date style");
+  if (formatter !== undefined) {
+    if (typeof formatter !== "function") throw new TypeError("date formatter must be a function");
+    const output = formatter(new Date(date.getTime()));
+    if (typeof output !== "string") throw new TypeError("date formatter must return text");
+    return output;
+  }
+  return style === "iso" ? date.toISOString().slice(0, 10)
+    : new Intl.DateTimeFormat(lang, { dateStyle: style, timeZone: "UTC" }).format(date);
+}
 const sidebarSchema = z.strictObject({
   side: z.enum(["left", "right"]).optional(),
   variant: z.enum(["sidebar", "floating", "inset"]).optional(),
@@ -17,6 +135,7 @@ export const layoutSchema = z.strictObject({
   lang: z.string().trim().min(1).optional(),
   dir: z.enum(["ltr", "rtl"]).optional(),
   sidebar: sidebarSchema.nullable().optional(),
+  parts: partsSchema.optional(),
 });
 
 const typeSchema = layoutSchema.extend({
@@ -72,17 +191,20 @@ function parse(schema, value, label) {
 }
 
 function copyLayout(options) {
-  return { ...options, ...(options.sidebar ? { sidebar: { ...options.sidebar } } : {}) };
+  return { ...options, ...(options.sidebar ? { sidebar: { ...options.sidebar } } : {}),
+    ...(options.parts ? { parts: structuredClone(options.parts) } : {}) };
 }
 
 function freezeLayout(options) {
   if (options.sidebar) Object.freeze(options.sidebar);
+  if (options.parts) freezeTree(options.parts);
   return Object.freeze(options);
 }
 
 function mergeLayout(...layers) {
   const output = { ...builtIn };
   const sidebar = { ...sidebarDefaults };
+  const parts = structuredClone(partDefaults);
   for (const layer of layers) {
     if (!layer) continue;
     for (const [key, value] of Object.entries(layer)) {
@@ -96,10 +218,13 @@ function mergeLayout(...layers) {
           output.sidebar = { ...sidebar };
         }
       }
+      else if (key === "parts") mergeParts(parts, value);
       else if (key === "views") continue;
       else output[key] = value;
     }
   }
+  parse(partsSchema, parts, "parts");
+  output.parts = parts;
   return freezeLayout(output);
 }
 

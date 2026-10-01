@@ -20,7 +20,8 @@ import Typography from "../components/Typography.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
 import { getDemoNavigation } from "../demo/navigation.js";
 
-const lang = getSiteContext().site.defaults.lang;
+const { site } = getSiteContext();
+const { lang, parts, theme, pageWidth, headerWidth, dir, shellMode } = site.defaults;
 const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
   label: "Workspace",
   items: [
@@ -31,16 +32,20 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
 ---
 
 <Layout
-  title="Moo UI Astro"
+  title={site.brand}
   lang={lang}
   description="Astro theme foundation powered by Moo UI."
   sidebar
-  theme="dark"
-  headerWidth="fluid"
+  parts={parts}
+  theme={theme}
+  pageWidth={pageWidth}
+  headerWidth={headerWidth}
+  dir={dir}
+  shellMode={shellMode}
   sidebarKey="astro-home"
   sidebarId="astro-sidebar"
 >
-  <Sidebar slot="sidebar" id="astro-sidebar" brand="Moo UI Astro" groups={sidebarGroups} />
+  <Sidebar slot="sidebar" id="astro-sidebar" brand={site.brand} groups={sidebarGroups} />
 
   <nav slot="header" class="d-flex align-items-center gap-2 w-100" aria-label="Demo controls">
     <Button element="a" href="#components" variant="ghost" size="sm" class="d-none d-sm-inline-flex">Components</Button>
@@ -51,7 +56,7 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
     </div>
   </nav>
 
-  <div class="py-5">
+  <div>
     <Badge label="Astro foundation" variant="outline" pill />
     <Typography
       variant="page-title"

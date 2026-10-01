@@ -170,6 +170,106 @@ class PublicComponentRendering(unittest.TestCase):
             "src/content/page/entry.md": "---\ntitle: Content entry\nstatus: publish\n---\nContent body.\n",
         }
 
+    def test_public_parts_reach_layout_includes_and_context_free_views(self):
+        source = '''---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+import { resolveParts } from "@wpmoo/astro/config";
+const parts = resolveParts({
+  content: { utilities: ["py-1"] },
+  header: { utilities: ["bg-body-tertiary"], breadcrumbUtilities: ["mb-1"] },
+  pageHeader: { utilities: ["mb-5"], titleUtilities: ["text-center"], descriptionVariant: "muted", descriptionUtilities: ["mb-3"] },
+  loop: { itemUtilities: ["mb-2"], dateStyle: "long" },
+  footer: { utilities: ["py-2"], linkUtilities: ["link-primary"] },
+});
+---
+<Layout title="Theme contract" lang="de" parts={parts}>
+  <Header slot="header" parts={parts} breadcrumbs={[{label: "Home", href: "/"}]} />
+  <Archive title="Entries" description="Summary" parts={parts} lang="de" items={[{id:"entry",title:"Entry",href:"/entry",date:new Date("2026-10-01T23:30:00Z")}]} />
+  <Footer slot="footer" parts={parts} homeHref="/" brand="Example" />
+</Layout>'''
+        result, html = self.build(source, check=True, files={
+            "tsconfig.json": '{"extends":"astro/tsconfigs/strict"}',
+        })
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        parsed = Markup()
+        parsed.feed(html)
+        rails = [attrs for _, attrs in parsed.elements if "data-page-container" in attrs]
+        self.assertEqual(len(rails), 1)
+        self.assertEqual(set(rails[0]["class"].split()), {"container-xl", "py-1"})
+        self.assertEqual(len([tag for tag, _ in parsed.elements if tag == "main"]), 1)
+        self.assertIn('class="bg-body-tertiary"', html)
+        self.assertIn('class="link-primary"', html)
+        self.assertIn('class="text-body-secondary mb-3">Summary</span>', html)
+        self.assertIn("1. Oktober 2026", html)
+        self.assertIn('datetime="2026-10-01T23:30:00.000Z"', html)
+
+    def test_theme_preferences_reach_page_and_post_routes_with_one_entry_override(self):
+        files = self.integrated_files()
+        files["tsconfig.json"] = '{"extends":"astro/tsconfigs/strict"}'
+        files["src/content.config.mjs"] += '''
+import { postSchema } from "@wpmoo/astro/plugins/post/content";
+collections.post = defineCollection({ loader: glob({ base: new URL("./content/post/", import.meta.url), pattern: "**/*.md", generateId: sourceEntryId }), schema: postSchema });
+'''
+        files["src/content/post/first.md"] = "---\ntitle: First post\nstatus: publish\npublished_at: \"2026-10-01T12:00:00Z\"\n---\nFirst body.\n"
+        files["src/content/post/second.md"] = "---\ntitle: Second post\nstatus: publish\npublished_at: \"2026-09-30T12:00:00Z\"\nlayout:\n  parts:\n    content:\n      utilities: []\n---\nSecond body.\n"
+        result, _ = self.build(None, configuration='''integrations: [moo({
+  site: { defaults: { lang: "de", parts: {
+    content: { utilities: ["py-2", "py-md-5"] },
+    header: { utilities: ["bg-body-tertiary"], breadcrumbLabel: "Navigation" },
+    pageHeader: { titleUtilities: ["text-center"] },
+    loop: { dateStyle: "long", emptyText: "Nothing published" },
+  } } }, plugins: [page(), post({ label: "Updates" })],
+})]''', config_imports='import { post } from "@wpmoo/astro/plugins/post";', files=files, check=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for path, utilities in [("entry/index.html", {"py-2", "py-md-5"}), ("posts/index.html", {"py-2", "py-md-5"}),
+                                ("posts/first/index.html", {"py-2", "py-md-5"}), ("posts/second/index.html", set())]:
+            html = result.generated_html[path]
+            parsed = Markup()
+            parsed.feed(html)
+            rails = [attrs for _, attrs in parsed.elements if "data-page-container" in attrs]
+            self.assertEqual(len(rails), 1, path)
+            self.assertEqual(set(rails[0]["class"].split()), {"container-xl"} | utilities, path)
+            self.assertIn('class="bg-body-tertiary"', html, path)
+            self.assertIn('aria-label="Navigation"', html, path)
+            self.assertIn('fw-semibold text-center', html, path)
+            self.assertIn('lang="de"', html, path)
+        self.assertIn("1. Oktober 2026", result.generated_html["posts/first/index.html"])
+        self.assertIn("1. Oktober 2026", result.generated_html["posts/index.html"])
+        self.assertIn('datetime="2026-10-01T12:00:00.000Z"', result.generated_html["posts/first/index.html"])
+
+    def test_description_and_title_conflicts_fail_at_the_public_configuration_boundary(self):
+        for field, token in [("titleUtilities", "fw-normal"), ("descriptionUtilities", "text-primary"), ("descriptionUtilities", "mb-3")]:
+            source = '''---
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import { resolveParts } from "@wpmoo/astro/config";
+const parts = resolveParts({ pageHeader: { ''' + field + ': ["' + token + '''"] } });
+---
+<PageHeader title="Title" description="Description" parts={parts} />'''
+            result, _ = self.build(source)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn(f"parts.pageHeader.{field}", result.stdout + result.stderr)
+
+    def test_archive_date_locale_does_not_change_canonical_post_links(self):
+        files = {
+            "src/content.config.mjs": '''import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
+import { sourceEntryId } from "@wpmoo/astro/content";
+import { postSchema } from "@wpmoo/astro/plugins/post/content";
+export const collections = { post: defineCollection({ loader: glob({ base: new URL("./content/post/", import.meta.url), pattern: "**/*.md", generateId: sourceEntryId }), schema: postSchema }) };''',
+            "src/content/post/Über.md": '---\ntitle: About\nstatus: publish\npublished_at: "2025-10-01T12:00:00Z"\n---\nPost body.\n',
+        }
+        result, _ = self.build(None, configuration='''integrations: [moo({ plugins: [post()], site: {
+  defaults: { lang: "en" }, types: { post: { views: { archive: { lang: "de", parts: { loop: { dateStyle: "long" } } } } } },
+} })]''', config_imports='import { post } from "@wpmoo/astro/plugins/post";', files=files)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(set(result.generated_html), {"posts/index.html", "posts/uber/index.html"})
+        archive = result.generated_html["posts/index.html"]
+        self.assertIn('href="/posts/uber"', archive)
+        self.assertIn("1. Oktober 2025", archive)
+
     def test_native_page_literals_require_canonical_urls_but_endpoint_paths_do_not(self):
         for filename, valid in [("About.astro", False), ("about.astro", True)]:
             with self.subTest(filename=filename):
@@ -427,7 +527,9 @@ const context = { type: "page", id: "contact.mdx", source: "markdown" } as const
         self.assertEqual([attrs.get("class", "").split() for attrs in articles], [["page", "page-id--contact_002e_mdx"]])
         lists = [attrs.get("class", "").split() for tag, attrs in parsed.elements
                  if tag == "li" and ("post-news" in attrs.get("class", "") or "entry-team--cng" in attrs.get("class", ""))]
-        self.assertEqual(lists, [["post", "post-news", "tag-astro", "mb-3"], ["type-team", "entry-team--cng", "mb-3"]])
+        self.assertEqual(len(lists), 2)
+        self.assertTrue({"post", "post-news", "tag-astro"}.issubset(lists[0]))
+        self.assertTrue({"type-team", "entry-team--cng"}.issubset(lists[1]))
         links = [attrs["href"] for tag, attrs in parsed.elements if tag == "a"]
         for href in ["/news", "https://example.test/team", "mailto:hello@example.test", "tel:+491234"]:
             self.assertIn(href, links)

@@ -23,21 +23,21 @@ const entries = await getPublishedPosts();
 const layoutProps = {
   title: plugin.label, pageContext: { view: "archive" as const, type: "post" },
   shellMode: options.shellMode, pageWidth: options.pageWidth, headerWidth: options.headerWidth,
-  theme: options.theme, lang: options.lang, dir: options.dir,
+  theme: options.theme, lang: options.lang, dir: options.dir, parts: options.parts,
 };
 ---
 
 {options.sidebar ? (
   <Layout {...layoutProps} sidebar sidebarId="moo-site-sidebar" sidebarKey="moo-site" defaultOpen={options.sidebar.defaultOpen}>
-    <Sidebar slot="sidebar" id="moo-site-sidebar" brand={site.brand} brandHref={homeHref} groups={[{ items: navigation.map(item => ({ title: item.label, href: item.href, active: item.active })) }]} side={options.sidebar.side} variant={options.sidebar.variant} collapsible={options.sidebar.collapsible} rail={options.sidebar.rail} ariaLabel="Site navigation" />
-    <Header slot="header" breadcrumbs={breadcrumbs} />
-    <Archive entries={entries} title={plugin.label} basePath={plugin.basePath} base={base} trailingSlash={trailingSlash} lang={site.defaults.lang} />
-    <Footer slot="footer" brand={site.brand} homeHref={homeHref} />
+    <Sidebar slot="sidebar" id="moo-site-sidebar" brand={site.brand} brandHref={homeHref} groups={[{ items: navigation.map(item => ({ title: item.label, href: item.href, active: item.active })) }]} side={options.sidebar.side} variant={options.sidebar.variant} collapsible={options.sidebar.collapsible} rail={options.sidebar.rail} parts={options.parts} />
+    <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
+    <Archive parts={options.parts} entries={entries} title={plugin.label} basePath={plugin.basePath} base={base} trailingSlash={trailingSlash} lang={site.defaults.lang} dateLang={options.lang} />
+    <Footer parts={options.parts} slot="footer" brand={site.brand} homeHref={homeHref} />
   </Layout>
 ) : (
   <Layout {...layoutProps}>
-    <Header slot="header" breadcrumbs={breadcrumbs} />
-    <Archive entries={entries} title={plugin.label} basePath={plugin.basePath} base={base} trailingSlash={trailingSlash} lang={site.defaults.lang} />
-    <Footer slot="footer" brand={site.brand} homeHref={homeHref} />
+    <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
+    <Archive parts={options.parts} entries={entries} title={plugin.label} basePath={plugin.basePath} base={base} trailingSlash={trailingSlash} lang={site.defaults.lang} dateLang={options.lang} />
+    <Footer parts={options.parts} slot="footer" brand={site.brand} homeHref={homeHref} />
   </Layout>
 )}

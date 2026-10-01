@@ -1,4 +1,5 @@
 ---
+import { getDemoOptions } from "../../../demo/settings.js";
 import Layout from "../../../demo/Layout.astro";
 import Single from "@wpmoo/astro/views/Single.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
@@ -24,14 +25,15 @@ interface Props {
   sidebarOptions?: PageOptions["sidebar"];
 }
 const { profile: currentProfile, ...options } = Astro.props;
+const preferences = getDemoOptions();
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
 const copy = getDemoMessages(lang);
 const title = copy.layoutProfiles[currentProfile];
 const profiles = Object.entries(copy.layoutProfiles).map(([id, title]) => ({ id, title }));
 ---
 
-<Layout title={title} sidebar lang={lang} {...options}>
-  <Single title={title} description={copy.layoutDescription}>
+<Layout parts={preferences.parts} title={title} sidebar lang={lang} {...options}>
+  <Single parts={preferences.parts} title={title} description={copy.layoutDescription}>
     <nav class="d-flex flex-wrap gap-2 mb-3" aria-label={copy.layoutLabel}>
       {profiles.map((profile) => <Button element="a" href={`/preview/layouts/${profile.id}`} variant={profile.id === Astro.params.profile ? "default" : "outline"} size="sm" aria-current={profile.id === Astro.params.profile ? "page" : undefined}>{profile.title}</Button>)}
     </nav>

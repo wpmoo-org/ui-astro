@@ -7,6 +7,9 @@ navOrder: 1
 layout:
   sidebar: null
   pageWidth: lg
+  parts:
+    content:
+      utilities: []
 ---
 
 Independent Page content.

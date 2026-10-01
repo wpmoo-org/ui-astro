@@ -1,4 +1,5 @@
 ---
+import { getDemoOptions } from "../../demo/settings.js";
 import Layout from "../../demo/Layout.astro";
 import PageArchive from "../../plugins/page/views/Archive.astro";
 import { getPublishedPages } from "../../plugins/page/queries.js";
@@ -8,8 +9,9 @@ import { getDemoMessages } from "../../demo/messages.js";
 const entries = await getPublishedPages();
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
 const copy = getDemoMessages(lang);
+const preferences = getDemoOptions("page", "archive");
 ---
 
-<Layout title="Page archive preview" pageContext={{ view: "archive", type: "page" }} lang={lang}>
-  <PageArchive title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages} />
+<Layout parts={preferences.parts} title="Page archive preview" pageContext={{ view: "archive", type: "page" }} lang={lang}>
+  <PageArchive parts={preferences.parts} title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages} />
 </Layout>
