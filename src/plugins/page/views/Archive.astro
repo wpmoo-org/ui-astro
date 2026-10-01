@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import Archive from "../../../views/Archive.astro";
-import { pageLoopItems } from "../paths.js";
+import Loop from "./Loop.astro";
 
 interface Props {
   entries: CollectionEntry<"page">[];
@@ -16,7 +16,11 @@ interface Props {
 }
 
 const { entries, title = "Pages", description, base = "/", trailingSlash = "ignore", lang = "en", reservedPrefixes = [], emptyText = "No pages yet.", titleVariant = "section-title" } = Astro.props;
-const items = pageLoopItems(entries, { base, trailingSlash, lang, reservedPrefixes });
 ---
 
-<Archive title={title} description={description} items={items} emptyText={emptyText} titleVariant={titleVariant} />
+<Archive title={title} description={description} emptyText={emptyText} titleVariant={titleVariant} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), actions: Astro.slots.has("actions"), loop: true, afterList: Astro.slots.has("after-list") }}>
+  {Astro.slots.has("page-header") ? <slot name="page-header" slot="page-header" /> : null}
+  {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
+  {Astro.slots.has("loop") ? <slot name="loop" slot="loop" /> : <Loop slot="loop" entries={entries} base={base} trailingSlash={trailingSlash} lang={lang} reservedPrefixes={reservedPrefixes} emptyText={emptyText} titleVariant={titleVariant} />}
+  {Astro.slots.has("after-list") ? <slot name="after-list" slot="after-list" /> : null}
+</Archive>

@@ -1,0 +1,50 @@
+---
+import Layout from "../../../demo/Layout.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import Card from "@wpmoo/astro/components/Card.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import type { PageOptions } from "@wpmoo/astro/config";
+import { getDemoMessages } from "../../../demo/messages.js";
+
+export function getStaticPaths() {
+  return [
+    { profile: "viewport", shellMode: "viewport" },
+    { profile: "contained", shellMode: "contained" },
+    { profile: "fluid-header", shellMode: "viewport", pageWidth: "sm", headerWidth: "fluid" },
+    { profile: "right-sidebar", shellMode: "viewport", sidebarOptions: { side: "right", variant: "inset", collapsible: "icon", rail: true, defaultOpen: true } },
+  ].map(({ profile, ...options }) => ({ params: { profile }, props: { profile, ...options } }));
+}
+
+interface Props {
+  profile: "viewport" | "contained" | "fluid-header" | "right-sidebar";
+  shellMode: "viewport" | "contained";
+  pageWidth?: "sm";
+  headerWidth?: "fluid";
+  sidebarOptions?: PageOptions["sidebar"];
+}
+const { profile: currentProfile, ...options } = Astro.props;
+const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
+const copy = getDemoMessages(lang);
+const title = copy.layoutProfiles[currentProfile];
+const profiles = Object.entries(copy.layoutProfiles).map(([id, title]) => ({ id, title }));
+---
+
+<Layout title={title} sidebar lang={lang} {...options}>
+  <Single title={title} description={copy.layoutDescription}>
+    <nav class="d-flex flex-wrap gap-2 mb-3" aria-label={copy.layoutLabel}>
+      {profiles.map((profile) => <Button element="a" href={`/preview/layouts/${profile.id}`} variant={profile.id === Astro.params.profile ? "default" : "outline"} size="sm" aria-current={profile.id === Astro.params.profile ? "page" : undefined}>{profile.title}</Button>)}
+    </nav>
+    <section aria-labelledby="layout-grid-title">
+      <h2 id="layout-grid-title">{copy.pageGrid}</h2>
+      <div class="row g-3 mb-3" data-layout="page-grid">
+        {[1, 2, 3].map((number) => <div class="col-12" data-page-col-md="4"><Card title={`${copy.gridItem} ${number}`}><p>{copy.gridDescription}</p></Card></div>)}
+      </div>
+    </section>
+    <section aria-labelledby="layout-content-title">
+      <h2 id="layout-content-title">{copy.longContent}</h2>
+      {Array.from({ length: 35 }, (_, index) => <p>{index + 1}. {copy.longParagraph}</p>)}
+      <p>{copy.longContentEnd}</p>
+    </section>
+  </Single>
+</Layout>

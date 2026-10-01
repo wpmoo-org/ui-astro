@@ -100,7 +100,8 @@ class AcceptedAstroSurface(unittest.TestCase):
 
     def test_theme_direction_persist_and_keyboard_focus_is_visible(self):
         trigger = self.page.locator("[data-sidebar-trigger]")
-        for _ in range(8):
+        # The host's example menu can grow; allow one finite traversal of its controls.
+        for _ in range(self.page.locator("a[href], button, input, select, textarea, [tabindex]").count() + 1):
             self.page.keyboard.press("Tab")
             if trigger.evaluate("element => document.activeElement === element"):
                 break

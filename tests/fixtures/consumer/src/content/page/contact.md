@@ -1,7 +1,7 @@
 ---
 title: Contact
 description: Packed Page content
-slug: İletişim
+slug: contact
 status: publish
 navOrder: 1
 layout:

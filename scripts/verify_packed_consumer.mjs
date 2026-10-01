@@ -89,7 +89,7 @@ export function assertConsumerOutput(html) {
     ['data-public-part-count="7"', "seven public include and view imports"],
     ['data-public-page-view-count="3"', "three public Page view imports"],
     ['data-context-plugin="page"', "public Page route context"],
-    ['data-context-link="/iletisim"', "canonical Page context link"],
+    ['data-context-link="/contact"', "canonical Page context link"],
     ['data-navigation-count="2"', "public Page navigation"],
     ['data-config-sidebar="none"', "public site preference resolution"],
     ['data-config-slug="iletisim"', "public Turkish slug normalization"],
@@ -122,10 +122,10 @@ export function assertPackedPageOutput({ contact, guide, draftExists }) {
       throw new Error(`${title} Page route must render its published title and Markdown once`);
     }
   }
-  if (!contact.includes('page page-contact') || !contact.includes('href="/iletisim"')) {
+  if (!contact.includes('page page-contact') || !contact.includes('href="/contact"')) {
     throw new Error("Contact Page route must preserve its exact entry identity and canonical href");
   }
-  if (!guide.includes('data-slot="sidebar"') || !guide.includes('href="/kilavuz/kurulum"') ||
+  if (!guide.includes('data-slot="sidebar"') || !guide.includes('href="/guide/setup"') ||
       !guide.includes('aria-current="page"')) {
     throw new Error("Guide Page route must inherit the public Sidebar and active canonical link");
   }
@@ -232,8 +232,8 @@ export async function verifyPackedConsumer({ cache, output }) {
   const htmlPath = join(consumerPath, "dist/index.html");
   const html = await readFile(htmlPath, "utf8");
   assertConsumerOutput(html);
-  const contactPath = join(consumerPath, "dist/iletisim/index.html");
-  const guidePath = join(consumerPath, "dist/kilavuz/kurulum/index.html");
+  const contactPath = join(consumerPath, "dist/contact/index.html");
+  const guidePath = join(consumerPath, "dist/guide/setup/index.html");
   const contact = await readFile(contactPath, "utf8");
   const guide = await readFile(guidePath, "utf8");
   const draftExists = await stat(join(consumerPath, "dist/draft/index.html"))
@@ -252,8 +252,8 @@ export async function verifyPackedConsumer({ cache, output }) {
     built_html: "consumer/dist/index.html",
     built_html_sha256: sha256(Buffer.from(html)),
     built_pages: {
-      contact: { path: "consumer/dist/iletisim/index.html", sha256: sha256(Buffer.from(contact)) },
-      guide: { path: "consumer/dist/kilavuz/kurulum/index.html", sha256: sha256(Buffer.from(guide)) },
+      contact: { path: "consumer/dist/contact/index.html", sha256: sha256(Buffer.from(contact)) },
+      guide: { path: "consumer/dist/guide/setup/index.html", sha256: sha256(Buffer.from(guide)) },
     },
     public_source_imports: importCount,
     host_astro: { version: manifest.peerDependencies.astro, single_resolved_path: relative(outputPath, consumerAstro) },

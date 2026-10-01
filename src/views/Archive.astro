@@ -17,15 +17,20 @@ interface Props {
   items?: LoopItem[];
   emptyText?: string;
   titleVariant?: "section-title" | "subsection-title";
+  forwardedSlots?: { pageHeader: boolean; actions: boolean; loop: boolean; afterList: boolean };
 }
 
-const { title, description, items = [], emptyText = "No items yet.", titleVariant = "section-title" } = Astro.props;
+const { title, description, items = [], emptyText = "No items yet.", titleVariant = "section-title", forwardedSlots } = Astro.props;
+const hasPageHeader = forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
+const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
+const hasLoop = forwardedSlots?.loop ?? Astro.slots.has("loop");
+const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
 ---
 
-{Astro.slots.has("page-header") ? <slot name="page-header" /> : (
+{hasPageHeader ? <slot name="page-header" /> : (
   <PageHeader title={title} description={description}>
-    {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
+    {hasActions ? <slot name="actions" slot="actions" /> : null}
   </PageHeader>
 )}
-{Astro.slots.has("loop") ? <slot name="loop" /> : <Loop items={items} emptyText={emptyText} titleVariant={titleVariant} />}
-{Astro.slots.has("after-list") ? <slot name="after-list" /> : null}
+{hasLoop ? <slot name="loop" /> : <Loop items={items} emptyText={emptyText} titleVariant={titleVariant} />}
+{hasAfterList ? <slot name="after-list" /> : null}

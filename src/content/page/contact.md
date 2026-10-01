@@ -1,7 +1,7 @@
 ---
 title: "Contact"
 description: "Reach us through the contact page."
-slug: "İletişim"
+slug: "contact"
 status: publish
 created_at: "2026-09-27"
 published_at: "2026-09-28T18:25:03+02:00"

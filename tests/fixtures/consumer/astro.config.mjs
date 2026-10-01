@@ -13,5 +13,5 @@ if (options.headerWidth !== null || options.sidebar.rail !== false) {
 
 export default defineConfig({
   site: "https://example.test",
-  integrations: [moo({ site: { defaults: { lang: "tr" }, types: { page: { sidebar: {} } } } })],
+  integrations: [moo({ site: { types: { page: { sidebar: {} } } } })],
 });

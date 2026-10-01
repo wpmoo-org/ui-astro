@@ -17,11 +17,13 @@ import Progress from "../components/Progress.astro";
 import Select from "../components/Select.astro";
 import Sidebar from "../components/Sidebar.astro";
 import Typography from "../components/Typography.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoNavigation } from "../demo/navigation.js";
 
-const sidebarGroups = [{
+const lang = getSiteContext().site.defaults.lang;
+const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
   label: "Workspace",
   items: [
-    { title: "Overview", href: "/", icon: "panel-left", active: true },
     { title: "Components", href: "#components", icon: "layout-grid" },
     { title: "About", href: "#about", icon: "circle-info" },
   ],
@@ -30,6 +32,7 @@ const sidebarGroups = [{
 
 <Layout
   title="Moo UI Astro"
+  lang={lang}
   description="Astro theme foundation powered by Moo UI."
   sidebar
   theme="dark"

@@ -9,9 +9,9 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = Path(os.environ.get("ASTRO_PREVIEW_DIST", ROOT / "dist"))
-LOCALE = os.environ.get("ASTRO_PREVIEW_LOCALE", "tr")
+LOCALE = os.environ.get("ASTRO_PREVIEW_LOCALE", "en")
 EMPTY_TEXT = {
-    "tr": ("Henüz öğe yok.", "Henüz sayfa yok."),
+    "en": ("No items yet.", "No pages yet."),
     "de": ("Noch keine Einträge.", "Noch keine Seiten."),
 }
 

@@ -91,6 +91,48 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="page"]').count(), 1)
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
+    def test_breadcrumb_and_header_controls_share_a_vertical_center(self):
+        for width, theme, direction in [(1440, "light", "ltr"), (390, "dark", "rtl")]:
+            with self.subTest(width=width, theme=theme, direction=direction):
+                self.page.set_viewport_size({"width": width, "height": 844})
+                self.context.add_init_script(
+                    f"localStorage.setItem('moo:theme', '{theme}'); "
+                    f"localStorage.setItem('moo:direction', '{direction}')"
+                )
+                self.open_preview("preview/single")
+                header = self.page.locator('[data-slot="page"] > header')
+                centers = [
+                    locator.bounding_box()
+                    for locator in [header.locator("ol.breadcrumb"),
+                                    header.locator("[data-sidebar-trigger]"),
+                                    header.locator('a[href="/"]').last]
+                ]
+                breadcrumb_center = centers[0]["y"] + centers[0]["height"] / 2
+                for box in centers[1:]:
+                    self.assertAlmostEqual(breadcrumb_center, box["y"] + box["height"] / 2, delta=1)
+                self.assertEqual(self.page.locator("html").get_attribute("dir"), direction)
+                self.assertEqual(self.page.locator(".moo-ui").get_attribute("data-bs-theme"), theme)
+                self.assert_region_rails_align()
+
+    def test_shared_example_menu_navigates_and_marks_the_current_page(self):
+        self.open_preview("preview/single")
+        menu = self.page.locator('[data-slot="sidebar-content"] nav')
+        expected = ["/", "/contact", "/guide/setup", "/preview/single",
+                    "/preview/archive", "/preview/page-archive",
+                    "/preview/page-archive-slots", "/preview/i18n-empty"]
+        hrefs = menu.locator("a").evaluate_all("links => links.map(link => link.getAttribute('href'))")
+        self.assertTrue(set(expected).issubset(hrefs))
+        self.assertEqual(len(hrefs), len(set(hrefs)))
+        self.assertEqual(menu.locator('[aria-current="page"]').get_attribute("href"), "/preview/single")
+        menu.locator('a[href="/guide/setup"]').click()
+        self.page.wait_for_url("**/guide/setup")
+        self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Setup guide"])
+        menu = self.page.locator('[data-slot="sidebar-content"] nav')
+        self.assertEqual(menu.locator('[aria-current="page"]').get_attribute("href"), "/guide/setup")
+        menu.locator('a[href="/preview/single"]').click()
+        self.page.wait_for_url("**/preview/single")
+        self.assertEqual(self.page.locator("main h1").all_text_contents(), ["A sample post"])
+
 
 if __name__ == "__main__":
     unittest.main()

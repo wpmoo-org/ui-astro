@@ -1,7 +1,6 @@
 ---
 import { getSiteContext } from "@wpmoo/astro/context";
-import Layout from "../../layouts/Layout.astro";
-import Header from "../../includes/Header.astro";
+import Layout from "../../demo/Layout.astro";
 import PageHeader from "../../includes/PageHeader.astro";
 import Typography from "../../components/Typography.astro";
 import Loop from "../../views/Loop.astro";
@@ -14,7 +13,6 @@ const copy = getDemoMessages(lang);
 ---
 
 <Layout title={copy.emptyStateTitle} lang={lang} dir={site.defaults.dir} pageContext={{ view: "archive", type: "page" }}>
-  <Header slot="header" breadcrumbs={[{ label: copy.emptyStateTitle }]} ariaLabel={copy.breadcrumb} />
   <PageHeader title={copy.emptyStateTitle} />
   <Typography variant="section-title" content={copy.items} />
   <Loop items={[]} emptyText={copy.emptyItems} />

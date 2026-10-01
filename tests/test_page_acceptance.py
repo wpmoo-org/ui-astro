@@ -40,7 +40,7 @@ class AcceptedPageExamples(unittest.TestCase):
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
     def test_one_page_override_omits_sidebar_without_affecting_its_content(self):
-        self.open_page("iletisim")
+        self.open_page("contact")
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Contact"])
         self.assertEqual(self.page.locator("main article.page.page-contact").count(), 1)
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
@@ -48,18 +48,18 @@ class AcceptedPageExamples(unittest.TestCase):
         self.assertIn("Contact page body.", self.page.locator("main").inner_text())
 
     def test_other_page_inherits_sidebar_and_uses_its_canonical_links(self):
-        self.open_page("kilavuz/kurulum")
+        self.open_page("guide/setup")
         self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state-ready]').wait_for()
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Setup guide"])
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 1)
-        self.assertEqual(self.page.locator('[data-slot="sidebar"] a[aria-current="page"]').get_attribute("href"), "/kilavuz/kurulum")
+        self.assertEqual(self.page.locator('[data-slot="sidebar"] a[aria-current="page"]').get_attribute("href"), "/guide/setup")
         self.assertEqual(self.page.locator('[data-sidebar-trigger]').get_attribute("aria-controls"), "moo-site-sidebar")
         self.assertEqual(self.page.locator('[data-sidebar-trigger]').get_attribute("aria-expanded"), "true")
-        self.assertEqual(self.page.locator('footer a').get_attribute("href"), "/iletisim")
+        self.assertEqual(self.page.locator('footer a').get_attribute("href"), "/")
 
     def test_narrow_page_sidebar_opens_by_keyboard_and_escape_returns_focus(self):
         self.page.set_viewport_size({"width": 390, "height": 844})
-        self.open_page("kilavuz/kurulum")
+        self.open_page("guide/setup")
         trigger = self.page.locator('[data-sidebar-trigger]')
         trigger.focus()
         self.assertTrue(trigger.evaluate("element => element.matches(':focus-visible')"))
@@ -79,7 +79,7 @@ class AcceptedPageExamples(unittest.TestCase):
         self.assertEqual(self.page.locator('.moo-ui').get_attribute("data-bs-theme"), "dark")
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Pages"])
         self.assertEqual(self.page.locator("main h2 a").all_text_contents(), ["Contact", "Setup guide"])
-        self.assertEqual(self.page.locator("main h2 a").evaluate_all("links => links.map(link => link.getAttribute('href'))"), ["/iletisim", "/kilavuz/kurulum"])
+        self.assertEqual(self.page.locator("main h2 a").evaluate_all("links => links.map(link => link.getAttribute('href'))"), ["/contact", "/guide/setup"])
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
 
 

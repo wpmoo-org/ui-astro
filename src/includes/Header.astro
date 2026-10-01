@@ -20,5 +20,5 @@ for (const [index, item] of breadcrumbs.entries()) {
 }
 ---
 
-<Breadcrumb items={breadcrumbs} ariaLabel={ariaLabel} />
+<Breadcrumb items={breadcrumbs} ariaLabel={ariaLabel} class="mb-0" />
 {Astro.slots.has("actions") ? <slot name="actions" /> : null}

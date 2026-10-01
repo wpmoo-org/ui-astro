@@ -1,0 +1,21 @@
+---
+import Layout from "../../demo/Layout.astro";
+import PageHeader from "../../includes/PageHeader.astro";
+import PageArchive from "../../plugins/page/views/Archive.astro";
+import PageLoop from "../../plugins/page/views/Loop.astro";
+import { getPublishedPages } from "../../plugins/page/queries.js";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoMessages } from "../../demo/messages.js";
+
+const entries = await getPublishedPages();
+const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
+const copy = getDemoMessages(lang);
+---
+
+<Layout title="Custom Page archive preview" sidebar pageContext={{ view: "archive", type: "page" }} lang={lang}>
+  <PageArchive title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages}>
+    <PageHeader slot="page-header" title="Custom Pages" description="A Page archive using explicit Moo UI slots." />
+    <PageLoop slot="loop" entries={[...entries].reverse()} lang={lang} emptyText={copy.emptyPages} />
+    <p slot="after-list" class="text-body-secondary">End of the published Page list.</p>
+  </PageArchive>
+</Layout>

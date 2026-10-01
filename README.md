@@ -37,6 +37,8 @@ const groups = [{
 
 Omit `sidebar` and the Sidebar slot for a page without a Sidebar. When `sidebar` is present, the slot is required and its `id` must match `sidebarId`. Layout supports the registered `shellMode`, `pageWidth`, `headerWidth`, `theme`, and `dir` values. Use its `header` and `footer` slots for page regions. `Sidebar` contributes the direct `<aside>` branch, while Layout supplies the app wrapper, Page rail, trigger, and initialization.
 
+The current RC9 `contained` shell forces its Sidebar into document flow below 992 px. The long-navigation mobile example is rejected and is not an accepted regression baseline. Correct mobile drawer behavior requires a Moo Core contract correction; the adapter does not override the published CSS or substitute a controller. Desktop containment and the `viewport` mobile drawer are separate verified behaviors.
+
 The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `src/pages/index.astro` demonstrates this composition; it is not part of the package.
 
 The running demo also exposes `/preview/single` with an explicit Sidebar and `/preview/archive` without a Sidebar option. Both routes compose the public includes and generic views; these preview pages are excluded from the package archive.
@@ -67,10 +69,10 @@ const site = defineSite({
   types: { post: { sidebar: {}, views: { single: { sidebar: null } } } },
 });
 const options = resolvePageOptions(site, "post", "single");
-const slug = normalizeSlug("İletişim", { lang: "tr" });
+const slug = normalizeSlug("Contact Us", { lang: "en" });
 ```
 
-Here `options.sidebar` is `null` and `slug` is `"iletisim"`. An omitted Sidebar option defaults to `null`; `sidebar: {}` enables Moo's default Sidebar preferences; `sidebar: null` disables an inherited Sidebar for a type, view, or individual page without erasing its field preferences. A later `sidebar: {}` re-enables those preferences. A route passes `sidebar={options.sidebar !== null}` to Layout and supplies the Sidebar slot only when enabled. The config entrypoint does not activate Page/Post plugins or add routes; those features are separate work.
+Here `options.sidebar` is `null` and `slug` is `"contact-us"`. An omitted Sidebar option defaults to `null`; `sidebar: {}` enables Moo's default Sidebar preferences; `sidebar: null` disables an inherited Sidebar for a type, view, or individual page without erasing its field preferences. A later `sidebar: {}` re-enables those preferences. A route passes `sidebar={options.sidebar !== null}` to Layout and supplies the Sidebar slot only when enabled. The config entrypoint does not activate Page/Post plugins or add routes; those features are separate work.
 
 `@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors; `page()` is the default. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers. The local demo uses this documented boundary to compose its example Sidebar; demo files stay outside the package.
 

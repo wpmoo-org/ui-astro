@@ -23,6 +23,29 @@ class Markup(HTMLParser):
         self.elements.append((tag, dict(attrs)))
 
 
+class SlotCases(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.cases = {}
+        self.current = None
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if tag == "section":
+            self.current = attributes["id"]
+            self.cases[self.current] = {"elements": [], "text": []}
+        if self.current:
+            self.cases[self.current]["elements"].append((tag, attributes))
+
+    def handle_endtag(self, tag):
+        if tag == "section":
+            self.current = None
+
+    def handle_data(self, data):
+        if self.current:
+            self.cases[self.current]["text"].append(data)
+
+
 def page(path):
     markup = Markup()
     markup.feed((DIST / path).read_text(encoding="utf-8"))
@@ -53,7 +76,7 @@ class SharedPartStructure(unittest.TestCase):
             self.assertEqual(len([tag for tag, _ in elements if tag == "h1"]), 1)
         self.assertEqual(len([tag for tag, _ in archive if tag == "h2"]), 2)
         self.assertEqual(len([tag for tag, _ in archive if tag == "aside"]), 0)
-        self.assertEqual(len([tag for tag, attrs in single if tag == "article" and "post-duyuru" in attrs.get("class", "").split()]), 1)
+        self.assertEqual(len([tag for tag, attrs in single if tag == "article" and "post-announcement" in attrs.get("class", "").split()]), 1)
 
 
 class PublicComponentRendering(unittest.TestCase):
@@ -240,6 +263,54 @@ const context = { type: "page", id: "contact.mdx", source: "markdown" } as const
         self.assertIn("News &lt;text&gt;", html)
         self.assertIn("Brand &lt;text&gt;", html)
         self.assertNotIn("Hidden fallback", html)
+
+    def test_shared_views_preserve_omitted_empty_and_replaced_slots(self):
+        result, html = self.build('''---
+import Single from "@wpmoo/astro/views/Single.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+import Loop from "@wpmoo/astro/views/Loop.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+const items = [{ id: "entry", title: "Fallback entry", href: "/entry", date: new Date("2026-10-01T00:30:00+03:00") }];
+---
+<section id="single-default"><Single title="Fallback Single"><p>Body</p></Single></section>
+<section id="single-empty"><Single title="Suppressed Single"><Fragment slot="page-header" /><p>Body</p></Single></section>
+<section id="single-custom"><Single title="Suppressed Single">
+  <PageHeader slot="page-header" title="Custom Single" />
+  <p>Body</p><p slot="after-content">After content</p>
+</Single></section>
+<section id="archive-default"><Archive title="Fallback Archive" items={items} /></section>
+<section id="archive-empty"><Archive title="Archive with empty Loop" items={items}><Fragment slot="loop" /></Archive></section>
+<section id="archive-custom"><Archive title="Archive with replaced Loop" items={items}>
+  <p slot="loop">Caller list</p><p slot="after-list">After list</p>
+</Archive></section>
+<section id="loop-embedded"><h2>Related entries</h2><Loop items={items} titleVariant="subsection-title" /></section>
+''')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        parsed = SlotCases()
+        parsed.feed(html)
+        headings = lambda case, tag: [attrs for name, attrs in parsed.cases[case]["elements"] if name == tag]
+        text = lambda case: "".join(parsed.cases[case]["text"])
+        self.assertEqual(len(headings("single-default", "h1")), 1)
+        self.assertIn("Fallback Single", text("single-default"))
+        self.assertEqual(headings("single-empty", "h1"), [])
+        self.assertNotIn("Suppressed Single", text("single-empty"))
+        self.assertEqual(len(headings("single-custom", "h1")), 1)
+        self.assertIn("Custom Single", text("single-custom"))
+        self.assertIn("After content", text("single-custom"))
+        self.assertNotIn("Suppressed Single", text("single-custom"))
+        for case in ["archive-default", "archive-empty", "archive-custom"]:
+            self.assertEqual(len(headings(case, "h1")), 1)
+        self.assertEqual(len(headings("archive-default", "h2")), 1)
+        self.assertEqual(headings("archive-default", "time"), [{"datetime": "2026-09-30T21:30:00.000Z"}])
+        self.assertIn("2026-09-30", text("archive-default"))
+        for case in ["archive-empty", "archive-custom"]:
+            self.assertEqual(headings(case, "h2"), [])
+            self.assertNotIn("Fallback entry", text(case))
+        self.assertIn("Caller list", text("archive-custom"))
+        self.assertIn("After list", text("archive-custom"))
+        self.assertEqual(len(headings("loop-embedded", "h2")), 1)
+        self.assertEqual(len(headings("loop-embedded", "h3")), 1)
+        self.assertEqual(headings("loop-embedded", "h1"), [])
 
 
 if __name__ == "__main__":

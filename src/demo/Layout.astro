@@ -1,0 +1,44 @@
+---
+import type { ComponentProps } from "astro/types";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import type { PageOptions } from "@wpmoo/astro/config";
+import { getDemoMessages } from "./messages.js";
+import { getDemoNavigation } from "./navigation.js";
+
+type Props = ComponentProps<typeof Layout> & {
+  sidebarOptions?: PageOptions["sidebar"];
+};
+const { title, sidebar = false, lang = getSiteContext().site.defaults.lang, sidebarOptions, ...options } = Astro.props;
+const copy = getDemoMessages(lang);
+const groups = getDemoNavigation(Astro.url.pathname, lang);
+const breadcrumbs = [{ label: "Moo UI Astro", href: "/" }, { label: title }];
+const layoutProps = { ...options, title, lang };
+const sidebarId = options.sidebarId ?? "demo-sidebar";
+const sidebarKey = options.sidebarKey ?? "astro-demo";
+---
+
+{sidebar ? (
+  <Layout {...layoutProps} sidebar sidebarId={sidebarId} sidebarKey={sidebarKey} defaultOpen={sidebarOptions?.defaultOpen ?? options.defaultOpen ?? true}>
+    <Sidebar slot="sidebar" id={sidebarId} brand="Moo UI Astro" brandHref="/" groups={groups} side={sidebarOptions?.side} variant={sidebarOptions?.variant} collapsible={sidebarOptions?.collapsible} rail={sidebarOptions?.rail} ariaLabel={copy.examples}>
+      <span slot="footer" class="small text-body-secondary">Moo UI · Astro</span>
+    </Sidebar>
+    <Header slot="header" breadcrumbs={breadcrumbs} ariaLabel={copy.breadcrumb}>
+      <Button slot="actions" element="a" href="/" variant="ghost" size="sm" class="ms-auto">{copy.overview}</Button>
+    </Header>
+    <slot />
+    <Footer slot="footer" homeHref="/" brand="Moo UI Astro" />
+  </Layout>
+) : (
+  <Layout {...layoutProps}>
+    <Header slot="header" breadcrumbs={breadcrumbs} ariaLabel={copy.breadcrumb}>
+      <Button slot="actions" element="a" href="/" variant="ghost" size="sm" class="ms-auto">{copy.overview}</Button>
+    </Header>
+    <slot />
+    <Footer slot="footer" homeHref="/" brand="Moo UI Astro" />
+  </Layout>
+)}

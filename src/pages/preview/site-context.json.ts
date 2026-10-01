@@ -7,7 +7,7 @@ export const GET: APIRoute = async () => {
   if (!contact) throw new Error("Preview Page contact.md is missing");
   return new Response(JSON.stringify({
     ...getSiteContext(),
-    navigation: await getSiteNavigation("/iletisim"),
+    navigation: await getSiteNavigation("/contact"),
     contactHref: getEntryHref("page", contact),
   }), {
     headers: { "Content-Type": "application/json; charset=utf-8" },

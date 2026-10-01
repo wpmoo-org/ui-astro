@@ -20,7 +20,7 @@ function boundary(args = ["--mode", "release"]) {
   return spawnSync(process.execPath, [script, ...args], {
     cwd: root,
     encoding: "utf8",
-    env: { ...process.env, npm_config_cache: "/private/tmp/moo-astro-npm-cache" },
+    env: { ...process.env, npm_config_cache: join(tmpdir(), "moo-astro-npm-cache") },
   });
 }
 

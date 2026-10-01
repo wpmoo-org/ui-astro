@@ -54,10 +54,10 @@ test("incompatible peer evidence must be npm ERESOLVE for the exact certified As
 });
 
 test("packed consumer HTML must show public wrappers, Layout, Page grid, and escaped text", () => {
-  const html = '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45" data-public-part-count="7" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/iletisim" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
+  const html = '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45" data-public-part-count="7" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/contact" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
   assert.doesNotThrow(() => assertConsumerOutput(html));
   assert.throws(() => assertConsumerOutput(html.replace('data-public-wrapper-count="45"', 'data-public-wrapper-count="44"')), /45 public wrapper imports/);
-  assert.throws(() => assertConsumerOutput(html.replace('data-context-link="/iletisim"', 'data-context-link="/wrong"')), /canonical Page context link/);
+  assert.throws(() => assertConsumerOutput(html.replace('data-context-link="/contact"', 'data-context-link="/wrong"')), /canonical Page context link/);
   assert.throws(() => assertConsumerOutput(html.replace('&lt;img src=x onerror=alert(1)&gt;', '<img src=x onerror=alert(1)>')), /untrusted text must be escaped/);
   assert.throws(() => assertConsumerOutput(html.replace('data-toast-show-on-load="true"', 'data-toast-show-on-load="false"')), /published Toast startup hook/);
   assert.throws(() => assertConsumerOutput(html.replace('&lt;svg onload=alert(2)&gt;', '<svg onload=alert(2)>')), /Toast untrusted body must be escaped/);
@@ -69,8 +69,8 @@ test("private deep imports must fail at the package exports boundary", () => {
 });
 
 test("independent Page output requires two published routes and excludes draft", () => {
-  const contact = '<title>Contact</title><div class="moo-ui page page-contact"><h1>Contact</h1><p>Independent Page content.</p><a href="/iletisim">Contact</a></div>';
-  const guide = '<title>Setup guide</title><div data-slot="sidebar"><a href="/kilavuz/kurulum" aria-current="page">Setup guide</a></div><h1>Setup guide</h1><p>Independent guide content.</p>';
+  const contact = '<title>Contact</title><div class="moo-ui page page-contact"><h1>Contact</h1><p>Independent Page content.</p><a href="/contact">Contact</a></div>';
+  const guide = '<title>Setup guide</title><div data-slot="sidebar"><a href="/guide/setup" aria-current="page">Setup guide</a></div><h1>Setup guide</h1><p>Independent guide content.</p>';
   assert.doesNotThrow(() => assertPackedPageOutput({ contact, guide, draftExists: false }));
   assert.throws(() => assertPackedPageOutput({ contact, guide, draftExists: true }), /Draft Page/);
   assert.throws(() => assertPackedPageOutput({ contact, guide: guide.replace('aria-current="page"', ''), draftExists: false }), /Guide Page route/);

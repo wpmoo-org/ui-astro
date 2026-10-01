@@ -13,8 +13,8 @@ class NativePageCollection(unittest.TestCase):
         data = json.loads((DIST / "preview/page-data.json").read_text(encoding="utf-8"))
         self.assertEqual(data["publishedIds"], ["contact.md", "guide/setup.md"])
         self.assertEqual(data["paths"], [
-            {"id": "contact.md", "slug": "iletisim"},
-            {"id": "guide/setup.md", "slug": "kilavuz/kurulum"},
+            {"id": "contact.md", "slug": "contact"},
+            {"id": "guide/setup.md", "slug": "guide/setup"},
         ])
         self.assertEqual(data["contactLayout"], {"sidebar": None, "pageWidth": "lg"})
         self.assertEqual(data["contactDate"], "2026-09-28T16:25:03.000Z")
@@ -26,13 +26,13 @@ class NativePageCollection(unittest.TestCase):
     def test_public_site_context_exposes_preferences_without_host_source_paths(self):
         source = (DIST / "preview/site-context.json").read_text(encoding="utf-8")
         data = json.loads(source)
-        self.assertEqual(data["site"]["defaults"]["lang"], "tr")
+        self.assertEqual(data["site"]["defaults"]["lang"], "en")
         self.assertEqual(data["base"], "/")
         self.assertEqual(data["plugins"][0]["contentTypes"][0]["collection"], "page")
-        self.assertEqual(data["contactHref"], "/iletisim")
+        self.assertEqual(data["contactHref"], "/contact")
         self.assertEqual(data["navigation"], [
-            {"label": "Contact", "href": "/iletisim", "active": True},
-            {"label": "Setup guide", "href": "/kilavuz/kurulum", "active": False},
+            {"label": "Contact", "href": "/contact", "active": True},
+            {"label": "Setup guide", "href": "/guide/setup", "active": False},
         ])
         self.assertNotIn("file:", source)
         self.assertNotIn("src/content/page", source)
