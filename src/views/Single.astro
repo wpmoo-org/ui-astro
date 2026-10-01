@@ -18,7 +18,7 @@ const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
 const hasAfterContent = forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
 ---
 
-<article class:list={[entryClasses, "py-4"]}>
+<article class:list={entryClasses}>
   {hasPageHeader ? <slot name="page-header" /> : (
     <PageHeader title={title} description={description}>
       {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
