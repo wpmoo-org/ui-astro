@@ -2,6 +2,7 @@ import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import { isAbsolute, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
+import { parseFrontmatter } from "astro/markdown";
 
 import { jsonEntryId, sourceEntryId } from "./index.js";
 
@@ -32,7 +33,7 @@ export function validateSelectedCollections(collections, selected) {
   }
 }
 
-export async function validateMarkdownSource({ collection, root, base, formats, entries }) {
+export async function validateMarkdownSource({ collection, root, base, formats, schema, entries }) {
   if (!Array.isArray(entries) || !Array.isArray(formats) || !formats.length) {
     throw new TypeError(`${collection} source needs loaded entries and declared formats`);
   }
@@ -83,6 +84,26 @@ export async function validateMarkdownSource({ collection, root, base, formats, 
     if (!expected.has(entry.id)) throw new TypeError(`${collection} loaded ${entry.id} is undeclared by its source`);
     if (entry.filePath !== expected.get(entry.id)) {
       throw new TypeError(`${collection} ${entry.id} filePath differs from its declared source`);
+    }
+    let current;
+    try {
+      current = parseFrontmatter(await readFile(join(rootPath, entry.filePath), "utf8"));
+    } catch {
+      throw new TypeError(`${collection} ${entry.id} malformed Markdown source`);
+    }
+    if (!schema || typeof schema.safeParse !== "function") {
+      throw new TypeError(`${collection} Markdown source needs a static schema`);
+    }
+    const parsed = schema.safeParse(current.frontmatter);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      throw new TypeError(`${collection} ${entry.id} current Markdown source fails schema at ${issue.path.join(".")}: ${issue.message}`);
+    }
+    if (!isDeepStrictEqual(entry.data, parsed.data)) {
+      throw new TypeError(`${collection} ${entry.id} data differs from its current source`);
+    }
+    if (typeof entry.body !== "string" || entry.body !== current.content.trim()) {
+      throw new TypeError(`${collection} ${entry.id} body differs from its current source; native glob must retainBody`);
     }
   }
   for (const id of expected.keys()) {

@@ -1,4 +1,3 @@
-import { getCollection } from "astro:content";
 import context, { collections } from "virtual:wpmoo-astro/routes";
 import { validateJsonDirectorySource, validateJsonFileSource, validateMarkdownSource, validateSelectedCollections } from "../content/integrity.js";
 import { entryPath, siteHref } from "../content/paths.js";
@@ -65,6 +64,8 @@ export async function getSiteNavigation(currentPath) {
 }
 
 export async function validateSiteContent() {
+  // Dev middleware survives HMR; query the current native content module.
+  const { getCollection } = await import("astro:content");
   validateSelectedCollections(collections, context.sources.map((source) => source.collection));
   for (const source of context.sources) {
     const common = {
@@ -73,7 +74,7 @@ export async function validateSiteContent() {
       entries: await getCollection(source.collection),
     };
     if (source.kind === "markdown") {
-      await validateMarkdownSource({ ...common, base: new URL(source.base), formats: source.formats });
+      await validateMarkdownSource({ ...common, base: new URL(source.base), formats: source.formats, schema: collections[source.collection].schema });
     } else if (source.kind === "json-directory") {
       await validateJsonDirectorySource({ ...common, base: new URL(source.base), schema: collections[source.collection].schema });
     } else if (source.kind === "json") {

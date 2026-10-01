@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { after } from "node:test";
 
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,14 +8,21 @@ import { pathToFileURL } from "node:url";
 import { z } from "astro/zod";
 
 import { runDevContentGate, validateJsonDirectorySource, validateJsonFileSource, validateMarkdownSource, validateSelectedCollections } from "../src/content/integrity.js";
+import { pageSchema } from "../src/plugins/page/content.js";
 
-const root = new URL("../", import.meta.url);
-const base = new URL("../src/content/page/", import.meta.url);
+const directory = await mkdtemp(join(tmpdir(), "moo-astro-native-md-"));
+const root = pathToFileURL(`${directory}/`);
+const base = new URL("./src/content/page/", root);
+await mkdir(new URL("./guide/", base), { recursive: true });
+for (const id of ["contact.md", "draft.md", "guide/setup.md"]) {
+  await writeFile(new URL(id, base), `---\ntitle: ${id}\nstatus: publish\n---\nBody.\n`);
+}
+after(() => rm(directory, { recursive: true, force: true }));
 
 function entry(id) {
   return {
     id, collection: "page", data: { title: id, status: "publish" },
-    filePath: `src/content/page/${id}`,
+    filePath: `src/content/page/${id}`, body: "Body.",
   };
 }
 
@@ -23,31 +30,50 @@ const loaded = [entry("contact.md"), entry("draft.md"), entry("guide/setup.md")]
 
 test("the declared native Markdown source matches every exact loaded file and path", async () => {
   await assert.doesNotReject(() => validateMarkdownSource({
-    collection: "page", root, base, formats: ["md"], entries: loaded,
+    collection: "page", root, base, formats: ["md"], entries: loaded, schema: pageSchema,
   }));
   await assert.doesNotReject(() => validateMarkdownSource({
-    collection: "page", root, base: new URL("../src/content/missing/", import.meta.url), formats: ["md"], entries: [],
+    collection: "page", root, base: new URL("./missing/", root), formats: ["md"], entries: [], schema: pageSchema,
   }));
 });
 
 test("skipped and unexpected entries fail the complete source-set gate", async () => {
   await assert.rejects(() => validateMarkdownSource({
-    collection: "page", root, base, formats: ["md"], entries: loaded.slice(1),
+    collection: "page", root, base, formats: ["md"], entries: loaded.slice(1), schema: pageSchema,
   }), /page.*contact\.md.*missing/i);
   await assert.rejects(() => validateMarkdownSource({
-    collection: "page", root, base, formats: ["md"], entries: [...loaded, entry("phantom.md")],
+    collection: "page", root, base, formats: ["md"], entries: [...loaded, entry("phantom.md")], schema: pageSchema,
   }), /page.*phantom\.md.*undeclared|page.*phantom\.md.*unexpected/i);
 });
 
 test("the same ID from another source path cannot impersonate the declared file", async () => {
   await assert.rejects(() => validateMarkdownSource({
-    collection: "page", root, base, formats: ["md"],
+    collection: "page", root, base, formats: ["md"], schema: pageSchema,
     entries: loaded.map((item) => item.id === "contact.md" ? { ...item, filePath: "src/content/other/contact.md" } : item),
   }), /page.*contact\.md.*filePath|page.*contact\.md.*source/i);
   await assert.rejects(() => validateMarkdownSource({
-    collection: "page", root, base, formats: ["md"],
+    collection: "page", root, base, formats: ["md"], schema: pageSchema,
     entries: loaded.map((item) => item.id === "contact.md" ? { ...item, filePath: undefined } : item),
   }), /page.*contact\.md.*filePath|page.*contact\.md.*source/i);
+});
+
+test("the Markdown gate blocks an invalid edit even when the native loader retains its last valid record", async () => {
+  const file = new URL("contact.md", base);
+  const input = { collection: "page", root, base, formats: ["md"], entries: loaded, schema: pageSchema };
+  try {
+    await writeFile(file, "---\ntitle: []\nstatus: draft\n---\nInvalid draft.\n");
+    await assert.rejects(() => validateMarkdownSource(input), /page contact\.md.*current Markdown.*title/i);
+    await writeFile(file, "---\ntitle: contact.md\nstatus: draft\n---\nBody.\n");
+    await assert.rejects(() => validateMarkdownSource(input), /page contact\.md.*data.*current source/i);
+    await writeFile(file, "---\ntitle: contact.md\nstatus: publish\n---\nEdited body.\n");
+    await assert.rejects(() => validateMarkdownSource(input), /page contact\.md.*body.*current source/i);
+    const current = loaded.map((item) => item.id === "contact.md" ? { ...item, body: "Edited body." } : item);
+    await assert.doesNotReject(() => validateMarkdownSource({ ...input, entries: current }));
+    await writeFile(file, "---\ntitle: [\nstatus: draft\n---\nInvalid YAML.\n");
+    await assert.rejects(() => validateMarkdownSource(input), /page contact\.md.*malformed Markdown/i);
+  } finally {
+    await writeFile(file, "---\ntitle: contact.md\nstatus: publish\n---\nBody.\n");
+  }
 });
 
 test("a selected missing collection fails while an empty declared collection remains valid", () => {
@@ -64,8 +90,8 @@ test("Markdown source containment also accepts a symlinked host root spelling", 
     await writeFile(join(directory, "content/contact.md"), "---\ntitle: Contact\nstatus: publish\n---\n");
     await assert.doesNotReject(() => validateMarkdownSource({
       collection: "page", root: pathToFileURL(`${directory}/`),
-      base: pathToFileURL(`${directory}/content/`), formats: ["md"],
-      entries: [{ collection: "page", id: "contact.md", filePath: "content/contact.md" }],
+      base: pathToFileURL(`${directory}/content/`), formats: ["md"], schema: pageSchema,
+      entries: [{ collection: "page", id: "contact.md", filePath: "content/contact.md", body: "", data: { title: "Contact", status: "publish" } }],
     }));
   } finally {
     await rm(directory, { recursive: true, force: true });
