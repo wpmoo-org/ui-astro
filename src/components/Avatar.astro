@@ -29,15 +29,43 @@ const {
   ...rest
 } = Astro.props;
 const fallbackText = (fallback || initials).trim();
-const classes = ["avatar", size ? `avatar-${size}` : "", src ? "avatar--has-image" : "", className].filter(Boolean).join(" ");
+const classes = [
+  "avatar",
+  size ? `avatar-${size}` : "",
+  src ? "avatar--has-image" : "",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
 ---
 
-<span {...rest} class={classes} role={!src ? "img" : undefined} aria-label={!src ? (name || fallbackText) : undefined}>
+<span
+  {...rest}
+  class={classes}
+  role={!src ? "img" : undefined}
+  aria-label={!src ? name || fallbackText : undefined}
+>
   {src ? <img src={src} alt={alt} /> : null}
-  {fallbackText ? <span class="avatar-fallback"><slot>{fallbackText}</slot></span> : null}
-  {badge || badgeDot || Astro.slots.has("badge") ? (
-    <span class:list={["avatar-badge", badgeDot ? "avatar-badge--dot" : "", badgeClass]} role={badgeAriaLabel ? "status" : undefined} aria-label={badgeAriaLabel || undefined}>
-      <slot name="badge">{badge}</slot>
-    </span>
-  ) : null}
+  {
+    fallbackText ? (
+      <span class="avatar-fallback">
+        <slot>{fallbackText}</slot>
+      </span>
+    ) : null
+  }
+  {
+    badge || badgeDot || Astro.slots.has("badge") ? (
+      <span
+        class:list={[
+          "avatar-badge",
+          badgeDot ? "avatar-badge--dot" : "",
+          badgeClass,
+        ]}
+        role={badgeAriaLabel ? "status" : undefined}
+        aria-label={badgeAriaLabel || undefined}
+      >
+        <slot name="badge">{badge}</slot>
+      </span>
+    ) : null
+  }
 </span>

@@ -16,7 +16,8 @@ interface Props {
     | "outline-primary"
     | "outline-success"
     | "outline-danger";
-  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+  size?:
+    "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   type?: "button" | "submit" | "reset";
   href?: string;
   disabled?: boolean;
@@ -88,8 +89,19 @@ const hasAriaLabel = ariaLabel.trim().length > 0;
 if (!hasLabel && !hasAriaLabel && !Astro.slots.has("default")) {
   throw new Error("Button without a visible label requires ariaLabel");
 }
-if (element !== "button" && (toggle || dropdown || dropdownOffset || dropdownAutoClose || dropdownCaret || loading || collapseTarget)) {
-  throw new Error("Button dropdown, toggle, loading, and collapseTarget options require element=button");
+if (
+  element !== "button" &&
+  (toggle ||
+    dropdown ||
+    dropdownOffset ||
+    dropdownAutoClose ||
+    dropdownCaret ||
+    loading ||
+    collapseTarget)
+) {
+  throw new Error(
+    "Button dropdown, toggle, loading, and collapseTarget options require element=button",
+  );
 }
 
 const variantClasses = {
@@ -124,14 +136,29 @@ const classes = ["btn", variantClasses[variant], sizeClasses[size], className]
   .filter(Boolean)
   .join(" ");
 
-const resolvedClasses = [classes, dropdownCaret ? "dropdown-toggle" : "", element === "a" && disabled ? "disabled" : ""]
+const resolvedClasses = [
+  classes,
+  dropdownCaret ? "dropdown-toggle" : "",
+  element === "a" && disabled ? "disabled" : "",
+]
   .filter(Boolean)
   .join(" ");
 
 const pluginAttributes = tooltip
-  ? { "data-bs-toggle": "tooltip", "data-bs-title": tooltip, "data-bs-placement": tooltipPlacement, ...(tooltipHtml ? { "data-bs-html": "true" } : {}) }
+  ? {
+      "data-bs-toggle": "tooltip",
+      "data-bs-title": tooltip,
+      "data-bs-placement": tooltipPlacement,
+      ...(tooltipHtml ? { "data-bs-html": "true" } : {}),
+    }
   : popoverContent
-    ? { "data-bs-toggle": "popover", "data-bs-content": popoverContent, "data-bs-placement": popoverPlacement, ...(popoverTitle ? { "data-bs-title": popoverTitle } : {}), ...(popoverHtml ? { "data-bs-html": "true" } : {}) }
+    ? {
+        "data-bs-toggle": "popover",
+        "data-bs-content": popoverContent,
+        "data-bs-placement": popoverPlacement,
+        ...(popoverTitle ? { "data-bs-title": popoverTitle } : {}),
+        ...(popoverHtml ? { "data-bs-html": "true" } : {}),
+      }
     : dialogTarget
       ? { "data-bs-toggle": "modal", "data-bs-target": `#${dialogTarget}` }
       : sheetTarget
@@ -153,55 +180,79 @@ const buttonAttributes = {
         ? { "data-bs-toggle": "collapse" }
         : pluginAttributes),
   ...(dropdown && dropdownOffset ? { "data-bs-offset": dropdownOffset } : {}),
-  ...(dropdown && dropdownAutoClose ? { "data-bs-auto-close": dropdownAutoClose } : {}),
+  ...(dropdown && dropdownAutoClose
+    ? { "data-bs-auto-close": dropdownAutoClose }
+    : {}),
   ...(collapseTarget ? { "data-bs-target": `#${collapseTarget}` } : {}),
   ...(dismiss ? { "data-bs-dismiss": dismiss } : {}),
   ...(toastTarget ? { "data-toast-target": `#${toastTarget}` } : {}),
 };
 ---
 
-{element === "a" ? (
-  <a
-    {...rest}
-    {...commonAttributes}
-    class={resolvedClasses}
-    role="button"
-    href={disabled ? undefined : href}
-    aria-label={ariaLabel || undefined}
-    aria-controls={ariaControls || undefined}
-    aria-expanded={ariaExpanded === undefined ? undefined : ariaExpanded ? "true" : "false"}
-    aria-disabled={disabled ? "true" : undefined}
-    tabindex={disabled ? -1 : undefined}
-  >
-    <slot name="icon-start" />
-    <slot>{label}</slot>
-    <slot name="icon-end" />
-  </a>
-) : element === "input" ? (
-  <input
-    {...rest}
-    {...commonAttributes}
-    class={resolvedClasses}
-    type={type}
-    value={label}
-    disabled={disabled}
-    aria-label={ariaLabel || undefined}
-  />
-) : (
-  <button
-    {...rest}
-    {...buttonAttributes}
-    class={resolvedClasses}
-    type={type}
-    disabled={disabled}
-    aria-label={ariaLabel || undefined}
-    aria-expanded={ariaExpanded === undefined ? (dropdown || collapseTarget ? (collapseTarget ? (collapseOpen ? "true" : "false") : "false") : undefined) : ariaExpanded ? "true" : "false"}
-    aria-pressed={toggle ? "false" : undefined}
-    aria-controls={ariaControls || collapseTarget || undefined}
-    aria-busy={loading ? "true" : undefined}
-  >
-    {loading ? <slot name="loading-icon"><Icon name="loader-circle" /></slot> : <slot name="icon-start" />}
-    <slot>{label}</slot>
-    <slot name="icon-end" />
-  </button>
-)}
+{
+  element === "a" ? (
+    <a
+      {...rest}
+      {...commonAttributes}
+      class={resolvedClasses}
+      role="button"
+      href={disabled ? undefined : href}
+      aria-label={ariaLabel || undefined}
+      aria-controls={ariaControls || undefined}
+      aria-expanded={
+        ariaExpanded === undefined ? undefined : ariaExpanded ? "true" : "false"
+      }
+      aria-disabled={disabled ? "true" : undefined}
+      tabindex={disabled ? -1 : undefined}
+    >
+      <slot name="icon-start" />
+      <slot>{label}</slot>
+      <slot name="icon-end" />
+    </a>
+  ) : element === "input" ? (
+    <input
+      {...rest}
+      {...commonAttributes}
+      class={resolvedClasses}
+      type={type}
+      value={label}
+      disabled={disabled}
+      aria-label={ariaLabel || undefined}
+    />
+  ) : (
+    <button
+      {...rest}
+      {...buttonAttributes}
+      class={resolvedClasses}
+      type={type}
+      disabled={disabled}
+      aria-label={ariaLabel || undefined}
+      aria-expanded={
+        ariaExpanded === undefined
+          ? dropdown || collapseTarget
+            ? collapseTarget
+              ? collapseOpen
+                ? "true"
+                : "false"
+              : "false"
+            : undefined
+          : ariaExpanded
+            ? "true"
+            : "false"
+      }
+      aria-pressed={toggle ? "false" : undefined}
+      aria-controls={ariaControls || collapseTarget || undefined}
+      aria-busy={loading ? "true" : undefined}
+    >
+      {loading ? (
+        <slot name="loading-icon">
+          <Icon name="loader-circle" />
+        </slot>
+      ) : (
+        <slot name="icon-start" />
+      )}
+      <slot>{label}</slot>
+      <slot name="icon-end" />
+    </button>
+  )
+}

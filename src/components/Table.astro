@@ -1,5 +1,10 @@
 ---
-interface RowGroup { title: string; headingId?: string; rows: (string | number)[][]; rowIds?: string[]; }
+interface RowGroup {
+  title: string;
+  headingId?: string;
+  rows: (string | number)[][];
+  rowIds?: string[];
+}
 interface Props {
   headers: string[];
   rows: (string | number)[][];
@@ -20,17 +25,145 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { headers, rows, caption = "", captionTop = false, align = [], footer = [], rowIds = [], rowHeader = false, striped = false, hover = false, small = false, borderless = false, responsiveClass = "", rowGroups = [], trustedHtml = false, class: className = "", ...rest } = Astro.props;
+const {
+  headers,
+  rows,
+  caption = "",
+  captionTop = false,
+  align = [],
+  footer = [],
+  rowIds = [],
+  rowHeader = false,
+  striped = false,
+  hover = false,
+  small = false,
+  borderless = false,
+  responsiveClass = "",
+  rowGroups = [],
+  trustedHtml = false,
+  class: className = "",
+  ...rest
+} = Astro.props;
 if (!headers?.length) {
   throw new Error("Table headers are required");
 }
-const classes = ["table", striped ? "table-striped" : "", hover ? "table-hover" : "", small ? "table-sm" : "", captionTop ? "caption-top" : "", borderless ? "table-borderless" : "", className].filter(Boolean).join(" ");
-const cellClass = (index: number) => align[index] ? `text-${align[index]}` : undefined;
+const classes = [
+  "table",
+  striped ? "table-striped" : "",
+  hover ? "table-hover" : "",
+  small ? "table-sm" : "",
+  captionTop ? "caption-top" : "",
+  borderless ? "table-borderless" : "",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
+const cellClass = (index: number) =>
+  align[index] ? `text-${align[index]}` : undefined;
 ---
 
-<div class:list={["table-responsive", responsiveClass]}><table {...rest} class={classes}>
-  {caption ? <caption>{caption}</caption> : null}
-  <thead><tr>{headers.map((header, index) => <th scope="col" class={cellClass(index)}>{header}</th>)}</tr></thead>
-  {rowGroups.length ? rowGroups.map((group) => <tbody><tr class="moo-table-section-row" id={group.headingId}><th scope="rowgroup" colspan={headers.length}>{group.title}</th></tr>{group.rows.map((row, rowIndex) => <tr id={group.rowIds?.[rowIndex]}>{row.map((value, index) => rowHeader && index === 0 ? <th scope="row" class={cellClass(index)}>{trustedHtml ? <Fragment set:html={String(value)} /> : String(value)}</th> : <td class={cellClass(index)}>{trustedHtml ? <Fragment set:html={String(value)} /> : String(value)}</td>)}</tr>)}</tbody>) : <tbody>{rows.map((row, rowIndex) => <tr id={rowIds[rowIndex]}>{row.map((value, index) => rowHeader && index === 0 ? <th scope="row" class={cellClass(index)}>{trustedHtml ? <Fragment set:html={String(value)} /> : String(value)}</th> : <td class={cellClass(index)}>{trustedHtml ? <Fragment set:html={String(value)} /> : String(value)}</td>)}</tr>)}</tbody>}
-  {footer.length ? <tfoot><tr>{footer.map((value, index) => index === 0 ? <th scope="row" class={cellClass(index)}>{trustedHtml ? <Fragment set:html={String(value)} /> : String(value)}</th> : <td class={cellClass(index)}>{trustedHtml ? <Fragment set:html={String(value)} /> : String(value)}</td>)}</tr></tfoot> : null}
-</table></div>
+<div class:list={["table-responsive", responsiveClass]}>
+  <table {...rest} class={classes}>
+    {caption ? <caption>{caption}</caption> : null}
+    <thead
+      ><tr
+        >{
+          headers.map((header, index) => (
+            <th scope="col" class={cellClass(index)}>
+              {header}
+            </th>
+          ))
+        }</tr
+      ></thead
+    >
+    {
+      rowGroups.length ? (
+        rowGroups.map((group) => (
+          <tbody>
+            <tr class="moo-table-section-row" id={group.headingId}>
+              <th scope="rowgroup" colspan={headers.length}>
+                {group.title}
+              </th>
+            </tr>
+            {group.rows.map((row, rowIndex) => (
+              <tr id={group.rowIds?.[rowIndex]}>
+                {row.map((value, index) =>
+                  rowHeader && index === 0 ? (
+                    <th scope="row" class={cellClass(index)}>
+                      {trustedHtml ? (
+                        <Fragment set:html={String(value)} />
+                      ) : (
+                        String(value)
+                      )}
+                    </th>
+                  ) : (
+                    <td class={cellClass(index)}>
+                      {trustedHtml ? (
+                        <Fragment set:html={String(value)} />
+                      ) : (
+                        String(value)
+                      )}
+                    </td>
+                  ),
+                )}
+              </tr>
+            ))}
+          </tbody>
+        ))
+      ) : (
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr id={rowIds[rowIndex]}>
+              {row.map((value, index) =>
+                rowHeader && index === 0 ? (
+                  <th scope="row" class={cellClass(index)}>
+                    {trustedHtml ? (
+                      <Fragment set:html={String(value)} />
+                    ) : (
+                      String(value)
+                    )}
+                  </th>
+                ) : (
+                  <td class={cellClass(index)}>
+                    {trustedHtml ? (
+                      <Fragment set:html={String(value)} />
+                    ) : (
+                      String(value)
+                    )}
+                  </td>
+                ),
+              )}
+            </tr>
+          ))}
+        </tbody>
+      )
+    }
+    {
+      footer.length ? (
+        <tfoot>
+          <tr>
+            {footer.map((value, index) =>
+              index === 0 ? (
+                <th scope="row" class={cellClass(index)}>
+                  {trustedHtml ? (
+                    <Fragment set:html={String(value)} />
+                  ) : (
+                    String(value)
+                  )}
+                </th>
+              ) : (
+                <td class={cellClass(index)}>
+                  {trustedHtml ? (
+                    <Fragment set:html={String(value)} />
+                  ) : (
+                    String(value)
+                  )}
+                </td>
+              ),
+            )}
+          </tr>
+        </tfoot>
+      ) : null
+    }
+  </table>
+</div>

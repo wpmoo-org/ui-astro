@@ -8,4 +8,18 @@ interface Props {
 const { ariaLabel, class: className = "", ...rest } = Astro.props;
 ---
 
-<div {...rest} class:list={["menubar", "d-inline-flex", "align-items-center", "border", "rounded-3", className]} role="group" aria-label={ariaLabel}><slot /></div>
+<div
+  {...rest}
+  class:list={[
+    "menubar",
+    "d-inline-flex",
+    "align-items-center",
+    "border",
+    "rounded-3",
+    className,
+  ]}
+  role="group"
+  aria-label={ariaLabel}
+>
+  <slot />
+</div>

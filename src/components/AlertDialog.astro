@@ -16,10 +16,55 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { id, title = "", description = "", icon = "", size = "default", centered = true, direction = "", ariaLabel = "", describedby = "", class: className = "", ...rest } = Astro.props;
+const {
+  id,
+  title = "",
+  description = "",
+  icon = "",
+  size = "default",
+  centered = true,
+  direction = "",
+  ariaLabel = "",
+  describedby = "",
+  class: className = "",
+  ...rest
+} = Astro.props;
 ---
 
-<Dialog {...rest} id={id} title={title} description={description} size={size} centered={centered} static direction={direction} ariaLabel={ariaLabel} describedby={describedby} headerClass="modal-header--alert" class:list={["modal--alert", className]}>
-  {icon ? <span slot="icon" class="btn btn-icon-sm btn-outline-secondary flex-shrink-0" aria-hidden="true"><slot name="icon"><Icon name={icon} /></slot></span> : Astro.slots.has("icon") ? <span slot="icon" class="btn btn-icon-sm btn-outline-secondary flex-shrink-0" aria-hidden="true"><slot name="icon" /></span> : null}
+<Dialog
+  {...rest}
+  id={id}
+  title={title}
+  description={description}
+  size={size}
+  centered={centered}
+  static
+  direction={direction}
+  ariaLabel={ariaLabel}
+  describedby={describedby}
+  headerClass="modal-header--alert"
+  class:list={["modal--alert", className]}
+>
+  {
+    icon ? (
+      <span
+        slot="icon"
+        class="btn btn-icon-sm btn-outline-secondary flex-shrink-0"
+        aria-hidden="true"
+      >
+        <slot name="icon">
+          <Icon name={icon} />
+        </slot>
+      </span>
+    ) : Astro.slots.has("icon") ? (
+      <span
+        slot="icon"
+        class="btn btn-icon-sm btn-outline-secondary flex-shrink-0"
+        aria-hidden="true"
+      >
+        <slot name="icon" />
+      </span>
+    ) : null
+  }
   <slot />
 </Dialog>

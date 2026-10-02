@@ -31,18 +31,36 @@ const classes = ["card", size === "sm" ? "card--sm" : "", className]
 ---
 
 <div {...rest} class={classes} dir={dir || undefined}>
-  {image ? <div class="card-image"><img class="card-img-top" src={image.src} alt={image.alt} /></div> : null}
-  {title || subtitle || Astro.slots.has("action") ? (
-    <div class:list={["card-header", headerClass]}>
-      <div class="card-header__text">
-        {title && <h3 class="card-title">{title}</h3>}
-        {subtitle && <p class="card-subtitle">{subtitle}</p>}
+  {
+    image ? (
+      <div class="card-image">
+        <img class="card-img-top" src={image.src} alt={image.alt} />
       </div>
-      {Astro.slots.has("action") ? <div class="card-action"><slot name="action" /></div> : null}
-    </div>
-  ) : null}
+    ) : null
+  }
+  {
+    title || subtitle || Astro.slots.has("action") ? (
+      <div class:list={["card-header", headerClass]}>
+        <div class="card-header__text">
+          {title && <h3 class="card-title">{title}</h3>}
+          {subtitle && <p class="card-subtitle">{subtitle}</p>}
+        </div>
+        {Astro.slots.has("action") ? (
+          <div class="card-action">
+            <slot name="action" />
+          </div>
+        ) : null}
+      </div>
+    ) : null
+  }
   <div class:list={["card-body", bodyClass]}>
     <slot />
   </div>
-  {Astro.slots.has("footer") ? <div class:list={["card-footer", footerClass]}><slot name="footer" /></div> : null}
+  {
+    Astro.slots.has("footer") ? (
+      <div class:list={["card-footer", footerClass]}>
+        <slot name="footer" />
+      </div>
+    ) : null
+  }
 </div>

@@ -11,8 +11,31 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { title, description = "", variant = "default", dismissible = false, dismissAriaLabel = "Close", class: className = "", ...rest } = Astro.props;
-const classes = ["alert", variant === "destructive" ? "alert-danger" : variant === "warning" ? "alert-warning" : variant === "success" ? "alert-success" : variant === "info" ? "alert-info" : "", dismissible ? "alert-dismissible fade show" : "", className].filter(Boolean).join(" ");
+const {
+  title,
+  description = "",
+  variant = "default",
+  dismissible = false,
+  dismissAriaLabel = "Close",
+  class: className = "",
+  ...rest
+} = Astro.props;
+const classes = [
+  "alert",
+  variant === "destructive"
+    ? "alert-danger"
+    : variant === "warning"
+      ? "alert-warning"
+      : variant === "success"
+        ? "alert-success"
+        : variant === "info"
+          ? "alert-info"
+          : "",
+  dismissible ? "alert-dismissible fade show" : "",
+  className,
+]
+  .filter(Boolean)
+  .join(" ");
 ---
 
 <div {...rest} class={classes} role="alert">
@@ -21,6 +44,16 @@ const classes = ["alert", variant === "destructive" ? "alert-danger" : variant =
     <div class="alert-heading">{title}</div>
     {description ? <p class="mb-0">{description}</p> : null}
   </div>
-  {Astro.slots.has("action") ? <div class="alert-action"><slot name="action" /></div> : null}
-  {dismissible ? <CloseButton ariaLabel={dismissAriaLabel} dismiss="alert" /> : null}
+  {
+    Astro.slots.has("action") ? (
+      <div class="alert-action">
+        <slot name="action" />
+      </div>
+    ) : null
+  }
+  {
+    dismissible ? (
+      <CloseButton ariaLabel={dismissAriaLabel} dismiss="alert" />
+    ) : null
+  }
 </div>

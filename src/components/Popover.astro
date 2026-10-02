@@ -11,7 +11,30 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { label, content, title = "", placement = "top", html = false, href = "#!", container = "", class: className = "", ...rest } = Astro.props;
+const {
+  label,
+  content,
+  title = "",
+  placement = "top",
+  html = false,
+  href = "#!",
+  container = "",
+  class: className = "",
+  ...rest
+} = Astro.props;
 ---
 
-<a {...rest} href={href || undefined} role="button" tabindex="0" class:list={["btn", "btn-outline-secondary", className]} data-bs-toggle="popover" data-bs-trigger="focus" data-bs-container={container || undefined} data-bs-placement={placement} data-bs-title={title || undefined} data-bs-content={content} data-bs-html={html ? "true" : undefined}>{label}</a>
+<a
+  {...rest}
+  href={href || undefined}
+  role="button"
+  tabindex="0"
+  class:list={["btn", "btn-outline-secondary", className]}
+  data-bs-toggle="popover"
+  data-bs-trigger="focus"
+  data-bs-container={container || undefined}
+  data-bs-placement={placement}
+  data-bs-title={title || undefined}
+  data-bs-content={content}
+  data-bs-html={html ? "true" : undefined}>{label}</a
+>

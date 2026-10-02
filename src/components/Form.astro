@@ -8,4 +8,6 @@ interface Props {
 const { novalidate = false, class: className = "", ...rest } = Astro.props;
 ---
 
-<form {...rest} class:list={["field-form", className]} novalidate={novalidate}><slot /></form>
+<form {...rest} class:list={["field-form", className]} novalidate={novalidate}>
+  <slot />
+</form>

@@ -1,6 +1,15 @@
 ---
-interface Option { value: string; label: string; selected?: boolean; disabled?: boolean; }
-interface OptionGroup { label: string; options: Option[]; disabled?: boolean; }
+interface Option {
+  value: string;
+  label: string;
+  selected?: boolean;
+  disabled?: boolean;
+}
+interface OptionGroup {
+  label: string;
+  options: Option[];
+  disabled?: boolean;
+}
 interface Props {
   label?: string;
   ariaLabel?: string;
@@ -20,7 +29,24 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { label = "", ariaLabel = "", id = "", name = "", options, selected, size = "", multiple = false, rows = "", disabled = false, invalid = false, required = false, describedby = "", dir = "", class: className = "", ...rest } = Astro.props;
+const {
+  label = "",
+  ariaLabel = "",
+  id = "",
+  name = "",
+  options,
+  selected,
+  size = "",
+  multiple = false,
+  rows = "",
+  disabled = false,
+  invalid = false,
+  required = false,
+  describedby = "",
+  dir = "",
+  class: className = "",
+  ...rest
+} = Astro.props;
 const hasLabel = label.trim().length > 0;
 const hasAriaLabel = ariaLabel.trim().length > 0;
 if (hasLabel === hasAriaLabel) {
@@ -32,10 +58,67 @@ if (hasLabel && !id.trim()) {
 if (!options?.length) {
   throw new Error("Select options are required");
 }
-const selectedValues = Array.isArray(selected) ? selected : selected === undefined ? [] : [selected];
+const selectedValues = Array.isArray(selected)
+  ? selected
+  : selected === undefined
+    ? []
+    : [selected];
 ---
 
-{label ? <label class="form-label" for={id || undefined}>{label}</label> : null}
-<select {...rest} class:list={["form-select", size ? `form-select-${size}` : "", invalid ? "is-invalid" : "", className]} id={id || undefined} name={name || undefined} aria-label={ariaLabel || undefined} aria-describedby={describedby || undefined} aria-invalid={invalid ? "true" : undefined} multiple={multiple || undefined} size={rows || undefined} disabled={disabled} required={required} dir={dir || undefined} data-selected={selected !== undefined ? (Array.isArray(selected) ? selected.join(",") : selected) : undefined}>
-  {options.map((option) => "options" in option ? <optgroup label={option.label} disabled={option.disabled}>{option.options.map((child) => <option value={child.value} selected={selectedValues.includes(child.value) || child.selected} disabled={child.disabled}>{child.label}</option>)}</optgroup> : <option value={option.value} selected={selectedValues.includes(option.value) || option.selected} disabled={option.disabled}>{option.label}</option>)}
+{
+  label ? (
+    <label class="form-label" for={id || undefined}>
+      {label}
+    </label>
+  ) : null
+}
+<select
+  {...rest}
+  class:list={[
+    "form-select",
+    size ? `form-select-${size}` : "",
+    invalid ? "is-invalid" : "",
+    className,
+  ]}
+  id={id || undefined}
+  name={name || undefined}
+  aria-label={ariaLabel || undefined}
+  aria-describedby={describedby || undefined}
+  aria-invalid={invalid ? "true" : undefined}
+  multiple={multiple || undefined}
+  size={rows || undefined}
+  disabled={disabled}
+  required={required}
+  dir={dir || undefined}
+  data-selected={selected !== undefined
+    ? Array.isArray(selected)
+      ? selected.join(",")
+      : selected
+    : undefined}
+>
+  {
+    options.map((option) =>
+      "options" in option ? (
+        <optgroup label={option.label} disabled={option.disabled}>
+          {option.options.map((child) => (
+            <option
+              value={child.value}
+              selected={selectedValues.includes(child.value) || child.selected}
+              disabled={child.disabled}
+            >
+              {child.label}
+            </option>
+          ))}
+        </optgroup>
+      ) : (
+        <option
+          value={option.value}
+          selected={selectedValues.includes(option.value) || option.selected}
+          disabled={option.disabled}
+        >
+          {option.label}
+        </option>
+      ),
+    )
+  }
 </select>

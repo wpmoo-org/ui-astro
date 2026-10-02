@@ -6,11 +6,28 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { orientation = "horizontal", decorative = true, class: className = "", ...rest } = Astro.props;
+const {
+  orientation = "horizontal",
+  decorative = true,
+  class: className = "",
+  ...rest
+} = Astro.props;
 ---
 
-{orientation === "vertical" ? (
-  <div {...rest} class:list={["vr", className]} aria-hidden={decorative ? "true" : undefined} role={!decorative ? "separator" : undefined} aria-orientation={!decorative ? "vertical" : undefined}></div>
-) : (
-  <hr {...rest} class={className || undefined} aria-hidden={decorative ? "true" : undefined} />
-)}
+{
+  orientation === "vertical" ? (
+    <div
+      {...rest}
+      class:list={["vr", className]}
+      aria-hidden={decorative ? "true" : undefined}
+      role={!decorative ? "separator" : undefined}
+      aria-orientation={!decorative ? "vertical" : undefined}
+    />
+  ) : (
+    <hr
+      {...rest}
+      class={className || undefined}
+      aria-hidden={decorative ? "true" : undefined}
+    />
+  )
+}

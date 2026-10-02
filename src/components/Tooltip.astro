@@ -9,7 +9,23 @@ interface Props {
   [key: string]: unknown;
 }
 
-const { label, text, placement = "top", html = false, href = "#!", class: className = "", ...rest } = Astro.props;
+const {
+  label,
+  text,
+  placement = "top",
+  html = false,
+  href = "#!",
+  class: className = "",
+  ...rest
+} = Astro.props;
 ---
 
-<a {...rest} href={href} class:list={["tooltip-trigger", className]} data-bs-toggle="tooltip" data-bs-placement={placement} data-bs-title={text} data-bs-html={html ? "true" : undefined}>{label}</a>
+<a
+  {...rest}
+  href={href}
+  class:list={["tooltip-trigger", className]}
+  data-bs-toggle="tooltip"
+  data-bs-placement={placement}
+  data-bs-title={text}
+  data-bs-html={html ? "true" : undefined}>{label}</a
+>
