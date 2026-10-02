@@ -1,0 +1,20 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Loop from "@wpmoo/astro/views/Loop.astro";
+import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import Typography from "@wpmoo/astro/components/Typography.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoMessages } from "../../../../../../demo/messages.js";
+const { site } = getSiteContext();
+const lang = site.defaults.lang;
+const copy = getDemoMessages(lang);
+---
+
+<Layout title={copy.emptyStateTitle} lang={lang} parts={site.defaults.parts}>
+  <PageHeader title={copy.emptyStateTitle} />
+  <Typography variant="section-title" content={copy.items} />
+  <Loop items={[]} emptyText={copy.emptyItems} />
+  <Typography variant="section-title" content={copy.pages} />
+  <PageLoop entries={[]} lang={lang} emptyText={copy.emptyPages} />
+</Layout>

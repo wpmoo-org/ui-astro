@@ -18,7 +18,7 @@ export const collections = { post: defineCollection({
 }) };
 ''',
         "src/content/post/first.md": '---\ntitle: First post\nstatus: publish\npublished_at: "2026-09-20T23:30:00-02:00"\n---\nFirst post body.\n',
-        "src/content/post/second.md": '---\ntitle: Second post\nstatus: publish\npublished_at: "2026-09-22T12:00:00Z"\nlayout:\n  sidebar: {}\n---\nSecond post body.\n',
+        "src/content/post/second.md": '---\ntitle: Second post\nstatus: publish\npublished_at: "2026-09-22T12:00:00Z"\noptions:\n  sidebar: {}\n---\nSecond post body.\n',
         "src/content/post/draft.md": '---\ntitle: Draft post\nstatus: draft\n---\nDraft body.\n',
         "src/content/post/pending.md": '---\ntitle: Pending post\nstatus: pending\n---\nPending body.\n',
         "src/content/post/scheduled.md": '---\ntitle: Scheduled post\nstatus: future\npublished_at: "2099-01-01T12:00:00Z"\n---\nScheduled body.\n',

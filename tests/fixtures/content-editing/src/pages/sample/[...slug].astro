@@ -1,0 +1,130 @@
+---
+import { getCollection } from "astro:content";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import Text from "../../components/sections/Text.astro";
+import Action from "../../components/sections/Action.astro";
+
+export async function getStaticPaths() {
+  return (
+    await getCollection("sample", (entry) => entry.data.status === "publish")
+  ).map((entry) => ({
+    params: { slug: getEntryHref("sample", entry).slice("/sample/".length) },
+    props: { entry },
+  }));
+}
+const { entry } = Astro.props;
+const { site } = getSiteContext();
+const { sidebar, ...options } = resolvePageOptions(
+  site,
+  "sample",
+  "single",
+  entry.data.options,
+);
+const entryContext = {
+  type: "sample",
+  id: entry.id,
+  source: "json" as const,
+  taxonomies: Object.fromEntries(
+    Object.entries(entry.data.taxonomies ?? {}).map(([key, references]) => [
+      key,
+      references.map((reference) => reference.id),
+    ]),
+  ),
+};
+const sectionComponents = { text: Text, action: Action };
+const SectionText = sectionComponents.text;
+const SectionAction = sectionComponents.action;
+const groups = [
+  {
+    items: [
+      { title: "Editable Page", href: "/editable" },
+      { title: "Plain Page", href: "/plain" },
+    ],
+  },
+];
+const layoutProps = {
+  ...options,
+  title: entry.data.title,
+  pageContext: { view: "single" as const, entry: entryContext },
+};
+const breadcrumbs = [
+  { label: site.brand, href: "/editable" },
+  { label: entry.data.title },
+];
+---
+
+{
+  sidebar ? (
+    <Layout
+      {...layoutProps}
+      sidebar
+      sidebarId="editable-sidebar"
+      sidebarKey="editable"
+      defaultOpen={sidebar.defaultOpen}
+    >
+      <Sidebar
+        slot="sidebar"
+        id="editable-sidebar"
+        brand={site.brand}
+        brandHref="/editable"
+        groups={groups}
+        parts={options.parts}
+        side={sidebar.side}
+        variant={sidebar.variant}
+        collapsible={sidebar.collapsible}
+        rail={sidebar.rail}
+      />
+      <Header slot="header" parts={options.parts} breadcrumbs={breadcrumbs} />
+      <Single
+        title={entry.data.title}
+        parts={options.parts}
+        entryContext={entryContext}
+      >
+        <p>{entry.data.body}</p>
+        {(entry.data.sections ?? []).map((section) =>
+          section.type === "text" ? (
+            <SectionText id={section.id} {...section.props} />
+          ) : (
+            <SectionAction id={section.id} {...section.props} />
+          ),
+        )}
+      </Single>
+      <Footer
+        slot="footer"
+        parts={options.parts}
+        brand={site.brand}
+        homeHref="/editable"
+      />
+    </Layout>
+  ) : (
+    <Layout {...layoutProps}>
+      <Header slot="header" parts={options.parts} breadcrumbs={breadcrumbs} />
+      <Single
+        title={entry.data.title}
+        parts={options.parts}
+        entryContext={entryContext}
+      >
+        <p>{entry.data.body}</p>
+        {(entry.data.sections ?? []).map((section) =>
+          section.type === "text" ? (
+            <SectionText id={section.id} {...section.props} />
+          ) : (
+            <SectionAction id={section.id} {...section.props} />
+          ),
+        )}
+      </Single>
+      <Footer
+        slot="footer"
+        parts={options.parts}
+        brand={site.brand}
+        homeHref="/editable"
+      />
+    </Layout>
+  )
+}

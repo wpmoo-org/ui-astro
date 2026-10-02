@@ -189,20 +189,29 @@ export const taxonomies = [defineTaxonomy({ id: "sector", label: "Sectors", sour
         files["src/content.config.mjs"] = files["src/content.config.mjs"].replace('export const collections = {', 'export const collections = { project: defineCollection({ loader: file("src/data/project.json"), schema: entrySchema.extend({ id: z.string(), ...relationships }) }),')
         for path in ["src/content/page/contact.md", "src/content/post/announcement.md", "src/content/post/draft.md"]:
             files[path] = files[path].replace("category: [root, child]", "sector: [education]").replace("category: [child]", "sector: [education]").replace("  tag: [astro]\n", "")
-        files["src/data/project.json"] = json.dumps([{"id": "contact", "title": "Reusable project", "status": "publish", "taxonomies": {"sector": ["education"]}}])
+        preferences = {"sidebar": None, "headerWidth": None, "parts": {"content": {"utilities": []}}}
+        files["src/data/project.json"] = json.dumps([{"id": "contact", "title": "Reusable project", "status": "publish", "options": preferences, "taxonomies": {"sector": ["education"]}}])
         files["src/pages/projects/[...slug].astro"] = '''---
 import { getCollection } from "astro:content";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
 import Layout from "@wpmoo/astro/Layout.astro";
 import Single from "@wpmoo/astro/views/Single.astro";
 export async function getStaticPaths() { return (await getCollection("project")).map(entry => ({ params: { slug: entry.id }, props: { entry } })); }
 const { entry } = Astro.props;
+const { site } = getSiteContext();
+const { sidebar: _sidebar, ...options } = resolvePageOptions(site, "project", "single", entry.data.options);
 ---
-<Layout title={entry.data.title}><Single title={entry.data.title}><p>Reusable project body.</p></Single></Layout>
+<Layout title={entry.data.title} {...options}><Single title={entry.data.title} parts={options.parts}><p>Reusable project body.</p></Single></Layout>
+'''
+        files["src/pages/project-data.json.ts"] = '''import { getCollection } from "astro:content";
+export const GET = async () => Response.json((await getCollection("project"))[0].data.options);
 '''
         imports = CONFIG_IMPORTS + '''import { definePlugin } from "@wpmoo/astro/plugins";
 const sample = definePlugin({ apiVersion: 1, id: "projects", label: "Projects", basePath: "/projects", contentTypes: [{ id: "project", collection: "project", singleRoute: "single", source: { kind: "json", file: new URL("./src/data/project.json", import.meta.url) }, taxonomies: bindings }], routes: [{ id: "single", pattern: "/[...slug]", prerender: true, owner: "host" }] });
 '''
-        result, _ = self.build(None, configuration='integrations: [moo({ plugins: [page({ taxonomies: bindings }), post({ taxonomies: bindings }), sample], taxonomies })]', config_imports=imports, files=files)
+        configuration = 'integrations: [moo({ site: { types: { project: { sidebar: {}, parts: { content: { utilities: ["py-5"] } } } } }, plugins: [page({ taxonomies: bindings }), post({ taxonomies: bindings }), sample], taxonomies })]'
+        result, _ = self.build(None, configuration=configuration, config_imports=imports, files=files)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         archive = result.generated_html["topics/sector/education/index.html"]
         for href in ["/contact", "/posts/announcement", "/projects/contact"]:
@@ -214,6 +223,18 @@ const sample = definePlugin({ apiVersion: 1, id: "projects", label: "Projects", 
         self.assertIn("entry-project--contact", archive)
         self.assertIn("tax-sector--education", archive)
         self.assertIn("Reusable project", archive)
+        self.assertEqual(json.loads(result.generated_data["project-data.json"]), preferences)
+        single = native.Markup()
+        single.feed(result.generated_html["projects/contact/index.html"])
+        self.assertFalse(any(tag == "aside" for tag, _ in single.elements))
+        self.assertEqual(next(attrs["class"] for _, attrs in single.elements if "data-page-container" in attrs), "container-xl")
+        record = json.loads(files["src/data/project.json"])[0]
+        record["layout"] = record.pop("options")
+        files["src/data/project.json"] = json.dumps([record])
+        legacy, _ = self.build(None, configuration=configuration, config_imports=imports, files=files)
+        self.assertNotEqual(legacy.returncode, 0, legacy.stdout + legacy.stderr)
+        self.assertIn('"layout"', legacy.stdout + legacy.stderr)
+        self.assertIn('"options"', legacy.stdout + legacy.stderr)
 
     def test_array_and_directory_term_storage_preserve_membership_and_urls(self):
         arrays, _ = self.taxonomy_build(taxonomy_files())

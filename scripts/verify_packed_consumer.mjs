@@ -2,22 +2,109 @@
 
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { createRequire } from "node:module";
 import {
-  cp,
+  lstat,
   mkdir,
   readFile,
+  readdir,
   realpath,
-  stat,
   writeFile,
 } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+
+import {
+  assertPackedContainer,
+  assertPlainInputTree,
+  validateProfileLock,
+} from "./packed_consumer_contracts.mjs";
+export {
+  assertPackedContainer,
+  assertPlainInputTree,
+  validateProfileLock,
+  assertConsumerOutput,
+  assertPackedPageOutput,
+  assertThemeOutput,
+  assertPrivateSubpathError,
+  assertPeerConflict,
+} from "./packed_consumer_contracts.mjs";
 
 const ASTRO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKSPACE_ROOT = resolve(ASTRO_ROOT, "../../..");
 const FIXTURE_ROOT = join(ASTRO_ROOT, "tests/fixtures/consumer");
+
+export async function assertRetainedArtifacts(root, artifacts) {
+  for (const [name, artifact] of Object.entries(artifacts)) {
+    const bytes = await readFile(join(root, artifact.filename));
+    if (createHash("sha256").update(bytes).digest("hex") !== artifact.sha256)
+      throw new Error(
+        `retained archive changed after isolated execution: ${name}`,
+      );
+  }
+}
+
+export const PACKED_PROFILES = Object.freeze({
+  default: "consumer",
+  theme: "theme",
+  "ui-only": "ui-only",
+  "page-only": "page-only",
+  "post-only": "post-only",
+  mdx: "mdx",
+  "external-plugin": "external-consumer",
+  taxonomy: "taxonomy",
+  "external-taxonomy": "external-taxonomy",
+  "content-editing": "content-editing",
+});
+
+const USAGE =
+  "Usage: node scripts/verify_packed_consumer.mjs --fixture all --cache /absolute/primed-cache --output /absolute/empty-proof --image <existing-local-image>";
+
+export function parsePackedArguments(args) {
+  const options = { fixture: "all" };
+  const seen = new Set();
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index];
+    if (!["--fixture", "--cache", "--output", "--image"].includes(flag)) {
+      throw new Error(`Unknown argument: ${flag}`);
+    }
+    if (seen.has(flag)) throw new Error(`Duplicate argument: ${flag}`);
+    const value = args[index + 1];
+    if (
+      typeof value !== "string" ||
+      !value ||
+      value.startsWith("--") ||
+      /[\u0000-\u001f\u007f]/u.test(value)
+    ) {
+      throw new Error(`Missing or invalid value for ${flag}`);
+    }
+    options[flag.slice(2)] = value;
+    seen.add(flag);
+  }
+  for (const name of ["cache", "output", "image"]) {
+    if (!seen.has(`--${name}`)) throw new Error(`Missing argument: --${name}`);
+  }
+  for (const name of ["cache", "output"]) {
+    if (!isAbsolute(options[name]))
+      throw new Error(`--${name} must be an absolute path`);
+  }
+  if (
+    options.fixture !== "all" &&
+    !Object.hasOwn(PACKED_PROFILES, options.fixture)
+  ) {
+    throw new Error(`Unknown fixture: ${options.fixture}`);
+  }
+  if (/\s/u.test(options.image))
+    throw new Error("--image must name one existing local image");
+  return options;
+}
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -31,16 +118,6 @@ function run(command, args, options = {}) {
     );
   }
   return result.stdout;
-}
-
-function assertOutsideWorkspace(path, label) {
-  if (!isAbsolute(path)) throw new Error(`${label} must be an absolute path`);
-  const resolved = resolve(path);
-  const fromWorkspace = relative(WORKSPACE_ROOT, resolved);
-  if (!fromWorkspace.startsWith("..") && fromWorkspace !== "") {
-    throw new Error(`${label} must be outside the workspace`);
-  }
-  return resolved;
 }
 
 export function validateConsumerFixture({ source, manifest }) {
@@ -144,151 +221,98 @@ export function validateConsumerLock({
   }
 }
 
-export function assertConsumerOutput(html) {
-  const required = [
-    ['data-moo-document-owner="true"', "Moo document owner"],
-    ['data-slot="sidebar-wrapper"', "Sidebar wrapper"],
-    ['data-slot="sidebar"', "direct Sidebar"],
-    ['data-slot="page"', "Page"],
-    ['id="main-content"', "focusable main"],
-    ["data-page-container", "Page rail"],
-    ['data-layout="page-grid"', "Page grid"],
-    ['data-public-wrapper-count="45"', "45 public wrapper imports"],
-    ['data-public-part-count="7"', "seven public include and view imports"],
-    ['data-public-page-view-count="3"', "three public Page view imports"],
-    ['data-context-plugin="page"', "public Page route context"],
-    ['data-context-link="/contact"', "canonical Page context link"],
-    ['data-navigation-count="2"', "public Page navigation"],
-    ['data-config-sidebar="none"', "public site preference resolution"],
-    ['data-config-slug="iletisim"', "public Turkish slug normalization"],
-    ['data-plugin-id="page"', "public plugin descriptor"],
-    ["btn-icon-sm", "published icon button size"],
-    ['data-toast-show-on-load="true"', "published Toast startup hook"],
-    ['aria-label="Dismiss saved toast"', "published Toast action label"],
-    ["&lt;svg onload=alert(2)&gt;", "Toast untrusted body must be escaped"],
-    ["<strong>Approved</strong>", "trusted caller markup opt-in"],
-    ["&lt;img src=x onerror=alert(1)&gt;", "untrusted text must be escaped"],
-  ];
-  for (const [marker, label] of required) {
-    if (!html.includes(marker))
-      throw new Error(`consumer HTML is missing ${label}`);
-  }
-  if (html.includes("<img src=x onerror=alert(1)>")) {
-    throw new Error("untrusted text must be escaped");
-  }
-  if (html.includes("<svg onload=alert(2)>")) {
-    throw new Error("Toast untrusted body must be escaped");
-  }
-}
-
-export function assertPackedPageOutput({ contact, guide, draftExists }) {
-  for (const [html, title, body] of [
-    [contact, "Contact", "Independent Page content."],
-    [guide, "Setup guide", "Independent guide content."],
-  ]) {
-    if (
-      !html.includes(`<title>${title}</title>`) ||
-      !html.includes(body) ||
-      [...html.matchAll(/<h1(?:\s|>)/gu)].length !== 1
-    ) {
-      throw new Error(
-        `${title} Page route must render its published title and Markdown once`,
-      );
-    }
-  }
-  if (
-    !contact.includes("page page-contact") ||
-    !contact.includes('href="/contact"')
-  ) {
-    throw new Error(
-      "Contact Page route must preserve its exact entry identity and canonical href",
-    );
-  }
-  if (
-    !guide.includes('data-slot="sidebar"') ||
-    !guide.includes('href="/guide/setup"') ||
-    !guide.includes('aria-current="page"')
-  ) {
-    throw new Error(
-      "Guide Page route must inherit the public Sidebar and active canonical link",
-    );
-  }
-  if (draftExists)
-    throw new Error("Draft Page must not be published by the packed consumer");
-}
-
-export function assertPrivateSubpathError(result) {
-  if (
-    result.status === 0 ||
-    !result.stderr.includes("ERR_PACKAGE_PATH_NOT_EXPORTED")
-  ) {
-    throw new Error(
-      "private deep import must fail with ERR_PACKAGE_PATH_NOT_EXPORTED",
-    );
-  }
-}
-
-export function assertThemeOutput({ home, contact, guide }) {
-  for (const [name, html, expected] of [
-    ["home", home, ["container-xl", "py-3", "py-md-5"]],
-    ["contact", contact, ["container-lg"]],
-    ["guide", guide, ["container-xl", "py-3", "py-md-5"]],
-  ]) {
-    const rails = [
-      ...html.matchAll(
-        /<div\b(?=[^>]*\bdata-page-container(?:\s|>|=))[^>]*>/gu,
-      ),
-    ];
-    const actual = rails[0]?.[0]
-      .match(/\bclass="([^"]*)"/u)?.[1]
-      .split(/\s+/u)
-      .filter(Boolean)
-      .sort();
-    if (
-      rails.length !== 1 ||
-      JSON.stringify(actual) !== JSON.stringify([...expected].sort())
-    ) {
-      throw new Error(
-        `${name} must render its resolved theme preferences on one Page rail`,
-      );
-    }
-  }
-  for (const html of [contact, guide]) {
-    if (!html.includes('<header class="bg-body-tertiary border-bottom">')) {
-      throw new Error(
-        "Theme Header preferences must reach both built-in Page routes",
-      );
+async function canonicalMount(path, label, { mustExist = true } = {}) {
+  if (!isAbsolute(path)) throw new Error(`${label} must be an absolute path`);
+  let current = resolve(path);
+  const missing = [];
+  while (true) {
+    try {
+      const canonical = await realpath(current);
+      const final = resolve(canonical, ...missing.reverse());
+      const workspace = await realpath(WORKSPACE_ROOT);
+      const inside = (parent, child) => {
+        const value = relative(parent, child);
+        return (
+          value === "" ||
+          (value !== ".." && !value.startsWith("../") && !isAbsolute(value))
+        );
+      };
+      if (inside(workspace, final) || inside(final, workspace))
+        throw new Error(`${label} cannot be inside or contain the workspace`);
+      if (mustExist && missing.length)
+        throw new Error(`${label} must be an existing primed directory`);
+      return final;
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      missing.push(basename(current));
+      current = dirname(current);
     }
   }
 }
 
-export function assertPeerConflict(result, certifiedVersion) {
-  if (
-    result.status === 0 ||
-    !result.stderr.includes("ERESOLVE") ||
-    !result.stderr.includes(`peer astro@"${certifiedVersion}"`)
-  ) {
-    throw new Error(
-      "incompatible host must fail with npm ERESOLVE for the certified Astro peer",
-    );
+async function copyFixture(source, target) {
+  const names = [];
+  async function visit(directory) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      if (
+        directory === source &&
+        ["node_modules", ".astro", "dist", ".cache", ".vite", ".git"].includes(
+          entry.name,
+        )
+      )
+        continue;
+      const full = join(directory, entry.name);
+      const name = relative(source, full);
+      if (entry.isSymbolicLink())
+        throw new Error(`prepared fixture symlink is forbidden: ${name}`);
+      if (entry.isDirectory()) await visit(full);
+      else if (entry.isFile()) {
+        await mkdir(dirname(join(target, name)), { recursive: true });
+        await writeFile(join(target, name), await readFile(full));
+        names.push(name);
+      } else
+        throw new Error(
+          `prepared fixture has an unsupported file kind: ${name}`,
+        );
+    }
   }
+  await visit(source);
+  return names.sort();
 }
 
-export async function verifyPackedConsumer({ cache, output }) {
-  const cachePath = assertOutsideWorkspace(cache, "cache");
-  const outputPath = assertOutsideWorkspace(output, "output");
+export async function verifyPackedConsumer({
+  cache,
+  output,
+  fixture = "all",
+  image,
+}) {
+  const selected = fixture === "all" ? Object.keys(PACKED_PROFILES) : [fixture];
+  const cachePath = await canonicalMount(cache, "cache");
+  const outputPath = await canonicalMount(output, "output", {
+    mustExist: false,
+  });
+  if (!(await lstat(cachePath)).isDirectory())
+    throw new Error("cache must be a primed npm directory");
+  await assertPlainInputTree(cachePath);
+  if (
+    cachePath === outputPath ||
+    cachePath.startsWith(`${outputPath}/`) ||
+    outputPath.startsWith(`${cachePath}/`)
+  ) {
+    throw new Error("cache and output directories must be disjoint");
+  }
+  try {
+    if ((await readdir(outputPath)).length)
+      throw new Error("output must be an empty proof directory");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  // Inspect first: docker create uses this immutable local ID and never pulls.
+  const imageRecord = JSON.parse(run("docker", ["image", "inspect", image]))[0];
+  if (!/^sha256:[a-f0-9]{64}$/u.test(imageRecord?.Id ?? ""))
+    throw new Error("An existing local image ID is required");
   const manifest = JSON.parse(
     await readFile(join(ASTRO_ROOT, "package.json"), "utf8"),
-  );
-  const fixtureSource = await readFile(
-    join(FIXTURE_ROOT, "src/pages/index.astro"),
-    "utf8",
-  );
-  const fixtureManifest = JSON.parse(
-    await readFile(join(FIXTURE_ROOT, "package.json"), "utf8"),
-  );
-  const fixtureLock = JSON.parse(
-    await readFile(join(FIXTURE_ROOT, "package-lock.json"), "utf8"),
   );
   const core = JSON.parse(
     await readFile(join(ASTRO_ROOT, "contracts/rc9-package.json"), "utf8"),
@@ -299,201 +323,263 @@ export async function verifyPackedConsumer({ cache, output }) {
       "utf8",
     ),
   );
-  const importCount = validateConsumerFixture({
-    source: fixtureSource,
-    manifest,
-  });
-  validateConsumerLock({ fixtureManifest, fixtureLock, manifest, core });
+  if (JSON.stringify(manifest.exports) !== JSON.stringify(surface.exports))
+    throw new Error("Main public exports differ from the reviewed surface");
+  const source = await readFile(
+    join(FIXTURE_ROOT, "src/pages/index.astro"),
+    "utf8",
+  );
+  const publicImports = validateConsumerFixture({ source, manifest });
   await mkdir(outputPath, { recursive: true });
-  await mkdir(cachePath, { recursive: true });
-  assertOutsideWorkspace(await realpath(outputPath), "output");
-  assertOutsideWorkspace(await realpath(cachePath), "cache");
-
-  const packOutput = run(
-    "npm",
-    ["pack", "--pack-destination", outputPath, "--json"],
-    {
-      cwd: ASTRO_ROOT,
-      env: { ...process.env, npm_config_cache: cachePath },
-    },
-  );
-  const packed = JSON.parse(packOutput)[0];
-  if (
-    fixtureManifest.dependencies[manifest.name] !== `file:../${packed.filename}`
-  ) {
-    throw new Error(
-      "consumer lock local archive name differs from the packed adapter",
-    );
-  }
-  const archivePath = join(outputPath, packed.filename);
-  const consumerPath = join(outputPath, "consumer");
-  await cp(FIXTURE_ROOT, consumerPath, {
-    recursive: true,
-    errorOnExist: true,
-    force: false,
-  });
-  const executionLock = structuredClone(fixtureLock);
-  executionLock.packages[`node_modules/${manifest.name}`].integrity =
-    packed.integrity;
+  await mkdir(join(outputPath, "packing-cache"));
   await writeFile(
-    join(consumerPath, "package-lock.json"),
-    `${JSON.stringify(executionLock, null, 2)}\n`,
+    join(outputPath, "image.json"),
+    `${JSON.stringify(imageRecord, null, 2)}\n`,
   );
-  const offlineEnv = {
-    ...process.env,
-    npm_config_cache: cachePath,
-    npm_config_offline: "true",
-    npm_config_registry: "https://registry.npmjs.org/",
-    npm_config_audit: "false",
-    npm_config_fund: "false",
-  };
-  run(
-    "npm",
-    ["ci", "--offline", "--strict-peer-deps", "--no-audit", "--no-fund"],
-    {
-      cwd: consumerPath,
-      env: offlineEnv,
-    },
+  const artifacts = {};
+  const external = selected.some((name) =>
+    ["external-plugin", "external-taxonomy"].includes(name),
   );
-  const consumerRequire = createRequire(join(consumerPath, "package.json"));
-  const consumerAstro = await realpath(
-    consumerRequire.resolve("astro/package.json"),
-  );
-  const adapterAstro = await realpath(
-    createRequire(
-      join(consumerPath, "node_modules", manifest.name, "package.json"),
-    ).resolve("astro/package.json"),
-  );
-  if (consumerAstro !== adapterAstro)
-    throw new Error("consumer and adapter must resolve the same Astro host");
-  try {
-    consumerRequire.resolve("@astrojs/mdx");
-    throw new Error("MD-only consumer installed MDX");
-  } catch (error) {
-    if (error.code !== "MODULE_NOT_FOUND") throw error;
-  }
-  const privateSubpaths = Object.fromEntries(
-    surface.private_transitives.map((path) => [
-      path,
-      "ERR_PACKAGE_PATH_NOT_EXPORTED",
-    ]),
-  );
-  for (const path of surface.private_transitives) {
-    const specifier = `${manifest.name}/${path}`;
-    const privateProbe = spawnSync(
-      process.execPath,
-      [
-        "--input-type=module",
-        "-e",
-        `import.meta.resolve(${JSON.stringify(specifier)})`,
-      ],
-      { cwd: consumerPath, encoding: "utf8", env: offlineEnv },
+  for (const root of [
+    ASTRO_ROOT,
+    ...(external ? [join(ASTRO_ROOT, "tests/fixtures/external-plugin")] : []),
+  ]) {
+    const packageManifest = JSON.parse(
+      await readFile(join(root, "package.json"), "utf8"),
     );
-    assertPrivateSubpathError(privateProbe);
+    const packed = JSON.parse(
+      run(
+        "npm",
+        [
+          "pack",
+          "--ignore-scripts",
+          "--pack-destination",
+          outputPath,
+          "--json",
+        ],
+        {
+          cwd: root,
+          env: {
+            ...process.env,
+            npm_config_cache: join(outputPath, "packing-cache"),
+            npm_config_offline: "true",
+          },
+        },
+      ),
+    )[0];
+    const names = packed.files.map((file) => file.path).sort();
+    if (
+      root === ASTRO_ROOT &&
+      JSON.stringify(names) !== JSON.stringify([...surface.files].sort())
+    ) {
+      throw new Error(
+        "Main archive file inventory differs from the reviewed surface",
+      );
+    }
+    const bytes = await readFile(join(outputPath, packed.filename));
+    const integrity = `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
+    if (packed.integrity !== integrity)
+      throw new Error(
+        "Actual archive integrity differs from npm pack metadata",
+      );
+    const hashes = Object.fromEntries(
+      await Promise.all(
+        names.map(async (name) => [
+          name,
+          sha256(await readFile(join(root, name))),
+        ]),
+      ),
+    );
+    artifacts[packageManifest.name] = {
+      filename: packed.filename,
+      sha256: sha256(bytes),
+      integrity,
+      manifest: packageManifest,
+      files: hashes,
+      pack_metadata: packed,
+    };
   }
-  const typeOutput = run("npm", ["run", "check"], {
-    cwd: consumerPath,
-    env: offlineEnv,
-  });
-  await writeFile(join(outputPath, "type-check.log"), typeOutput);
-  run("npm", ["run", "build"], { cwd: consumerPath, env: offlineEnv });
-
-  // This fixture is official registry metadata, never installed: npm must reject
-  // the unsupported host before fetching or running that version.
+  await mkdir(join(outputPath, "template-locks"));
+  const profiles = [];
+  for (const name of selected) {
+    const sourceRoot = join(
+      ASTRO_ROOT,
+      "tests/fixtures",
+      PACKED_PROFILES[name],
+    );
+    const directory = name === "default" ? "consumer" : name;
+    const target = join(outputPath, directory);
+    const names = await copyFixture(sourceRoot, target);
+    for (const probe of [
+      ...(name !== "ui-only" ? ["content-contract.json.ts"] : []),
+      ...(name === "default" ? ["namespaces.json.ts"] : []),
+    ]) {
+      const path = `src/pages/${probe}`;
+      if (names.includes(path))
+        throw new Error(
+          `${name}: certification probe would replace an authored route`,
+        );
+      await mkdir(join(target, "src/pages"), { recursive: true });
+      await writeFile(
+        join(target, path),
+        await readFile(join(ASTRO_ROOT, "tests/fixtures/certification", probe)),
+      );
+      names.push(path);
+    }
+    const originalLock = await readFile(join(target, "package-lock.json"));
+    await writeFile(
+      join(outputPath, "template-locks", `${name}.json`),
+      originalLock,
+    );
+    const lock = JSON.parse(originalLock);
+    for (const [packageName, artifact] of Object.entries(artifacts)) {
+      const local = lock.packages[`node_modules/${packageName}`];
+      if (local) local.integrity = artifact.integrity;
+    }
+    const fixtureManifest = JSON.parse(
+      await readFile(join(target, "package.json"), "utf8"),
+    );
+    validateProfileLock({
+      manifest: fixtureManifest,
+      lock,
+      artifacts,
+      core,
+      profile: name,
+    });
+    await writeFile(
+      join(target, "package-lock.json"),
+      `${JSON.stringify(lock, null, 2)}\n`,
+    );
+    const authoredFiles = names.filter((path) => path !== "package-lock.json");
+    const hashes = Object.fromEntries(
+      await Promise.all(
+        authoredFiles.map(async (path) => [
+          path,
+          sha256(await readFile(join(target, path))),
+        ]),
+      ),
+    );
+    profiles.push({
+      name,
+      fixture: PACKED_PROFILES[name],
+      directory,
+      authored_files: authoredFiles,
+      authored_sha256: hashes,
+      template_lock_sha256: sha256(originalLock),
+    });
+  }
+  for (const name of [
+    "run_packed_consumer.mjs",
+    "packed_consumer_contracts.mjs",
+  ]) {
+    await writeFile(
+      join(outputPath, name),
+      await readFile(join(ASTRO_ROOT, "scripts", name)),
+    );
+  }
   const incompatible = JSON.parse(
     await readFile(
       join(ASTRO_ROOT, "tests/fixtures/incompatible-astro-peer.json"),
       "utf8",
     ),
   );
-  const incompatiblePath = join(outputPath, "consumer-incompatible");
-  await mkdir(incompatiblePath);
-  const incompatibleManifest = structuredClone(fixtureManifest);
-  const incompatibleLock = structuredClone(executionLock);
-  incompatibleManifest.dependencies.astro = incompatible.version;
-  incompatibleLock.packages[""].dependencies.astro = incompatible.version;
-  incompatibleLock.packages["node_modules/astro"] = incompatible;
+  const request = {
+    schema_version: 2,
+    selection: fixture,
+    artifacts,
+    core,
+    surface,
+    profiles,
+    incompatible,
+  };
   await writeFile(
-    join(incompatiblePath, "package.json"),
-    JSON.stringify(incompatibleManifest),
+    join(outputPath, "request.json"),
+    `${JSON.stringify(request, null, 2)}\n`,
   );
+  await assertPlainInputTree(outputPath);
+  const id = run("docker", [
+    "create",
+    "--network",
+    "none",
+    "--read-only",
+    "--cap-drop=ALL",
+    "--security-opt",
+    "no-new-privileges",
+    "--tmpfs",
+    "/tmp:rw,exec,nosuid,size=2g",
+    "--mount",
+    `type=bind,src=${outputPath},dst=/proof`,
+    "--mount",
+    `type=bind,src=${cachePath},dst=/cache,readonly`,
+    "--workdir",
+    "/proof",
+    "--entrypoint",
+    "node",
+    imageRecord.Id,
+    "/proof/run_packed_consumer.mjs",
+    "/proof/request.json",
+  ]).trim();
+  const inspect = async (phase) => {
+    const actual = JSON.parse(run("docker", ["inspect", id]));
+    await writeFile(
+      join(outputPath, `container-${phase}.json`),
+      `${JSON.stringify(actual, null, 2)}\n`,
+    );
+    assertPackedContainer(actual[0], {
+      image: imageRecord.Id,
+      output: outputPath,
+      cache: cachePath,
+      workspace: await realpath(WORKSPACE_ROOT),
+    });
+    return actual[0];
+  };
+  await inspect("before");
+  const execution = spawnSync("docker", ["start", "--attach", id], {
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  });
   await writeFile(
-    join(incompatiblePath, "package-lock.json"),
-    JSON.stringify(incompatibleLock),
+    join(outputPath, "container-execution.log"),
+    `${execution.stdout ?? ""}${execution.stderr ?? ""}${execution.error?.message ?? ""}`,
   );
-  const peerResult = spawnSync(
-    "npm",
-    ["ci", "--offline", "--strict-peer-deps", "--no-audit", "--no-fund"],
-    {
-      cwd: incompatiblePath,
-      env: offlineEnv,
-      encoding: "utf8",
-    },
+  const after = await inspect("after");
+  if (
+    execution.error ||
+    execution.status !== 0 ||
+    after.State.Running ||
+    after.State.ExitCode !== 0
+  ) {
+    throw new Error(
+      `Isolated execution failed; retained ${join(outputPath, "container-execution.log")}`,
+    );
+  }
+  await assertRetainedArtifacts(outputPath, artifacts);
+  const result = JSON.parse(
+    await readFile(join(outputPath, "runner-result.json"), "utf8"),
   );
-  assertPeerConflict(peerResult, manifest.peerDependencies.astro);
-  const peerOutput = peerResult.stderr + peerResult.stdout;
-  await writeFile(join(outputPath, "peer-conflict.log"), peerOutput);
-  const htmlPath = join(consumerPath, "dist/index.html");
-  const html = await readFile(htmlPath, "utf8");
-  assertConsumerOutput(html);
-  const contactPath = join(consumerPath, "dist/contact/index.html");
-  const guidePath = join(consumerPath, "dist/guide/setup/index.html");
-  const contact = await readFile(contactPath, "utf8");
-  const guide = await readFile(guidePath, "utf8");
-  const draftExists = await stat(
-    join(consumerPath, "dist/draft/index.html"),
-  ).then(
-    () => true,
-    (error) => {
-      if (error.code === "ENOENT") return false;
-      throw error;
-    },
-  );
-  assertPackedPageOutput({ contact, guide, draftExists });
-  assertThemeOutput({ home: html, contact, guide });
-
+  if (JSON.stringify(Object.keys(result.profiles)) !== JSON.stringify(selected))
+    throw new Error("Runner result omits a selected profile");
   const proof = {
-    schema_version: 1,
+    schema_version: 2,
+    selection: fixture,
     adapter: `${manifest.name}@${manifest.version}`,
-    upstream: "@wpmoo/ui@1.0.0-rc.9",
-    archive: packed.filename,
-    archive_sha256: sha256(await readFile(archivePath)),
-    built_html: "consumer/dist/index.html",
-    built_html_sha256: sha256(Buffer.from(html)),
-    built_pages: {
-      contact: {
-        path: "consumer/dist/contact/index.html",
-        sha256: sha256(Buffer.from(contact)),
-      },
-      guide: {
-        path: "consumer/dist/guide/setup/index.html",
-        sha256: sha256(Buffer.from(guide)),
-      },
+    artifacts,
+    profiles: result.profiles,
+    runtime: result.runtime,
+    incompatible_peer: result.incompatible_peer,
+    public_source_imports: publicImports,
+    container: {
+      id,
+      image: imageRecord.Id,
+      network: "none",
+      exit_code: after.State.ExitCode,
     },
-    public_source_imports: importCount,
-    host_astro: {
-      version: manifest.peerDependencies.astro,
-      single_resolved_path: relative(outputPath, consumerAstro),
+    fixture_sources: profiles,
+    certification: {
+      independent_parent: "pending",
+      browser_matrix: "pending",
+      node_floor: "pending",
     },
-    mdx_installed: false,
-    theme_preferences:
-      "Shared Layout utilities and Header surface; isolated Contact utility replacement; public readonly types",
-    type_check: "npm run check",
-    type_check_output: {
-      path: "type-check.log",
-      sha256: sha256(Buffer.from(typeOutput)),
-    },
-    incompatible_peer: {
-      host_version: incompatible.version,
-      exit_code: peerResult.status,
-      code: "ERESOLVE",
-      path: "peer-conflict.log",
-      sha256: sha256(Buffer.from(peerOutput)),
-    },
-    installation:
-      "npm ci --offline --strict-peer-deps; container network disabled",
-    private_subpath: "ERR_PACKAGE_PATH_NOT_EXPORTED",
-    private_subpaths: privateSubpaths,
   };
   await writeFile(
     join(outputPath, "proof.json"),
@@ -503,18 +589,18 @@ export async function verifyPackedConsumer({ cache, output }) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const args = process.argv.slice(2);
-  const get = (name) => args[args.indexOf(name) + 1];
-  if (!args.includes("--cache") || !args.includes("--output")) {
-    console.error(
-      "Usage: node scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory",
-    );
+  let options;
+  try {
+    options = parsePackedArguments(process.argv.slice(2));
+  } catch (error) {
+    console.error(`${error.message}\n${USAGE}`);
     process.exitCode = 2;
-  } else {
-    verifyPackedConsumer({ cache: get("--cache"), output: get("--output") })
+  }
+  if (options) {
+    verifyPackedConsumer(options)
       .then((proof) =>
         console.log(
-          `Packed offline consumer: OK (${proof.public_source_imports} public source imports, ${proof.archive_sha256})`,
+          `Packed offline consumers: OK (${Object.keys(proof.profiles).length} profiles, ${proof.artifacts["@wpmoo/astro"].sha256}); final certification gates remain explicit`,
         ),
       )
       .catch((error) => {

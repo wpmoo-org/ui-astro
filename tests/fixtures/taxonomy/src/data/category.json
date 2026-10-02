@@ -1,0 +1,4 @@
+[
+  { "id": "root", "name": "Parent category", "slug": "parent" },
+  { "id": "child", "name": "Child category", "slug": "child", "parent": "root" }
+]

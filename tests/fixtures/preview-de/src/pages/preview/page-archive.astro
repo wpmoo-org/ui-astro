@@ -1,0 +1,12 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Archive from "@wpmoo/astro/plugins/page/views/Archive.astro";
+import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
+import { getSiteContext } from "@wpmoo/astro/context";
+const { site } = getSiteContext();
+const entries = await getPublishedPages();
+---
+
+<Layout title="Sprachprobe" lang={site.defaults.lang}>
+  <Archive title="Seiten" entries={entries} lang={site.defaults.lang} />
+</Layout>

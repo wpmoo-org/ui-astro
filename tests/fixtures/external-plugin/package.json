@@ -1,0 +1,40 @@
+{
+  "name": "@wpmoo-test/astro-content",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "content.js",
+    "content.d.ts",
+    "queries.js",
+    "queries.d.ts",
+    "views/Single.astro",
+    "views/Archive.astro",
+    "views/Loop.astro",
+    "routes/*.astro"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./content": {
+      "types": "./content.d.ts",
+      "default": "./content.js"
+    },
+    "./queries": {
+      "types": "./queries.d.ts",
+      "default": "./queries.js"
+    },
+    "./views/Single.astro": "./views/Single.astro",
+    "./views/Archive.astro": "./views/Archive.astro",
+    "./views/Loop.astro": "./views/Loop.astro"
+  },
+  "peerDependencies": {
+    "@wpmoo/astro": "0.1.0",
+    "astro": "7.3.3"
+  }
+}

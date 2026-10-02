@@ -1,0 +1,17 @@
+---
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import type { PartsInput } from "@wpmoo/astro/config";
+interface Props {
+  brand: string;
+  homeHref: string;
+  parts: PartsInput;
+}
+const { brand, homeHref, parts } = Astro.props;
+---
+
+<Footer brand={brand} homeHref={homeHref} parts={parts}>
+  <Button element="a" href={homeHref} variant="link" size="sm"
+    >Theme-owned Footer</Button
+  >
+</Footer>

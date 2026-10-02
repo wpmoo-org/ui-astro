@@ -1,0 +1,106 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import {
+  getSiteContext,
+  getSiteNavigation,
+  getEntryHref,
+} from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import { getSamplePaths, sampleLoopItems } from "../queries.js";
+import Single from "../views/Single.astro";
+
+export const prerender = true;
+export const getStaticPaths = getSamplePaths;
+const { entry } = Astro.props;
+const { site } = getSiteContext();
+const { sidebar, ...options } = resolvePageOptions(
+  site,
+  "sample",
+  "single",
+  entry.data.options,
+);
+const href = getEntryHref("sample", entry);
+const entryContext = sampleLoopItems([entry])[0].entryContext;
+const navigation = await getSiteNavigation(href);
+const groups = [
+  {
+    items: navigation.map((item) => ({
+      title: item.label,
+      href: item.href,
+      active: item.active,
+    })),
+  },
+];
+const homeHref = navigation[0]?.href ?? href;
+const breadcrumbs = [
+  { label: "Samples", href: homeHref },
+  { label: entry.data.title },
+];
+const layoutProps = {
+  ...options,
+  title: entry.data.title,
+  description: entry.data.description,
+  pageContext: { view: "single" as const, entry: entryContext },
+};
+---
+
+{
+  sidebar ? (
+    <Layout
+      {...layoutProps}
+      sidebar
+      sidebarId="sample-sidebar"
+      sidebarKey="sample"
+      defaultOpen={sidebar.defaultOpen}
+    >
+      <Sidebar
+        slot="sidebar"
+        id="sample-sidebar"
+        brand={site.brand}
+        brandHref={homeHref}
+        groups={groups}
+        parts={options.parts}
+        side={sidebar.side}
+        variant={sidebar.variant}
+        collapsible={sidebar.collapsible}
+        rail={sidebar.rail}
+      />
+      <Header slot="header" parts={options.parts} breadcrumbs={breadcrumbs} />
+      <Single
+        title={entry.data.title}
+        description={entry.data.description}
+        parts={options.parts}
+        entryContext={entryContext}
+      >
+        <p>{entry.data.body}</p>
+      </Single>
+      <Footer
+        slot="footer"
+        parts={options.parts}
+        brand={site.brand}
+        homeHref={homeHref}
+      />
+    </Layout>
+  ) : (
+    <Layout {...layoutProps}>
+      <Header slot="header" parts={options.parts} breadcrumbs={breadcrumbs} />
+      <Single
+        title={entry.data.title}
+        description={entry.data.description}
+        parts={options.parts}
+        entryContext={entryContext}
+      >
+        <p>{entry.data.body}</p>
+      </Single>
+      <Footer
+        slot="footer"
+        parts={options.parts}
+        brand={site.brand}
+        homeHref={homeHref}
+      />
+    </Layout>
+  )
+}

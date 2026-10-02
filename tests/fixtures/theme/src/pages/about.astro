@@ -1,0 +1,42 @@
+---
+import { render } from "astro:content";
+import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import Single from "@wpmoo/astro/plugins/page/views/Single.astro";
+import Layout from "../layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
+
+const entry = (await getPublishedPages()).find(
+  (item) => item.id === "about.md",
+);
+if (!entry) throw new Error("Theme About requires its published Page entry");
+const { site } = getSiteContext();
+const options = resolvePageOptions(site, "page", "single", entry.data.options);
+const entryContext = {
+  type: "page",
+  id: entry.id,
+  source: "markdown" as const,
+};
+const href = getEntryHref("page", entry);
+const { Content } = await render(entry);
+---
+
+<Layout
+  title={entry.data.title}
+  options={options}
+  pageContext={{ view: "single", entry: entryContext }}
+>
+  <Single entry={entry} parts={options.parts}>
+    <Hero
+      slot="page-header"
+      id="about-hero"
+      heading="page-title"
+      title={entry.data.title}
+      description="An explicit route renders the real Page entry."
+      action={{ label: "This Page", href }}
+      parts={options.parts}
+    />
+    <Content />
+  </Single>
+</Layout>

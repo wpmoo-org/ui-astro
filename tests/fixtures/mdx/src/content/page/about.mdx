@@ -1,0 +1,20 @@
+---
+title: Enhanced Page
+status: publish
+slug: enhanced
+options:
+  sidebar: {}
+  parts:
+    content:
+      utilities: [py-3]
+taxonomies:
+  category: [guides]
+  tag: [astro]
+---
+import Button from "@wpmoo/astro/components/Button.astro";
+import Hero from "../../components/Hero.astro";
+
+MDX preserves its own source ID and renders trusted authored components.
+
+<Hero id="mdx-section" title="Reusable MDX Hero" description="The host owns this Astro section and reuses it in a native page." />
+<Button element="a" href="/landing" variant="outline">Native Astro page</Button>

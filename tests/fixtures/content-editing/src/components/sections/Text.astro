@@ -1,0 +1,15 @@
+---
+import Typography from "@wpmoo/astro/components/Typography.astro";
+
+interface Props {
+  id: string;
+  heading: string;
+  text: string;
+}
+const { id, heading, text } = Astro.props;
+---
+
+<section id={id} data-section-type="text" aria-labelledby={`${id}-heading`}>
+  <Typography id={`${id}-heading`} variant="section-title" content={heading} />
+  <p>{text}</p>
+</section>

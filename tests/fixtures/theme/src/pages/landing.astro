@@ -1,0 +1,27 @@
+---
+import { getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import Single from "@wpmoo/astro/views/Single.astro";
+import Layout from "../layouts/Layout.astro";
+import Hero from "../components/Hero.astro";
+const { site } = getSiteContext();
+const options = resolvePageOptions(site, "page", "single", { sidebar: null });
+---
+
+<Layout
+  title="Native landing"
+  options={options}
+  pageContext={{ view: "native", key: "native-landing" }}
+>
+  <Single title="Native landing" parts={options.parts}>
+    <Hero
+      slot="page-header"
+      id="landing-hero"
+      heading="page-title"
+      title="Native landing"
+      description="A native Astro page composes the same public Layout and host Hero."
+      parts={options.parts}
+    />
+    <p>Native Astro content.</p>
+  </Single>
+</Layout>

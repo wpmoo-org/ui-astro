@@ -1,0 +1,52 @@
+---
+import { render } from "astro:content";
+import { getPostPaths } from "@wpmoo/astro/plugins/post/queries";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions, formatDate } from "@wpmoo/astro/config";
+import Single from "@wpmoo/astro/plugins/post/views/Single.astro";
+import Layout from "../../layouts/Layout.astro";
+import Hero from "../../components/Hero.astro";
+export function getStaticPaths() {
+  const { site } = getSiteContext();
+  return getPostPaths({ basePath: "/posts", lang: site.defaults.lang });
+}
+const { entry } = Astro.props;
+const { site } = getSiteContext();
+const options = resolvePageOptions(site, "post", "single", entry.data.options);
+const entryContext = {
+  type: "post",
+  id: entry.id,
+  source: "markdown" as const,
+};
+const publishedAt = entry.data.published_at;
+if (!publishedAt)
+  throw new Error("A published theme Post requires published_at");
+const { Content } = await render(entry);
+---
+
+<Layout
+  title={entry.data.title}
+  options={options}
+  pageContext={{ view: "single", entry: entryContext }}
+>
+  <Single entry={entry} parts={options.parts} lang={options.lang}>
+    <Hero
+      slot="page-header"
+      id="post-hero"
+      heading="page-title"
+      title={entry.data.title}
+      description={entry.data.description ?? "Theme-composed Post header."}
+      parts={options.parts}
+    >
+      <time datetime={publishedAt.toISOString()}
+        >{
+          formatDate(publishedAt, {
+            lang: options.lang,
+            style: options.parts.loop.dateStyle,
+          })
+        }</time
+      >
+    </Hero>
+    <Content />
+  </Single>
+</Layout>

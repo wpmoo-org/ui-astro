@@ -169,11 +169,18 @@ test("incompatible peer evidence must be npm ERESOLVE for the exact certified As
 test("packed consumer HTML must show public wrappers, Layout, Page grid, and escaped text", () => {
   const html =
     '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45" data-public-part-count="7" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/contact" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
-  assert.doesNotThrow(() => assertConsumerOutput(html));
+  const controls =
+    '<input id="consumer-checkbox" type="checkbox"><button aria-label="Remove Pages"></button><button aria-label="Remove Posts"></button>';
+  const compiled = html + controls;
+  assert.doesNotThrow(() => assertConsumerOutput(compiled));
+  assert.throws(
+    () => assertConsumerOutput(html),
+    /Checkbox label-wrapper input/,
+  );
   assert.throws(
     () =>
       assertConsumerOutput(
-        html.replace(
+        compiled.replace(
           'data-public-wrapper-count="45"',
           'data-public-wrapper-count="44"',
         ),
@@ -183,7 +190,7 @@ test("packed consumer HTML must show public wrappers, Layout, Page grid, and esc
   assert.throws(
     () =>
       assertConsumerOutput(
-        html.replace(
+        compiled.replace(
           'data-context-link="/contact"',
           'data-context-link="/wrong"',
         ),
@@ -193,7 +200,7 @@ test("packed consumer HTML must show public wrappers, Layout, Page grid, and esc
   assert.throws(
     () =>
       assertConsumerOutput(
-        html.replace(
+        compiled.replace(
           "&lt;img src=x onerror=alert(1)&gt;",
           "<img src=x onerror=alert(1)>",
         ),
@@ -203,7 +210,7 @@ test("packed consumer HTML must show public wrappers, Layout, Page grid, and esc
   assert.throws(
     () =>
       assertConsumerOutput(
-        html.replace(
+        compiled.replace(
           'data-toast-show-on-load="true"',
           'data-toast-show-on-load="false"',
         ),
@@ -213,7 +220,10 @@ test("packed consumer HTML must show public wrappers, Layout, Page grid, and esc
   assert.throws(
     () =>
       assertConsumerOutput(
-        html.replace("&lt;svg onload=alert(2)&gt;", "<svg onload=alert(2)>"),
+        compiled.replace(
+          "&lt;svg onload=alert(2)&gt;",
+          "<svg onload=alert(2)>",
+        ),
       ),
     /Toast untrusted body must be escaped/,
   );

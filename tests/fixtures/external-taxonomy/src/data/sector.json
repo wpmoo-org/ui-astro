@@ -1,0 +1,18 @@
+[
+  {
+    "id": "foundation",
+    "name": "Public sector",
+    "slug": "\u00d6ffentlich"
+  },
+  {
+    "id": "community",
+    "name": "Community sector",
+    "slug": "Gemeinschaft",
+    "parent": "foundation"
+  },
+  {
+    "id": "empty",
+    "name": "Empty sector",
+    "slug": "empty"
+  }
+]

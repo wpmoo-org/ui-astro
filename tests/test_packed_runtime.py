@@ -49,6 +49,17 @@ class PackedConsumerRuntime(unittest.TestCase):
             page.keyboard.press("Escape")
             page.wait_for_function("!document.querySelector('[data-slot=sidebar]').classList.contains('show')")
             self.assertTrue(trigger.evaluate("e => document.activeElement === e"))
+            checkbox = page.get_by_role("checkbox", name="Enable feature", exact=True)
+            self.assertTrue(checkbox.is_checked())
+            self.assertTrue(checkbox.is_disabled())
+            self.assertEqual(checkbox.get_attribute("aria-describedby"), "consumer-checkbox-description")
+            self.assertEqual(checkbox.get_attribute("data-caller-control"), "checkbox")
+            self.assertEqual(page.locator('input[type="hidden"][name="features"]').evaluate_all("nodes => nodes.map(node => node.value)"), ["page", "post"])
+            page.get_by_role("button", name="Remove Pages", exact=True).click()
+            self.assertEqual(page.locator('input[type="hidden"][name="features"]').evaluate_all("nodes => nodes.map(node => node.value)"), ["post"])
+            self.assertEqual(page.get_by_role("button", name="Remove Pages", exact=True).count(), 0)
+            self.assertEqual(page.get_by_role("button", name="Remove Posts", exact=True).count(), 1)
+            self.assertEqual(page_errors, [])
             browser.close()
 
 

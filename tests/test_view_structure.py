@@ -107,7 +107,7 @@ class PublicComponentRendering(unittest.TestCase):
     def tearDownClass(cls):
         cls.package_directory.cleanup()
 
-    def build(self, source, *, configuration="", config_imports="", files=None, check=False):
+    def build(self, source, *, configuration="", config_imports="", files=None, check=False, extra_modules=(), packed_modules=None, warm=False):
         # Native render fixtures must not trigger the live host's config watcher.
         with tempfile.TemporaryDirectory(prefix="astro-render-contract-") as directory:
             root = Path(directory)
@@ -120,12 +120,22 @@ class PublicComponentRendering(unittest.TestCase):
                 (modules / "@astrojs").mkdir()
                 (modules / "@astrojs/check").symlink_to(ROOT / "node_modules/@astrojs/check", target_is_directory=True)
                 (modules / "typescript").symlink_to(ROOT / "node_modules/typescript", target_is_directory=True)
+            for name in extra_modules:
+                target = modules / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(ROOT / "node_modules" / name, target_is_directory=True)
             shutil.copytree(self.package_root, modules / "@wpmoo/astro")
+            for name, package_root in (packed_modules or {}).items():
+                target = modules / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(package_root, target)
             manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
             (root / "package.json").write_text(json.dumps({
                 "name": "public-render-contract", "private": True, "type": "module",
                 "dependencies": {"astro": manifest["peerDependencies"]["astro"],
-                                 manifest["name"]: manifest["version"]},
+                                 manifest["name"]: manifest["version"],
+                                 **{name: json.loads((Path(package_root) / "package.json").read_text())["version"]
+                                    for name, package_root in (packed_modules or {}).items()}},
             }), encoding="utf-8")
             (root / "src/pages").mkdir(parents=True)
             if source is not None:
@@ -135,25 +145,42 @@ class PublicComponentRendering(unittest.TestCase):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content, encoding="utf-8")
             (root / "astro.config.mjs").write_text(
+                (files or {}).get("astro.config.mjs") or (
                 'import { defineConfig } from "astro/config";\n'
                 'import moo from "@wpmoo/astro";\n'
                 'import { page } from "@wpmoo/astro/plugins/page";\n'
                 + config_imports + '\n'
                 +
                 'export default defineConfig({ vite: { cacheDir: new URL("./.vite", import.meta.url).pathname }, '
-                + configuration + ' });\n',
+                + configuration + ' });\n'),
                 encoding="utf-8",
             )
             result = subprocess.run([str(ROOT / "node_modules/.bin/astro"), "build"],
                                     cwd=root, text=True, capture_output=True)
+            cold_html = cold_data = None
+            if warm and result.returncode == 0:
+                cold_html = {str(path.relative_to(root / "dist")): path.read_text(encoding="utf-8")
+                             for path in (root / "dist").rglob("*.html")}
+                cold_data = {str(path.relative_to(root / "dist")): path.read_text(encoding="utf-8")
+                             for path in (root / "dist").rglob("*.json")}
+                result = subprocess.run([str(ROOT / "node_modules/.bin/astro"), "build"],
+                                        cwd=root, text=True, capture_output=True)
             output = root / "dist/index.html"
             result.generated_files = [str(path.relative_to(root / "dist")) for path in (root / "dist").rglob("*") if path.is_file()]
             generated_html = {str(path.relative_to(root / "dist")): path.read_text(encoding="utf-8")
                               for path in (root / "dist").rglob("*.html")}
+            generated_data = {str(path.relative_to(root / "dist")): path.read_text(encoding="utf-8")
+                              for path in (root / "dist").rglob("*") if path.is_file() and path.suffix in {".json", ".xml"}}
+            generated_modules = {path.name: path.read_text(encoding="utf-8")
+                                 for path in (root / "dist").glob("*.js")}
             if result.returncode == 0 and check:
                 result = subprocess.run([str(ROOT / "node_modules/.bin/astro"), "check"],
                                         cwd=root, text=True, capture_output=True)
             result.generated_html = generated_html
+            result.generated_data = generated_data
+            result.generated_modules = generated_modules
+            result.cold_generated_html = cold_html
+            result.cold_generated_data = cold_data
             return result, output.read_text(encoding="utf-8") if output.exists() else ""
 
     def integrated_files(self):
@@ -272,7 +299,7 @@ import { postSchema } from "@wpmoo/astro/plugins/post/content";
 collections.post = defineCollection({ loader: glob({ base: new URL("./content/post/", import.meta.url), pattern: "**/*.md", generateId: sourceEntryId }), schema: postSchema });
 '''
         files["src/content/post/first.md"] = "---\ntitle: First post\nstatus: publish\npublished_at: \"2026-10-01T12:00:00Z\"\n---\nFirst body.\n"
-        files["src/content/post/second.md"] = "---\ntitle: Second post\nstatus: publish\npublished_at: \"2026-09-30T12:00:00Z\"\nlayout:\n  parts:\n    content:\n      utilities: []\n---\nSecond body.\n"
+        files["src/content/post/second.md"] = "---\ntitle: Second post\nstatus: publish\npublished_at: \"2026-09-30T12:00:00Z\"\noptions:\n  parts:\n    content:\n      utilities: []\n---\nSecond body.\n"
         result, _ = self.build(None, configuration='''integrations: [moo({
   site: { defaults: { lang: "de", parts: {
     content: { utilities: ["py-2", "py-md-5"] },

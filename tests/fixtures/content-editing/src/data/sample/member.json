@@ -1,0 +1,19 @@
+{
+  "id": "member",
+  "title": "Directory sample",
+  "slug": "sample-member",
+  "status": "publish",
+  "body": "Directory sample body.",
+  "options": { "sidebar": null, "headerWidth": null },
+  "taxonomies": { "category": ["child"] },
+  "sections": [
+    {
+      "id": "directory-intro",
+      "type": "text",
+      "props": {
+        "heading": "Directory introduction",
+        "text": "This record is authored in a flat JSON file."
+      }
+    }
+  ]
+}

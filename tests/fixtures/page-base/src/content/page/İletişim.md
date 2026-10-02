@@ -2,7 +2,7 @@
 title: Contact
 status: publish
 navOrder: 2
-layout:
+options:
   sidebar: null
   pageWidth: lg
 ---

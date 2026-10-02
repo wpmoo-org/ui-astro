@@ -1,0 +1,39 @@
+[
+  {
+    "id": "alpha",
+    "title": "External sample",
+    "slug": "\u00dcber",
+    "status": "publish",
+    "body": "External JSON body.",
+    "published_at": "2026-09-28T01:30:00Z",
+    "options": {
+      "sidebar": null,
+      "headerWidth": null,
+      "parts": {
+        "content": {
+          "utilities": ["py-2"]
+        }
+      }
+    },
+    "taxonomies": {
+      "category": ["child"],
+      "tag": ["astro"],
+      "sector": ["community"]
+    }
+  },
+  {
+    "id": "fallback",
+    "title": "Fallback sample",
+    "status": "publish",
+    "body": "The canonical URL comes from the declared JSON ID."
+  },
+  {
+    "id": "draft",
+    "title": "Draft sample",
+    "status": "draft",
+    "body": "Private draft body.",
+    "taxonomies": {
+      "sector": ["community"]
+    }
+  }
+]

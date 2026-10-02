@@ -1,0 +1,8 @@
+---
+import type { ComponentProps } from "astro/types";
+import Loop from "@wpmoo/astro/views/Loop.astro";
+
+type Props = ComponentProps<typeof Loop>;
+---
+
+<Loop {...Astro.props} />

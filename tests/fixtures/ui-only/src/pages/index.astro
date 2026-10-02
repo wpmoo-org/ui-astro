@@ -1,0 +1,182 @@
+---
+import type { ComponentProps } from "astro/types";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Accordion from "@wpmoo/astro/components/Accordion.astro";
+import Alert from "@wpmoo/astro/components/Alert.astro";
+import AlertDialog from "@wpmoo/astro/components/AlertDialog.astro";
+import Avatar from "@wpmoo/astro/components/Avatar.astro";
+import Badge from "@wpmoo/astro/components/Badge.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import ButtonGroup from "@wpmoo/astro/components/ButtonGroup.astro";
+import Breadcrumb from "@wpmoo/astro/components/Breadcrumb.astro";
+import Card from "@wpmoo/astro/components/Card.astro";
+import Chart from "@wpmoo/astro/components/Chart.astro";
+import Checkbox from "@wpmoo/astro/components/Checkbox.astro";
+import CloseButton from "@wpmoo/astro/components/CloseButton.astro";
+import Collapsible from "@wpmoo/astro/components/Collapsible.astro";
+import Combobox from "@wpmoo/astro/components/Combobox.astro";
+import ContextMenu from "@wpmoo/astro/components/ContextMenu.astro";
+import DataTable from "@wpmoo/astro/components/DataTable.astro";
+import DatePicker from "@wpmoo/astro/components/DatePicker.astro";
+import Dialog from "@wpmoo/astro/components/Dialog.astro";
+import DropdownMenu from "@wpmoo/astro/components/DropdownMenu.astro";
+import Field from "@wpmoo/astro/components/Field.astro";
+import Form from "@wpmoo/astro/components/Form.astro";
+import Input from "@wpmoo/astro/components/Input.astro";
+import InputGroup from "@wpmoo/astro/components/InputGroup.astro";
+import Kbd from "@wpmoo/astro/components/Kbd.astro";
+import Menubar from "@wpmoo/astro/components/Menubar.astro";
+import Navigation from "@wpmoo/astro/components/Navigation.astro";
+import Popover from "@wpmoo/astro/components/Popover.astro";
+import Pagination from "@wpmoo/astro/components/Pagination.astro";
+import Progress from "@wpmoo/astro/components/Progress.astro";
+import RadioGroup from "@wpmoo/astro/components/RadioGroup.astro";
+import Select from "@wpmoo/astro/components/Select.astro";
+import Separator from "@wpmoo/astro/components/Separator.astro";
+import Sheet from "@wpmoo/astro/components/Sheet.astro";
+import Sidebar from "@wpmoo/astro/components/Sidebar.astro";
+import Skeleton from "@wpmoo/astro/components/Skeleton.astro";
+import Slider from "@wpmoo/astro/components/Slider.astro";
+import Spinner from "@wpmoo/astro/components/Spinner.astro";
+import Switch from "@wpmoo/astro/components/Switch.astro";
+import Table from "@wpmoo/astro/components/Table.astro";
+import Tabs from "@wpmoo/astro/components/Tabs.astro";
+import Textarea from "@wpmoo/astro/components/Textarea.astro";
+import Toast from "@wpmoo/astro/components/Toast.astro";
+import ToggleGroup from "@wpmoo/astro/components/ToggleGroup.astro";
+import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
+import Typography from "@wpmoo/astro/components/Typography.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import SidebarInclude from "@wpmoo/astro/includes/Sidebar.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+import Loop from "@wpmoo/astro/views/Loop.astro";
+import { defineSite, resolvePageOptions } from "@wpmoo/astro/config";
+import "@wpmoo/astro/styles.css";
+const wrappers = [
+  Accordion,
+  Alert,
+  AlertDialog,
+  Avatar,
+  Badge,
+  Button,
+  ButtonGroup,
+  Breadcrumb,
+  Card,
+  Chart,
+  Checkbox,
+  CloseButton,
+  Collapsible,
+  Combobox,
+  ContextMenu,
+  DataTable,
+  DatePicker,
+  Dialog,
+  DropdownMenu,
+  Field,
+  Form,
+  Input,
+  InputGroup,
+  Kbd,
+  Menubar,
+  Navigation,
+  Popover,
+  Pagination,
+  Progress,
+  RadioGroup,
+  Select,
+  Separator,
+  Sheet,
+  Sidebar,
+  Skeleton,
+  Slider,
+  Spinner,
+  Switch,
+  Table,
+  Tabs,
+  Textarea,
+  Toast,
+  ToggleGroup,
+  Tooltip,
+  Typography,
+];
+const site = defineSite({ brand: "UI-only consumer" });
+const { sidebar, ...options } = resolvePageOptions(site, "page", "single");
+void sidebar;
+const parts = [
+  Header,
+  SidebarInclude,
+  PageHeader,
+  Footer,
+  Single,
+  Archive,
+  Loop,
+];
+const items: ComponentProps<typeof Loop>["items"] = [
+  {
+    id: "sample",
+    title: "Supplied item",
+    href: "#supplied-item",
+    entryContext: { type: "sample", id: "sample", source: "json" },
+  },
+];
+---
+
+<Layout
+  title="UI-only consumer"
+  {...options}
+  pageContext={{ view: "native", key: "ui-only" }}
+>
+  <Header
+    slot="header"
+    parts={options.parts}
+    breadcrumbs={[{ label: site.brand }]}
+  />
+  <Single title="UI-only consumer" parts={options.parts}>
+    <PageHeader
+      slot="page-header"
+      title="UI-only consumer"
+      description="A collection-free host uses public components and supplied content."
+      parts={options.parts}
+    />
+    <p
+      data-public-wrapper-count={wrappers.length}
+      data-public-part-count={parts.length}
+    >
+      Public wrapper and include imports resolve without a content integration.
+    </p>
+    <Card title="Public components"
+      ><Badge label="Ready" /><Button element="a" href="#supplied-item"
+        >Supplied content</Button
+      ></Card
+    >
+    <Archive
+      title="Props-only Archive"
+      items={items}
+      parts={options.parts}
+      lang={options.lang}
+    >
+      <Typography
+        slot="page-header"
+        variant="section-title"
+        content="Props-only Archive"
+      />
+    </Archive>
+    <section id="supplied-item" aria-label="Another supplied Loop">
+      <Loop
+        items={items}
+        parts={options.parts}
+        lang={options.lang}
+        titleVariant="subsection-title"
+      />
+    </section>
+  </Single>
+  <Footer slot="footer" brand={site.brand} homeHref="/" parts={options.parts} />
+</Layout>
+<script>
+  import "@wpmoo/astro/runtime/bootstrap.js";
+  import MooUI from "@wpmoo/astro/runtime/moo-ui.js";
+  void MooUI.Sidebar;
+</script>

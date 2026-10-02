@@ -1,0 +1,40 @@
+---
+import { getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import Archive from "@wpmoo/astro/plugins/post/views/Archive.astro";
+import Layout from "../../layouts/Layout.astro";
+import Hero from "../../components/Hero.astro";
+import Loop from "../../views/Loop.astro";
+const { site } = getSiteContext();
+const options = resolvePageOptions(site, "post", "archive");
+const entries = await getPublishedPosts();
+---
+
+<Layout
+  title="Posts"
+  options={options}
+  pageContext={{ view: "archive", type: "post" }}
+>
+  <Archive
+    entries={entries}
+    parts={options.parts}
+    lang={site.defaults.lang}
+    dateLang={options.lang}
+  >
+    <Hero
+      slot="page-header"
+      id="archive-hero"
+      heading="page-title"
+      title="Posts"
+      description="A theme-owned Archive with an explicitly selected Loop."
+      parts={options.parts}
+    />
+    <Loop
+      slot="loop"
+      entries={entries}
+      parts={options.parts}
+      lang={options.lang}
+    />
+  </Archive>
+</Layout>

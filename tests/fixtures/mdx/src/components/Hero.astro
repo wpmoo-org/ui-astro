@@ -1,0 +1,58 @@
+---
+import type { ComponentProps } from "astro/types";
+import Typography from "@wpmoo/astro/components/Typography.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import { resolveParts, type PartsInput } from "@wpmoo/astro/config";
+
+interface Props {
+  id: string;
+  title: string;
+  description: string;
+  heading?: "page-title" | "section-title" | "subsection-title";
+  parts?: PartsInput;
+  action?: {
+    label: string;
+    href: string;
+    variant?: ComponentProps<typeof Button>["variant"];
+  };
+}
+const {
+  id,
+  title,
+  description,
+  heading = "section-title",
+  action,
+} = Astro.props;
+const parts = resolveParts(Astro.props.parts);
+const headingId = `${id}-heading`;
+---
+
+<section
+  aria-labelledby={headingId}
+  data-host-section="hero"
+  class:list={parts.pageHeader.utilities}
+>
+  <Typography
+    id={headingId}
+    variant={heading}
+    content={title}
+    class={parts.pageHeader.titleUtilities.join(" ")}
+  />
+  <Typography
+    variant={parts.pageHeader.descriptionVariant}
+    content={description}
+    class={parts.pageHeader.descriptionUtilities.join(" ")}
+  />
+  <slot />
+  {
+    action ? (
+      <Button
+        element="a"
+        href={action.href}
+        variant={action.variant ?? "outline"}
+      >
+        {action.label}
+      </Button>
+    ) : null
+  }
+</section>

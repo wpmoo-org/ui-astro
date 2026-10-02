@@ -1,0 +1,61 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Header from "@wpmoo/astro/includes/Header.astro";
+import Footer from "@wpmoo/astro/includes/Footer.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import Hero from "../components/Hero.astro";
+const { site } = getSiteContext();
+const { sidebar: _sidebar, ...options } = resolvePageOptions(
+  site,
+  "page",
+  "single",
+  { sidebar: null },
+);
+const home = (await getPublishedPages()).find(
+  (entry) => entry.id === "about.md",
+);
+if (!home)
+  throw new Error("Mixed content fixture requires its published About Page");
+const homeHref = getEntryHref("page", home);
+---
+
+<Layout
+  title="Native landing"
+  {...options}
+  pageContext={{ view: "native", key: "mixed-landing" }}
+>
+  <Header
+    slot="header"
+    parts={options.parts}
+    breadcrumbs={[
+      { label: site.brand, href: homeHref },
+      { label: "Native landing" },
+    ]}
+  />
+  <Single title="Native landing" parts={options.parts}>
+    <Hero
+      slot="page-header"
+      id="native-heading"
+      heading="page-title"
+      title="Native landing"
+      description="A native Astro page explicitly selects the same public Layout."
+      parts={options.parts}
+    />
+    <Hero
+      id="native-section"
+      title="Reusable Astro Hero"
+      description="The exact same host component is also imported by MDX."
+      parts={options.parts}
+    />
+    <p>Native Astro content.</p>
+  </Single>
+  <Footer
+    slot="footer"
+    parts={options.parts}
+    brand={site.brand}
+    homeHref={homeHref}
+  />
+</Layout>

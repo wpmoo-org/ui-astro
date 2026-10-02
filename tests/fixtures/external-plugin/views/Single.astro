@@ -1,0 +1,22 @@
+---
+import type { ComponentProps } from "astro/types";
+import Single from "@wpmoo/astro/views/Single.astro";
+
+type Props = ComponentProps<typeof Single>;
+---
+
+<Single
+  {...Astro.props}
+  forwardedSlots={{
+    pageHeader: Astro.slots.has("page-header"),
+    metadata: Astro.slots.has("metadata"),
+    actions: Astro.slots.has("actions"),
+    afterContent: Astro.slots.has("after-content"),
+  }}
+>
+  <slot name="page-header" slot="page-header" />
+  <slot name="metadata" slot="metadata" />
+  <slot name="actions" slot="actions" />
+  <slot />
+  <slot name="after-content" slot="after-content" />
+</Single>

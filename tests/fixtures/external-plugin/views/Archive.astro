@@ -1,0 +1,21 @@
+---
+import type { ComponentProps } from "astro/types";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+
+type Props = ComponentProps<typeof Archive>;
+---
+
+<Archive
+  {...Astro.props}
+  forwardedSlots={{
+    pageHeader: Astro.slots.has("page-header"),
+    actions: Astro.slots.has("actions"),
+    loop: Astro.slots.has("loop"),
+    afterList: Astro.slots.has("after-list"),
+  }}
+>
+  <slot name="page-header" slot="page-header" />
+  <slot name="actions" slot="actions" />
+  <slot name="loop" slot="loop" />
+  <slot name="after-list" slot="after-list" />
+</Archive>

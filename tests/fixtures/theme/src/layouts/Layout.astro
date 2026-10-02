@@ -1,0 +1,89 @@
+---
+import type { ComponentProps } from "astro/types";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
+import { getSiteContext, getSiteNavigation } from "@wpmoo/astro/context";
+import type { PageOptions } from "@wpmoo/astro/config";
+import Header from "../includes/Header.astro";
+import Footer from "../includes/Footer.astro";
+
+interface Props {
+  title: string;
+  options: PageOptions;
+  pageContext: ComponentProps<typeof Layout>["pageContext"];
+}
+const { title, options, pageContext } = Astro.props;
+const { sidebar, ...layoutOptions } = options;
+const { site } = getSiteContext();
+const navigation = await getSiteNavigation(Astro.url.pathname);
+const homeHref = navigation[0]?.href;
+if (!homeHref)
+  throw new Error("Theme requires its published home navigation entry");
+const groups = [
+  {
+    items: navigation.map((item) => ({
+      title: item.label,
+      href: item.href,
+      active: item.active,
+    })),
+  },
+];
+---
+
+{
+  sidebar ? (
+    <Layout
+      title={title}
+      {...layoutOptions}
+      pageContext={pageContext}
+      sidebar
+      sidebarId="theme-sidebar"
+      sidebarKey="theme"
+      defaultOpen={sidebar.defaultOpen}
+    >
+      <Sidebar
+        slot="sidebar"
+        id="theme-sidebar"
+        brand={site.brand}
+        brandHref={homeHref}
+        groups={groups}
+        parts={options.parts}
+        side={sidebar.side}
+        variant={sidebar.variant}
+        collapsible={sidebar.collapsible}
+        rail={sidebar.rail}
+      />
+      <Header
+        slot="header"
+        title={title}
+        brand={site.brand}
+        homeHref={homeHref}
+        parts={options.parts}
+      />
+      <slot />
+      <Footer
+        slot="footer"
+        brand={site.brand}
+        homeHref={homeHref}
+        parts={options.parts}
+      />
+    </Layout>
+  ) : (
+    <Layout title={title} {...layoutOptions} pageContext={pageContext}>
+      <Header
+        slot="header"
+        title={title}
+        brand={site.brand}
+        homeHref={homeHref}
+        parts={options.parts}
+      />
+      <slot />
+      <Footer
+        slot="footer"
+        brand={site.brand}
+        homeHref={homeHref}
+        parts={options.parts}
+      />
+    </Layout>
+  )
+}
