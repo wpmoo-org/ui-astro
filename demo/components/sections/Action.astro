@@ -1,0 +1,14 @@
+---
+import Button from "@wpmoo/astro/components/Button.astro";
+
+interface Props {
+  id: string;
+  label: string;
+  href: string;
+}
+const { id, label, href } = Astro.props;
+---
+
+<p id={id} data-section-type="action">
+  <Button element="a" href={href}>{label}</Button>
+</p>

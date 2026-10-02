@@ -5,14 +5,28 @@ import Single from "@wpmoo/astro/views/Single.astro";
 import type { EntryClassContext } from "@wpmoo/astro/config";
 
 const entryContext: EntryClassContext = {
-  type: "post", id: "announcement.md", source: "markdown",
+  type: "post",
+  id: "announcement.md",
+  source: "markdown",
   taxonomies: { category: ["company"], tag: ["astro"] },
 };
 const preferences = getDemoOptions("post", "single");
 ---
 
-<Layout parts={preferences.parts} title="Single preview" sidebar sidebarKey="preview-single" sidebarId="preview-sidebar" pageContext={{ view: "single", entry: entryContext }}>
-  <Single parts={preferences.parts} title="A sample post" description="A common Single view composed with published Moo UI components." entryContext={entryContext}>
+<Layout
+  parts={preferences.parts}
+  title="Single preview"
+  sidebar
+  sidebarKey="preview-single"
+  sidebarId="preview-sidebar"
+  pageContext={{ view: "single", entry: entryContext }}
+>
+  <Single
+    parts={preferences.parts}
+    title="A sample post"
+    description="A common Single view composed with published Moo UI components."
+    entryContext={entryContext}
+  >
     <p>This paragraph is site-owned content in the generic Single view.</p>
   </Single>
 </Layout>

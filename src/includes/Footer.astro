@@ -11,7 +11,10 @@ interface Props {
 const parts = resolveParts(Astro.props.parts);
 const { homeHref, brand = defineSite().brand } = Astro.props;
 navigationHref(homeHref, "Footer homeHref");
-if (typeof brand !== "string" || !brand.trim()) throw new TypeError("Footer brand must be nonempty text");
+if (typeof brand !== "string" || !brand.trim())
+  throw new TypeError("Footer brand must be nonempty text");
 ---
 
-<slot><a class:list={parts.footer.linkUtilities} href={homeHref}>{brand}</a></slot>
+<slot
+  ><a class:list={parts.footer.linkUtilities} href={homeHref}>{brand}</a></slot
+>

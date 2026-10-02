@@ -1,0 +1,34 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+import Hero from "../components/Hero.astro";
+import { getDemoOptions } from "../settings.js";
+
+const { sidebar: _sidebar, ...options } = getDemoOptions("page", "single", {
+  sidebar: null,
+});
+---
+
+<Layout
+  title="Native Astro page"
+  {...options}
+  pageContext={{ view: "native", key: "mdx-landing" }}
+>
+  <Single
+    title="Native Astro page"
+    description="A host-owned route reuses the same public Layout and Astro section."
+    parts={options.parts}
+  >
+    <Hero
+      id="native-example"
+      title="Reusable Astro Hero"
+      description="This exact host component also appears in the MDX collection entry."
+      parts={options.parts}
+      action={{ label: "Open MDX Page", href: "/enhanced-page" }}
+    />
+    <p>
+      Native Astro pages use explicit imports, props and slots. This route has
+      its own stable key and does not invent a collection entry.
+    </p>
+  </Single>
+</Layout>

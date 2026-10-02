@@ -2,6 +2,8 @@
 title: "Setup guide"
 slug: "guide/setup"
 status: publish
+locale: en
+translationKey: setup-guide
 taxonomies:
   category: [layouts]
   tag: [astro]

@@ -7,6 +7,7 @@ export interface PostOptions {
   formats?: readonly ["md"] | readonly ["md", "mdx"];
   taxonomies?: readonly string[];
   routes?: { single?: "plugin" | "host"; archive?: "plugin" | "host" };
+  locales?: Plugin["locales"];
 }
 
 export declare function post(options?: PostOptions): Plugin;

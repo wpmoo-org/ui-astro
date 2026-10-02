@@ -1,72 +1,172 @@
-import { getEntryHref, getSiteContext, getSiteNavigation, validateSiteContent } from "../context/index.js";
+import {
+  getEntryHref,
+  getSiteContext,
+  getSiteNavigation,
+  validateSiteContent,
+} from "../context/index.js";
 import { normalizeSlug } from "../config/index.js";
-import { siteHref } from "../content/paths.js";
-import { termHref, termItems, validateTerms } from "./paths.js";
+import { termItems, validateTerms } from "./paths.js";
+import { getLocaleHref } from "../i18n/index.js";
 
 function activeTaxonomy(context, id) {
-  const taxonomy = context.taxonomies.find(item => item.id === id);
-  if (!taxonomy) throw new TypeError(`Taxonomy ${String(id)} is unknown or inactive`);
+  const taxonomy = context.taxonomies.find((item) => item.id === id);
+  if (!taxonomy)
+    throw new TypeError(`Taxonomy ${String(id)} is unknown or inactive`);
   return taxonomy;
 }
 
-async function inputs() {
+async function inputs(requestedLocale) {
   await validateSiteContent();
   const { getCollection } = await import("astro:content");
   const context = getSiteContext();
+  const locale =
+    requestedLocale ??
+    context.i18n?.defaultLocale ??
+    context.site.defaults.lang;
+  if (
+    context.i18n
+      ? !context.i18n.locales.includes(locale)
+      : locale !== context.site.defaults.lang
+  )
+    throw new TypeError(`taxonomy locale ${locale} is not active`);
   const graphs = new Map();
   for (const taxonomy of context.taxonomies) {
-    graphs.set(taxonomy.id, validateTerms(taxonomy, await getCollection(taxonomy.id), { lang: context.site.defaults.lang }));
+    graphs.set(
+      taxonomy.id,
+      validateTerms(taxonomy, await getCollection(taxonomy.id), {
+        lang: locale,
+      }),
+    );
   }
-  return { context, graphs, getCollection };
+  return { context, graphs, getCollection, locale };
 }
 
 async function sourcesFor(taxonomy, context, getCollection) {
   const sources = [];
-  for (const type of context.plugins.flatMap(plugin => plugin.contentTypes)) {
-    if (type.taxonomies.includes(taxonomy.id)) sources.push({ type, entries: await getCollection(type.collection) });
+  for (const type of context.plugins.flatMap((plugin) => plugin.contentTypes)) {
+    if (type.taxonomies.includes(taxonomy.id))
+      sources.push({ type, entries: await getCollection(type.collection) });
   }
   return sources;
 }
 
-export async function getTaxonomyTerms(taxonomyId) {
-  const { context, graphs } = await inputs();
+export async function getTaxonomyTerms(taxonomyId, options = {}) {
+  if (
+    !options ||
+    typeof options !== "object" ||
+    Array.isArray(options) ||
+    Object.keys(options).some((key) => key !== "locale")
+  )
+    throw new TypeError("Taxonomy term options support only locale");
+  const { context, graphs } = await inputs(options.locale);
   activeTaxonomy(context, taxonomyId);
   return Object.freeze([...graphs.get(taxonomyId).values()]);
 }
 
 export async function getTermEntries(taxonomyId, termId, options = {}) {
-  if (!options || typeof options !== "object" || Array.isArray(options) || Object.keys(options).some(key => key !== "include")) throw new TypeError("Term query options support only include");
-  const { context, graphs, getCollection } = await inputs();
+  if (
+    !options ||
+    typeof options !== "object" ||
+    Array.isArray(options) ||
+    Object.keys(options).some((key) => !["include", "locale"].includes(key))
+  )
+    throw new TypeError("Term query options support only include and locale");
+  const { context, graphs, getCollection, locale } = await inputs(
+    options.locale,
+  );
   const taxonomy = activeTaxonomy(context, taxonomyId);
-  return termItems(taxonomy, graphs.get(taxonomyId), termId, await sourcesFor(taxonomy, context, getCollection), { ...options, getEntryHref });
+  return termItems(
+    taxonomy,
+    graphs.get(taxonomyId),
+    termId,
+    await sourcesFor(taxonomy, context, getCollection),
+    { ...options, locale: context.i18n ? locale : undefined, getEntryHref },
+  );
 }
 
 export async function getTaxonomyPaths(options = {}) {
-  if (!options || typeof options !== "object" || Array.isArray(options) || Object.keys(options).some(key => key !== "taxonomies")) throw new TypeError("Taxonomy path options support only taxonomies");
-  const { context, graphs, getCollection } = await inputs();
-  const selected = options.taxonomies ?? context.taxonomies.filter(taxonomy => taxonomy.archive).map(taxonomy => taxonomy.id);
-  if (!Array.isArray(selected) || new Set(selected).size !== selected.length) throw new TypeError("Taxonomy path selection must contain unique active IDs");
-  const navigation = await getSiteNavigation(siteHref("/", context));
-  const homeHref = navigation.find(item => item.href === siteHref("/", context))?.href ?? navigation[0]?.href;
+  if (
+    !options ||
+    typeof options !== "object" ||
+    Array.isArray(options) ||
+    Object.keys(options).some((key) => !["taxonomies", "locale"].includes(key))
+  )
+    throw new TypeError(
+      "Taxonomy path options support only taxonomies and locale",
+    );
+  const { context, graphs, getCollection, locale } = await inputs(
+    options.locale,
+  );
+  const selected =
+    options.taxonomies ??
+    context.taxonomies
+      .filter((taxonomy) => taxonomy.archive)
+      .map((taxonomy) => taxonomy.id);
+  if (!Array.isArray(selected) || new Set(selected).size !== selected.length)
+    throw new TypeError(
+      "Taxonomy path selection must contain unique active IDs",
+    );
+  const localeHome = getLocaleHref("/", locale);
+  const navigation = await getSiteNavigation(localeHome, locale);
+  const homeHref =
+    navigation.find((item) => item.href === localeHome)?.href ??
+    navigation[0]?.href;
   const paths = [];
   for (const id of selected) {
     const taxonomy = activeTaxonomy(context, id);
     const terms = graphs.get(id);
     const sources = await sourcesFor(taxonomy, context, getCollection);
-    const hrefOptions = { ...context, lang: context.site.defaults.lang };
+    const authoredTerms = new Map(
+      (await getCollection(id)).map((entry) => [entry.id, entry.data]),
+    );
+    const localized = taxonomy.locales?.[locale];
+    const hrefFor = (value, language = locale) => {
+      const authored = authoredTerms.get(value.id);
+      const slug = authored.locales?.[language]?.slug ?? authored.slug;
+      return getLocaleHref(
+        `${context.taxonomyBasePath}/${taxonomy.locales?.[language]?.slug ?? taxonomy.id}/${normalizeSlug(slug, { lang: language })}`,
+        language,
+      );
+    };
     for (const term of terms.values()) {
       const ancestors = [];
-      for (let parent = term.parent; parent; parent = terms.get(parent).parent) ancestors.unshift(terms.get(parent));
+      for (let parent = term.parent; parent; parent = terms.get(parent).parent)
+        ancestors.unshift(terms.get(parent));
       const breadcrumbs = [
         ...(homeHref ? [{ label: context.site.brand, href: homeHref }] : []),
-        ...ancestors.map(ancestor => ({ label: ancestor.name, href: termHref(taxonomy, ancestor, hrefOptions) })),
+        ...ancestors.map((ancestor) => ({
+          label: ancestor.name,
+          href: hrefFor(ancestor),
+        })),
         // Moo Breadcrumb permits plain text only in its current item.
-        { label: `${taxonomy.label}: ${term.name}` },
+        { label: `${localized?.label ?? taxonomy.label}: ${term.name}` },
       ];
-      paths.push({ params: { taxonomy: id, slug: normalizeSlug(term.slug, { lang: context.site.defaults.lang }) }, props: {
-        taxonomy: id, term, href: termHref(taxonomy, term, hrefOptions), breadcrumbs,
-        items: termItems(taxonomy, terms, term.id, sources, { include: taxonomy.archive ? taxonomy.archive.include : "direct", getEntryHref }),
-      } });
+      paths.push({
+        params: {
+          taxonomy: localized?.slug ?? id,
+          slug: normalizeSlug(term.slug, { lang: locale }),
+        },
+        props: {
+          taxonomy: id,
+          term,
+          href: hrefFor(term),
+          breadcrumbs,
+          ...(context.i18n
+            ? {
+                locale,
+                alternates: context.i18n.locales.map((language) => ({
+                  locale: language,
+                  href: hrefFor(term, language),
+                })),
+              }
+            : {}),
+          items: termItems(taxonomy, terms, term.id, sources, {
+            locale: context.i18n ? locale : undefined,
+            include: taxonomy.archive ? taxonomy.archive.include : "direct",
+            getEntryHref,
+          }),
+        },
+      });
     }
   }
   return paths;

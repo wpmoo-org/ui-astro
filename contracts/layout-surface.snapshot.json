@@ -6,7 +6,7 @@
   },
   "source": {
     "repository": "projects/ui/html",
-    "commit": "414bf45de507d5b2c8cf29307ace84784e19182d",
+    "commit": "e2ef1b28cb4ab6f882b801ee6ea242630696548a",
     "files": {
       "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
       "src/layouts/app.html.jinja": "b95f6d4b89d4083858ac88e3d81666ebc4a00aae24a31d4f6b1444741361f364",
@@ -20,12 +20,8 @@
       "status": "preview",
       "description": "Compose a direct application shell with an optional Sidebar sibling and one independent Page sibling.",
       "source": "src/layouts/app.html.jinja",
-      "parts": [
-        "sidebar"
-      ],
-      "layoutParts": [
-        "page"
-      ]
+      "parts": ["sidebar"],
+      "layoutParts": ["page"]
     },
     {
       "slug": "page",
@@ -39,41 +35,18 @@
   ],
   "layout_surface": {
     "app": {
-      "navigation": [
-        "sidebar",
-        "none"
-      ],
-      "shell_mode": [
-        "viewport",
-        "contained"
-      ],
-      "side": [
-        "left",
-        "right"
-      ],
-      "variant": [
-        "sidebar",
-        "floating",
-        "inset"
-      ],
-      "collapsible": [
-        "icon",
-        "offcanvas",
-        "none"
-      ],
+      "navigation": ["sidebar", "none"],
+      "shell_mode": ["viewport", "contained"],
+      "side": ["left", "right"],
+      "variant": ["sidebar", "floating", "inset"],
+      "collapsible": ["icon", "offcanvas", "none"],
       "root": {
         "class": "wrapper",
         "data_layout": "app",
         "data_shell_mode": "viewport|contained"
       },
-      "direct_children": [
-        "sidebar",
-        "page"
-      ],
-      "named_slots": [
-        "sidebar",
-        "page"
-      ]
+      "direct_children": ["sidebar", "page"],
+      "named_slots": ["sidebar", "page"]
     },
     "page": {
       "width": {
@@ -85,21 +58,14 @@
         "xxl": "container-xxl",
         "fluid": "container-fluid"
       },
-      "regions": [
-        "header",
-        "main",
-        "footer"
-      ],
+      "regions": ["header", "main", "footer"],
       "root": {
         "data_slot": "page"
       },
       "main": {
         "id": "main-content",
         "tabindex": "-1",
-        "class": [
-          "scroll-fade-y",
-          "no-scrollbar"
-        ],
+        "class": ["scroll-fade-y", "no-scrollbar"],
         "rail_attribute": "data-page-container"
       }
     }

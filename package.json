@@ -131,8 +131,16 @@
     "contracts/astro-public-surface.json",
     "contracts/rc9-package.json",
     "README.md",
+    "COMPATIBILITY.md",
     "THIRD_PARTY_NOTICES.md",
-    "LICENSE"
+    "LICENSE",
+    "src/seo/index.js",
+    "src/seo/index.d.ts",
+    "src/i18n/index.js",
+    "src/i18n/index.d.ts",
+    "src/i18n/profile.js",
+    "src/i18n/graph.js",
+    "src/i18n/href.js"
   ],
   "exports": {
     ".": "./src/integration/index.js",
@@ -211,7 +219,9 @@
     "./plugins/post/views/Single.astro": "./src/plugins/post/views/Single.astro",
     "./taxonomies": "./src/taxonomies/index.js",
     "./taxonomies/content": "./src/taxonomies/content.js",
-    "./taxonomies/queries": "./src/taxonomies/queries.js"
+    "./taxonomies/queries": "./src/taxonomies/queries.js",
+    "./seo": "./src/seo/index.js",
+    "./i18n": "./src/i18n/index.js"
   },
   "dependencies": {
     "@wpmoo/ui": "1.0.0-rc.9",

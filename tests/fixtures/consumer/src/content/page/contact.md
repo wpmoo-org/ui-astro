@@ -4,7 +4,7 @@ description: Packed Page content
 slug: contact
 status: publish
 navOrder: 1
-layout:
+options:
   sidebar: null
   pageWidth: lg
   parts:

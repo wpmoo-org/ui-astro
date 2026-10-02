@@ -1,0 +1,84 @@
+---
+import { render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import { getLanguageLinks, getLocaleHref } from "@wpmoo/astro/i18n";
+import Single from "@wpmoo/astro/plugins/page/views/Single.astro";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { resolveSeoMetadata } from "@wpmoo/astro/seo";
+import { getDemoEntryContext } from "../settings.js";
+import TextSection from "../components/sections/Text.astro";
+import ActionSection from "../components/sections/Action.astro";
+
+interface Props {
+  entry: CollectionEntry<"page">;
+}
+
+const { entry } = Astro.props;
+const { site, i18n } = getSiteContext();
+const locale = i18n ? entry.data.locale : undefined;
+const options = resolvePageOptions(
+  site,
+  "page",
+  "single",
+  entry.data.options,
+  locale,
+);
+const languageLinks = i18n ? await getLanguageLinks("page", entry) : [];
+const href = getEntryHref("page", entry);
+const metadata = Astro.site
+  ? resolveSeoMetadata(site, {
+      title: entry.data.title,
+      description: entry.data.description,
+      status: entry.data.status,
+      type: "page",
+      view:
+        href === getLocaleHref("/", locale ?? site.defaults.lang)
+          ? "home"
+          : "single",
+      lang: options.lang,
+      url: new URL(href, Astro.site).href,
+      alternates: languageLinks.map((link) => ({
+        locale: link.locale,
+        url: new URL(link.href, Astro.site).href,
+      })),
+      created_at: entry.data.created_at,
+      published_at: entry.data.published_at,
+      updated_at: entry.data.updated_at,
+    })
+  : undefined;
+const { Content } = await render(entry);
+---
+
+<Layout
+  title={entry.data.title}
+  description={entry.data.description}
+  metadata={metadata}
+  languageLinks={languageLinks}
+  sidebar={options.sidebar !== null}
+  sidebarId="moo-site-sidebar"
+  sidebarKey="moo-site"
+  sidebarOptions={options.sidebar}
+  shellMode={options.shellMode}
+  pageWidth={options.pageWidth}
+  headerWidth={options.headerWidth}
+  theme={options.theme}
+  lang={options.lang}
+  dir={options.dir}
+  parts={options.parts}
+  pageContext={{ view: "single", entry: getDemoEntryContext("page", entry) }}
+>
+  <Single parts={options.parts} entry={entry}>
+    <Content />
+    {
+      (entry.data.sections ?? []).map((section) =>
+        section.type === "text" ? (
+          <TextSection id={section.id} {...section.props} />
+        ) : (
+          <ActionSection id={section.id} {...section.props} />
+        ),
+      )
+    }
+  </Single>
+</Layout>

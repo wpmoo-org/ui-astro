@@ -1,31 +1,47 @@
 ---
 import PageHeader from "../includes/PageHeader.astro";
-import { getEntryClasses, type EntryClassContext, type PartsInput } from "../config/index.js";
+import {
+  getEntryClasses,
+  type EntryClassContext,
+  type PartsInput,
+} from "../config/index.js";
 
 interface Props {
   title: string;
   description?: string;
   entryContext?: EntryClassContext;
   parts?: PartsInput;
-  forwardedSlots?: { pageHeader: boolean; metadata: boolean; actions: boolean; afterContent: boolean };
+  forwardedSlots?: {
+    pageHeader: boolean;
+    metadata: boolean;
+    actions: boolean;
+    afterContent: boolean;
+  };
 }
 
 const { title, description, entryContext, parts, forwardedSlots } = Astro.props;
-if (!Astro.slots.has("default")) throw new TypeError("Single requires its content slot");
+if (!Astro.slots.has("default"))
+  throw new TypeError("Single requires its content slot");
 const entryClasses = entryContext ? getEntryClasses(entryContext) : [];
-const hasPageHeader = forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
+const hasPageHeader =
+  forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
 const hasMetadata = forwardedSlots?.metadata ?? Astro.slots.has("metadata");
 const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
-const hasAfterContent = forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
+const hasAfterContent =
+  forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
 ---
 
 <article class:list={entryClasses}>
-  {hasPageHeader ? <slot name="page-header" /> : (
-    <PageHeader title={title} description={description} parts={parts}>
-      {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
-      {hasActions ? <slot name="actions" slot="actions" /> : null}
-    </PageHeader>
-  )}
+  {
+    hasPageHeader ? (
+      <slot name="page-header" />
+    ) : (
+      <PageHeader title={title} description={description} parts={parts}>
+        {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
+        {hasActions ? <slot name="actions" slot="actions" /> : null}
+      </PageHeader>
+    )
+  }
   <slot />
   {hasAfterContent ? <slot name="after-content" /> : null}
 </article>

@@ -1,6 +1,7 @@
 ---
 title: A scheduled announcement
 status: future
+locale: en
 published_at: "2099-01-01T12:00:00Z"
 ---
 

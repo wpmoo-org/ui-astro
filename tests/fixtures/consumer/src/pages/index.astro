@@ -47,22 +47,48 @@ import Toast from "@wpmoo/astro/components/Toast.astro";
 import ToggleGroup from "@wpmoo/astro/components/ToggleGroup.astro";
 import Tooltip from "@wpmoo/astro/components/Tooltip.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
-import { defineSite, formatDate, normalizeSlug, resolvePageOptions, resolveParts } from "@wpmoo/astro/config";
+import {
+  defineSite,
+  formatDate,
+  normalizeSlug,
+  resolvePageOptions,
+  resolveParts,
+} from "@wpmoo/astro/config";
 import { entrySchema, sourceEntryId } from "@wpmoo/astro/content";
-import { getEntryHref, getSiteContext, getSiteNavigation } from "@wpmoo/astro/context";
+import {
+  getEntryHref,
+  getSiteContext,
+  getSiteNavigation,
+} from "@wpmoo/astro/context";
 import { definePlugin } from "@wpmoo/astro/plugins";
 import { page } from "@wpmoo/astro/plugins/page";
 import { pageSchema } from "@wpmoo/astro/plugins/page/content";
-import { getPagePaths, getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
+import {
+  getPagePaths,
+  getPublishedPages,
+} from "@wpmoo/astro/plugins/page/queries";
 import PageArchive from "@wpmoo/astro/plugins/page/views/Archive.astro";
 import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
 import PageSingle from "@wpmoo/astro/plugins/page/views/Single.astro";
 import { post } from "@wpmoo/astro/plugins/post";
 import { postSchema } from "@wpmoo/astro/plugins/post/content";
 import { defineTaxonomy } from "@wpmoo/astro/taxonomies";
+import { resolveSeoMetadata } from "@wpmoo/astro/seo";
+import {
+  getLocaleHref,
+  getRouteLocale,
+  getLanguageLinks,
+} from "@wpmoo/astro/i18n";
 import { termSchema } from "@wpmoo/astro/taxonomies/content";
-import { getTaxonomyTerms, getTermEntries, getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
-import { getPostPaths, getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
+import {
+  getTaxonomyTerms,
+  getTermEntries,
+  getTaxonomyPaths,
+} from "@wpmoo/astro/taxonomies/queries";
+import {
+  getPostPaths,
+  getPublishedPosts,
+} from "@wpmoo/astro/plugins/post/queries";
 import PostArchive from "@wpmoo/astro/plugins/post/views/Archive.astro";
 import PostLoop from "@wpmoo/astro/plugins/post/views/Loop.astro";
 import PostSingle from "@wpmoo/astro/plugins/post/views/Single.astro";
@@ -75,46 +101,233 @@ import Archive from "@wpmoo/astro/views/Archive.astro";
 import Loop from "@wpmoo/astro/views/Loop.astro";
 import "@wpmoo/astro/styles.css";
 
-const publicWrappers = [Accordion, Alert, AlertDialog, Avatar, Badge, Button, ButtonGroup, Breadcrumb, Card, Chart, Checkbox, CloseButton, Collapsible, Combobox, ContextMenu, DataTable, DatePicker, Dialog, DropdownMenu, Field, Form, Input, InputGroup, Kbd, Menubar, Navigation, Popover, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Switch, Table, Tabs, Textarea, Toast, ToggleGroup, Tooltip, Typography];
-const publicParts = [Header, SidebarInclude, PageHeader, Footer, Single, Archive, Loop];
+const publicWrappers = [
+  Accordion,
+  Alert,
+  AlertDialog,
+  Avatar,
+  Badge,
+  Button,
+  ButtonGroup,
+  Breadcrumb,
+  Card,
+  Chart,
+  Checkbox,
+  CloseButton,
+  Collapsible,
+  Combobox,
+  ContextMenu,
+  DataTable,
+  DatePicker,
+  Dialog,
+  DropdownMenu,
+  Field,
+  Form,
+  Input,
+  InputGroup,
+  Kbd,
+  Menubar,
+  Navigation,
+  Popover,
+  Pagination,
+  Progress,
+  RadioGroup,
+  Select,
+  Separator,
+  Sheet,
+  Sidebar,
+  Skeleton,
+  Slider,
+  Spinner,
+  Switch,
+  Table,
+  Tabs,
+  Textarea,
+  Toast,
+  ToggleGroup,
+  Tooltip,
+  Typography,
+];
+const publicParts = [
+  Header,
+  SidebarInclude,
+  PageHeader,
+  Footer,
+  Single,
+  Archive,
+  Loop,
+];
 const pageViews = [PageArchive, PageLoop, PageSingle];
 const postViews = [PostArchive, PostLoop, PostSingle];
-const groups = [{ items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }] }];
+const groups = [
+  {
+    items: [{ title: "Overview", href: "/", icon: "panel-left", active: true }],
+  },
+];
 const site = defineSite();
-const configuredPostSidebar = resolvePageOptions(site, "post", "single").sidebar;
+const metadata = resolveSeoMetadata(
+  defineSite({ organization: { name: "Example Foundation" } }),
+  {
+    title: "Packed consumer",
+    type: "page",
+    view: "home",
+    status: "publish",
+    url: "https://example.test/",
+  },
+);
+const configuredPostSidebar = resolvePageOptions(
+  site,
+  "post",
+  "single",
+).sidebar;
 const normalizedContactSlug = normalizeSlug("İletişim", { lang: "tr" });
 const pagePlugin = definePlugin({
-  apiVersion: 1, id: "page", label: "Pages", basePath: "/",
-  contentTypes: [{ id: "page", collection: "page", singleRoute: "single", source: { kind: "markdown", formats: ["md"] } }],
-  routes: [{ id: "single", pattern: "/[...slug]", prerender: true, owner: "host" }],
+  apiVersion: 1,
+  id: "page",
+  label: "Pages",
+  basePath: "/",
+  contentTypes: [
+    {
+      id: "page",
+      collection: "page",
+      singleRoute: "single",
+      source: { kind: "markdown", formats: ["md"] },
+    },
+  ],
+  routes: [
+    { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" },
+  ],
 });
 const configuredPage = page({ routes: { single: "host" } });
 const sourceId = sourceEntryId({ entry: "contact.md" });
-const entryTitle = entrySchema.parse({ title: "Contact", status: "draft" }).title;
+const entryTitle = entrySchema.parse({
+  title: "Contact",
+  status: "draft",
+}).title;
 const pageTitle = pageSchema.parse({ title: "Contact", status: "draft" }).title;
 const siteContext = getSiteContext();
 const parts = resolveParts(siteContext.site.defaults.parts);
-if (formatDate(new Date("2026-09-28T12:00:00Z"), { style: parts.loop.dateStyle }) !== "2026-09-28") throw new Error("Public date formatting differs");
+if (
+  formatDate(new Date("2026-09-28T12:00:00Z"), {
+    style: parts.loop.dateStyle,
+  }) !== "2026-09-28"
+)
+  throw new Error("Public date formatting differs");
 const pageNavigation = await getSiteNavigation("/contact");
-const packedContact = (await getCollection("page")).find((entry) => entry.id === "contact.md");
-if (!packedContact) throw new Error("Packed consumer Page contact.md is missing");
+const packedContact = (await getCollection("page")).find(
+  (entry) => entry.id === "contact.md",
+);
+if (!packedContact)
+  throw new Error("Packed consumer Page contact.md is missing");
 const packedContactHref = getEntryHref("page", packedContact);
-void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle, post, postSchema, getPostPaths, getPublishedPosts, postViews, defineTaxonomy, termSchema, getTaxonomyTerms, getTermEntries, getTaxonomyPaths];
+if (
+  getLocaleHref("/contact", getRouteLocale(Astro.routePattern)) !==
+    packedContactHref ||
+  (await getLanguageLinks("page", packedContact)).length
+)
+  throw new Error("Optional i18n changed the single-language consumer");
+void [
+  MooIntegration,
+  getPagePaths,
+  getPublishedPages,
+  configuredPage,
+  sourceId,
+  entryTitle,
+  pageTitle,
+  post,
+  postSchema,
+  getPostPaths,
+  getPublishedPosts,
+  postViews,
+  defineTaxonomy,
+  termSchema,
+  getTaxonomyTerms,
+  getTermEntries,
+  getTaxonomyPaths,
+];
 ---
 
-<Layout title="Packed consumer" parts={parts} sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">
-  <Sidebar slot="sidebar" id="packed-sidebar" brand="Packed consumer" groups={groups} />
+<Layout
+  title="Packed consumer"
+  metadata={metadata}
+  parts={parts}
+  sidebar
+  theme="dark"
+  sidebarKey="packed-consumer"
+  sidebarId="packed-sidebar"
+>
+  <Sidebar
+    slot="sidebar"
+    id="packed-sidebar"
+    brand="Packed consumer"
+    groups={groups}
+  />
   <h1>Independent package consumer</h1>
-  <p data-public-wrapper-count={publicWrappers.length} data-public-part-count={publicParts.length} data-public-page-view-count={pageViews.length} data-context-plugin={siteContext.plugins[0]?.id} data-context-link={packedContactHref} data-navigation-count={pageNavigation.length} data-config-sidebar={configuredPostSidebar === null ? "none" : "enabled"} data-config-slug={normalizedContactSlug} data-plugin-id={pagePlugin.id}>All public wrapper imports resolve from the packed adapter.</p>
+  <p
+    data-public-wrapper-count={publicWrappers.length}
+    data-public-part-count={publicParts.length}
+    data-public-page-view-count={pageViews.length}
+    data-context-plugin={siteContext.plugins[0]?.id}
+    data-context-link={packedContactHref}
+    data-navigation-count={pageNavigation.length}
+    data-config-sidebar={configuredPostSidebar === null ? "none" : "enabled"}
+    data-config-slug={normalizedContactSlug}
+    data-plugin-id={pagePlugin.id}
+  >
+    All public wrapper imports resolve from the packed adapter.
+  </p>
   <Card title="Public components">
     <Badge label="Ready" variant="success" />
     <Button size="icon-sm" ariaLabel="Open actions">+</Button>
-    <Alert title="Escaped input" description={"<img src=x onerror=alert(1)>"} variant="info" />
+    <Alert
+      title="Escaped input"
+      description={"<img src=x onerror=alert(1)>"}
+      variant="info"
+    />
     <Input id="consumer-input" label="Theme name" name="theme" value="Moo" />
-    <Toast id="consumer-toast" title="Saved" body={"<svg onload=alert(2)>"} showOnLoad={true} actionLabel="Close" actionAriaLabel="Dismiss saved toast" />
-    <Toast id="consumer-trusted-toast" title="Trusted" body="<strong>Approved</strong>" trustedHtml={true} />
+    <Checkbox
+      id="consumer-checkbox"
+      labelWrapper
+      ariaLabel="Enable feature"
+      description="Caller description"
+      name="feature"
+      value="enabled"
+      checked
+      disabled
+      invalid
+      data-caller-control="checkbox"
+    />
+    <Combobox
+      id="consumer-multiple"
+      label="Selected features"
+      name="features"
+      multiple
+      selected={["page", "post"]}
+      items={[
+        { value: "page", label: "Pages" },
+        { value: "post", label: "Posts" },
+      ]}
+    />
+    <Toast
+      id="consumer-toast"
+      title="Saved"
+      body={"<svg onload=alert(2)>"}
+      showOnLoad={true}
+      actionLabel="Close"
+      actionAriaLabel="Dismiss saved toast"
+    />
+    <Toast
+      id="consumer-trusted-toast"
+      title="Trusted"
+      body="<strong>Approved</strong>"
+      trustedHtml={true}
+    />
   </Card>
-  <section class="row g-3" data-layout="page-grid" aria-label="Package Page grid">
+  <section
+    class="row g-3"
+    data-layout="page-grid"
+    aria-label="Package Page grid"
+  >
     <div class="col-12" data-page-col-lg="3">Navigation</div>
     <div class="col-12" data-page-col-lg="9">Content</div>
   </section>
@@ -124,4 +337,8 @@ void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId,
   import "@wpmoo/astro/runtime/bootstrap.js";
   import MooUI from "@wpmoo/astro/runtime/moo-ui.js";
   void MooUI.Sidebar;
+  const combobox = document
+    .getElementById("consumer-multiple-input")
+    ?.closest(".combobox");
+  if (combobox) MooUI.Combobox.getOrCreateInstance(combobox);
 </script>

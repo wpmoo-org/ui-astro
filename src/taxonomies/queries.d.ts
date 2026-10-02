@@ -20,9 +20,21 @@ export interface TaxonomyPath {
     href: string;
     breadcrumbs: { label: string; href?: string }[];
     items: readonly TermItem[];
+    locale?: string;
+    alternates?: readonly { readonly locale: string; readonly href: string }[];
   };
 }
 
-export declare function getTaxonomyTerms(taxonomyId: string): Promise<readonly Term[]>;
-export declare function getTermEntries(taxonomyId: string, termId: string, options?: { include?: "direct" | "descendants" }): Promise<readonly TermItem[]>;
-export declare function getTaxonomyPaths(options?: { taxonomies?: readonly string[] }): Promise<TaxonomyPath[]>;
+export declare function getTaxonomyTerms(
+  taxonomyId: string,
+  options?: { locale?: string },
+): Promise<readonly Term[]>;
+export declare function getTermEntries(
+  taxonomyId: string,
+  termId: string,
+  options?: { include?: "direct" | "descendants"; locale?: string },
+): Promise<readonly TermItem[]>;
+export declare function getTaxonomyPaths(options?: {
+  taxonomies?: readonly string[];
+  locale?: string;
+}): Promise<TaxonomyPath[]>;

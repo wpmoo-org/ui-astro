@@ -1,5 +1,5 @@
 ---
-import { getDemoOptions } from "../../settings.js";
+import { demoPageArchiveEntryIds, getDemoOptions } from "../../settings.js";
 import Layout from "../../layouts/Layout.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
 import PageArchive from "@wpmoo/astro/plugins/page/views/Archive.astro";
@@ -8,16 +8,46 @@ import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
 import { getSiteContext } from "@wpmoo/astro/context";
 import { getDemoMessages } from "../../messages.js";
 
-const entries = await getPublishedPages();
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
+const locale = getSiteContext().i18n ? lang : undefined;
+const entries = (await getPublishedPages({ locale })).filter((entry) =>
+  demoPageArchiveEntryIds.includes(entry.id),
+);
 const copy = getDemoMessages(lang);
 const preferences = getDemoOptions("page", "archive");
 ---
 
-<Layout parts={preferences.parts} title="Custom Page archive preview" sidebar pageContext={{ view: "archive", type: "page" }} lang={lang}>
-  <PageArchive parts={preferences.parts} title="Pages" entries={entries} lang={lang} emptyText={copy.emptyPages}>
-    <PageHeader parts={preferences.parts} slot="page-header" title="Custom Pages" description="A Page archive using explicit Moo UI slots." />
-    <PageLoop parts={preferences.parts} slot="loop" entries={[...entries].reverse()} lang={lang} emptyText={copy.emptyPages} />
-    <p slot="after-list" class="text-body-secondary">End of the published Page list.</p>
+<Layout
+  parts={preferences.parts}
+  title="Custom Page archive preview"
+  sidebar
+  pageContext={{ view: "archive", type: "page" }}
+  lang={lang}
+>
+  <PageArchive
+    parts={preferences.parts}
+    title="Pages"
+    entries={entries}
+    lang={lang}
+    locale={locale}
+    emptyText={copy.emptyPages}
+  >
+    <PageHeader
+      parts={preferences.parts}
+      slot="page-header"
+      title="Custom Pages"
+      description="A Page archive using explicit Moo UI slots."
+    />
+    <PageLoop
+      parts={preferences.parts}
+      slot="loop"
+      entries={[...entries].reverse()}
+      lang={lang}
+      locale={locale}
+      emptyText={copy.emptyPages}
+    />
+    <p slot="after-list" class="text-body-secondary">
+      End of the published Page list.
+    </p>
   </PageArchive>
 </Layout>

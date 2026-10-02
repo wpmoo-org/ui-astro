@@ -1,42 +1,13 @@
 ---
-import { render } from "astro:content";
-import Layout from "../layouts/Layout.astro";
-import Single from "@wpmoo/astro/plugins/page/views/Single.astro";
-import { getPagePaths } from "@wpmoo/astro/plugins/page/queries";
-import { resolvePageOptions } from "@wpmoo/astro/config";
-import { getSiteContext } from "@wpmoo/astro/context";
-import { getDemoEntryContext } from "../settings.js";
+import type { GetStaticPathsOptions } from "astro";
+import Page from "../views/Page.astro";
+import { getDemoPagePaths } from "../settings.js";
 
 export const prerender = true;
-export async function getStaticPaths() {
-  const { site, plugins, taxonomies, taxonomyBasePath } = getSiteContext();
-  return getPagePaths({
-    lang: site.defaults.lang,
-    reservedPrefixes: [...plugins.filter((plugin) => plugin.id !== "page").map((plugin) => plugin.basePath), ...(taxonomies.some(taxonomy => taxonomy.archive) ? [taxonomyBasePath] : [])],
-  });
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getDemoPagePaths(routePattern);
 }
-
 const { entry } = Astro.props;
-const { site } = getSiteContext();
-const options = resolvePageOptions(site, "page", "single", entry.data.layout);
-const { Content } = await render(entry);
 ---
 
-<Layout
-  title={entry.data.title}
-  description={entry.data.description}
-  sidebar={options.sidebar !== null}
-  sidebarId="moo-site-sidebar"
-  sidebarKey="moo-site"
-  sidebarOptions={options.sidebar}
-  shellMode={options.shellMode}
-  pageWidth={options.pageWidth}
-  headerWidth={options.headerWidth}
-  theme={options.theme}
-  lang={options.lang}
-  dir={options.dir}
-  parts={options.parts}
-  pageContext={{ view: "single", entry: getDemoEntryContext("page", entry) }}
->
-  <Single parts={options.parts} entry={entry}><Content /></Single>
-</Layout>
+<Page entry={entry} />

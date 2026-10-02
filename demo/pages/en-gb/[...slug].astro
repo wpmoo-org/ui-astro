@@ -1,0 +1,13 @@
+---
+import type { GetStaticPathsOptions } from "astro";
+import Page from "../../views/Page.astro";
+import { getDemoPagePaths } from "../../settings.js";
+
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getDemoPagePaths(routePattern);
+}
+const { entry } = Astro.props;
+---
+
+<Page entry={entry} />

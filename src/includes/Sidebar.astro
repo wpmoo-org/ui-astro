@@ -3,8 +3,20 @@ import MooSidebar from "../components/Sidebar.astro";
 import { navigationHref } from "../internal/href.js";
 import { defineSite, resolveParts, type PartsInput } from "../config/index.js";
 
-interface SidebarItem { title: string; href?: string; icon?: string; badge?: string | number; active?: boolean; disabled?: boolean; tooltip?: string; ariaLabel?: string }
-interface SidebarGroup { label?: string; items: SidebarItem[] }
+interface SidebarItem {
+  title: string;
+  href?: string;
+  icon?: string;
+  badge?: string | number;
+  active?: boolean;
+  disabled?: boolean;
+  tooltip?: string;
+  ariaLabel?: string;
+}
+interface SidebarGroup {
+  label?: string;
+  items: SidebarItem[];
+}
 interface Props {
   id: string;
   brandHref: string;
@@ -21,30 +33,140 @@ interface Props {
 }
 
 const parts = resolveParts(Astro.props.parts);
-const { id, brandHref, groups = [], parts: _parts, brand = defineSite().brand, ariaLabel = parts.header.navigationLabel, ...options } = Astro.props;
+const {
+  id,
+  brandHref,
+  groups = [],
+  parts: _parts,
+  brand = defineSite().brand,
+  ariaLabel = parts.header.navigationLabel,
+  ...options
+} = Astro.props;
 const rest = { ...options, brand, ariaLabel };
-if (typeof id !== "string" || !id.trim()) throw new TypeError("Sidebar include id is required");
+if (typeof id !== "string" || !id.trim())
+  throw new TypeError("Sidebar include id is required");
 navigationHref(brandHref, "Sidebar include brandHref");
 const header = Astro.slots.has("header");
-const body = Astro.slots.has("content") ? "content" : Astro.slots.has("default") ? "default" : "none";
+const body = Astro.slots.has("content")
+  ? "content"
+  : Astro.slots.has("default")
+    ? "default"
+    : "none";
 const footer = Astro.slots.has("footer");
 const slotCase = `${Number(header)}-${body}-${Number(footer)}`;
 for (const [groupIndex, group] of groups.entries()) {
   for (const [itemIndex, item] of group.items.entries()) {
-    if (item.href !== undefined) navigationHref(item.href, `Sidebar include groups[${groupIndex}].items[${itemIndex}].href`);
+    if (item.href !== undefined)
+      navigationHref(
+        item.href,
+        `Sidebar include groups[${groupIndex}].items[${itemIndex}].href`,
+      );
   }
 }
 ---
 
-{slotCase === "0-none-0" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups} /> : null}
-{slotCase === "0-none-1" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="footer" slot="footer" /></MooSidebar> : null}
-{slotCase === "0-content-0" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="content" slot="content" /></MooSidebar> : null}
-{slotCase === "0-content-1" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="content" slot="content" /><slot name="footer" slot="footer" /></MooSidebar> : null}
-{slotCase === "0-default-0" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot /></MooSidebar> : null}
-{slotCase === "0-default-1" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot /><slot name="footer" slot="footer" /></MooSidebar> : null}
-{slotCase === "1-none-0" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="header" slot="header" /></MooSidebar> : null}
-{slotCase === "1-none-1" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="header" slot="header" /><slot name="footer" slot="footer" /></MooSidebar> : null}
-{slotCase === "1-content-0" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="header" slot="header" /><slot name="content" slot="content" /></MooSidebar> : null}
-{slotCase === "1-content-1" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="header" slot="header" /><slot name="content" slot="content" /><slot name="footer" slot="footer" /></MooSidebar> : null}
-{slotCase === "1-default-0" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="header" slot="header" /><slot /></MooSidebar> : null}
-{slotCase === "1-default-1" ? <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}><slot name="header" slot="header" /><slot /><slot name="footer" slot="footer" /></MooSidebar> : null}
+{
+  slotCase === "0-none-0" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups} />
+  ) : null
+}
+{
+  slotCase === "0-none-1" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <slot name="footer" slot="footer" />
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "0-content-0" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <slot name="content" slot="content" />
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "0-content-1" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot name="content" slot="content" />
+        <slot name="footer" slot="footer" />
+      </>
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "0-default-0" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <slot />
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "0-default-1" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot />
+        <slot name="footer" slot="footer" />
+      </>
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "1-none-0" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <slot name="header" slot="header" />
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "1-none-1" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot name="header" slot="header" />
+        <slot name="footer" slot="footer" />
+      </>
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "1-content-0" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot name="header" slot="header" />
+        <slot name="content" slot="content" />
+      </>
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "1-content-1" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot name="header" slot="header" />
+        <slot name="content" slot="content" />
+        <slot name="footer" slot="footer" />
+      </>
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "1-default-0" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot name="header" slot="header" />
+        <slot />
+      </>
+    </MooSidebar>
+  ) : null
+}
+{
+  slotCase === "1-default-1" ? (
+    <MooSidebar {...rest} id={id} brandHref={brandHref} groups={groups}>
+      <>
+        <slot name="header" slot="header" />
+        <slot />
+        <slot name="footer" slot="footer" />
+      </>
+    </MooSidebar>
+  ) : null
+}

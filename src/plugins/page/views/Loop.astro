@@ -1,6 +1,11 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { defineSite, resolveParts, type DateFormatter, type PartsInput } from "../../../config/index.js";
+import {
+  defineSite,
+  resolveParts,
+  type DateFormatter,
+  type PartsInput,
+} from "../../../config/index.js";
 import Loop from "../../../views/Loop.astro";
 import { pageLoopItems } from "../paths.js";
 
@@ -11,6 +16,7 @@ interface Props {
   base?: string;
   trailingSlash?: "always" | "never" | "ignore";
   lang?: string;
+  locale?: string;
   dateLang?: string;
   reservedPrefixes?: readonly string[];
   emptyText?: string;
@@ -18,8 +24,32 @@ interface Props {
 }
 
 const parts = resolveParts(Astro.props.parts);
-const { entries, base = "/", trailingSlash = "ignore", lang = defineSite().defaults.lang, dateLang = lang, reservedPrefixes = [], emptyText = parts.loop.pageEmptyText, titleVariant, dateFormatter } = Astro.props;
-const items = pageLoopItems(entries, { base, trailingSlash, lang, reservedPrefixes });
+const {
+  entries,
+  base = "/",
+  trailingSlash = "ignore",
+  lang = defineSite().defaults.lang,
+  locale,
+  dateLang = lang,
+  reservedPrefixes = [],
+  emptyText = parts.loop.pageEmptyText,
+  titleVariant,
+  dateFormatter,
+} = Astro.props;
+const items = pageLoopItems(entries, {
+  base,
+  trailingSlash,
+  lang,
+  reservedPrefixes,
+  locale,
+});
 ---
 
-<Loop items={items} emptyText={emptyText} titleVariant={titleVariant} parts={parts} lang={dateLang} dateFormatter={dateFormatter} />
+<Loop
+  items={items}
+  emptyText={emptyText}
+  titleVariant={titleVariant}
+  parts={parts}
+  lang={dateLang}
+  dateFormatter={dateFormatter}
+/>

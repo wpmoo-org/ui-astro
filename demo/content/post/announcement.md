@@ -2,6 +2,8 @@
 title: A published announcement
 description: A native Markdown Post with its own publication timestamp.
 status: publish
+locale: en
+translationKey: announcement
 taxonomies:
   category: [guides]
   tag: [astro]

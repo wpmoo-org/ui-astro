@@ -3,7 +3,10 @@ import Breadcrumb from "../components/Breadcrumb.astro";
 import { navigationHref } from "../internal/href.js";
 import { resolveParts, type PartsInput } from "../config/index.js";
 
-interface BreadcrumbItem { label: string; href?: string }
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
 interface Props {
   breadcrumbs: BreadcrumbItem[];
   ariaLabel?: string;
@@ -17,11 +20,18 @@ if (!Array.isArray(breadcrumbs) || !breadcrumbs.length) {
 }
 for (const [index, item] of breadcrumbs.entries()) {
   if (typeof item.label !== "string" || !item.label.trim()) {
-    throw new TypeError(`Header breadcrumbs[${index}].label must be nonempty text`);
+    throw new TypeError(
+      `Header breadcrumbs[${index}].label must be nonempty text`,
+    );
   }
-  if (item.href !== undefined) navigationHref(item.href, `Header breadcrumbs[${index}].href`);
+  if (item.href !== undefined)
+    navigationHref(item.href, `Header breadcrumbs[${index}].href`);
 }
 ---
 
-<Breadcrumb items={breadcrumbs} ariaLabel={ariaLabel} class={parts.header.breadcrumbUtilities.join(" ")} />
+<Breadcrumb
+  items={breadcrumbs}
+  ariaLabel={ariaLabel}
+  class={parts.header.breadcrumbUtilities.join(" ")}
+/>
 {Astro.slots.has("actions") ? <slot name="actions" /> : null}

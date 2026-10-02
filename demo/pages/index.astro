@@ -21,14 +21,19 @@ import { getSiteContext } from "@wpmoo/astro/context";
 import { getDemoNavigation } from "../navigation.js";
 
 const { site } = getSiteContext();
-const { lang, parts, theme, pageWidth, headerWidth, dir, shellMode } = site.defaults;
-const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
-  label: "Workspace",
-  items: [
-    { title: "Components", href: "#components", icon: "layout-grid" },
-    { title: "About", href: "#about", icon: "circle-info" },
-  ],
-}];
+const { lang, parts, theme, pageWidth, headerWidth, dir, shellMode } =
+  site.defaults;
+const { groups, homeHref } = await getDemoNavigation(Astro.url.pathname, lang);
+const sidebarGroups = [
+  ...groups,
+  {
+    label: "Workspace",
+    items: [
+      { title: "Components", href: "#components", icon: "layout-grid" },
+      { title: "About", href: "#about", icon: "circle-info" },
+    ],
+  },
+];
 ---
 
 <Layout
@@ -45,14 +50,49 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
   sidebarKey="astro-home"
   sidebarId="astro-sidebar"
 >
-  <Sidebar slot="sidebar" id="astro-sidebar" brand={site.brand} groups={sidebarGroups} />
+  <Sidebar
+    slot="sidebar"
+    id="astro-sidebar"
+    brand={site.brand}
+    brandHref={homeHref}
+    groups={sidebarGroups}
+  />
 
-  <nav slot="header" class="d-flex align-items-center gap-2 w-100" aria-label="Demo controls">
-    <Button element="a" href="#components" variant="ghost" size="sm" class="d-none d-sm-inline-flex">Components</Button>
+  <nav
+    slot="header"
+    class="d-flex align-items-center gap-2 w-100"
+    aria-label="Demo controls"
+  >
+    <Button
+      element="a"
+      href="#components"
+      variant="ghost"
+      size="sm"
+      class="d-none d-sm-inline-flex">Components</Button
+    >
     <div class="d-flex align-items-center gap-2 ms-auto">
-      <Button variant="ghost" size="sm" data-theme-toggle ariaLabel="Switch to light mode">Light mode</Button>
-      <Button variant="ghost" size="sm" data-direction-toggle ariaLabel="Switch to RTL">RTL</Button>
-      <Button element="a" href="https://github.com/wpmoo-org/ui" variant="outline" size="sm" class="d-none d-md-inline-flex" target="_blank" rel="noopener noreferrer" ariaLabel="Open Moo UI on GitHub">GitHub</Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        data-theme-toggle
+        ariaLabel="Switch to light mode">Light mode</Button
+      >
+      <Button
+        variant="ghost"
+        size="sm"
+        data-direction-toggle
+        ariaLabel="Switch to RTL">RTL</Button
+      >
+      <Button
+        element="a"
+        href="https://github.com/wpmoo-org/ui"
+        variant="outline"
+        size="sm"
+        class="d-none d-md-inline-flex"
+        target="_blank"
+        rel="noopener noreferrer"
+        ariaLabel="Open Moo UI on GitHub">GitHub</Button
+      >
     </div>
   </nav>
 
@@ -75,13 +115,20 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
       >
     </ButtonGroup>
 
-    <section class="row g-3 mt-4" data-layout="page-grid" aria-label="Available-width layout example">
+    <section
+      class="row g-3 mt-4"
+      data-layout="page-grid"
+      aria-label="Available-width layout example"
+    >
       <div class="col-12" data-page-col-lg="3">
         <div data-page-hide-from="lg">Compact navigation</div>
         <div data-page-show-from="lg">Wide navigation</div>
       </div>
       <div class="col-12" data-page-col-lg="9">
-        <p class="mb-0">These columns respond to the Page rail, even when the Sidebar changes its width.</p>
+        <p class="mb-0">
+          These columns respond to the Page rail, even when the Sidebar changes
+          its width.
+        </p>
       </div>
     </section>
 
@@ -150,7 +197,10 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
       />
       <DropdownMenu
         label="More actions"
-        items={[{ label: "Duplicate" }, { label: "Archive", destructive: true }]}
+        items={[
+          { label: "Duplicate" },
+          { label: "Archive", destructive: true },
+        ]}
         class="mt-3"
       />
       <Chart
@@ -191,8 +241,10 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
   const directionToggle = document.querySelector("[data-direction-toggle]");
 
   function updateHostControls() {
-    const nextTheme = owner?.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
-    const nextDirection = document.documentElement.dir === "rtl" ? "LTR" : "RTL";
+    const nextTheme =
+      owner?.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+    const nextDirection =
+      document.documentElement.dir === "rtl" ? "LTR" : "RTL";
     if (themeToggle) {
       themeToggle.textContent = `${nextTheme[0].toUpperCase()}${nextTheme.slice(1)} mode`;
       themeToggle.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
@@ -205,16 +257,26 @@ const sidebarGroups = [...getDemoNavigation(Astro.url.pathname, lang), {
 
   themeToggle?.addEventListener("click", () => {
     if (!owner) return;
-    const nextTheme = owner.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+    const nextTheme =
+      owner.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
     owner.setAttribute("data-bs-theme", nextTheme);
-    try { localStorage.setItem("moo:theme", nextTheme); } catch (_) { /* Storage can be unavailable. */ }
+    try {
+      localStorage.setItem("moo:theme", nextTheme);
+    } catch (_) {
+      /* Storage can be unavailable. */
+    }
     updateHostControls();
   });
 
   directionToggle?.addEventListener("click", () => {
-    const nextDirection = document.documentElement.dir === "rtl" ? "ltr" : "rtl";
+    const nextDirection =
+      document.documentElement.dir === "rtl" ? "ltr" : "rtl";
     document.documentElement.dir = nextDirection;
-    try { localStorage.setItem("moo:direction", nextDirection); } catch (_) { /* Storage can be unavailable. */ }
+    try {
+      localStorage.setItem("moo:direction", nextDirection);
+    } catch (_) {
+      /* Storage can be unavailable. */
+    }
     updateHostControls();
   });
 

@@ -8,13 +8,21 @@ export declare const entrySchema: z.ZodObject<{
   description: z.ZodOptional<z.ZodString>;
   slug: z.ZodOptional<z.ZodString>;
   status: z.ZodType<PublicationStatus>;
+  locale: z.ZodOptional<z.ZodString>;
+  translationKey: z.ZodOptional<z.ZodString>;
   created_at: z.ZodOptional<z.ZodType<Date>>;
   published_at: z.ZodOptional<z.ZodType<Date>>;
   updated_at: z.ZodOptional<z.ZodType<Date>>;
-  layout: z.ZodOptional<z.ZodType<PageOptionsInput>>;
+  options: z.ZodOptional<z.ZodType<PageOptionsInput>>;
 }>;
 
 export type Entry = z.infer<typeof entrySchema>;
 
-export declare function sourceEntryId(input: { entry: string; data?: Record<string, unknown> }): string;
-export declare function jsonEntryId(input: { entry: string; data: Record<string, unknown> }): string;
+export declare function sourceEntryId(input: {
+  entry: string;
+  data?: Record<string, unknown>;
+}): string;
+export declare function jsonEntryId(input: {
+  entry: string;
+  data: Record<string, unknown>;
+}): string;

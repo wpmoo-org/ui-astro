@@ -1,6 +1,14 @@
 ---
 import Typography from "../components/Typography.astro";
-import { defineSite, formatDate, getEntryClasses, resolveParts, type DateFormatter, type EntryClassContext, type PartsInput } from "../config/index.js";
+import {
+  defineSite,
+  formatDate,
+  getEntryClasses,
+  resolveParts,
+  type DateFormatter,
+  type EntryClassContext,
+  type PartsInput,
+} from "../config/index.js";
 import { navigationHref } from "../internal/href.js";
 
 interface LoopItem {
@@ -21,36 +29,79 @@ interface Props {
 }
 
 const parts = resolveParts(Astro.props.parts);
-const { items, emptyText = parts.loop.emptyText, titleVariant = parts.loop.titleVariant, lang = defineSite().defaults.lang, dateFormatter } = Astro.props;
+const {
+  items,
+  emptyText = parts.loop.emptyText,
+  titleVariant = parts.loop.titleVariant,
+  lang = defineSite().defaults.lang,
+  dateFormatter,
+} = Astro.props;
 if (!Array.isArray(items)) throw new TypeError("Loop items must be an array");
 if (titleVariant !== "section-title" && titleVariant !== "subsection-title") {
-  throw new TypeError("Loop titleVariant must be section-title or subsection-title");
+  throw new TypeError(
+    "Loop titleVariant must be section-title or subsection-title",
+  );
 }
-if (typeof emptyText !== "string") throw new TypeError("Loop emptyText must be text");
+if (typeof emptyText !== "string")
+  throw new TypeError("Loop emptyText must be text");
 const checkedItems = items.map((item, index) => {
-  if (!item || typeof item.id !== "string" || !item.id || typeof item.title !== "string" || !item.title.trim()) {
+  if (
+    !item ||
+    typeof item.id !== "string" ||
+    !item.id ||
+    typeof item.title !== "string" ||
+    !item.title.trim()
+  ) {
     throw new TypeError(`Loop items[${index}] needs an id and title`);
   }
   navigationHref(item.href, `Loop items[${index}].href`);
   if (item.description !== undefined && typeof item.description !== "string") {
     throw new TypeError(`Loop items[${index}].description must be text`);
   }
-  if (item.date !== undefined && (!(item.date instanceof Date) || !Number.isFinite(item.date.getTime()))) {
+  if (
+    item.date !== undefined &&
+    (!(item.date instanceof Date) || !Number.isFinite(item.date.getTime()))
+  ) {
     throw new TypeError(`Loop items[${index}].date must be a valid Date`);
   }
-  return { ...item, entryClasses: item.entryContext ? getEntryClasses(item.entryContext) : [],
-    dateText: item.date ? formatDate(item.date, { lang, style: parts.loop.dateStyle, formatter: dateFormatter }) : undefined };
+  return {
+    ...item,
+    entryClasses: item.entryContext ? getEntryClasses(item.entryContext) : [],
+    dateText: item.date
+      ? formatDate(item.date, {
+          lang,
+          style: parts.loop.dateStyle,
+          formatter: dateFormatter,
+        })
+      : undefined,
+  };
 });
 ---
 
-{checkedItems.length ? (
-  <ul class:list={parts.loop.utilities}>
-    {checkedItems.map((item) => (
-      <li class:list={[item.entryClasses, parts.loop.itemUtilities]}>
-        <Typography variant={titleVariant} content={item.title} class={parts.loop.titleUtilities.join(" ")}><a href={item.href}>{item.title}</a></Typography>
-        {item.description ? <p class:list={parts.loop.descriptionUtilities}>{item.description}</p> : null}
-        {item.date ? <time datetime={item.date.toISOString()}>{item.dateText}</time> : null}
-      </li>
-    ))}
-  </ul>
-) : <p class:list={parts.loop.emptyUtilities}>{emptyText}</p>}
+{
+  checkedItems.length ? (
+    <ul class:list={parts.loop.utilities}>
+      {checkedItems.map((item) => (
+        <li class:list={[item.entryClasses, parts.loop.itemUtilities]}>
+          <Typography
+            variant={titleVariant}
+            content={item.title}
+            class={parts.loop.titleUtilities.join(" ")}
+          >
+            <a href={item.href}>{item.title}</a>
+          </Typography>
+          {item.description ? (
+            <p class:list={parts.loop.descriptionUtilities}>
+              {item.description}
+            </p>
+          ) : null}
+          {item.date ? (
+            <time datetime={item.date.toISOString()}>{item.dateText}</time>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class:list={parts.loop.emptyUtilities}>{emptyText}</p>
+  )
+}

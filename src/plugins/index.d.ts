@@ -1,10 +1,18 @@
 export type PluginSourceInput =
-  | { kind: "markdown"; base?: URL; formats: readonly ["md"] | readonly ["md", "mdx"] }
+  | {
+      kind: "markdown";
+      base?: URL;
+      formats: readonly ["md"] | readonly ["md", "mdx"];
+    }
   | { kind: "json"; file: URL }
   | { kind: "json-directory"; base: URL };
 
 export type PluginSource =
-  | { readonly kind: "markdown"; readonly base?: string; readonly formats: readonly ("md" | "mdx")[] }
+  | {
+      readonly kind: "markdown";
+      readonly base?: string;
+      readonly formats: readonly ("md" | "mdx")[];
+    }
   | { readonly kind: "json"; readonly file: string }
   | { readonly kind: "json-directory"; readonly base: string };
 
@@ -25,12 +33,35 @@ export interface ContentType {
 }
 
 export type PluginRouteInput =
-  | { id: string; pattern: string; prerender: true; owner?: "plugin"; entrypoint: URL }
-  | { id: string; pattern: string; prerender: true; owner: "host"; entrypoint?: never };
+  | {
+      id: string;
+      pattern: string;
+      prerender: true;
+      owner?: "plugin";
+      entrypoint: URL;
+    }
+  | {
+      id: string;
+      pattern: string;
+      prerender: true;
+      owner: "host";
+      entrypoint?: never;
+    };
 
 export type PluginRoute =
-  | { readonly id: string; readonly pattern: string; readonly prerender: true; readonly owner: "plugin"; readonly entrypoint: string }
-  | { readonly id: string; readonly pattern: string; readonly prerender: true; readonly owner: "host" };
+  | {
+      readonly id: string;
+      readonly pattern: string;
+      readonly prerender: true;
+      readonly owner: "plugin";
+      readonly entrypoint: string;
+    }
+  | {
+      readonly id: string;
+      readonly pattern: string;
+      readonly prerender: true;
+      readonly owner: "host";
+    };
 
 export interface PluginNavigationInput {
   label: string;
@@ -52,6 +83,9 @@ export interface PluginInput {
   contentTypes: readonly ContentTypeInput[];
   routes: readonly PluginRouteInput[];
   navigation?: readonly PluginNavigationInput[];
+  locales?: Readonly<
+    Record<string, { readonly label?: string; readonly basePath?: string }>
+  >;
 }
 
 export interface Plugin {
@@ -62,6 +96,9 @@ export interface Plugin {
   readonly contentTypes: readonly ContentType[];
   readonly routes: readonly PluginRoute[];
   readonly navigation: readonly PluginNavigation[];
+  readonly locales?: Readonly<
+    Record<string, { readonly label?: string; readonly basePath?: string }>
+  >;
 }
 
 export declare function definePlugin(input: PluginInput): Plugin;

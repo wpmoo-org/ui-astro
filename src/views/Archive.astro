@@ -1,7 +1,11 @@
 ---
 import PageHeader from "../includes/PageHeader.astro";
 import Loop from "./Loop.astro";
-import type { DateFormatter, EntryClassContext, PartsInput } from "../config/index.js";
+import type {
+  DateFormatter,
+  EntryClassContext,
+  PartsInput,
+} from "../config/index.js";
 
 interface LoopItem {
   id: string;
@@ -20,20 +24,53 @@ interface Props {
   parts?: PartsInput;
   lang?: string;
   dateFormatter?: DateFormatter;
-  forwardedSlots?: { pageHeader: boolean; actions: boolean; loop: boolean; afterList: boolean };
+  forwardedSlots?: {
+    pageHeader: boolean;
+    actions: boolean;
+    loop: boolean;
+    afterList: boolean;
+  };
 }
 
-const { title, description, items = [], emptyText, titleVariant, parts, lang, dateFormatter, forwardedSlots } = Astro.props;
-const hasPageHeader = forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
+const {
+  title,
+  description,
+  items = [],
+  emptyText,
+  titleVariant,
+  parts,
+  lang,
+  dateFormatter,
+  forwardedSlots,
+} = Astro.props;
+const hasPageHeader =
+  forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
 const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
 const hasLoop = forwardedSlots?.loop ?? Astro.slots.has("loop");
 const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
 ---
 
-{hasPageHeader ? <slot name="page-header" /> : (
-  <PageHeader title={title} description={description} parts={parts}>
-    {hasActions ? <slot name="actions" slot="actions" /> : null}
-  </PageHeader>
-)}
-{hasLoop ? <slot name="loop" /> : <Loop items={items} emptyText={emptyText} titleVariant={titleVariant} parts={parts} lang={lang} dateFormatter={dateFormatter} />}
+{
+  hasPageHeader ? (
+    <slot name="page-header" />
+  ) : (
+    <PageHeader title={title} description={description} parts={parts}>
+      {hasActions ? <slot name="actions" slot="actions" /> : null}
+    </PageHeader>
+  )
+}
+{
+  hasLoop ? (
+    <slot name="loop" />
+  ) : (
+    <Loop
+      items={items}
+      emptyText={emptyText}
+      titleVariant={titleVariant}
+      parts={parts}
+      lang={lang}
+      dateFormatter={dateFormatter}
+    />
+  )
+}
 {hasAfterList ? <slot name="after-list" /> : null}

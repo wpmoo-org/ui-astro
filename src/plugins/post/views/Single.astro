@@ -1,25 +1,77 @@
 ---
 import Single from "../../../views/Single.astro";
 import type { CollectionEntry } from "astro:content";
-import { defineSite, formatDate, resolveParts, type DateFormatter, type PartsInput } from "../../../config/index.js";
+import {
+  defineSite,
+  formatDate,
+  resolveParts,
+  type DateFormatter,
+  type PartsInput,
+} from "../../../config/index.js";
 import { entryClassContext } from "../../../taxonomies/paths.js";
 
-interface Props { entry: CollectionEntry<"post">; parts?: PartsInput; lang?: string; dateFormatter?: DateFormatter }
+interface Props {
+  entry: CollectionEntry<"post">;
+  parts?: PartsInput;
+  lang?: string;
+  dateFormatter?: DateFormatter;
+}
 const parts = resolveParts(Astro.props.parts);
 const { entry, lang = defineSite().defaults.lang, dateFormatter } = Astro.props;
-if (entry?.collection !== "post") throw new TypeError("Post Single entry must belong to collection post");
+if (entry?.collection !== "post")
+  throw new TypeError("Post Single entry must belong to collection post");
 const date = entry.data.published_at;
-if (date !== undefined && (!(date instanceof Date) || !Number.isFinite(date.getTime()))) {
+if (
+  date !== undefined &&
+  (!(date instanceof Date) || !Number.isFinite(date.getTime()))
+) {
   throw new TypeError("Post Single published_at must be a valid Date");
 }
 const hasMetadata = Astro.slots.has("metadata");
-const dateText = !hasMetadata && date ? formatDate(date, { lang, style: parts.loop.dateStyle, formatter: dateFormatter }) : undefined;
+const dateText =
+  !hasMetadata && date
+    ? formatDate(date, {
+        lang,
+        style: parts.loop.dateStyle,
+        formatter: dateFormatter,
+      })
+    : undefined;
 ---
 
-<Single parts={parts} title={entry.data.title} description={entry.data.description} entryContext={entryClassContext({ id: "post", sourceKind: "markdown" }, entry)} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), metadata: hasMetadata || date !== undefined, actions: Astro.slots.has("actions"), afterContent: Astro.slots.has("after-content") }}>
-  {Astro.slots.has("page-header") ? <slot name="page-header" slot="page-header" /> : null}
-  {hasMetadata ? <slot name="metadata" slot="metadata" /> : date ? <time slot="metadata" datetime={date.toISOString()}>{dateText}</time> : null}
+<Single
+  parts={parts}
+  title={entry.data.title}
+  description={entry.data.description}
+  entryContext={entryClassContext(
+    { id: "post", sourceKind: "markdown" },
+    entry,
+  )}
+  forwardedSlots={{
+    pageHeader: Astro.slots.has("page-header"),
+    metadata: hasMetadata || date !== undefined,
+    actions: Astro.slots.has("actions"),
+    afterContent: Astro.slots.has("after-content"),
+  }}
+>
+  {
+    Astro.slots.has("page-header") ? (
+      <slot name="page-header" slot="page-header" />
+    ) : null
+  }
+  {
+    hasMetadata ? (
+      <slot name="metadata" slot="metadata" />
+    ) : date ? (
+      <time slot="metadata" datetime={date.toISOString()}>
+        {dateText}
+      </time>
+    ) : null
+  }
   {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}
   <slot />
-  {Astro.slots.has("after-content") ? <slot name="after-content" slot="after-content" /> : null}
+  {
+    Astro.slots.has("after-content") ? (
+      <slot name="after-content" slot="after-content" />
+    ) : null
+  }
 </Single>

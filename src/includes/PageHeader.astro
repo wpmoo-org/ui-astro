@@ -10,15 +10,28 @@ interface Props {
 
 const { title, description } = Astro.props;
 const parts = resolveParts(Astro.props.parts);
-if (typeof title !== "string" || !title.trim()) throw new TypeError("PageHeader title is required");
+if (typeof title !== "string" || !title.trim())
+  throw new TypeError("PageHeader title is required");
 if (description !== undefined && typeof description !== "string") {
   throw new TypeError("PageHeader description must be text");
 }
 ---
 
 <header class:list={parts.pageHeader.utilities}>
-  <Typography variant="page-title" content={title} class={parts.pageHeader.titleUtilities.join(" ")} />
-  {description ? <Typography variant={parts.pageHeader.descriptionVariant} content={description} class={parts.pageHeader.descriptionUtilities.join(" ")} /> : null}
+  <Typography
+    variant="page-title"
+    content={title}
+    class={parts.pageHeader.titleUtilities.join(" ")}
+  />
+  {
+    description ? (
+      <Typography
+        variant={parts.pageHeader.descriptionVariant}
+        content={description}
+        class={parts.pageHeader.descriptionUtilities.join(" ")}
+      />
+    ) : null
+  }
   {Astro.slots.has("metadata") ? <slot name="metadata" /> : null}
   {Astro.slots.has("actions") ? <slot name="actions" /> : null}
 </header>

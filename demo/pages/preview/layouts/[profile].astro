@@ -12,9 +12,27 @@ export function getStaticPaths() {
   return [
     { profile: "viewport", shellMode: "viewport" },
     { profile: "contained", shellMode: "contained" },
-    { profile: "fluid-header", shellMode: "viewport", pageWidth: "sm", headerWidth: "fluid" },
-    { profile: "right-sidebar", shellMode: "viewport", sidebarOptions: { side: "right", variant: "inset", collapsible: "icon", rail: true, defaultOpen: true } },
-  ].map(({ profile, ...options }) => ({ params: { profile }, props: { profile, ...options } }));
+    {
+      profile: "fluid-header",
+      shellMode: "viewport",
+      pageWidth: "sm",
+      headerWidth: "fluid",
+    },
+    {
+      profile: "right-sidebar",
+      shellMode: "viewport",
+      sidebarOptions: {
+        side: "right",
+        variant: "inset",
+        collapsible: "icon",
+        rail: true,
+        defaultOpen: true,
+      },
+    },
+  ].map(({ profile, ...options }) => ({
+    params: { profile },
+    props: { profile, ...options },
+  }));
 }
 
 interface Props {
@@ -29,23 +47,66 @@ const preferences = getDemoOptions();
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
 const copy = getDemoMessages(lang);
 const title = copy.layoutProfiles[currentProfile];
-const profiles = Object.entries(copy.layoutProfiles).map(([id, title]) => ({ id, title }));
+const profiles = Object.entries(copy.layoutProfiles).map(([id, title]) => ({
+  id,
+  title,
+}));
 ---
 
-<Layout parts={preferences.parts} title={title} sidebar lang={lang} {...options}>
-  <Single parts={preferences.parts} title={title} description={copy.layoutDescription}>
+<Layout
+  parts={preferences.parts}
+  title={title}
+  sidebar
+  lang={lang}
+  {...options}
+>
+  <Single
+    parts={preferences.parts}
+    title={title}
+    description={copy.layoutDescription}
+  >
     <nav class="d-flex flex-wrap gap-2 mb-3" aria-label={copy.layoutLabel}>
-      {profiles.map((profile) => <Button element="a" href={`/preview/layouts/${profile.id}`} variant={profile.id === Astro.params.profile ? "default" : "outline"} size="sm" aria-current={profile.id === Astro.params.profile ? "page" : undefined}>{profile.title}</Button>)}
+      {
+        profiles.map((profile) => (
+          <Button
+            element="a"
+            href={`/preview/layouts/${profile.id}`}
+            variant={
+              profile.id === Astro.params.profile ? "default" : "outline"
+            }
+            size="sm"
+            aria-current={
+              profile.id === Astro.params.profile ? "page" : undefined
+            }
+          >
+            {profile.title}
+          </Button>
+        ))
+      }
     </nav>
     <section aria-labelledby="layout-grid-title">
       <h2 id="layout-grid-title">{copy.pageGrid}</h2>
       <div class="row g-3 mb-3" data-layout="page-grid">
-        {[1, 2, 3].map((number) => <div class="col-12" data-page-col-md="4"><Card title={`${copy.gridItem} ${number}`}><p>{copy.gridDescription}</p></Card></div>)}
+        {
+          [1, 2, 3].map((number) => (
+            <div class="col-12" data-page-col-md="4">
+              <Card title={`${copy.gridItem} ${number}`}>
+                <p>{copy.gridDescription}</p>
+              </Card>
+            </div>
+          ))
+        }
       </div>
     </section>
     <section aria-labelledby="layout-content-title">
       <h2 id="layout-content-title">{copy.longContent}</h2>
-      {Array.from({ length: 35 }, (_, index) => <p>{index + 1}. {copy.longParagraph}</p>)}
+      {
+        Array.from({ length: 35 }, (_, index) => (
+          <p>
+            {index + 1}. {copy.longParagraph}
+          </p>
+        ))
+      }
       <p>{copy.longContentEnd}</p>
     </section>
   </Single>

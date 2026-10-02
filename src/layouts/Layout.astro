@@ -3,7 +3,14 @@ import "../styles.css";
 import stateSource from "@wpmoo/ui/state.js?raw";
 import Button from "../components/Button.astro";
 import Icon from "../components/internal/Icon.astro";
-import { defineSite, getPageClasses, resolveParts, type PageClassContext, type PartsInput } from "../config/index.js";
+import {
+  defineSite,
+  getPageClasses,
+  resolveParts,
+  type PageClassContext,
+  type PartsInput,
+} from "../config/index.js";
+import type { SeoMetadata } from "../seo/index.js";
 
 type ShellMode = "viewport" | "contained";
 type Theme = "light" | "dark";
@@ -13,6 +20,7 @@ type PageWidth = "base" | "sm" | "md" | "lg" | "xl" | "xxl" | "fluid";
 interface Props {
   title: string;
   description?: string;
+  metadata?: SeoMetadata | null;
   sidebar?: boolean;
   shellMode?: ShellMode;
   theme?: Theme;
@@ -49,6 +57,7 @@ const parts = resolveParts(Astro.props.parts);
 const {
   title,
   description,
+  metadata,
   sidebar = false,
   shellMode = defaults.shellMode,
   theme = defaults.theme,
@@ -83,7 +92,11 @@ if (typeof lang !== "string" || !lang.trim()) {
 if (typeof defaultOpen !== "boolean") {
   throw new TypeError("Layout defaultOpen must be boolean");
 }
-if (typeof ariaLabel !== "string" || !ariaLabel.trim() || /[\x00-\x1f\x7f]/u.test(ariaLabel)) {
+if (
+  typeof ariaLabel !== "string" ||
+  !ariaLabel.trim() ||
+  /[\x00-\x1f\x7f]/u.test(ariaLabel)
+) {
   throw new TypeError("Layout trigger label must be nonempty plain text");
 }
 if (typeof skipText !== "string" || !skipText.trim()) {
@@ -99,7 +112,11 @@ if (id && (id === "main-content" || !identifierPattern.test(id))) {
   throw new TypeError("Invalid Layout id");
 }
 if (sidebar) {
-  if (!sidebarId || sidebarId === "main-content" || !identifierPattern.test(sidebarId)) {
+  if (
+    !sidebarId ||
+    sidebarId === "main-content" ||
+    !identifierPattern.test(sidebarId)
+  ) {
     throw new TypeError("Invalid Layout sidebarId");
   }
   if (!sidebarKey || !identifierPattern.test(sidebarKey)) {
@@ -126,6 +143,15 @@ const hasHeader = sidebar || Astro.slots.has("header");
 const pageClass = containerClasses[pageWidth];
 const headerClass = containerClasses[resolvedHeaderWidth];
 const pageClasses = getPageClasses(pageContext);
+const headTitle = metadata?.title ?? title;
+const headDescription = metadata?.description ?? description;
+const jsonLd = metadata
+  ? JSON.stringify(metadata.jsonLd).replace(
+      /[<>&\u2028\u2029]/gu,
+      (character) =>
+        `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+    )
+  : undefined;
 ---
 
 <!doctype html>
@@ -133,34 +159,106 @@ const pageClasses = getPageClasses(pageContext);
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    {description ? <meta name="description" content={description} /> : null}
+    {
+      headDescription !== undefined ? (
+        <meta name="description" content={headDescription} />
+      ) : null
+    }
     <link rel="icon" href="data:," />
-    <title>{title}</title>
+    <title>{headTitle}</title>
+    {
+      metadata ? (
+        <>
+          <link rel="canonical" href={metadata.canonical} />
+          {metadata.alternates?.map((item) => (
+            <link rel="alternate" hreflang={item.locale} href={item.url} />
+          ))}
+          {Object.entries(metadata.openGraph).map(([key, value]) => (
+            <meta property={`og:${key}`} content={value} />
+          ))}
+          {Object.entries(metadata.twitter).map(([key, value]) => (
+            <meta name={`twitter:${key}`} content={value} />
+          ))}
+          <script is:inline type="application/ld+json" set:html={jsonLd} />
+        </>
+      ) : null
+    }
   </head>
   <body>
-    <div class:list={["moo-ui", pageClasses]} data-bs-theme={theme} data-moo-document-owner="true">
-      <script is:inline set:html={stateSource}></script>
-      <Button element="a" href="#main-content" class="visually-hidden-focusable position-absolute top-0 start-0 z-3">{skipText}</Button>
-      <div class="wrapper" data-layout="app" data-shell-mode={shellMode} id={id || undefined} data-slot={sidebar ? "sidebar-wrapper" : undefined} data-sidebar-state={sidebar ? (defaultOpen ? "expanded" : "collapsed") : undefined} data-sidebar-key={sidebar ? sidebarKey : undefined}>
-        {sidebar ? <script is:inline set:html={stateSource}></script> : null}
+    <div
+      class:list={["moo-ui", pageClasses]}
+      data-bs-theme={theme}
+      data-moo-document-owner="true"
+    >
+      <script is:inline set:html={stateSource} />
+      <Button
+        element="a"
+        href="#main-content"
+        class="visually-hidden-focusable position-absolute top-0 start-0 z-3"
+        >{skipText}</Button
+      >
+      <div
+        class="wrapper"
+        data-layout="app"
+        data-shell-mode={shellMode}
+        id={id || undefined}
+        data-slot={sidebar ? "sidebar-wrapper" : undefined}
+        data-sidebar-state={sidebar
+          ? defaultOpen
+            ? "expanded"
+            : "collapsed"
+          : undefined}
+        data-sidebar-key={sidebar ? sidebarKey : undefined}
+      >
+        {sidebar ? <script is:inline set:html={stateSource} /> : null}
         {sidebar ? <slot name="sidebar" /> : null}
         <div data-slot="page">
-          {hasHeader ? (
-            <header class:list={parts.header.utilities}>
-              <div class={headerClass}>
-                <div class:list={parts.header.contentUtilities}>
-                  {sidebar ? (
-                    <Button variant={parts.header.trigger.variant} size={parts.header.trigger.size} class="sidebar-trigger" data-sidebar-trigger data-bs-target={`#${sidebarId}`} ariaLabel={ariaLabel} ariaControls={sidebarId} ariaExpanded={defaultOpen}>
-                      <Icon name={parts.header.trigger.icon} />
-                    </Button>
-                  ) : null}
-                  <slot name="header" />
+          {
+            hasHeader ? (
+              <header class:list={parts.header.utilities}>
+                <div class={headerClass}>
+                  <div class:list={parts.header.contentUtilities}>
+                    {sidebar ? (
+                      <Button
+                        variant={parts.header.trigger.variant}
+                        size={parts.header.trigger.size}
+                        class="sidebar-trigger"
+                        data-sidebar-trigger
+                        data-bs-target={`#${sidebarId}`}
+                        ariaLabel={ariaLabel}
+                        ariaControls={sidebarId}
+                        ariaExpanded={defaultOpen}
+                      >
+                        <Icon name={parts.header.trigger.icon} />
+                      </Button>
+                    ) : null}
+                    <slot name="header" />
+                  </div>
                 </div>
-              </div>
-            </header>
-          ) : null}
-          <main id="main-content" tabindex="-1" class:list={parts.content.scrollUtilities}><div class:list={[pageClass, parts.content.utilities]} data-page-container><slot /></div></main>
-          {Astro.slots.has("footer") ? <footer class:list={parts.footer.utilities}><div class={pageClass}><slot name="footer" /></div></footer> : null}
+              </header>
+            ) : null
+          }
+          <main
+            id="main-content"
+            tabindex="-1"
+            class:list={parts.content.scrollUtilities}
+          >
+            <div
+              class:list={[pageClass, parts.content.utilities]}
+              data-page-container
+            >
+              <slot />
+            </div>
+          </main>
+          {
+            Astro.slots.has("footer") ? (
+              <footer class:list={parts.footer.utilities}>
+                <div class={pageClass}>
+                  <slot name="footer" />
+                </div>
+              </footer>
+            ) : null
+          }
         </div>
       </div>
     </div>

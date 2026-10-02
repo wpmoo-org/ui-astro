@@ -14,10 +14,21 @@ const copy = getDemoMessages(lang);
 const preferences = getDemoOptions("page", "archive");
 ---
 
-<Layout parts={preferences.parts} title={copy.emptyStateTitle} lang={lang} dir={site.defaults.dir} pageContext={{ view: "archive", type: "page" }}>
+<Layout
+  parts={preferences.parts}
+  title={copy.emptyStateTitle}
+  lang={lang}
+  dir={site.defaults.dir}
+  pageContext={{ view: "archive", type: "page" }}
+>
   <PageHeader parts={preferences.parts} title={copy.emptyStateTitle} />
   <Typography variant="section-title" content={copy.items} />
   <Loop parts={preferences.parts} items={[]} emptyText={copy.emptyItems} />
   <Typography variant="section-title" content={copy.pages} />
-  <PageLoop parts={preferences.parts} entries={[]} lang={lang} emptyText={copy.emptyPages} />
+  <PageLoop
+    parts={preferences.parts}
+    entries={[]}
+    lang={lang}
+    emptyText={copy.emptyPages}
+  />
 </Layout>

@@ -5,6 +5,8 @@ import Header from "@wpmoo/astro/includes/Header.astro";
 import Sidebar from "@wpmoo/astro/includes/Sidebar.astro";
 import Footer from "@wpmoo/astro/includes/Footer.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
+import DropdownMenu from "@wpmoo/astro/components/DropdownMenu.astro";
+import type { LanguageLink } from "@wpmoo/astro/i18n";
 import { getSiteContext } from "@wpmoo/astro/context";
 import type { PageOptions } from "@wpmoo/astro/config";
 import { getDemoMessages } from "../messages.js";
@@ -13,42 +15,155 @@ import { demoControls, getDemoOptions } from "../settings.js";
 
 type Props = ComponentProps<typeof Layout> & {
   sidebarOptions?: PageOptions["sidebar"];
+  languageLinks?: readonly LanguageLink[];
 };
-const { title, sidebar = false, sidebarOptions, ...options } = Astro.props;
+const {
+  title,
+  sidebar = false,
+  sidebarOptions,
+  languageLinks = [],
+  ...options
+} = Astro.props;
 const context = getSiteContext();
 const pageContext = options.pageContext;
-const type = pageContext?.view === "single" ? pageContext.entry.type : pageContext?.view === "archive" ? pageContext.type : "page";
+const type =
+  pageContext?.view === "single"
+    ? pageContext.entry.type
+    : pageContext?.view === "archive"
+      ? pageContext.type
+      : "page";
 const view = pageContext?.view === "archive" ? "archive" : "single";
-const defaults = getDemoOptions(type, view, { parts: options.parts, lang: options.lang });
+const defaults = getDemoOptions(type, view, {
+  parts: options.parts,
+  lang: options.lang,
+});
 const { lang, parts } = defaults;
-const selectedSidebar = sidebarOptions === undefined ? defaults.sidebar : sidebarOptions;
+const selectedSidebar =
+  sidebarOptions === undefined ? defaults.sidebar : sidebarOptions;
 const copy = getDemoMessages(lang);
-const groups = getDemoNavigation(Astro.url.pathname, lang);
-const homeHref = context.base;
-const breadcrumbs = [{ label: context.site.brand, href: homeHref }, { label: title }];
+const { groups, homeHref, homeLabel } = await getDemoNavigation(
+  Astro.url.pathname,
+  lang,
+);
+const breadcrumbs = [
+  { label: context.site.brand, href: homeHref },
+  { label: title },
+];
 const { sidebar: _sidebar, ...layoutDefaults } = defaults;
-const layoutProps = { ...layoutDefaults, ...options, title, lang, parts, skipText: options.skipText ?? parts.header.skipLabel };
+const layoutProps = {
+  ...layoutDefaults,
+  ...options,
+  title,
+  lang,
+  parts,
+  skipText: options.skipText ?? parts.header.skipLabel,
+};
 const sidebarId = options.sidebarId ?? "demo-sidebar";
 const sidebarKey = options.sidebarKey ?? "astro-demo";
+const languageItems = languageLinks.map((link) => ({
+  label: link.locale === "en-gb" ? "English (UK)" : "English",
+  href: link.href,
+  active: link.locale === lang,
+}));
 ---
 
-{sidebar ? (
-  <Layout {...layoutProps} sidebar sidebarId={sidebarId} sidebarKey={sidebarKey} defaultOpen={options.defaultOpen ?? selectedSidebar?.defaultOpen ?? true}>
-    <Sidebar slot="sidebar" id={sidebarId} brand={context.site.brand} brandHref={homeHref} parts={parts} groups={groups} side={selectedSidebar?.side} variant={selectedSidebar?.variant} collapsible={selectedSidebar?.collapsible} rail={selectedSidebar?.rail} ariaLabel={copy.examples}>
-      <span slot="footer" class:list={demoControls.sidebarFooterUtilities}>{context.site.brand}</span>
-    </Sidebar>
-    <Header slot="header" parts={parts} breadcrumbs={breadcrumbs} ariaLabel={parts.header.breadcrumbLabel}>
-      <Button slot="actions" element="a" href={homeHref} {...demoControls.action}>{copy.overview}</Button>
-    </Header>
-    <slot />
-    <Footer slot="footer" parts={parts} homeHref={homeHref} brand={context.site.brand} />
-  </Layout>
-) : (
-  <Layout {...layoutProps}>
-    <Header slot="header" parts={parts} breadcrumbs={breadcrumbs} ariaLabel={parts.header.breadcrumbLabel}>
-      <Button slot="actions" element="a" href={homeHref} {...demoControls.action}>{copy.overview}</Button>
-    </Header>
-    <slot />
-    <Footer slot="footer" parts={parts} homeHref={homeHref} brand={context.site.brand} />
-  </Layout>
-)}
+{
+  sidebar ? (
+    <Layout
+      {...layoutProps}
+      sidebar
+      sidebarId={sidebarId}
+      sidebarKey={sidebarKey}
+      defaultOpen={options.defaultOpen ?? selectedSidebar?.defaultOpen ?? true}
+    >
+      <Sidebar
+        slot="sidebar"
+        id={sidebarId}
+        brand={context.site.brand}
+        brandHref={homeHref}
+        parts={parts}
+        groups={groups}
+        side={selectedSidebar?.side}
+        variant={selectedSidebar?.variant}
+        collapsible={selectedSidebar?.collapsible}
+        rail={selectedSidebar?.rail}
+        ariaLabel={copy.examples}
+      >
+        <span slot="footer" class:list={demoControls.sidebarFooterUtilities}>
+          {context.site.brand}
+        </span>
+      </Sidebar>
+      <Header
+        slot="header"
+        parts={parts}
+        breadcrumbs={breadcrumbs}
+        ariaLabel={parts.header.breadcrumbLabel}
+      >
+        {languageItems.length > 1 ? (
+          <DropdownMenu
+            slot="actions"
+            label="Language"
+            ariaLabel="Choose page language"
+            items={languageItems}
+            class="ms-auto"
+            size="sm"
+            align="end"
+          />
+        ) : (
+          <Button
+            slot="actions"
+            element="a"
+            href={homeHref}
+            {...demoControls.action}
+          >
+            {homeLabel}
+          </Button>
+        )}
+      </Header>
+      <slot />
+      <Footer
+        slot="footer"
+        parts={parts}
+        homeHref={homeHref}
+        brand={context.site.brand}
+      />
+    </Layout>
+  ) : (
+    <Layout {...layoutProps}>
+      <Header
+        slot="header"
+        parts={parts}
+        breadcrumbs={breadcrumbs}
+        ariaLabel={parts.header.breadcrumbLabel}
+      >
+        {languageItems.length > 1 ? (
+          <DropdownMenu
+            slot="actions"
+            label="Language"
+            ariaLabel="Choose page language"
+            items={languageItems}
+            class="ms-auto"
+            size="sm"
+            align="end"
+          />
+        ) : (
+          <Button
+            slot="actions"
+            element="a"
+            href={homeHref}
+            {...demoControls.action}
+          >
+            {homeLabel}
+          </Button>
+        )}
+      </Header>
+      <slot />
+      <Footer
+        slot="footer"
+        parts={parts}
+        homeHref={homeHref}
+        brand={context.site.brand}
+      />
+    </Layout>
+  )
+}

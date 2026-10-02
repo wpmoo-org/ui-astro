@@ -27,7 +27,7 @@ export function validateSelectedCollections(collections, selected) {
       throw new TypeError(`${id} collection is not declared in the host content config`);
     }
     if (!collection.loader || typeof collection.loader.name !== "string" ||
-        !collection.schema || typeof collection.schema.safeParse !== "function") {
+      !collection.schema || typeof collection.schema.safeParse !== "function") {
       throw new TypeError(`${id} collection needs a native loader and static schema`);
     }
   }

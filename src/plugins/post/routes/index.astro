@@ -4,40 +4,141 @@ import Header from "../../../includes/Header.astro";
 import Footer from "../../../includes/Footer.astro";
 import Sidebar from "../../../includes/Sidebar.astro";
 import { resolvePageOptions } from "../../../config/index.js";
-import { siteHref } from "../../../content/paths.js";
+import { resolveSeoMetadata } from "../../../seo/index.js";
 import { getSiteContext, getSiteNavigation } from "../../../context/index.js";
 import { getPublishedPosts } from "../queries.js";
+import { getLocaleHref, getRouteLocale } from "../../../i18n/index.js";
+import { localePath } from "../../../i18n/profile.js";
 import Archive from "../views/Archive.astro";
 
 export const prerender = true;
 const routeContext = getSiteContext();
 const { site, plugins, base, trailingSlash } = routeContext;
-const plugin = plugins.find(item => item.id === "post");
-if (!plugin) throw new TypeError("Post archive requires the active post plugin");
-const href = siteHref(plugin.basePath, routeContext);
-const options = resolvePageOptions(site, "post", "archive");
-const navigation = await getSiteNavigation(href);
-const homeHref = navigation.find(item => item.href === siteHref("/", routeContext))?.href ?? navigation[0]?.href ?? href;
-const breadcrumbs = homeHref === href ? [{ label: plugin.label }] : [{ label: site.brand, href: homeHref }, { label: plugin.label }];
-const entries = await getPublishedPosts();
+const plugin = plugins.find((item) => item.id === "post");
+if (!plugin)
+  throw new TypeError("Post archive requires the active post plugin");
+const locale = routeContext.i18n
+  ? getRouteLocale(Astro.routePattern)
+  : undefined;
+const label = plugin.locales?.[locale ?? ""]?.label ?? plugin.label;
+const localBasePath =
+  plugin.locales?.[locale ?? ""]?.basePath ?? plugin.basePath;
+const href = getLocaleHref(localBasePath, locale ?? site.defaults.lang);
+const options = resolvePageOptions(site, "post", "archive", undefined, locale);
+const navigation = await getSiteNavigation(href, locale);
+const homeHref =
+  navigation.find(
+    (item) => item.href === getLocaleHref("/", locale ?? site.defaults.lang),
+  )?.href ??
+  navigation[0]?.href ??
+  href;
+const breadcrumbs =
+  homeHref === href
+    ? [{ label }]
+    : [{ label: site.brand, href: homeHref }, { label }];
+const entries = await getPublishedPosts({ locale });
+const basePath = localePath(localBasePath, locale, routeContext.i18n);
 const layoutProps = {
-  title: plugin.label, pageContext: { view: "archive" as const, type: "post" },
-  shellMode: options.shellMode, pageWidth: options.pageWidth, headerWidth: options.headerWidth,
-  theme: options.theme, lang: options.lang, dir: options.dir, parts: options.parts,
+  title: label,
+  pageContext: { view: "archive" as const, type: "post" },
+  metadata: Astro.site
+    ? resolveSeoMetadata(site, {
+        title: label,
+        status: "publish",
+        type: "post",
+        view: "archive",
+        lang: options.lang,
+        url: new URL(href, Astro.site).href,
+        alternates: routeContext.i18n?.locales.map((value) => ({
+          locale: value,
+          url: new URL(
+            getLocaleHref(
+              plugin.locales?.[value]?.basePath ?? plugin.basePath,
+              value,
+            ),
+            Astro.site,
+          ).href,
+        })),
+      })
+    : undefined,
+  shellMode: options.shellMode,
+  pageWidth: options.pageWidth,
+  headerWidth: options.headerWidth,
+  theme: options.theme,
+  lang: options.lang,
+  dir: options.dir,
+  parts: options.parts,
 };
 ---
 
-{options.sidebar ? (
-  <Layout {...layoutProps} sidebar sidebarId="moo-site-sidebar" sidebarKey="moo-site" defaultOpen={options.sidebar.defaultOpen}>
-    <Sidebar slot="sidebar" id="moo-site-sidebar" brand={site.brand} brandHref={homeHref} groups={[{ items: navigation.map(item => ({ title: item.label, href: item.href, active: item.active })) }]} side={options.sidebar.side} variant={options.sidebar.variant} collapsible={options.sidebar.collapsible} rail={options.sidebar.rail} parts={options.parts} />
-    <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
-    <Archive parts={options.parts} entries={entries} title={plugin.label} basePath={plugin.basePath} base={base} trailingSlash={trailingSlash} lang={site.defaults.lang} dateLang={options.lang} />
-    <Footer parts={options.parts} slot="footer" brand={site.brand} homeHref={homeHref} />
-  </Layout>
-) : (
-  <Layout {...layoutProps}>
-    <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
-    <Archive parts={options.parts} entries={entries} title={plugin.label} basePath={plugin.basePath} base={base} trailingSlash={trailingSlash} lang={site.defaults.lang} dateLang={options.lang} />
-    <Footer parts={options.parts} slot="footer" brand={site.brand} homeHref={homeHref} />
-  </Layout>
-)}
+{
+  options.sidebar ? (
+    <Layout
+      {...layoutProps}
+      sidebar
+      sidebarId="moo-site-sidebar"
+      sidebarKey="moo-site"
+      defaultOpen={options.sidebar.defaultOpen}
+    >
+      <Sidebar
+        slot="sidebar"
+        id="moo-site-sidebar"
+        brand={site.brand}
+        brandHref={homeHref}
+        groups={[
+          {
+            items: navigation.map((item) => ({
+              title: item.label,
+              href: item.href,
+              active: item.active,
+            })),
+          },
+        ]}
+        side={options.sidebar.side}
+        variant={options.sidebar.variant}
+        collapsible={options.sidebar.collapsible}
+        rail={options.sidebar.rail}
+        parts={options.parts}
+      />
+      <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
+      <Archive
+        parts={options.parts}
+        entries={entries}
+        title={label}
+        basePath={basePath}
+        base={base}
+        trailingSlash={trailingSlash}
+        lang={locale ?? site.defaults.lang}
+        locale={locale}
+        dateLang={options.lang}
+      />
+      <Footer
+        parts={options.parts}
+        slot="footer"
+        brand={site.brand}
+        homeHref={homeHref}
+      />
+    </Layout>
+  ) : (
+    <Layout {...layoutProps}>
+      <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
+      <Archive
+        parts={options.parts}
+        entries={entries}
+        title={label}
+        basePath={basePath}
+        base={base}
+        trailingSlash={trailingSlash}
+        lang={locale ?? site.defaults.lang}
+        locale={locale}
+        dateLang={options.lang}
+      />
+      <Footer
+        parts={options.parts}
+        slot="footer"
+        brand={site.brand}
+        homeHref={homeHref}
+      />
+    </Layout>
+  )
+}
