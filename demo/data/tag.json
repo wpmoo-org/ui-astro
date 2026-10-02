@@ -1,0 +1,4 @@
+[
+  { "id": "astro", "name": "Astro", "slug": "astro", "description": "Shared native Astro content from different types." },
+  { "id": "empty", "name": "Empty tag", "slug": "empty", "description": "A valid term without published content." }
+]

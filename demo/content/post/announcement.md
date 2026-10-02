@@ -2,6 +2,10 @@
 title: A published announcement
 description: A native Markdown Post with its own publication timestamp.
 status: publish
+taxonomies:
+  category: [guides]
+  tag: [astro]
+  sector: [foundation]
 published_at: "2026-09-20T23:30:00-02:00"
 ---
 

@@ -5,6 +5,7 @@ import { navigationFromDescriptors, navigationFromPages } from "../integration/n
 import { pageHrefFromEntry, pagePathsFromEntries } from "../plugins/page/paths.js";
 import { getPublishedPages } from "../plugins/page/queries.js";
 import { postPathsFromEntries } from "../plugins/post/paths.js";
+import { validateReferences, validateTerms } from "../taxonomies/paths.js";
 
 function freezeData(value) {
   if (value !== null && typeof value === "object") {
@@ -17,6 +18,7 @@ function freezeData(value) {
 const publicContext = freezeData({
   site: context.site, base: context.base,
   trailingSlash: context.trailingSlash, plugins: context.plugins,
+  taxonomies: context.taxonomies, taxonomyBasePath: context.taxonomyBasePath,
 });
 
 export function getSiteContext() {
@@ -24,9 +26,10 @@ export function getSiteContext() {
 }
 
 function reservedPrefixes(typeId) {
-  return context.plugins
+  return [...context.plugins
     .filter((plugin) => !plugin.contentTypes.some(type => type.id === typeId) && plugin.basePath !== "/")
-    .map((plugin) => plugin.basePath);
+    .map((plugin) => plugin.basePath),
+    ...(context.taxonomies.some(taxonomy => taxonomy.archive) ? [context.taxonomyBasePath] : [])];
 }
 
 export function getEntryHref(typeId, entry) {
@@ -67,25 +70,44 @@ export async function validateSiteContent() {
   // Dev middleware survives HMR; query the current native content module.
   const { getCollection } = await import("astro:content");
   validateSelectedCollections(collections, context.sources.map((source) => source.collection));
+  const loaded = new Map();
+  const terms = new Map();
   for (const source of context.sources) {
     const common = {
       collection: source.collection,
       root: new URL(context.root),
       entries: await getCollection(source.collection),
     };
+    loaded.set(source.collection, common.entries);
     if (source.kind === "markdown") {
       await validateMarkdownSource({ ...common, base: new URL(source.base), formats: source.formats, schema: collections[source.collection].schema });
     } else if (source.kind === "json-directory") {
       await validateJsonDirectorySource({ ...common, base: new URL(source.base), schema: collections[source.collection].schema });
     } else if (source.kind === "json") {
-      await validateJsonFileSource({ ...common, file: new URL(source.file), schema: collections[source.collection].schema });
+      await validateJsonFileSource({ ...common, file: new URL(source.file), schema: collections[source.collection].schema,
+        arrayOnly: context.taxonomies.some(taxonomy => taxonomy.id === source.collection) });
     } else {
       throw new TypeError(`${source.collection} source kind ${source.kind} is unsupported by this integrity gate`);
     }
+    const taxonomy = context.taxonomies.find(taxonomy => taxonomy.id === source.collection);
+    if (taxonomy) terms.set(taxonomy.id, validateTerms(taxonomy, common.entries, { lang: context.site.defaults.lang }));
     if (source.collection === "page") {
       pagePathsFromEntries(common.entries, { lang: context.site.defaults.lang, reservedPrefixes: reservedPrefixes("page") });
     } else if (source.collection === "post") {
       postPathsFromEntries(common.entries, { lang: context.site.defaults.lang, basePath: context.singlePrefixes.post });
+    }
+  }
+  for (const type of context.plugins.flatMap(plugin => plugin.contentTypes)) {
+    const entries = loaded.get(type.collection);
+    validateReferences(type, entries, terms);
+    if (type.id === "page" || type.id === "post") continue;
+    const claimed = new Map();
+    for (const entry of entries) {
+      const path = entryPath(entry, { type: type.id, prefix: context.singlePrefixes[type.id], sourceKind: type.sourceKind, lang: context.site.defaults.lang });
+      if (entry.data.status !== "publish" && entry.data.status !== "future") continue;
+      const previous = claimed.get(path.href);
+      if (previous) throw new TypeError(`${type.id} URL collision: ${previous.id} (${previous.raw}) and ${entry.id} (${path.raw}) both map to ${path.href}`);
+      claimed.set(path.href, { id: entry.id, raw: path.raw });
     }
   }
 }

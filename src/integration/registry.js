@@ -1,4 +1,6 @@
 import { siteHref } from "../content/paths.js";
+import { defineTaxonomy } from "../taxonomies/index.js";
+import { taxonomyMount } from "../taxonomies/paths.js";
 
 function fullPattern(basePath, pattern) {
   return basePath === "/" ? pattern : pattern === "/" ? basePath : `${basePath}${pattern}`;
@@ -8,7 +10,7 @@ function insideNamespace(path, namespace) {
   return path === namespace || path.startsWith(`${namespace}/`);
 }
 
-export function buildRegistry(plugins) {
+export function buildRegistry(plugins, { taxonomies = [], taxonomyBasePath = "/topics" } = {}) {
   if (!Array.isArray(plugins)) throw new TypeError("moo.plugins must be an array");
   const ids = new Set();
   const types = new Map();
@@ -18,6 +20,8 @@ export function buildRegistry(plugins) {
   const contentTypes = [];
   const routeClaims = [];
   const routes = [];
+  const mount = taxonomyMount(taxonomyBasePath);
+  if (!Array.isArray(taxonomies)) throw new TypeError("moo.taxonomies must be an array");
 
   for (const plugin of plugins) {
     if (!plugin || plugin.apiVersion !== 1 || typeof plugin.id !== "string" ||
@@ -58,11 +62,35 @@ export function buildRegistry(plugins) {
       }
     }
   }
+  const selected = new Map();
+  for (const taxonomy of taxonomies) {
+    if (!taxonomy || typeof taxonomy.source !== "string") throw new TypeError("moo.taxonomies requires normalized taxonomy descriptors");
+    const normalized = defineTaxonomy({ ...taxonomy, source: new URL(taxonomy.source) });
+    if (selected.has(normalized.id)) throw new TypeError(`moo has duplicate taxonomy ${normalized.id}`);
+    if (types.has(normalized.id) || collections.has(normalized.id)) throw new TypeError(`moo taxonomy ${normalized.id} conflicts with an active type or collection`);
+    selected.set(normalized.id, normalized);
+  }
+  for (const type of contentTypes) {
+    for (const id of type.taxonomies) {
+      if (!selected.has(id)) throw new TypeError(`moo type ${type.id} binds inactive taxonomy ${id}`);
+    }
+  }
+  if ([...selected.values()].some(taxonomy => taxonomy.archive)) {
+    for (const [namespace, owner] of namespaces) {
+      if (insideNamespace(mount, namespace) || insideNamespace(namespace, mount)) throw new TypeError(`moo namespace ${mount} conflicts between taxonomy and ${owner}`);
+    }
+    const pattern = `${mount}/[taxonomy]/[slug]`;
+    if (patterns.has(pattern)) throw new TypeError(`moo taxonomy route pattern ${pattern} conflicts with ${patterns.get(pattern)}`);
+    routeClaims.push(Object.freeze({ owner: "taxonomy", pattern, routeOwner: "plugin" }));
+    routes.push(Object.freeze({ owner: "taxonomy", pattern, entrypoint: new URL("../taxonomies/routes/[taxonomy]/[slug].astro", import.meta.url), prerender: true }));
+  }
   return Object.freeze({
     plugins: Object.freeze([...plugins]),
     contentTypes: Object.freeze(contentTypes),
     routeClaims: Object.freeze(routeClaims),
     routes: Object.freeze(routes),
+    taxonomies: Object.freeze([...selected.values()]),
+    taxonomyBasePath: mount,
   });
 }
 

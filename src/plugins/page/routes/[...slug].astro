@@ -8,14 +8,16 @@ import { resolvePageOptions } from "../../../config/index.js";
 import { siteHref } from "../../../content/paths.js";
 import { getEntryHref, getSiteContext, getSiteNavigation } from "../../../context/index.js";
 import { getPagePaths } from "../queries.js";
+import { entryClassContext } from "../../../taxonomies/paths.js";
 import Single from "../views/Single.astro";
 
 export const prerender = true;
 export async function getStaticPaths() {
-  const { site, plugins } = getSiteContext();
+  const { site, plugins, taxonomies, taxonomyBasePath } = getSiteContext();
   const reservedPrefixes = plugins
     .filter((plugin) => plugin.id !== "page" && plugin.basePath !== "/")
     .map((plugin) => plugin.basePath);
+  if (taxonomies.some(taxonomy => taxonomy.archive)) reservedPrefixes.push(taxonomyBasePath);
   return getPagePaths({ lang: site.defaults.lang, reservedPrefixes });
 }
 
@@ -32,7 +34,7 @@ const breadcrumbs = href === homeHref
 const layoutProps = {
   title: entry.data.title,
   description: entry.data.description,
-  pageContext: { view: "single" as const, entry: { type: "page", id: entry.id, source: "markdown" as const } },
+  pageContext: { view: "single" as const, entry: entryClassContext({ id: "page", sourceKind: "markdown" }, entry) },
   shellMode: options.shellMode,
   pageWidth: options.pageWidth,
   headerWidth: options.headerWidth,

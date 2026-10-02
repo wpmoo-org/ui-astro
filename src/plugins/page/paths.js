@@ -1,6 +1,7 @@
 import { normalizeSlug } from "../../config/index.js";
 import { sourceEntryId } from "../../content/index.js";
 import { siteHref } from "../../content/paths.js";
+import { entryClassContext } from "../../taxonomies/paths.js";
 
 const reservedRoots = new Set(["404", "_astro", "_server_islands", "_actions", "__moo_content_integrity"]);
 const canonicalPath = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*)?$/u;
@@ -65,7 +66,7 @@ export function pageLoopItems(entries, options = {}) {
     ...(entry.data.description === undefined ? {} : { description: entry.data.description }),
     ...(entry.data.published_at === undefined ? {} : { date: entry.data.published_at }),
     href: siteHref(pageHrefFromEntry(entry, { lang, reservedPrefixes }), { base, trailingSlash }),
-    entryContext: { type: "page", id: entry.id, source: /** @type {const} */ ("markdown") },
+    entryContext: entryClassContext({ id: "page", sourceKind: "markdown" }, entry),
   }));
 }
 

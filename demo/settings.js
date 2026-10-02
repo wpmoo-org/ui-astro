@@ -10,3 +10,10 @@ export const demoControls = Object.freeze({
 export function getDemoOptions(type = "page", view = "single", overrides = {}) {
   return resolvePageOptions(getSiteContext().site, type, view, overrides);
 }
+
+/** @returns {import("@wpmoo/astro/config").EntryClassContext} */
+export function getDemoEntryContext(type, entry) {
+  return { type, id: entry.id, source: "markdown", ...(entry.data.taxonomies ? {
+    taxonomies: Object.fromEntries(Object.entries(entry.data.taxonomies).map(([id, refs]) => [id, refs.map(ref => ref.id)])),
+  } : {}) };
+}

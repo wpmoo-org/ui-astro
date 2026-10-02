@@ -193,6 +193,71 @@ The Post examples at `/posts`, `/posts/announcement` and `/posts/layout-options`
 
 String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
 
+### Optional shared taxonomies
+
+Select taxonomies explicitly in `moo({ plugins, taxonomies })`; the default is
+`[]`. `defineTaxonomy` from `@wpmoo/astro/taxonomies` creates a pure, owned
+descriptor. A definition has a stable lowercase kebab `id`, plain `label`,
+local `source: URL`, optional `sourceKind: "json" | "json-directory"`,
+`hierarchical`, and `archive: false | { include: "direct" | "descendants" }`.
+Archives are disabled by default; descendants requires hierarchy.
+
+```js
+import { defineTaxonomy } from "@wpmoo/astro/taxonomies";
+
+export const taxonomies = [defineTaxonomy({
+  id: "category",
+  label: "Categories",
+  source: new URL("./data/category.json", import.meta.url),
+  hierarchical: true,
+  archive: { include: "descendants" },
+})];
+```
+
+The host declares the same native collection using Astro's `file()` loader
+and the public `termSchema` from `@wpmoo/astro/taxonomies/content`. Its source
+is a JSON array of `{ id, name, slug, description?, parent? }`. Directory mode
+uses native `glob({ base, pattern: "*.json", generateId: jsonEntryId })` and
+one record per exact `<id>.json` file. IDs remain stable when names or slugs
+change. See `demo/definitions.js` and `demo/content.config.ts` for both recipes.
+
+Bind the definition with `page({ taxonomies: ["category"] })`, `post(...)`,
+or a custom plugin's content type. Extend the host's static schema with only
+those bound keys, using native references:
+
+```ts
+pageSchema.extend({
+  taxonomies: z.object({
+    category: z.array(reference("category")).default([]),
+  }).strict().optional(),
+});
+```
+
+Authored Markdown uses `taxonomies: { category: [guides] }`. The integration
+validates every selected term and every content status, even with no archive
+or query. Missing/duplicate IDs, converted slug collisions, invalid parents,
+cycles, wrong/unbound/duplicate references and source/data mismatches fail.
+The checks read native public collection data; no replacement loader or private
+Astro store is used. A rapid save suppressed by the native file watcher remains
+blocked by integrity validation until native content is current; a cold build
+is the authoritative release check.
+
+Server-only `@wpmoo/astro/taxonomies/queries` exports `getTaxonomyTerms(id)`,
+`getTermEntries(id, termId, { include }?)`, and `getTaxonomyPaths({ taxonomies }?)`.
+Items contain published Page/Post/custom-type summaries, canonical Single
+hrefs, owned direct membership context and optional copied publication dates.
+Ordering is type ID then exact entry ID; descendant matches deduplicate each
+entry. Source locations and full entries are not exposed.
+
+Enabled archives share one `/topics/[taxonomy]/[slug]` route, with an optional
+canonical `taxonomyBasePath`. They compose the existing Layout/includes/Archive/
+Loop and resolve `site.types[taxonomyId].views.archive`. There is no taxonomy
+index, pagination or automatic navigation. Breadcrumb ancestors link to actual
+term routes; the current item includes the taxonomy label because Moo
+Breadcrumb has no plain intermediate-item contract. A host replacement disables
+default archives and explicitly requests its selected paths. Term URLs follow
+the canonical site language, independent of display-language preferences.
+
 ## Theme language and visible copy
 
 The host theme owns its translations. Resolve the language of a route, then pass translated text through the public component props. This includes empty states, headings, breadcrumbs, button labels, placeholders, and ARIA labels; changing `<html lang>` alone does not translate them. For a one-language site, `site.defaults.lang` is the fallback. When the host configures Astro's native i18n, `Astro.currentLocale` supplies the route language:
@@ -292,6 +357,6 @@ python3 tests/test_shared_parts_acceptance.py -v
 
 The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
-For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs strict `npm ci --offline` outside the workspace, resolves all 73 source entrypoints from the package, checks types, rejects the fifteen recorded private subpaths and unsupported Astro peer, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. The current primary fixture selects Page only; separate native packed fixtures exercise active Post behavior, while the full independent feature matrix remains planned work. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
+For an independent install, first prime an isolated npm cache from `tests/fixtures/consumer/package-lock.json` and the current adapter tarball. Then run `scripts/verify_packed_consumer.mjs --cache /absolute/cache --output /absolute/empty-directory` in a Node >=22.12 container with networking disabled. The script packs the adapter, runs strict `npm ci --offline` outside the workspace, resolves all 76 source entrypoints from the package, checks types, rejects the seventeen recorded private subpaths and unsupported Astro peer, builds the fixture, and retains the archive, installed consumer, built HTML, and hashes. The current primary fixture selects Page only; separate native packed fixtures exercise active Post behavior, while the full independent feature matrix remains planned work. Run `python3 tests/test_packed_runtime.py /absolute/output/consumer/dist -v` to exercise that built page and its assets in Chromium without a server.
 
 The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc9-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.

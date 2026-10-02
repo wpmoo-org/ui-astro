@@ -1,0 +1,4 @@
+[
+  { "id": "guides", "name": "Guides", "slug": "guides", "description": "Published Pages and Posts in this category and its descendants." },
+  { "id": "layouts", "name": "Layouts", "slug": "layouts", "parent": "guides", "description": "Layout guidance using the shared Page and Post contracts." }
+]

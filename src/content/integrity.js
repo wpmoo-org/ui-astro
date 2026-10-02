@@ -192,9 +192,10 @@ export async function validateJsonDirectorySource({ collection, root, base, sche
   validateJsonEntries(collection, entries, expected);
 }
 
-export async function validateJsonFileSource({ collection, root, file, schema, entries }) {
+export async function validateJsonFileSource({ collection, root, file, schema, entries, arrayOnly = false }) {
   const { rootPath, actual } = await jsonRootAndSource(root, file, collection, "file");
   const raw = parsedJson(await readFile(actual, "utf8"), collection, actual);
+  if (arrayOnly && !Array.isArray(raw)) throw new TypeError(`${collection} JSON source must contain an array`);
   if (!Array.isArray(raw) && (raw === null || typeof raw !== "object")) {
     throw new TypeError(`${collection} JSON source must contain an array or ID-keyed object`);
   }

@@ -3,6 +3,7 @@ import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
 import { post } from "@wpmoo/astro/plugins/post";
 import { getDemoMessages } from "../../demo/messages.js";
+import { taxonomies, bindings } from "../../demo/definitions.js";
 
 const copy = getDemoMessages("de");
 
@@ -12,6 +13,7 @@ export default {
   outDir: fileURLToPath(new URL("../../node_modules/.cache/preview-de-dist", import.meta.url)),
   integrations: [moo({
     site: { defaults: { lang: "de", parts: { header: { skipLabel: copy.skipToContent, breadcrumbLabel: copy.breadcrumb } } }, types: { page: { sidebar: {} } } },
-    plugins: [page({ routes: { single: "host" } }), post()],
+    plugins: [page({ routes: { single: "host" }, taxonomies: bindings }), post({ taxonomies: bindings })],
+    taxonomies,
   })],
 };

@@ -5,13 +5,14 @@ import Single from "@wpmoo/astro/plugins/page/views/Single.astro";
 import { getPagePaths } from "@wpmoo/astro/plugins/page/queries";
 import { resolvePageOptions } from "@wpmoo/astro/config";
 import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoEntryContext } from "../settings.js";
 
 export const prerender = true;
 export async function getStaticPaths() {
-  const { site, plugins } = getSiteContext();
+  const { site, plugins, taxonomies, taxonomyBasePath } = getSiteContext();
   return getPagePaths({
     lang: site.defaults.lang,
-    reservedPrefixes: plugins.filter((plugin) => plugin.id !== "page").map((plugin) => plugin.basePath),
+    reservedPrefixes: [...plugins.filter((plugin) => plugin.id !== "page").map((plugin) => plugin.basePath), ...(taxonomies.some(taxonomy => taxonomy.archive) ? [taxonomyBasePath] : [])],
   });
 }
 
@@ -35,7 +36,7 @@ const { Content } = await render(entry);
   lang={options.lang}
   dir={options.dir}
   parts={options.parts}
-  pageContext={{ view: "single", entry: { type: "page", id: entry.id, source: "markdown" } }}
+  pageContext={{ view: "single", entry: getDemoEntryContext("page", entry) }}
 >
   <Single parts={options.parts} entry={entry}><Content /></Single>
 </Layout>

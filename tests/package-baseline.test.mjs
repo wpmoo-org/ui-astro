@@ -48,7 +48,7 @@ test("package retains all 45 public wrappers and the explicit integration, Page 
   assert.equal(lock.name, declared.name);
   assert.equal(lock.packages[""].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 74);
+  assert.equal(Object.keys(declared.exports).length, 77);
   assert.equal(Object.keys(declared.exports).filter((path) => path.startsWith("./components/")).length, 45);
   assert.equal(declared.exports["./config"], "./src/config/index.js");
   assert.equal(declared.exports["./plugins"], "./src/plugins/index.js");
@@ -59,6 +59,7 @@ test("package retains all 45 public wrappers and the explicit integration, Page 
   assert.equal(declared.exports["./plugins/post"], "./src/plugins/post/index.js");
   assert.equal(declared.exports["./plugins/post/content"], "./src/plugins/post/content.js");
   assert.equal(declared.exports["./plugins/post/queries"], "./src/plugins/post/queries.js");
+  for (const name of ["", "/content", "/queries"]) assert.equal(declared.exports[`./taxonomies${name}`], `./src/taxonomies/${name ? name.slice(1) : "index"}.js`);
   assert.equal(declared.exports["."], "./src/integration/index.js");
   assert.equal(declared.exports["./context"], "./src/context/index.js");
   for (const view of ["Single", "Archive", "Loop"]) {

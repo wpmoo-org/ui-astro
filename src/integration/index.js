@@ -21,11 +21,12 @@ function plainRecord(value) {
 export default function moo(input = {}) {
   if (!plainRecord(input)) throw new TypeError("moo options must be a plain object");
   for (const key of Object.keys(input)) {
-    if (key !== "site" && key !== "plugins") throw new TypeError(`moo.${key} is unsupported`);
+    if (!["site", "plugins", "taxonomies", "taxonomyBasePath"].includes(key)) throw new TypeError(`moo.${key} is unsupported`);
   }
   const site = defineSite(input.site);
   const plugins = input.plugins ?? [page(), post()];
-  const registry = buildRegistry(plugins);
+  const registry = buildRegistry(plugins, { taxonomies: input.taxonomies, taxonomyBasePath: input.taxonomyBasePath });
+  const active = plugins.length > 0 || registry.taxonomies.length > 0;
   let context = null;
   let resolvedRoutes = [];
   let root = null;
@@ -40,12 +41,13 @@ export default function moo(input = {}) {
           updateConfig({ vite: { cacheDir: fileURLToPath(new URL(`node_modules/.vite/wpmoo-${command}/`, config.root)) } });
         }
         for (const route of registry.routes) injectRoute({ pattern: route.pattern, entrypoint: route.entrypoint, prerender: route.prerender });
-        if (!plugins.length) return;
+        if (!active) return;
         updateConfig({ prerenderConflictBehavior: "error" });
         if (command === "dev") {
           addMiddleware({ entrypoint: new URL("./middleware.js", import.meta.url), order: "pre" });
         }
-        updateConfig({ vite: { plugins: [{
+        // Server query facades must pass through Vite's private virtual-module guard.
+        updateConfig({ vite: { ssr: { noExternal: ["@wpmoo/astro"] }, plugins: [{
           name: "wpmoo-astro-context",
           resolveId(source, importer, options) {
             if (source !== virtualId) return null;
@@ -67,17 +69,17 @@ export default function moo(input = {}) {
       },
       "astro:routes:resolved": ({ routes }) => {
         validateResolvedRoutes(registry, routes);
-        if (plugins.length) validateNativePageRoutes(routes, integrityEntrypoint, root);
+        if (active) validateNativePageRoutes(routes, integrityEntrypoint, root);
         resolvedRoutes = routes;
       },
       "astro:build:done": ({ pages }) => {
-        if (plugins.length) validateBuiltPagePaths(pages, resolvedRoutes);
+        if (active) validateBuiltPagePaths(pages, resolvedRoutes);
       },
       "astro:config:done": ({ config, injectTypes }) => {
         if (config.integrations.filter(integration => integration.name === "@wpmoo/astro").length !== 1) {
           throw new TypeError("@wpmoo/astro must be registered exactly once");
         }
-        if (plugins.length) {
+        if (active) {
           if (config.output !== "static") throw new TypeError("moo requires Astro output: static for active content");
           if (config.prerenderConflictBehavior !== "error") {
             throw new TypeError("moo requires Astro prerenderConflictBehavior: error for active content");
@@ -87,10 +89,10 @@ export default function moo(input = {}) {
         const files = ["content.config.ts", "content.config.mts", "content.config.js", "content.config.mjs"]
           .map((name) => new URL(name, config.srcDir))
           .filter((url) => existsSync(fileURLToPath(url)));
-        if (plugins.length && files.length !== 1) {
+        if (active && files.length !== 1) {
           throw new TypeError(`moo requires exactly one host content.config file in ${fileURLToPath(config.srcDir)}`);
         }
-        if (plugins.length) injectTypes({ filename: "route-context.d.ts", content: `
+        if (active) injectTypes({ filename: "route-context.d.ts", content: `
 declare module ${JSON.stringify(virtualId)} {
   interface RouteSource {
     readonly collection: string;
@@ -117,14 +119,19 @@ declare module ${JSON.stringify(virtualId)} {
             return [type.id, `${plugin.basePath === "/" ? "" : plugin.basePath}${prefix}`];
           }))),
           navigation: plugins.flatMap(plugin => plugin.navigation),
-          sources: registry.contentTypes.map((type) => ({
+          taxonomies: registry.taxonomies.map(({ source, ...metadata }) => metadata),
+          taxonomyBasePath: registry.taxonomyBasePath,
+          sources: [...registry.contentTypes.map((type) => ({
             collection: type.collection,
             kind: type.source.kind,
             ...(type.source.kind === "json"
               ? { file: type.source.file }
               : { base: type.source.base ?? new URL(`content/${type.collection}/`, config.srcDir).href }),
             formats: type.source.formats ?? [],
-          })),
+          })), ...registry.taxonomies.map(taxonomy => ({
+            collection: taxonomy.id, kind: taxonomy.sourceKind, formats: [],
+            ...(taxonomy.sourceKind === "json" ? { file: taxonomy.source } : { base: taxonomy.source }),
+          }))],
           site,
           base: config.base,
           trailingSlash: config.trailingSlash,
@@ -132,7 +139,7 @@ declare module ${JSON.stringify(virtualId)} {
             id: plugin.id, label: plugin.label, basePath: plugin.basePath,
             contentTypes: plugin.contentTypes.map((type) => ({
               id: type.id, collection: type.collection, sourceKind: type.source.kind,
-              formats: type.source.formats ?? [], singleRoute: type.singleRoute,
+              formats: type.source.formats ?? [], singleRoute: type.singleRoute, taxonomies: type.taxonomies,
             })),
           })),
         } };

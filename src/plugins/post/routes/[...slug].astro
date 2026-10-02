@@ -9,6 +9,7 @@ import { siteHref } from "../../../content/paths.js";
 import { getEntryHref, getSiteContext, getSiteNavigation } from "../../../context/index.js";
 import { getPostPaths } from "../queries.js";
 import Single from "../views/Single.astro";
+import { entryClassContext } from "../../../taxonomies/paths.js";
 
 export const prerender = true;
 export async function getStaticPaths() {
@@ -35,7 +36,7 @@ const breadcrumbs = [
 ];
 const layoutProps = {
   title: entry.data.title, description: entry.data.description,
-  pageContext: { view: "single" as const, entry: { type: "post", id: entry.id, source: "markdown" as const } },
+  pageContext: { view: "single" as const, entry: entryClassContext({ id: "post", sourceKind: "markdown" }, entry) },
   shellMode: options.shellMode, pageWidth: options.pageWidth, headerWidth: options.headerWidth,
   theme: options.theme, lang: options.lang, dir: options.dir, parts: options.parts,
 };

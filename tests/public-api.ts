@@ -14,6 +14,9 @@ import { pageSchema } from "@wpmoo/astro/plugins/page/content";
 import { getPagePaths, getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
 import { getSiteContext, getSiteNavigation, getEntryHref, validateSiteContent } from "@wpmoo/astro/context";
 import MooUI, { Chart, Combobox, ContextMenu, DataTable, Datepicker, MooCalendar, MooDateRangePicker, Sidebar, Slider } from "@wpmoo/astro/runtime/moo-ui.js";
+import { defineTaxonomy, type Taxonomy } from "@wpmoo/astro/taxonomies";
+import { termSchema, type Term } from "@wpmoo/astro/taxonomies/content";
+import { getTaxonomyTerms, getTermEntries, getTaxonomyPaths, type TermItem } from "@wpmoo/astro/taxonomies/queries";
 
 type LocalSiteOptions = SiteInput;
 export const single: ViewKind = "single";
@@ -38,6 +41,11 @@ export const descriptorInput: PluginInput = {
 };
 export const descriptor: Plugin = definePlugin(descriptorInput);
 export const integration: AstroIntegration = moo({ site: input, plugins: [page()] });
+export const taxonomy: Taxonomy = defineTaxonomy({ id: "category", label: "Categories", source: new URL("file:///tmp/category.json"), hierarchical: true, archive: { include: "descendants" } });
+export const term: Term = termSchema.parse({ id: "root", name: "Root", slug: "Root" });
+export const taxonomyIntegration: AstroIntegration = moo({ plugins: [page({ taxonomies: [taxonomy.id] })], taxonomies: [taxonomy], taxonomyBasePath: "/topics" });
+export type MixedItem = TermItem;
+export const taxonomyServerFunctions = { getTaxonomyTerms, getTermEntries, getTaxonomyPaths };
 export const button: ComponentProps<typeof Button> = { label: "Expand", ariaExpanded: false, size: "sm" };
 export const layout: ComponentProps<typeof Layout> = { title: "Contact", sidebar: false, pageContext };
 export const parsedPage = pageSchema.parse({ title: "Contact", status, layout: override });
@@ -68,3 +76,9 @@ site.types.page.views!.single!.sidebar!.side = "left";
 resolved.sidebar!.defaultOpen = true;
 // @ts-expect-error Every preference resolution selects a view explicitly.
 resolvePageOptions(site, "page");
+// @ts-expect-error Taxonomy sources are immutable normalized strings.
+taxonomy.source = "file:///tmp/changed.json";
+// @ts-expect-error Published terms use stable IDs and do not have draft state.
+export const invalidTerm: Term = { id: "root", name: "Root", slug: "root", draft: true };
+// @ts-expect-error Unknown membership policies are not a public query contract.
+getTermEntries("category", "root", { include: "all" });

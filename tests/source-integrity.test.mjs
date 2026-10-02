@@ -102,6 +102,21 @@ const jsonSchema = z.strictObject({
   id: z.string(), title: z.string(), status: z.enum(["publish", "draft"]),
 });
 
+test("taxonomy array mode rejects ID-keyed maps even when native loaded data matches", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "moo-astro-taxonomy-array-"));
+  const file = pathToFileURL(join(directory, "terms.json"));
+  const raw = { root: { id: "root", title: "Root", status: "publish" } };
+  const input = { collection: "category", root: pathToFileURL(`${directory}/`), file,
+    schema: jsonSchema, arrayOnly: true,
+    entries: [{ collection: "category", id: "root", filePath: "terms.json", data: raw.root }] };
+  try {
+    await writeFile(file, JSON.stringify(raw));
+    await assert.rejects(() => validateJsonFileSource(input), /category.*JSON source.*array/);
+    await writeFile(file, JSON.stringify([raw.root]));
+    await assert.doesNotReject(() => validateJsonFileSource(input));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test("JSON-directory source binds exact IDs, file paths, and current normalized data", async () => {
   const directory = await mkdtemp(join(tmpdir(), "moo-astro-json-dir-"));
   const basePath = join(directory, "src/content/team");

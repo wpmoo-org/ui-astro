@@ -2,12 +2,13 @@
 import Single from "../../../views/Single.astro";
 import type { CollectionEntry } from "astro:content";
 import type { PartsInput } from "../../../config/index.js";
+import { entryClassContext } from "../../../taxonomies/paths.js";
 
 interface Props { entry: CollectionEntry<"page">; parts?: PartsInput }
 const { entry, parts } = Astro.props;
 ---
 
-<Single parts={parts} title={entry.data.title} description={entry.data.description} entryContext={{ type: "page", id: entry.id, source: "markdown" }} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), metadata: Astro.slots.has("metadata"), actions: Astro.slots.has("actions"), afterContent: Astro.slots.has("after-content") }}>
+<Single parts={parts} title={entry.data.title} description={entry.data.description} entryContext={entryClassContext({ id: "page", sourceKind: "markdown" }, entry)} forwardedSlots={{ pageHeader: Astro.slots.has("page-header"), metadata: Astro.slots.has("metadata"), actions: Astro.slots.has("actions"), afterContent: Astro.slots.has("after-content") }}>
   {Astro.slots.has("page-header") ? <slot name="page-header" slot="page-header" /> : null}
   {Astro.slots.has("metadata") ? <slot name="metadata" slot="metadata" /> : null}
   {Astro.slots.has("actions") ? <slot name="actions" slot="actions" /> : null}

@@ -1,5 +1,6 @@
 import { sourceEntryId } from "../../content/index.js";
 import { entryPath, siteHref } from "../../content/paths.js";
+import { entryClassContext } from "../../taxonomies/paths.js";
 
 const statuses = new Set(["publish", "draft", "pending", "future"]);
 
@@ -79,6 +80,6 @@ export function postLoopItems(entries, { basePath, lang, base, trailingSlash } =
     ...(entry.data.description === undefined ? {} : { description: entry.data.description }),
     date: entry.data.published_at,
     href: siteHref(postHrefFromEntry(entry, { basePath, lang }), { base, trailingSlash }),
-    entryContext: { type: "post", id: entry.id, source: /** @type {const} */ ("markdown") },
+    entryContext: entryClassContext({ id: "post", sourceKind: "markdown" }, entry),
   }));
 }

@@ -59,6 +59,9 @@ import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
 import PageSingle from "@wpmoo/astro/plugins/page/views/Single.astro";
 import { post } from "@wpmoo/astro/plugins/post";
 import { postSchema } from "@wpmoo/astro/plugins/post/content";
+import { defineTaxonomy } from "@wpmoo/astro/taxonomies";
+import { termSchema } from "@wpmoo/astro/taxonomies/content";
+import { getTaxonomyTerms, getTermEntries, getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
 import { getPostPaths, getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
 import PostArchive from "@wpmoo/astro/plugins/post/views/Archive.astro";
 import PostLoop from "@wpmoo/astro/plugins/post/views/Loop.astro";
@@ -96,7 +99,7 @@ const pageNavigation = await getSiteNavigation("/contact");
 const packedContact = (await getCollection("page")).find((entry) => entry.id === "contact.md");
 if (!packedContact) throw new Error("Packed consumer Page contact.md is missing");
 const packedContactHref = getEntryHref("page", packedContact);
-void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle, post, postSchema, getPostPaths, getPublishedPosts, postViews];
+void [MooIntegration, getPagePaths, getPublishedPages, configuredPage, sourceId, entryTitle, pageTitle, post, postSchema, getPostPaths, getPublishedPosts, postViews, defineTaxonomy, termSchema, getTaxonomyTerms, getTermEntries, getTaxonomyPaths];
 ---
 
 <Layout title="Packed consumer" parts={parts} sidebar theme="dark" sidebarKey="packed-consumer" sidebarId="packed-sidebar">

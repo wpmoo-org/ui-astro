@@ -1,9 +1,12 @@
 import type { SiteConfig } from "../config/index.js";
+import type { Taxonomy } from "../taxonomies/index.js";
 
 export interface SiteContext {
   readonly site: SiteConfig;
   readonly base: string;
   readonly trailingSlash: "always" | "never" | "ignore";
+  readonly taxonomies: readonly Omit<Taxonomy, "source">[];
+  readonly taxonomyBasePath: string;
   readonly plugins: readonly {
     readonly id: string;
     readonly label: string;
@@ -14,6 +17,7 @@ export interface SiteContext {
       readonly sourceKind: "markdown" | "json" | "json-directory";
       readonly formats: readonly ("md" | "mdx")[];
       readonly singleRoute: string;
+      readonly taxonomies: readonly string[];
     }[];
   }[];
 }

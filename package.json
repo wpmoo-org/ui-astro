@@ -117,6 +117,14 @@
     "src/runtime/moo-ui.d.ts",
     "src/runtime/moo-ui.js",
     "src/styles.css",
+    "src/taxonomies/index.js",
+    "src/taxonomies/index.d.ts",
+    "src/taxonomies/content.js",
+    "src/taxonomies/content.d.ts",
+    "src/taxonomies/queries.js",
+    "src/taxonomies/queries.d.ts",
+    "src/taxonomies/paths.js",
+    "src/taxonomies/routes",
     "src/views/Archive.astro",
     "src/views/Loop.astro",
     "src/views/Single.astro",
@@ -200,7 +208,10 @@
     "./plugins/post/queries": "./src/plugins/post/queries.js",
     "./plugins/post/views/Archive.astro": "./src/plugins/post/views/Archive.astro",
     "./plugins/post/views/Loop.astro": "./src/plugins/post/views/Loop.astro",
-    "./plugins/post/views/Single.astro": "./src/plugins/post/views/Single.astro"
+    "./plugins/post/views/Single.astro": "./src/plugins/post/views/Single.astro",
+    "./taxonomies": "./src/taxonomies/index.js",
+    "./taxonomies/content": "./src/taxonomies/content.js",
+    "./taxonomies/queries": "./src/taxonomies/queries.js"
   },
   "dependencies": {
     "@wpmoo/ui": "1.0.0-rc.9",
