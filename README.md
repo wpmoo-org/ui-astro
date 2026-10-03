@@ -283,9 +283,14 @@ validates every selected term and every content status, even with no archive
 or query. Missing/duplicate IDs, converted slug collisions, invalid parents,
 cycles, wrong/unbound/duplicate references and source/data mismatches fail.
 The checks read native public collection data; no replacement loader or private
-Astro store is used. A rapid save suppressed by the native file watcher remains
-blocked by integrity validation until native content is current; a cold build
-is the authoritative release check.
+Astro store is used. During development, active content supplies a default
+`vite.server.watch.awaitWriteFinish` of 100ms stability with 20ms polling.
+This lets native loaders read the completed save when an editor saves and
+formats a file in quick succession. Explicit host `awaitWriteFinish` settings
+and `watch: null` remain host-owned. Disabling this stabilization can let the
+native watcher's change coalescing miss a final write; integrity validation
+then blocks requests until native content is current. Invalid source remains
+fatal, and a cold build is the authoritative release check.
 
 Server-only `@wpmoo/astro/taxonomies/queries` exports `getTaxonomyTerms(id)`,
 `getTermEntries(id, termId, { include }?)`, and `getTaxonomyPaths({ taxonomies }?)`.

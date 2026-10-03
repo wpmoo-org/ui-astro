@@ -92,6 +92,25 @@ export default function moo(input = {}) {
         if (!active) return;
         updateConfig({ prerenderConflictBehavior: "error" });
         if (command === "dev") {
+          // Save + format-on-save may write twice inside Chokidar's 50ms
+          // change throttle. Load native content after the complete save.
+          if (
+            config.vite.server?.watch !== null &&
+            config.vite.server?.watch?.awaitWriteFinish === undefined
+          ) {
+            updateConfig({
+              vite: {
+                server: {
+                  watch: {
+                    awaitWriteFinish: {
+                      stabilityThreshold: 100,
+                      pollInterval: 20,
+                    },
+                  },
+                },
+              },
+            });
+          }
           addMiddleware({
             entrypoint: new URL("./middleware.js", import.meta.url),
             order: "pre",

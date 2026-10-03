@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildRegistry, validateResolvedRoutes } from "../src/integration/registry.js";
+import {
+  buildRegistry,
+  validateResolvedRoutes,
+} from "../src/integration/registry.js";
 import { definePlugin } from "../src/plugins/index.js";
 import { page } from "../src/plugins/page/index.js";
 import moo from "../src/integration/index.js";
@@ -14,10 +17,23 @@ test("omitted plugin selection registers Page and Post, while an explicit list r
   ]) {
     const routes = [];
     moo(input).hooks["astro:config:setup"]({
-      command: "dev", config: { root: new URL("./fixtures/consumer/", import.meta.url), vite: {} },
-      injectRoute(value) { routes.push(value.pattern); }, updateConfig() {}, addMiddleware() {},
+      command: "dev",
+      config: {
+        root: new URL("./fixtures/consumer/", import.meta.url),
+        vite: {},
+      },
+      injectRoute(value) {
+        routes.push(value.pattern);
+      },
+      updateConfig() {},
+      addMiddleware() {},
     });
-    assert.deepEqual(routes.filter(pattern => !pattern.startsWith("/__moo_content_integrity")), expected);
+    assert.deepEqual(
+      routes.filter(
+        (pattern) => !pattern.startsWith("/__moo_content_integrity"),
+      ),
+      expected,
+    );
   }
 });
 
@@ -27,47 +43,121 @@ function external(id, basePath, { collection = id, type = id } = {}) {
     id,
     label: id,
     basePath,
-    contentTypes: [{
-      id: type, collection, singleRoute: "single",
-      source: { kind: "json-directory", base: new URL("./fixtures/consumer/src/content/page/", import.meta.url) },
-    }],
-    routes: [{
-      id: "single", pattern: "/[...slug]", prerender: true,
-      entrypoint: new URL("./fixtures/consumer/src/pages/index.astro", import.meta.url),
-    }],
+    contentTypes: [
+      {
+        id: type,
+        collection,
+        singleRoute: "single",
+        source: {
+          kind: "json-directory",
+          base: new URL(
+            "./fixtures/consumer/src/content/page/",
+            import.meta.url,
+          ),
+        },
+      },
+    ],
+    routes: [
+      {
+        id: "single",
+        pattern: "/[...slug]",
+        prerender: true,
+        entrypoint: new URL(
+          "./fixtures/consumer/src/pages/index.astro",
+          import.meta.url,
+        ),
+      },
+    ],
   });
 }
 
 test("registry records one owner for each active type, collection, and final route", () => {
   const registry = buildRegistry([page(), external("sample", "/sample")]);
-  assert.deepEqual(registry.routes.map(({ owner, pattern }) => ({ owner, pattern })), [
-    { owner: "page", pattern: "/[...slug]" },
-    { owner: "sample", pattern: "/sample/[...slug]" },
-  ]);
-  assert.deepEqual(registry.contentTypes.map(({ owner, id, collection }) => ({ owner, id, collection })), [
-    { owner: "page", id: "page", collection: "page" },
-    { owner: "sample", id: "sample", collection: "sample" },
-  ]);
+  assert.deepEqual(
+    registry.routes.map(({ owner, pattern }) => ({ owner, pattern })),
+    [
+      { owner: "page", pattern: "/[...slug]" },
+      { owner: "sample", pattern: "/sample/[...slug]" },
+    ],
+  );
+  assert.deepEqual(
+    registry.contentTypes.map(({ owner, id, collection }) => ({
+      owner,
+      id,
+      collection,
+    })),
+    [
+      { owner: "page", id: "page", collection: "page" },
+      { owner: "sample", id: "sample", collection: "sample" },
+    ],
+  );
 });
 
 test("registry rejects cross-plugin collection, type, and namespace conflicts", () => {
-  assert.throws(() => buildRegistry([page(), external("sample", "/sample", { collection: "page" })]), /collection page.*page.*sample/i);
-  assert.throws(() => buildRegistry([external("sample", "/sample", { type: "shared" }), external("other", "/other", { type: "shared" })]), /type shared.*sample.*other/i);
-  assert.throws(() => buildRegistry([page(), external("sample", "/sample"), external("nested", "/sample/nested")]), /namespace.*sample.*nested/i);
+  assert.throws(
+    () =>
+      buildRegistry([
+        page(),
+        external("sample", "/sample", { collection: "page" }),
+      ]),
+    /collection page.*page.*sample/i,
+  );
+  assert.throws(
+    () =>
+      buildRegistry([
+        external("sample", "/sample", { type: "shared" }),
+        external("other", "/other", { type: "shared" }),
+      ]),
+    /type shared.*sample.*other/i,
+  );
+  assert.throws(
+    () =>
+      buildRegistry([
+        page(),
+        external("sample", "/sample"),
+        external("nested", "/sample/nested"),
+      ]),
+    /namespace.*sample.*nested/i,
+  );
 });
 
 test("resolved routes require their one declared project or integration owner", () => {
   const injected = buildRegistry([page()]);
-  const externalRoute = { pattern: "/[...slug]", origin: "external", isPrerendered: true };
+  const externalRoute = {
+    pattern: "/[...slug]",
+    origin: "external",
+    isPrerendered: true,
+  };
   assert.doesNotThrow(() => validateResolvedRoutes(injected, [externalRoute]));
-  assert.throws(() => validateResolvedRoutes(injected, [externalRoute, { ...externalRoute, origin: "project" }]), /page.*\/\[\.\.\.slug\].*multiple/i);
-  assert.throws(() => validateResolvedRoutes(injected, [{ ...externalRoute, isPrerendered: false }]), /page.*prerender/i);
+  assert.throws(
+    () =>
+      validateResolvedRoutes(injected, [
+        externalRoute,
+        { ...externalRoute, origin: "project" },
+      ]),
+    /page.*\/\[\.\.\.slug\].*multiple/i,
+  );
+  assert.throws(
+    () =>
+      validateResolvedRoutes(injected, [
+        { ...externalRoute, isPrerendered: false },
+      ]),
+    /page.*prerender/i,
+  );
 
   const host = buildRegistry([page({ routes: { single: "host" } })]);
   assert.deepEqual(host.routes, []);
-  assert.doesNotThrow(() => validateResolvedRoutes(host, [{ ...externalRoute, origin: "project" }]));
-  assert.throws(() => validateResolvedRoutes(host, [externalRoute]), /page.*project.*\/\[\.\.\.slug\]/i);
-  assert.throws(() => validateResolvedRoutes(host, []), /page.*project.*\/\[\.\.\.slug\]/i);
+  assert.doesNotThrow(() =>
+    validateResolvedRoutes(host, [{ ...externalRoute, origin: "project" }]),
+  );
+  assert.throws(
+    () => validateResolvedRoutes(host, [externalRoute]),
+    /page.*project.*\/\[\.\.\.slug\]/i,
+  );
+  assert.throws(
+    () => validateResolvedRoutes(host, []),
+    /page.*project.*\/\[\.\.\.slug\]/i,
+  );
 });
 
 test("the Page integration registers a private pre-middleware only for development", () => {
@@ -75,15 +165,23 @@ test("the Page integration registers a private pre-middleware only for developme
     const middleware = [];
     moo().hooks["astro:config:setup"]({
       command,
-      config: { root: new URL("./fixtures/consumer/", import.meta.url), vite: {} },
+      config: {
+        root: new URL("./fixtures/consumer/", import.meta.url),
+        vite: {},
+      },
       injectRoute() {},
       updateConfig() {},
-      addMiddleware(value) { middleware.push(value); },
+      addMiddleware(value) {
+        middleware.push(value);
+      },
     });
     assert.equal(middleware.length, command === "dev" ? 1 : 0);
     if (command === "dev") {
       assert.equal(middleware[0].order, "pre");
-      assert.match(middleware[0].entrypoint.href, /\/src\/integration\/middleware\.js$/);
+      assert.match(
+        middleware[0].entrypoint.href,
+        /\/src\/integration\/middleware\.js$/,
+      );
     }
   }
 });
@@ -98,12 +196,20 @@ test("build and sync use a separate cache from the running development server", 
       config: { root, vite: {} },
       injectRoute() {},
       addMiddleware() {},
-      updateConfig(value) { updates.push(value); },
+      updateConfig(value) {
+        updates.push(value);
+      },
     });
-    const cache = updates.find((value) => value.vite?.cacheDir)?.vite.cacheDir ?? devCache;
-    if (command === "dev" || command === "preview") assert.equal(cache, devCache);
+    const cache =
+      updates.find((value) => value.vite?.cacheDir)?.vite.cacheDir ?? devCache;
+    if (command === "dev" || command === "preview")
+      assert.equal(cache, devCache);
     else {
-      assert.notEqual(cache, devCache, `${command} must preserve dev optimizer files`);
+      assert.notEqual(
+        cache,
+        devCache,
+        `${command} must preserve dev optimizer files`,
+      );
       assert.ok(cache.startsWith(new URL("node_modules/", root).pathname));
     }
   }
@@ -113,19 +219,58 @@ test("an explicit host Vite cache directory remains host-owned", () => {
   const updates = [];
   moo({ plugins: [] }).hooks["astro:config:setup"]({
     command: "build",
-    config: { root: new URL("./fixtures/consumer/", import.meta.url), vite: { cacheDir: "/tmp/site-vite-cache" } },
+    config: {
+      root: new URL("./fixtures/consumer/", import.meta.url),
+      vite: { cacheDir: "/tmp/site-vite-cache" },
+    },
     injectRoute() {},
     addMiddleware() {},
-    updateConfig(value) { updates.push(value); },
+    updateConfig(value) {
+      updates.push(value);
+    },
   });
   assert.ok(updates.every((value) => value.vite?.cacheDir === undefined));
+});
+
+test("explicit host save-stability and disabled watcher settings remain host-owned", () => {
+  for (const watch of [
+    null,
+    { awaitWriteFinish: false },
+    { awaitWriteFinish: true },
+    {
+      awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 50 },
+      usePolling: true,
+    },
+  ]) {
+    const updates = [];
+    moo().hooks["astro:config:setup"]({
+      command: "dev",
+      config: {
+        root: new URL("./fixtures/consumer/", import.meta.url),
+        vite: { server: { watch } },
+      },
+      injectRoute() {},
+      addMiddleware() {},
+      updateConfig(value) {
+        updates.push(value);
+      },
+    });
+    assert.ok(
+      updates.every((value) => value.vite?.server?.watch === undefined),
+    );
+  }
 });
 
 function finalConfig(integration, overrides = {}) {
   const root = new URL("./fixtures/page-base/", import.meta.url);
   return {
-    root, srcDir: new URL("src/", root), base: "/docs", trailingSlash: "ignore",
-    output: "static", prerenderConflictBehavior: "error", integrations: [integration],
+    root,
+    srcDir: new URL("src/", root),
+    base: "/docs",
+    trailingSlash: "ignore",
+    output: "static",
+    prerenderConflictBehavior: "error",
+    integrations: [integration],
     ...overrides,
   };
 }
@@ -134,37 +279,71 @@ test("active content makes concrete prerender conflicts fatal", () => {
   const updates = [];
   moo().hooks["astro:config:setup"]({
     command: "build",
-    config: { root: new URL("./fixtures/page-base/", import.meta.url), vite: {} },
-    injectRoute() {}, addMiddleware() {},
-    updateConfig(value) { updates.push(value); },
+    config: {
+      root: new URL("./fixtures/page-base/", import.meta.url),
+      vite: {},
+    },
+    injectRoute() {},
+    addMiddleware() {},
+    updateConfig(value) {
+      updates.push(value);
+    },
   });
-  assert.ok(updates.some(value => value.prerenderConflictBehavior === "error"));
+  assert.ok(
+    updates.some((value) => value.prerenderConflictBehavior === "error"),
+  );
 });
 
 test("the final content profile rejects weakened conflicts, server output, and a noncanonical base", () => {
   for (const [overrides, diagnostic] of [
     [{ prerenderConflictBehavior: "warn" }, /prerenderConflictBehavior.*error/],
-    [{ prerenderConflictBehavior: "ignore" }, /prerenderConflictBehavior.*error/],
+    [
+      { prerenderConflictBehavior: "ignore" },
+      /prerenderConflictBehavior.*error/,
+    ],
     [{ output: "server" }, /output.*static/],
     [{ base: "/Docs" }, /base.*canonical.*Docs/],
   ]) {
     const integration = moo();
-    assert.throws(() => integration.hooks["astro:config:done"]({ config: finalConfig(integration, overrides) }), diagnostic);
+    assert.throws(
+      () =>
+        integration.hooks["astro:config:done"]({
+          config: finalConfig(integration, overrides),
+        }),
+      diagnostic,
+    );
   }
   const integration = moo();
-  assert.doesNotThrow(() => integration.hooks["astro:config:done"]({ config: finalConfig(integration), injectTypes() {} }));
+  assert.doesNotThrow(() =>
+    integration.hooks["astro:config:done"]({
+      config: finalConfig(integration),
+      injectTypes() {},
+    }),
+  );
 });
 
 test("one host cannot register the Moo integration twice", () => {
   const integration = moo();
-  assert.throws(() => integration.hooks["astro:config:done"]({
-    config: finalConfig(integration, { integrations: [integration, moo()] }),
-  }), /@wpmoo\/astro.*once|duplicate.*@wpmoo\/astro/);
+  assert.throws(
+    () =>
+      integration.hooks["astro:config:done"]({
+        config: finalConfig(integration, {
+          integrations: [integration, moo()],
+        }),
+      }),
+    /@wpmoo\/astro.*once|duplicate.*@wpmoo\/astro/,
+  );
 });
 
 test("UI-only composition owns its output mode, base, and route policy", () => {
   const integration = moo({ plugins: [] });
-  assert.doesNotThrow(() => integration.hooks["astro:config:done"]({
-    config: finalConfig(integration, { output: "server", base: "/Docs", prerenderConflictBehavior: "warn" }),
-  }));
+  assert.doesNotThrow(() =>
+    integration.hooks["astro:config:done"]({
+      config: finalConfig(integration, {
+        output: "server",
+        base: "/Docs",
+        prerenderConflictBehavior: "warn",
+      }),
+    }),
+  );
 });
