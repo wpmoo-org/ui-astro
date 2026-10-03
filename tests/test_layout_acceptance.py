@@ -116,6 +116,12 @@ class AcceptedLayouts(unittest.TestCase):
                     self.assertEqual(trigger.get_attribute("aria-expanded"), "true")
                     self.assertAlmostEqual(sidebar.bounding_box()["height"], 480, delta=1)
                     content = sidebar.locator('[data-slot="sidebar-content"]')
+                    # Open the accepted submenus to exercise a genuinely long drawer.
+                    disclosures = content.get_by_role("button")
+                    for index in range(disclosures.count()):
+                        disclosure = disclosures.nth(index)
+                        if disclosure.get_attribute("aria-expanded") == "false":
+                            disclosure.click()
                     self.assertTrue(content.evaluate("e => e.scrollHeight > e.clientHeight"))
                     content.evaluate("e => e.scrollTop = e.scrollHeight")
                     self.assertGreater(content.evaluate("e => e.scrollTop"), 0)
@@ -147,7 +153,7 @@ class AcceptedLayouts(unittest.TestCase):
     def test_page_grid_reflows_when_the_sidebar_changes_usable_width(self):
         self.page.set_viewport_size({"width": 1024, "height": 900})
         self.open_page("preview/layouts/viewport")
-        self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-ready]').wait_for()
+        self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state-ready]').wait_for()
         boxes = self.grid_boxes()
         self.assertLess(boxes[0]["y"], boxes[1]["y"])
         self.assertLess(boxes[1]["y"], boxes[2]["y"])

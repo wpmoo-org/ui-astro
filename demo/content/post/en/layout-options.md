@@ -12,6 +12,6 @@ options:
   pageWidth: lg
 ---
 
-This Post explicitly restores the Sidebar through its own Layout options.
-Other Singles keep their configured Sidebar setting, and the Archive uses
-its separate view preferences.
+This Post inherits the common demo Sidebar and selects a wider content rail
+through its own Layout options. The announcement separately disables its
+Sidebar without changing this entry or the Archive.

@@ -26,11 +26,11 @@ def localized_files():
     return files
 
 
-def configuration(*, base="/", slash="ignore", prefixed=False, host=False):
+def configuration(*, base="/", slash="ignore", prefixed=False, host=False, default_locale="en"):
     page_options = 'routes: { single: "host" },' if host else ""
     return f'''site: "https://example.test", base: "{base}", trailingSlash: "{slash}",
-i18n: {{ locales: ["en", "de"], defaultLocale: "en", routing: {{ prefixDefaultLocale: {str(prefixed).lower()} }} }},
-integrations: [moo({{ site: {{ locales: {{ de: {{ dir: "rtl", parts: {{ loop: {{ emptyText: "Localized empty state." }}, header: {{ skipLabel: "Localized skip." }} }} }} }} }},
+i18n: {{ locales: ["en", "de"], defaultLocale: "{default_locale}", routing: {{ prefixDefaultLocale: {str(prefixed).lower()} }} }},
+integrations: [moo({{ site: {{ defaults: {{ lang: "{default_locale}" }}, locales: {{ de: {{ dir: "rtl", parts: {{ loop: {{ emptyText: "Localized empty state." }}, header: {{ skipLabel: "Localized skip." }} }} }} }} }},
 plugins: [page({{ {page_options} taxonomies: bindings }}), post({{ taxonomies: bindings, locales: {{ de: {{ label: "Localized articles", basePath: "/beitraege" }} }} }})], taxonomies }})]'''
 
 
@@ -212,6 +212,53 @@ if (links.length || language !== "en" || href !== "/docs/contact/") throw new Er
                         self.assertIn('de/beitraege/ueber', archive)
                         self.assertNotIn('rel="alternate"', result.generated_html[f'{root}standalone/index.html'])
                         self.assertFalse(any('pending' in path for path in result.generated_html))
+
+    def test_configured_main_locale_uses_its_source_folder_without_a_url_prefix(self):
+        files = localized_files()
+        files["src/pages/locale-contract.json.ts"] = '''import { getCollection } from "astro:content";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { getLanguageLinks, getRouteLocale } from "@wpmoo/astro/i18n";
+export const GET = async () => {
+  const context = getSiteContext();
+  if (!context.i18n) throw new Error("The locale contract requires native Astro i18n");
+  return new Response(JSON.stringify({
+  mainLocale: context.i18n.defaultLocale,
+  routeLocale: getRouteLocale("/locale-contract.json"),
+  entries: await Promise.all((await getCollection("page")).filter(entry => entry.data.status === "publish")
+    .map(async entry => ({ id: entry.id, filePath: entry.filePath, href: getEntryHref("page", entry),
+      links: await getLanguageLinks("page", entry) }))),
+}), { headers: { "Content-Type": "application/json" } });
+};'''
+        for main_locale, page_href, translated_href, post_file, translated_post_file, taxonomy_file in [
+            ("en", "/docs/contact/", "/docs/de/kontakt/", "posts/uber/index.html",
+             "de/beitraege/ueber/index.html", "topics/category/child/index.html"),
+            ("de", "/docs/kontakt/", "/docs/en/contact/", "beitraege/ueber/index.html",
+             "en/posts/uber/index.html", "topics/kategorie/aepfel/index.html"),
+        ]:
+            with self.subTest(main_locale=main_locale):
+                result, _ = self.build(None, files=files, check=True, config_imports=CONFIG_IMPORTS,
+                                       configuration=configuration(base="/docs", slash="always", default_locale=main_locale))
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                contract = json.loads(result.generated_data["locale-contract.json"])
+                self.assertEqual(contract["mainLocale"], main_locale)
+                self.assertEqual(contract["routeLocale"], main_locale)
+                entries = {entry["id"]: entry for entry in contract["entries"]}
+                contact = entries[main_locale + "/contact.md"]
+                self.assertEqual(contact["filePath"], "src/content/page/" + main_locale + "/contact.md")
+                self.assertEqual(contact["href"], page_href)
+                other_locale = "de" if main_locale == "en" else "en"
+                self.assertEqual({link["locale"]: link["href"] for link in contact["links"]},
+                                 {main_locale: page_href, other_locale: translated_href})
+                filename = page_href.removeprefix("/docs/") + "index.html"
+                parser = native.Markup()
+                parser.feed(result.generated_html[filename])
+                self.assertIn(("link", {"rel": "canonical", "href": "https://example.test" + page_href}), parser.elements)
+                self.assertEqual({attrs["hreflang"]: attrs["href"] for tag, attrs in parser.elements
+                                  if tag == "link" and attrs.get("rel") == "alternate"},
+                                 {main_locale: "https://example.test" + page_href,
+                                  other_locale: "https://example.test" + translated_href})
+                for path in [post_file, translated_post_file, taxonomy_file]:
+                    self.assertIn(path, result.generated_html)
 
     def test_host_single_cannot_omit_an_advertised_translation(self):
         files = localized_files()

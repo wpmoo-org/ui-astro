@@ -1,5 +1,8 @@
 ---
-import { demoPageArchiveEntryIds, getDemoOptions } from "../../settings.js";
+import {
+  demoPageArchiveTranslationKeys,
+  getDemoOptions,
+} from "../../settings.js";
 import Layout from "../../layouts/Layout.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
 import PageArchive from "@wpmoo/astro/plugins/page/views/Archive.astro";
@@ -10,8 +13,10 @@ import { getDemoMessages } from "../../messages.js";
 
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
 const locale = getSiteContext().i18n ? lang : undefined;
-const entries = (await getPublishedPages({ locale })).filter((entry) =>
-  demoPageArchiveEntryIds.includes(entry.id),
+const entries = (await getPublishedPages({ locale })).filter(
+  (entry) =>
+    entry.data.translationKey !== undefined &&
+    demoPageArchiveTranslationKeys.includes(entry.data.translationKey),
 );
 const copy = getDemoMessages(lang);
 const preferences = getDemoOptions("page", "archive");
@@ -20,7 +25,6 @@ const preferences = getDemoOptions("page", "archive");
 <Layout
   parts={preferences.parts}
   title="Custom Page archive preview"
-  sidebar
   pageContext={{ view: "archive", type: "page" }}
   lang={lang}
 >

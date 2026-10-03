@@ -1,4 +1,4 @@
-"""Positive browser contracts for the user-accepted RC9 Astro demo surface.
+"""Positive browser contracts for the accepted Astro demo and grouped navigation.
 
 Run against the existing `make ui-astro` server on port 4322. Set
 ASTRO_BASE_URL to inspect the same accepted surface from a packed consumer.
@@ -102,29 +102,48 @@ class AcceptedAstroSurface(unittest.TestCase):
         sidebar = self.page.locator('[data-slot="sidebar"]')
         trigger = self.page.locator('[data-sidebar-trigger]')
 
-        def named_links():
-            for name in ("Moo UI Astro", "Overview", "Single", "Archive"):
-                expect(sidebar.get_by_role("link", name=name, exact=True)).to_have_accessible_name(name)
-            for name in ("Single", "Archive"):
-                glyph = sidebar.get_by_role("link", name=name, exact=True).locator("svg")
+        def named_controls():
+            expect(sidebar.get_by_role("link", name="Moo UI Astro", exact=True)).to_have_accessible_name("Moo UI Astro")
+            for name in ("Site", "Views"):
+                control = sidebar.get_by_role("button", name=name, exact=True)
+                expect(control).to_have_accessible_name(name)
+                glyph = control.locator("svg").first
                 bounds = glyph.evaluate("e => { const b = e.getBBox(); return { width: b.width, height: b.height }; }")
                 self.assertGreater(bounds["width"], 0)
                 self.assertGreater(bounds["height"], 0)
 
-        named_links()
+        def named_links(scope):
+            for name in ("Single", "Archive"):
+                link = scope.get_by_role("link", name=name, exact=True)
+                expect(link).to_have_accessible_name(name)
+                expect(link).to_be_visible()
+                glyph = link.locator("svg")
+                bounds = glyph.evaluate("e => { const b = e.getBBox(); return { width: b.width, height: b.height }; }")
+                self.assertGreater(bounds["width"], 0)
+                self.assertGreater(bounds["height"], 0)
+
+        named_controls()
+        views = sidebar.get_by_role("button", name="Views", exact=True)
+        views.click()
+        named_links(sidebar)
         trigger.click()
         self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state="collapsed"]').wait_for()
-        self.assertEqual(sidebar.locator('a[href="/preview/single"] .sidebar-menu-button__text')
+        self.assertEqual(views.locator('.sidebar-menu-button__text')
                          .evaluate("e => getComputedStyle(e).display"), "none")
-        named_links()
+        named_controls()
+        views.click()
+        named_links(self.page.locator('[data-sidebar-flyout]'))
+        views.click()
         self.page.locator('[data-theme-toggle]').click()
         self.page.locator('[data-direction-toggle]').click()
-        named_links()
+        named_controls()
         self.page.set_viewport_size({"width": 390, "height": 844})
         trigger.click()
         self.page.wait_for_function("document.querySelector('[data-slot=sidebar]').classList.contains('show')")
         self.assertEqual(sidebar.get_attribute("aria-modal"), "true")
-        named_links()
+        named_controls()
+        views.click()
+        named_links(sidebar)
         self.page.keyboard.press("Escape")
         self.page.wait_for_function("!document.querySelector('[data-slot=sidebar]').classList.contains('show')")
         expect(trigger).to_be_focused()

@@ -1,1 +1,12 @@
-{ "id": "foundation", "name": "Foundation", "slug": "foundation", "description": "A custom taxonomy loaded from a native flat JSON directory." }
+{
+  "id": "foundation",
+  "name": "Foundation",
+  "slug": "foundation",
+  "description": "A custom taxonomy loaded from a native flat JSON directory.",
+  "locales": {
+    "de": {
+      "name": "Grundlagen",
+      "description": "Eine eigene Taxonomie aus einem nativen Verzeichnis mit JSON-Dateien."
+    }
+  }
+}

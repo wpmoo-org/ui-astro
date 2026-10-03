@@ -1,22 +1,36 @@
 import { getSiteContext } from "@wpmoo/astro/context";
 import { resolvePageOptions } from "@wpmoo/astro/config";
 import { getPagePaths } from "@wpmoo/astro/plugins/page/queries";
+import { getPostPaths } from "@wpmoo/astro/plugins/post/queries";
+import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
 import { getRouteLocale } from "@wpmoo/astro/i18n";
 
 // These accepted Archive fixtures keep the same authored records as the demo grows.
-export const demoPageArchiveEntryIds = Object.freeze([
-  "contact.md",
-  "guide/setup.md",
+export const demoPageArchiveTranslationKeys = Object.freeze([
+  "contact",
+  "setup-guide",
 ]);
 
 // These authored example choices belong to the host, outside the npm package.
 export const demoControls = Object.freeze({
+  sidebar: Object.freeze({ id: "demo-sidebar", key: "astro-demo" }),
   action: Object.freeze({ variant: "ghost", size: "sm", class: "ms-auto" }),
   sidebarFooterUtilities: Object.freeze(["small", "text-body-secondary"]),
 });
 
-export function getDemoOptions(type = "page", view = "single", overrides = {}) {
-  return resolvePageOptions(getSiteContext().site, type, view, overrides);
+export function getDemoOptions(
+  type = "page",
+  view = "single",
+  overrides = {},
+  locale,
+) {
+  return resolvePageOptions(
+    getSiteContext().site,
+    type,
+    view,
+    overrides,
+    locale,
+  );
 }
 
 export function getDemoPagePaths(routePattern) {
@@ -35,6 +49,26 @@ export function getDemoPagePaths(routePattern) {
         : []),
       ...(i18n?.locales.map((value) => `/${value}`) ?? []),
     ],
+  });
+}
+
+export function getDemoPostPaths(routePattern) {
+  const { site, plugins, i18n } = getSiteContext();
+  const locale = i18n ? getRouteLocale(routePattern) : undefined;
+  const post = plugins.find((plugin) => plugin.id === "post");
+  if (!post)
+    throw new TypeError("The demo Post routes require the post plugin");
+  return getPostPaths({
+    locale,
+    lang: locale ?? site.defaults.lang,
+    basePath: post.locales?.[locale ?? ""]?.basePath ?? post.basePath,
+  });
+}
+
+export function getDemoTaxonomyPaths(routePattern) {
+  const { i18n } = getSiteContext();
+  return getTaxonomyPaths({
+    locale: i18n ? getRouteLocale(routePattern) : undefined,
   });
 }
 

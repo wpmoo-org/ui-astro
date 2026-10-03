@@ -145,6 +145,7 @@ export function localizeRegistry(registry, profile) {
     const selected = buildRegistry(plugins, {
       taxonomies: registry.taxonomies,
       taxonomyBasePath: registry.taxonomyBasePath,
+      taxonomyRoutes: registry.taxonomyRoutes,
     });
     return { locale, registry: selected };
   });

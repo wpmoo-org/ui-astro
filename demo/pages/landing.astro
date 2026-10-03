@@ -4,9 +4,7 @@ import Single from "@wpmoo/astro/views/Single.astro";
 import Hero from "../components/Hero.astro";
 import { getDemoOptions } from "../settings.js";
 
-const { sidebar: _sidebar, ...options } = getDemoOptions("page", "single", {
-  sidebar: null,
-});
+const { sidebar: _sidebar, ...options } = getDemoOptions("page", "single");
 ---
 
 <Layout

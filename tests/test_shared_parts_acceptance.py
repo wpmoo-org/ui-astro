@@ -56,20 +56,24 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 1)
         trigger = self.page.locator("[data-sidebar-trigger]")
         self.assertEqual(trigger.count(), 1)
-        self.assertEqual(trigger.get_attribute("aria-controls"), "preview-sidebar")
+        self.assertEqual(trigger.get_attribute("aria-controls"),
+                         self.page.locator('[data-slot="sidebar"]').get_attribute("id"))
         self.assertEqual(trigger.get_attribute("aria-expanded"), "true")
         self.assertEqual(self.page.locator('[data-slot="sidebar-header"]').count(), 1)
         self.assertEqual(self.page.locator('[data-slot="sidebar-content"]').count(), 1)
         self.assert_region_rails_align()
 
-    def test_archive_without_sidebar_uses_the_same_page_regions_and_loop(self):
+    def test_archive_inherits_sidebar_and_uses_the_same_page_regions_and_loop(self):
         self.open_preview("preview/archive")
         self.assertEqual(self.page.title(), "Archive preview")
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Posts"])
         self.assertEqual(self.page.locator("main h2").count(), 2)
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="page"]').count(), 1)
-        self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
-        self.assertEqual(self.page.locator("[data-sidebar-trigger]").count(), 0)
+        self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 1)
+        trigger = self.page.locator("[data-sidebar-trigger]")
+        self.assertEqual(trigger.count(), 1)
+        self.assertEqual(trigger.get_attribute("aria-controls"),
+                         self.page.locator('[data-slot="sidebar"]').get_attribute("id"))
         self.assert_region_rails_align()
 
     def test_layout_spacing_is_inherited_and_one_page_can_replace_it(self):
@@ -141,13 +145,14 @@ class AcceptedSharedParts(unittest.TestCase):
         self.page.wait_for_function("!document.querySelector('[data-slot=sidebar]').classList.contains('show')")
         self.assertTrue(trigger.evaluate("element => document.activeElement === element"))
 
-    def test_sidebarless_archive_restores_dark_rtl_on_first_load(self):
+    def test_sidebarless_page_restores_dark_rtl_on_first_load(self):
         self.page.set_viewport_size({"width": 390, "height": 844})
         self.context.add_init_script("localStorage.setItem('moo:theme', 'dark'); localStorage.setItem('moo:direction', 'rtl')")
-        self.open_preview("preview/archive")
+        self.open_preview("contact")
         self.assertEqual(self.page.locator("html").get_attribute("dir"), "rtl")
         self.assertEqual(self.page.locator(".moo-ui").get_attribute("data-bs-theme"), "dark")
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="page"]').count(), 1)
+        self.assertEqual(self.page.locator('[data-slot="sidebar"]').count(), 0)
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
     def test_breadcrumb_and_header_controls_share_a_vertical_center(self):
@@ -183,11 +188,13 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertTrue(set(expected).issubset(hrefs))
         self.assertEqual(len(hrefs), len(set(hrefs)))
         self.assertEqual(menu.locator('[aria-current="page"]').get_attribute("href"), "/preview/single")
+        menu.get_by_role("button", name="Pages", exact=True).click()
         menu.locator('a[href="/guide/setup"]').click()
         self.page.wait_for_url("**/guide/setup")
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Setup guide"])
         menu = self.page.locator('[data-slot="sidebar-content"] nav')
         self.assertEqual(menu.locator('[aria-current="page"]').get_attribute("href"), "/guide/setup")
+        menu.get_by_role("button", name="Views", exact=True).click()
         menu.locator('a[href="/preview/single"]').click()
         self.page.wait_for_url("**/preview/single")
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["A sample post"])

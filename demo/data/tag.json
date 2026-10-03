@@ -1,4 +1,25 @@
 [
-  { "id": "astro", "name": "Astro", "slug": "astro", "description": "Shared native Astro content from different types." },
-  { "id": "empty", "name": "Empty tag", "slug": "empty", "description": "A valid term without published content." }
+  {
+    "id": "astro",
+    "name": "Astro",
+    "slug": "astro",
+    "description": "Shared native Astro content from different types.",
+    "locales": {
+      "de": {
+        "description": "Gemeinsame native Astro-Inhalte unterschiedlicher Typen."
+      }
+    }
+  },
+  {
+    "id": "empty",
+    "name": "Empty tag",
+    "slug": "empty",
+    "description": "A valid term without published content.",
+    "locales": {
+      "de": {
+        "name": "Leeres Schlagwort",
+        "description": "Ein gültiges Schlagwort ohne veröffentlichte Inhalte."
+      }
+    }
+  }
 ]

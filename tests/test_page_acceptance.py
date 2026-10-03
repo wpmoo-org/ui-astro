@@ -42,7 +42,7 @@ class AcceptedPageExamples(unittest.TestCase):
     def test_one_page_override_omits_sidebar_without_affecting_its_content(self):
         self.open_page("contact")
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Contact"])
-        self.assertEqual(self.page.locator("main article.page.page-contact").count(), 1)
+        self.assertEqual(self.page.locator("main article.page.page-id--en_002f_contact_002e_md").count(), 1)
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
         self.assertEqual(self.page.locator('[data-sidebar-trigger]').count(), 0)
         self.assertIn("Contact page body.", self.page.locator("main").inner_text())
@@ -53,7 +53,8 @@ class AcceptedPageExamples(unittest.TestCase):
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Setup guide"])
         self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 1)
         self.assertEqual(self.page.locator('[data-slot="sidebar"] a[aria-current="page"]').get_attribute("href"), "/guide/setup")
-        self.assertEqual(self.page.locator('[data-sidebar-trigger]').get_attribute("aria-controls"), "moo-site-sidebar")
+        self.assertEqual(self.page.locator('[data-sidebar-trigger]').get_attribute("aria-controls"),
+                         self.page.locator('[data-slot="sidebar"]').get_attribute("id"))
         self.assertEqual(self.page.locator('[data-sidebar-trigger]').get_attribute("aria-expanded"), "true")
         self.assertEqual(self.page.locator('footer a').get_attribute("href"), "/")
 
@@ -80,7 +81,56 @@ class AcceptedPageExamples(unittest.TestCase):
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Pages"])
         self.assertEqual(self.page.locator("main h2 a").all_text_contents(), ["Contact", "Setup guide"])
         self.assertEqual(self.page.locator("main h2 a").evaluate_all("links => links.map(link => link.getAttribute('href'))"), ["/contact", "/guide/setup"])
-        self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 0)
+        self.assertEqual(self.page.locator('[data-layout="app"] > [data-slot="sidebar"]').count(), 1)
+
+    def test_file_managed_sections_inherit_layout_and_keep_their_authored_identity(self):
+        for width, theme, direction in [(1440, "light", "ltr"), (390, "dark", "rtl")]:
+            with self.subTest(width=width, theme=theme, direction=direction):
+                self.context.close()
+                self.context = self.browser.new_context(viewport={"width": width, "height": 844})
+                self.context.add_init_script(
+                    f"localStorage.setItem('moo:theme', '{theme}');"
+                    f"localStorage.setItem('moo:direction', '{direction}');"
+                )
+                self.page = self.context.new_page()
+                self.page.on("pageerror", lambda error: self.errors.append(str(error)))
+                spacing = """rail => {
+                    const style = getComputedStyle(rail);
+                    return [style.paddingTop, style.paddingBottom];
+                }"""
+                self.open_page("posts")
+                inherited = self.page.locator('main > [data-page-container]').evaluate(spacing)
+                self.open_page("editable")
+                self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state-ready]').wait_for()
+                self.assertEqual(self.page.locator("main").count(), 1)
+                self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Page with sections"])
+                self.assertEqual(self.page.locator('[data-slot="page"] > header').count(), 1)
+                self.assertEqual(self.page.locator('[data-slot="page"] > footer').count(), 1)
+                self.assertEqual(self.page.locator('[data-slot="sidebar"]').count(), 1)
+                self.assertEqual(self.page.locator("html").get_attribute("dir"), direction)
+                self.assertEqual(self.page.locator('[data-moo-document-owner]').get_attribute("data-bs-theme"), theme)
+                article = self.page.locator("main article.page.page-id--en_002f_editable_002e_md")
+                self.assertEqual(article.count(), 1)
+                sections = article.locator('[data-section-type]')
+                self.assertEqual(sections.evaluate_all(
+                    "sections => sections.map(section => [section.id, section.dataset.sectionType])"),
+                    [["introduction", "text"], ["related-content", "action"]])
+                text = article.locator('section[data-section-type="text"]')
+                self.assertEqual(text.get_attribute("aria-labelledby"), text.locator("h2").get_attribute("id"))
+                rail = self.page.locator('main > [data-page-container]')
+                self.assertEqual(rail.evaluate(spacing), inherited)
+                self.assertTrue(rail.evaluate("""rail => {
+                    const bounds = rail.getBoundingClientRect();
+                    return [...rail.querySelectorAll('[data-section-type]')].every(section => {
+                        const child = section.getBoundingClientRect();
+                        return child.left >= bounds.left - 1 && child.right <= bounds.right + 1;
+                    });
+                }"""))
+                action = article.get_by_role("button", name="Explore related content", exact=True)
+                self.assertEqual(action.get_attribute("href"), "/topics/category/layouts")
+                action.click()
+                self.page.wait_for_url("**/topics/category/layouts")
+                self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Layouts"])
 
 
 if __name__ == "__main__":

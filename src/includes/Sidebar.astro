@@ -1,22 +1,12 @@
 ---
 import MooSidebar from "../components/Sidebar.astro";
+import type { ComponentProps } from "astro/types";
 import { navigationHref } from "../internal/href.js";
 import { defineSite, resolveParts, type PartsInput } from "../config/index.js";
 
-interface SidebarItem {
-  title: string;
-  href?: string;
-  icon?: string;
-  badge?: string | number;
-  active?: boolean;
-  disabled?: boolean;
-  tooltip?: string;
-  ariaLabel?: string;
-}
-interface SidebarGroup {
-  label?: string;
-  items: SidebarItem[];
-}
+type SidebarGroup = NonNullable<
+  ComponentProps<typeof MooSidebar>["groups"]
+>[number];
 interface Props {
   id: string;
   brandHref: string;
@@ -26,6 +16,7 @@ interface Props {
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "icon" | "offcanvas" | "none";
   rail?: boolean;
+  railAriaLabel?: string;
   ariaLabel?: string;
   ariaLabelledBy?: string;
   footerText?: string;
@@ -40,9 +31,10 @@ const {
   parts: _parts,
   brand = defineSite().brand,
   ariaLabel = parts.header.navigationLabel,
+  railAriaLabel = parts.header.toggleLabel,
   ...options
 } = Astro.props;
-const rest = { ...options, brand, ariaLabel };
+const rest = { ...options, brand, ariaLabel, railAriaLabel };
 if (typeof id !== "string" || !id.trim())
   throw new TypeError("Sidebar include id is required");
 navigationHref(brandHref, "Sidebar include brandHref");
@@ -54,15 +46,6 @@ const body = Astro.slots.has("content")
     : "none";
 const footer = Astro.slots.has("footer");
 const slotCase = `${Number(header)}-${body}-${Number(footer)}`;
-for (const [groupIndex, group] of groups.entries()) {
-  for (const [itemIndex, item] of group.items.entries()) {
-    if (item.href !== undefined)
-      navigationHref(
-        item.href,
-        `Sidebar include groups[${groupIndex}].items[${itemIndex}].href`,
-      );
-  }
-}
 ---
 
 {

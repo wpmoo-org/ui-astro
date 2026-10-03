@@ -75,11 +75,11 @@ class AcceptedPostLayouts(unittest.TestCase):
         self.page.locator('main h2 a[href="/posts/layout-options"]').click()
         self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-ready]').wait_for()
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["One Post with a Sidebar"])
-        self.assertEqual(self.page.locator('main article.post.post-layout-options').count(), 1)
+        self.assertEqual(self.page.locator('main article.post.post-id--en_002f_layout-options_002e_md').count(), 1)
         self.assertEqual(self.page.locator('[data-slot="sidebar"]').count(), 1)
         self.page.locator('header a[href="/posts"]').click()
         self.page.locator('main h2 a[href="/posts/announcement"]').click()
-        self.assertEqual(self.page.locator('main article.post.post-announcement').count(), 1)
+        self.assertEqual(self.page.locator('main article.post.post-id--en_002f_announcement_002e_md').count(), 1)
         self.assertEqual(self.page.locator('[data-slot="sidebar"]').count(), 0)
         self.assertEqual(self.page.locator('[data-sidebar-trigger]').count(), 0)
         self.assertEqual(self.page.locator("main time").inner_text(), "2026-09-21")
@@ -92,11 +92,11 @@ class AcceptedPostLayouts(unittest.TestCase):
         self.assertEqual(links.evaluate_all("links => links.map(link => link.getAttribute('href'))"),
                          ["/posts/layout-options", "/posts/announcement"])
         self.assertEqual(self.page.locator("main time").all_text_contents(), ["2026-09-22", "2026-09-21"])
-        self.assertEqual(self.page.locator('main li.post.post-layout-options').count(), 1)
-        self.assertEqual(self.page.locator('main li.post.post-announcement').count(), 1)
+        self.assertEqual(self.page.locator('main li.post.post-id--en_002f_layout-options_002e_md').count(), 1)
+        self.assertEqual(self.page.locator('main li.post.post-id--en_002f_announcement_002e_md').count(), 1)
         self.assertEqual(self.page.locator('.moo-ui.archive.post').count(), 1)
         self.assertEqual(self.page.locator('header nav[aria-label="Breadcrumb"]').count(), 1)
-        self.assertEqual(self.page.locator('footer a').get_attribute("href"), "/contact")
+        self.assertEqual(self.page.locator('footer a').get_attribute("href"), "/")
 
     def test_narrow_post_sidebar_opens_by_keyboard_and_escape_returns_focus(self):
         self.page.set_viewport_size({"width": 390, "height": 844})

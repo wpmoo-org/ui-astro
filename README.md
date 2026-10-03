@@ -1,6 +1,6 @@
 # Moo UI Astro adapter
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.9` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.10` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -12,7 +12,17 @@ After the adapter is published, install it in an Astro application:
 npm install @wpmoo/astro astro@7.3.3
 ```
 
-The package pins `@wpmoo/ui` to `1.0.0-rc.9` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The current `0.1.0` candidate is unpublished. To evaluate it now, install a
+reviewed local archive instead of assuming that npm serves this candidate:
+
+```bash
+npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.3
+```
+
+Use a separate application and its own committed lockfile. No demo content,
+host content config, host pages or CMS is installed with the package.
+
+The package pins `@wpmoo/ui` to `1.0.0-rc.10` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.2` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
 
@@ -52,11 +62,14 @@ Omit `sidebar` and the Sidebar slot for a page without a Sidebar. When `sidebar`
 
 Layout also supplies a Moo Button link to `#main-content`, hidden until keyboard focus by Bootstrap's registered `visually-hidden-focusable` helper. Its nonempty `skipText` defaults to `"Skip to main content"`; a multilingual theme supplies translated text through this prop. The link provides direct keyboard access to the main region and preserves Bootstrap's reverse-Tab loop when a mobile Sidebar is open.
 
-The current RC9 `contained` shell forces its Sidebar into document flow below 992 px. The long-navigation mobile example is rejected and is not an accepted regression baseline. Correct mobile drawer behavior requires a Moo Core contract correction; the adapter does not override the published CSS or substitute a controller. Desktop containment and the `viewport` mobile drawer are separate verified behaviors.
+RC9 forced the `contained` Sidebar into document flow below 992 px. That rejected long-navigation result remains historical evidence. The RC10 artifact removes the Core override; the adapter consumes its published CSS and Sidebar runtime directly, without a local CSS override or replacement controller. The current mobile behavior is verified separately from desktop containment.
 
 The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `demo/pages/index.astro` demonstrates this composition; it is not part of the package.
 
-The running demo also exposes `/preview/single` with an explicit Sidebar and `/preview/archive` without a Sidebar option. Both routes compose the public includes and generic views; these preview pages are excluded from the package archive.
+The running demo exposes `/preview/single` and `/preview/archive` through its
+shared Sidebar. Only explicitly Sidebarless examples opt out. Both routes
+compose public includes and generic views; the preview pages are excluded
+from the package archive.
 
 ## Public files and behavior
 
@@ -69,14 +82,20 @@ import "@wpmoo/astro/styles.css";
 
 <script>
   import "@wpmoo/astro/runtime/bootstrap.js";
-  import { Chart } from "@wpmoo/astro/runtime/moo-ui.js";
-  document
-    .querySelectorAll(".chart")
-    .forEach((root) => Chart.getOrCreateInstance(root));
+  import { loadChart } from "@wpmoo/astro/runtime/moo-ui.js";
+  async function initializeCharts() {
+    const roots = document.querySelectorAll(".chart");
+    if (!roots.length) return;
+    const Chart = await loadChart();
+    roots.forEach((root) => Chart.getOrCreateInstance(root));
+  }
+  void initializeCharts();
 </script>
 ```
 
-The Bootstrap facade exposes the installed Bootstrap ESM namespace to the published Moo Sidebar runtime. The Moo facade re-exports the published Core ESM module; its optional components are initialized on caller-owned roots. Layout already loads both facades and initializes its own Sidebar. Its declaration covers the shared `getInstance`, `getOrCreateInstance`, construction and disposal lifecycle of the nine RC9 constructors; it does not advertise additional component-specific methods.
+The Bootstrap facade exposes the installed Bootstrap ESM namespace to the published Moo Sidebar runtime. The Moo facade re-exports the published Core ESM module; its optional components are initialized on caller-owned roots. Layout already loads both facades and initializes its own Sidebar. Its declaration covers the shared `getInstance`, `getOrCreateInstance`, construction and disposal lifecycle of the eight aggregate constructors and the asynchronously loaded Chart constructor. RC10 exposes `loadChart()` (also `MooUI.loadChart()`), with no synchronous aggregate `Chart` export. Repeated loads share the dedicated Chart module's constructor; Chart dependencies load only when requested.
+
+RC10 also exposes `initSheets(root)` through this facade. Call it after the Bootstrap facade is loaded to enable the published Sheet autofocus and open-on-load behavior on that Document or Element. It returns a disposer; the host owns when to initialize and dispose it. Layout does not initialize optional Sheets automatically.
 
 `@wpmoo/astro/config` exports `defineSite`, `resolvePageOptions`, `resolveParts`, `formatDate`, `layoutSchema`, `getEntryClasses`, `getPageClasses`, and `normalizeSlug`. It resolves partial site, content-type, view, and page preferences without loading content or registering routes. For example:
 
@@ -142,7 +161,7 @@ Layout applies `parts.content.utilities` exactly once, on the existing `data-pag
 | `loop` display   | `titleVariant: 'section-title'` or `'subsection-title'`; `dateStyle: 'iso'` (default), `'short'`, `'medium'`, `'long'`, `'full'`; `emptyText`, `pageEmptyText`, `postEmptyText`, `pageTitle`, `postTitle`                                             |
 | `footer`         | `utilities: []` on the existing region; `linkUtilities: ['link-body-emphasis']` on its fallback link                                                                                                                                                  |
 
-The public `UtilityToken` type enumerates registered spacing (0–5 and responsive breakpoints), display/flex/alignment, text/background/link color, weight, border and rounded helpers. Custom classes, CSS values, HTML and file paths are rejected. PageHeader has narrower typed bounds because published Moo Typography owns some styles: `page-title` fixes `fw-semibold`; both description variants fix `text-body-secondary`; `page-description` fixes `mb-0`. Incompatible title weight, description color and nonzero bottom-margin utilities fail with their `parts.pageHeader` field. Responsive `m`/`my` utilities that change that bottom margin also fail. Alignment, title margins and description top margins remain configurable. An explicit `descriptionVariant: 'muted'` permits other description margins; repeat that variant in a layer that supplies them. Switching back to `page-description` also validates inherited utilities. RC9 has no public prop to replace the fixed weight/color mappings; this Core capability gap is retained instead of accepting an ineffective override.
+The public `UtilityToken` type enumerates registered spacing (0–5 and responsive breakpoints), display/flex/alignment, text/background/link color, weight, border and rounded helpers. Custom classes, CSS values, HTML and file paths are rejected. PageHeader has narrower typed bounds because published Moo Typography owns some styles: `page-title` fixes `fw-semibold`; both description variants fix `text-body-secondary`; `page-description` fixes `mb-0`. Incompatible title weight, description color and nonzero bottom-margin utilities fail with their `parts.pageHeader` field. Responsive `m`/`my` utilities that change that bottom margin also fail. Alignment, title margins and description top margins remain configurable. An explicit `descriptionVariant: 'muted'` permits other description margins; repeat that variant in a layer that supplies them. Switching back to `page-description` also validates inherited utilities. The current Typography contract has no public prop to replace the fixed weight/color mappings; this Core capability gap is retained instead of accepting an ineffective override.
 
 Public Typography semantic roles remain unchanged. Full content-region replacement uses the existing `page-header`, `metadata`, `actions`, `loop`, `after-list` and `after-content` slots. This setting does not add a stylesheet or replace a Moo controller.
 
@@ -150,7 +169,20 @@ Public Typography semantic roles remain unchanged. Full content-region replaceme
 
 This unpublished candidate adds `parts` to normalized output and changes the default outer content spacing from zero to `py-4`. Existing authored fields retain their meaning. The maintainer accepted the configurable spacing foundation on 2026-10-01; positive browser contracts cover inherited Layout spacing, a Contact-only override and independent heading/item gaps. This acceptance does not certify a finished theme design or release compatibility.
 
-`@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors. Omitting `plugins` selects `page()` plus `post()` and requires both native collections. An explicit list replaces the defaults: `[page()]` needs only Page, `[post()]` needs only Post, and `[]` adds no content routes or collection requirements. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers. The local demo uses this documented boundary to compose its example Sidebar; demo files stay outside the package.
+`@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors. Omitting `plugins` selects `page()` plus `post()` and requires both native collections. An explicit list replaces the defaults: `[page()]` needs only Page, `[post()]` needs only Post, and `[]` adds no content routes or collection requirements. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers.
+
+| Host choice                              | Required native collections | Route owner            |
+| ---------------------------------------- | --------------------------- | ---------------------- |
+| `moo()`                                  | `page` and `post`           | Package defaults       |
+| `moo({ plugins: [page()] })`             | `page`                      | Page plugin by default |
+| `moo({ plugins: [post()] })`             | `post`                      | Post plugin by default |
+| `moo({ plugins: [], taxonomies: [] })`   | None                        | Host only              |
+| Component/Layout imports without `moo()` | None                        | Host only              |
+
+Select only the features the application uses. Disabling a plugin stops its
+activation; its source remains in the one package archive.
+
+The private demo selects host-owned Page, Post and taxonomy routes, which compose one shared demo Layout and navigation. It enables the Sidebar once in `site.defaults`; Contact and the announcement explicitly opt out with entry `options.sidebar: null`. Other examples inherit that Sidebar, including archives, terms and the native Astro page. These host choices and all demo files stay outside the npm package. The package's default Sidebar remains disabled.
 
 `@wpmoo/astro/content` provides `sourceEntryId`, `jsonEntryId`, and the shared strict `entrySchema`. `@wpmoo/astro/plugins/page` provides the pure `page()` descriptor; its `/content` and `/queries` subpaths provide `pageSchema`, `getPublishedPages()`, and `getPagePaths()`. A Page-only host selects that descriptor in `astro.config.mjs`:
 
@@ -182,7 +214,86 @@ export const collections = {
 };
 ```
 
-Page frontmatter requires `title` and `status: publish|draft|pending|future`; `slug`, three authored dates, navigation labels/order, and `options` preferences are optional. Source IDs retain their exact relative `.md` or `.mdx` filenames. The slug controls only the URL. Only published Pages appear in the query results and paths; scheduled Pages reserve their canonical URL. The integration validates source identity and data before rendering. Taxonomy, SEO and native multilingual routing remain implementation tasks.
+Page frontmatter requires `title` and `status: publish|draft|pending|future`; `slug`, three authored dates, navigation labels/order, and `options` preferences are optional. Source IDs retain their exact relative `.md` or `.mdx` filenames. The slug controls only the URL. Only published Pages appear in the query results and paths; scheduled Pages reserve their canonical URL. The integration validates source identity and data before rendering. The sections below describe optional shared taxonomy, SEO and native static locales.
+
+### Explicit MDX and native Astro sections
+
+Ordinary content uses Markdown. To enable trusted authored MDX, the host adds
+the certified optional integration and declares the format on every selected
+Markdown source that may contain MDX:
+
+```bash
+npm install @astrojs/mdx@8.0.2
+```
+
+```js
+// astro.config.mjs
+import { defineConfig } from "astro/config";
+import mdx from "@astrojs/mdx";
+import moo from "@wpmoo/astro";
+import { page } from "@wpmoo/astro/plugins/page";
+
+export default defineConfig({
+  integrations: [mdx(), moo({ plugins: [page({ formats: ["md", "mdx"] })] })],
+});
+```
+
+In the Page collection recipe above, use
+`pattern: "**/*.{md,mdx}"` while retaining `generateId: sourceEntryId` and
+`schema: pageSchema`. Post uses the same format declaration and its own
+`postSchema`. Omitting MDX activation for declared MDX source fails the source
+integrity check; it does not silently publish only the Markdown subset.
+
+For example, `src/content/page/enhanced.mdx` can import a host component:
+
+```mdx
+---
+title: Enhanced page
+status: publish
+slug: enhanced
+options:
+  parts:
+    content:
+      utilities: [py-3]
+---
+
+import Hero from "../../components/Hero.astro";
+
+<Hero
+  title="Reusable host section"
+  description="Content selected by the host."
+/>
+
+Ordinary prose follows the same Page schema and Layout.
+```
+
+That relative import follows the file's actual location; moving multilingual
+source into another directory also requires updating its relative imports.
+The host owns `src/components/Hero.astro`; the package supplies no Hero or
+section-discovery convention. A native route can import that exact component
+without becoming a collection entry:
+
+```astro
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Hero from "../components/Hero.astro";
+import { resolveParts } from "@wpmoo/astro/config";
+
+const parts = resolveParts({ content: { utilities: ["py-3"] } });
+---
+
+<Layout title="Landing" parts={parts} pageContext={{ view: "native", key: "landing" }}>
+  <h1>Landing</h1>
+  <Hero title="Reusable host section" description="The same component used in MDX." />
+</Layout>
+```
+
+The Hero in this example renders a section heading below the page's `h1`.
+Native routes can instead replace the generic view's `page-header` slot and
+select the component's page-heading role explicitly. MDX executes trusted
+author imports and expressions; a future content-only editor must treat that
+code as read-only unless separately certified. It is not equivalent to plain
+Markdown editor input.
 
 ### Post content and routes
 
@@ -231,7 +342,45 @@ A Post needs a nonempty `title` and explicit `status`. Published Posts and all `
 
 The Post examples at `/posts`, `/posts/announcement` and `/posts/layout-options` have layout acceptance. Positive browser contracts preserve their region ownership, independent Sidebar preferences and canonical links. Padding and final theme styling remain open; these are foundation examples, not a finished theme or a release claim.
 
+Labels and namespaces are host values, for example
+`post({ label: "Blog", basePath: "/blog" })` or
+`post({ label: "Aktuelles", basePath: "/aktuelles" })`. Type and collection
+identity remain `post`; changing a namespace requires explicit redirects for
+previously published URLs.
+
 String props are escaped by default. `trustedHtml` is only for trusted, caller-owned markup. Do not enable it for user or remote content.
+
+### Theme routes and external content types
+
+Generic Single/Archive/Loop are collection-free and accept supplied props and
+slots. Specialized Page/Post views accept native entries or supplied lists;
+they do not select collections or own a second document. A host route resolves
+its entry's `options`, passes the resulting parts to Layout/includes/views,
+and renders the body with Astro's public `render(entry)`.
+
+With `page({ routes: { single: "host" } })`, implement the matching native
+prerendered route and return `getPagePaths()` from its `getStaticPaths()`.
+If `/about` also has an explicit native route, filter that entry out of the
+theme catch-all so that only `/about` produces its URL. Use the entry's stable
+source ID for the filter, not its display title. Missing/duplicate host route
+declarations fail validation. With native i18n enabled, a build also compares
+advertised published URLs with emitted routes. A single-language host must
+check its own concrete output for every intended Page; a matching catch-all
+alone does not prove that its `getStaticPaths()` emits those Pages.
+Choosing host ownership retains
+active collection, source, schema, taxonomy, navigation and canonical metadata;
+it suppresses only package route injection.
+
+An external CPT uses the pure `definePlugin()` API with `apiVersion: 1`, a
+stable plugin/type/collection identity, canonical `basePath`, declared source
+and a `singleRoute` naming one of its local route IDs. Sources are Markdown
+with explicit formats, a root JSON array or a flat JSON directory. A plugin
+owns static prerendered entrypoints through local `URL` values, or declares
+`owner: "host"` with no entrypoint. Bound taxonomies are explicit type metadata.
+Route IDs such as `single` may repeat across plugins; the final identity is
+namespaced by the plugin ID. A separately distributed plugin declares and
+tests its compatible `@wpmoo/astro` and Astro peers and commits its own lock.
+This foundation supplies no importer, plugin auto-discovery or template lookup.
 
 ### Optional shared taxonomies
 
@@ -300,13 +449,138 @@ Ordering is type ID then exact entry ID; descendant matches deduplicate each
 entry. Source locations and full entries are not exposed.
 
 Enabled archives share one `/topics/[taxonomy]/[slug]` route, with an optional
-canonical `taxonomyBasePath`. They compose the existing Layout/includes/Archive/
-Loop and resolve `site.types[taxonomyId].views.archive`. There is no taxonomy
+canonical `taxonomyBasePath`. By default the integration owns this route.
+They compose the existing Layout/includes/Archive/Loop and resolve
+`site.types[taxonomyId].views.archive`. There is no taxonomy
 index, pagination or automatic navigation. Breadcrumb ancestors link to actual
 term routes; the current item includes the taxonomy label because Moo
-Breadcrumb has no plain intermediate-item contract. A host replacement disables
-default archives and explicitly requests its selected paths. Term URLs follow
-the canonical site language, independent of display-language preferences.
+Breadcrumb has no plain intermediate-item contract. To compose archives in a
+theme Layout, select root `taxonomyRoutes: { archive: "host" }` and supply the
+matching native prerendered route using `getTaxonomyPaths()`. Retain each
+taxonomy's enabled `archive` metadata and membership policy. Ownership applies
+to the shared pattern and its native locale projections; missing, duplicate,
+nonproject or nonprerendered host routes fail validation. Omitting this option
+preserves plugin ownership. Term URLs follow the canonical site language,
+independent of display-language preferences.
+
+### Native JSON storage and integrity
+
+A custom content type declares either `{ kind: "json", file: URL }` or
+`{ kind: "json-directory", base: URL }`. The host collection must load that
+same source with a static schema. For example, two alternative `sample`
+collection loaders are:
+
+```ts
+import { defineCollection } from "astro:content";
+import { file, glob } from "astro/loaders";
+import { z } from "astro/zod";
+import { entrySchema, jsonEntryId } from "@wpmoo/astro/content";
+
+const sampleSchema = entrySchema.extend({
+  id: z.string().min(1),
+  body: z.string(),
+});
+
+// Select one loader, matching the plugin's declared source.
+const arrayCollection = defineCollection({
+  loader: file("src/data/sample.json"),
+  schema: sampleSchema,
+});
+const directoryCollection = defineCollection({
+  loader: glob({
+    base: new URL("./data/sample/", import.meta.url),
+    pattern: "*.json",
+    generateId: jsonEntryId,
+  }),
+  schema: sampleSchema,
+});
+export const collections = { sample: directoryCollection };
+```
+
+Array storage keeps all records in one authoritative file and preserves
+existing nonempty string IDs such as `cng_1`; the host schema may constrain them.
+Directory storage
+keeps one object in each exact `<id>.json` file; `jsonEntryId` returns the
+authored lowercase kebab ID. Nested directories, hidden JSON candidates,
+incorrect filename casing, ID/filename mismatches, missing sources and
+malformed JSON fail validation. An existing empty directory is valid. Term
+arrays use `termSchema`; term directories use the same `jsonEntryId` loader
+with `termSchema` and `sourceKind: "json-directory"` in their descriptor.
+
+Changing storage is an explicit migration. Before writing directory files,
+check every ID and filename, duplicate, reference, parent, locale association
+and canonical URL against the original array. If an ID cannot satisfy the
+directory rule, retain the original array and resolve that migration first;
+never silently rename IDs or slugify them. Update the source descriptor and
+native loader together, verify unchanged IDs/references/URLs, then remove the
+old authority. The package performs no automatic storage conversion.
+
+Validation covers every selected source and status, including content that
+has no public query or archive. A private prerendered integrity route validates
+the active collections and returns zero paths. It emits no public endpoint or
+page in a successful build. Missing/incorrect native entries, malformed current
+source, schema failures, invalid references and URL/graph conflicts fail the
+build; development middleware also rejects stale invalid source before serving
+a request. Valid source recovers once the native collection has synchronized.
+No custom content loader, private Astro store or substitute parser is installed.
+
+### CMS-free authoring and future editor adapters
+
+The package runs without an editor, database, authentication or admin route.
+Authored Markdown and JSON remain the content authority. MDX and native Astro
+files are trusted code and remain read-only to a future content-only editor
+unless that editor's code handling is separately certified.
+
+A theme can extend its static schema with an ordered `sections` array. Each
+item has a stable instance `id`, a host-declared `type` and validated `props`:
+
+```yaml
+sections:
+  - id: introduction
+    type: text
+    props:
+      heading: Welcome
+      text: Ordinary editable content.
+  - id: contact-action
+    type: action
+    props:
+      label: Contact us
+      href: /contact
+```
+
+The host declares the finite discriminated schema, rejects duplicate instance
+IDs and unsafe values, and maps the same type keys to explicitly imported
+Astro components. Keep pure labels/field metadata separate from `.astro`
+imports so a future editor can consume data without loading server components.
+The `content-editing` consumer proves this storage/rendering contract with
+ordinary Markdown and JSON. The package supplies no section library or generic
+Zod-to-form converter.
+
+No CMS has been selected, installed or certified by this package. An adapter
+must use the editor's public extension points for whole-field values and
+stable file keys. Examples of candidates are Keystatic's root-public
+`BasicFormField`/`SlugFormField` contracts and Decap's typed list plus custom
+widget contracts; these are integration candidates, not tested panels.
+Selecting another editor requires equivalent evidence.
+
+Before advertising an adapter, retain actual panel round trips proving:
+
+- No-op save preserves authored missing fields, `false`, `null`, stable IDs,
+  references and URLs without serializing resolved theme defaults.
+- Add, reorder, edit, save and reload preserve section IDs, type keys and props;
+  title/slug edits preserve the independent file key.
+- Conditional revision writes reject stale edits, deletion and recreation;
+  partial write failures recover without replacing the content authority.
+- Invalid content can be repaired or restored. The first preview represents a
+  saved published snapshot from the exact revision and a fresh successful
+  Astro build. Unsaved/draft preview, media and a co-hosted admin runtime need
+  their own certification.
+- Removing the editor config and dependencies leaves the authored files,
+  source IDs, canonical URLs and ordinary Astro build working unchanged.
+
+A direct-file fixture or stock form control does not prove those panel,
+concurrency or preview guarantees. There is no automatic WordPress import,
+template discovery or CMS-specific permalink behavior.
 
 ## SEO from ordinary content
 
@@ -411,7 +685,9 @@ The host can obtain content alternatives from `getLanguageLinks()` and term
 alternatives from `getTaxonomyPaths()`. Project those records in its build
 before the optional Sitemap integration runs; verify every advertised URL
 against actual output. The package does not install or configure Sitemap.
-The full independent active-feature consumer matrix remains a separate gate.
+The ten independent consumers cover the implemented foundation. SEO and native
+locale checks additionally exercise their own compiled fixtures; broader
+version support and final release acceptance remain separate gates.
 
 ## Theme language and visible copy
 
@@ -446,9 +722,10 @@ also work in an active single-language content host: `getRouteLocale()` returns
 and `getLanguageLinks()` returns no translation links for a standalone entry.
 The integration loads `astro:i18n` only when native i18n is enabled.
 
-The repository-only `/guide/setup` and `/en-gb/getting-started` demos share a
+The repository-only `/guide/setup` and `/de/einrichtung` demos share a
 translation key and switch between actual authored URLs through the public Moo
-DropdownMenu. Both examples use English copy; demo files stay outside npm.
+DropdownMenu. English is the default; German content, navigation and language
+controls demonstrate the translated locale. Demo files stay outside npm.
 
 ```js
 import { defineConfig } from "astro/config";
@@ -456,16 +733,21 @@ import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
 import { post } from "@wpmoo/astro/plugins/post";
 
+const i18n = {
+  locales: ["de", "en"],
+  defaultLocale: "de",
+  routing: { prefixDefaultLocale: false },
+};
+
 export default defineConfig({
   site: "https://example.test",
-  i18n: {
-    locales: ["en", "de"],
-    defaultLocale: "en",
-    routing: { prefixDefaultLocale: false },
-  },
+  i18n,
   integrations: [
     moo({
-      site: { defaults: { lang: "en" }, locales: { de: { dir: "ltr" } } },
+      site: {
+        defaults: { lang: i18n.defaultLocale },
+        locales: { de: { dir: "ltr" } },
+      },
       plugins: [
         page(),
         post({ locales: { de: { label: "Articles", basePath: "/articles" } } }),
@@ -484,10 +766,39 @@ explicit publication status transition and a rebuild when its date passes.
 
 For example, `en/contact.md` can declare `slug: contact`, `locale: en`,
 `translationKey: contact`; `de/contact.md` can declare `slug: kontakt`,
-`locale: de`, `translationKey: contact`. Their URLs are `/contact` and
-`/de/kontakt` under the config above. Filename-derived URLs strip a matching
-locale directory, while the exact native source ID remains `de/contact.md`.
+`locale: de`, `translationKey: contact`. Their URLs are `/en/contact` and
+`/kontakt` under the config above. Filename-derived URLs strip a matching
+locale directory, while the exact native source IDs remain `en/contact.md`
+and `de/contact.md`.
 Explicit slugs keep their authored path. JSON source IDs remain unchanged.
+
+Multilingual Markdown and MDX content use the same directory structure for
+every language, including the configured main language:
+
+```text
+content/
+├── page/
+│   ├── de/contact.md
+│   └── en/contact.md
+└── post/
+    ├── de/announcement.md
+    └── en/announcement.md
+```
+
+`i18n.defaultLocale` selects the main language; it is not tied to English.
+With `prefixDefaultLocale: false`, only other languages receive URL prefixes.
+The locale directory describes the content's actual language and stays in its
+native source ID. Changing the main language changes which public URLs have
+prefixes; it does not rename or relabel the content. Share that configured
+value with `site.defaults.lang` as above. Existing sites must plan redirects
+when changing their main language because canonical URLs change.
+
+Astro's `pages/` directory is a route manifest, separate from the content
+directories. For host-owned routes, the main language's route files stay at
+the root of `pages/`, and other languages use locale subdirectories. Keep
+these host route files aligned when changing the configured main language.
+Plugin-owned routes apply the selected locale automatically. This follows
+[Astro's native i18n routing](https://docs.astro.build/en/guides/internationalization/#prefixdefaultlocale-false).
 
 `site.locales.<locale>` refines the shared site defaults before type/view/entry
 options, including `parts`, `dir` and theme preferences. Route language must
@@ -514,10 +825,11 @@ The initial active static profile supports canonical lowercase string locales,
 unprefixed or all-prefixed defaults, root/subpath mounts and all three Astro
 slash policies. Alias locale objects, manual routing, domains and automatic
 fallback pages require further certification and fail explicitly. This is not
-a second router or translation database. The broader theme/MDX/CMS/version
-matrix and final release decision remain pending.
+a second router or translation database. The existing ten-profile matrix
+includes theme and MDX hosts; CMS interoperability, broader host versions and
+the final release decision remain separate gates.
 
-Published Moo UI RC9 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
+Published Moo UI RC10 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
 
 ## Develop and verify
 
@@ -536,7 +848,7 @@ ui-astro/
 │   ├── layouts/          # Host composition using public includes and Layout
 │   ├── pages/            # Example routes and preview endpoints
 │   └── *.js              # Host navigation, copy and settings
-├── contracts/            # Closed exports/files and immutable RC9 provenance
+├── contracts/            # Closed exports/files and immutable release provenance
 ├── scripts/              # Nonpacked verification tools
 └── tests/                # Nonpacked unit, native and consumer fixtures
 ```
@@ -547,7 +859,7 @@ their own source directories and install the packed package independently.
 
 The npm archive contains the public adapter source, its private transitive
 helpers and injected routes, declarations, the CSS/runtime facades, the
-closed export/file ledger, immutable RC9 provenance, this README,
+closed export/file ledger, immutable release provenance, this README,
 `COMPATIBILITY.md`, `LICENSE`
 and `THIRD_PARTY_NOTICES.md`. Demo pages, example Markdown, host content
 configuration, tests, development scripts, caches and built demo output are
@@ -556,9 +868,19 @@ not shipped. Packed private helpers remain inaccessible as package subpaths.
 Sidebar menu links keep explicit accessible names when the published icon
 collapse hides their visual text. Each name defaults to its item `title`;
 an explicit nonempty `ariaLabel` can replace it. The brand link uses `brand`.
-The embedded `file-text` and `layout-grid` geometry follows the RC9 icon
+The embedded `file-text` and `layout-grid` geometry follows the published icon
 registry. That registry is not a public npm export; the adapter does not read
 a sibling checkout at runtime or provide the entire Lucide catalog.
+
+Sidebar items can supply a nonempty `children` array of links instead of an
+`href`. The parent becomes the published submenu disclosure with a unique
+target derived from the Sidebar ID and item position. `open` overrides the
+initial state; when omitted, a submenu opens if it contains an active link.
+Submenus support one level, preserve link labels and disabled states, and use
+Bootstrap Collapse plus Moo's icon-rail flyout. The include accepts the same
+item contract and defaults `railAriaLabel` to `parts.header.toggleLabel`.
+Neither the adapter nor the demo adds a navigation controller
+or custom CSS. The demo groups its examples into these collapsible sections.
 
 Accessible `parts.header` labels and Layout's direct `ariaLabel` require
 nonempty plain text. Empty-state copy can still be explicitly empty.
@@ -571,9 +893,10 @@ warm edits fail every development request even if Astro's watcher retains
 the last valid record; valid edits recover after the native collection syncs.
 This adds no replacement loader, private Astro import or parser dependency.
 
-From the workspace root, `make ui-astro` serves the local demonstration on port 4322. `make sync` follows the HTML `dev` branch for local integration and leaves the release pin in `package.json` and `package-lock.json` intact. Do not treat the local development package as the published RC9 release.
+From the workspace root, `make ui-astro` serves the local demonstration on port 4322. Development asset sync has separate provenance; it does not change the
+tracked release pin and never substitutes for the published RC10 release.
 
-For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_PACKAGE_TARBALL=/absolute/path/to/ui.tgz`. The native npm install keeps lockfile resolution enabled and uses `--no-save` so unrelated locked dependencies and tracked release inputs stay unchanged. A local correction candidate may intentionally differ from RC9's recorded CSS bytes; the release artifact guard must reject it. Restore the published package with `npm ci` for release checks.
+For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_PACKAGE_TARBALL=/absolute/path/to/ui.tgz`. The native npm install keeps lockfile resolution enabled and uses `--no-save` so unrelated locked dependencies and tracked release inputs stay unchanged. A local correction candidate may intentionally differ from RC10's recorded CSS bytes; the release artifact guard must reject it. Restore the published package with `npm ci` for release checks.
 
 The `moo()` integration separates the default build and sync Vite caches from the development cache, so these commands can run while the existing development server stays open. An explicit host `vite.cacheDir` remains unchanged; a host choosing its own cache must keep concurrent commands isolated. After a runtime upgrade, reload the browser to request the current modules. The live regression `python3 tests/test_dev_runtime_build.py` uses the existing 4322 server and checks that a build preserves public runtime responses and selected Page/Post routes.
 
@@ -631,4 +954,12 @@ the primary built page in Chromium without a server. See
 [COMPATIBILITY.md](COMPATIBILITY.md) for verified runtime scope and remaining
 release gates.
 
-The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc9-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc10-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+
+## Upgrade a theme or plugin
+
+Keep the application's tested package, Astro, optional integrations and lockfile
+explicit. Read [COMPATIBILITY.md](COMPATIBILITY.md) before updating them. Check
+the application's old content/configuration first, then adopt new options
+deliberately and inspect its rendered result. A dependency update does not
+activate a new feature, migrate content, rename URLs or deploy the site.

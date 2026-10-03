@@ -39,7 +39,15 @@ export default function moo(input = {}) {
   if (!plainRecord(input))
     throw new TypeError("moo options must be a plain object");
   for (const key of Object.keys(input)) {
-    if (!["site", "plugins", "taxonomies", "taxonomyBasePath"].includes(key))
+    if (
+      ![
+        "site",
+        "plugins",
+        "taxonomies",
+        "taxonomyBasePath",
+        "taxonomyRoutes",
+      ].includes(key)
+    )
       throw new TypeError(`moo.${key} is unsupported`);
   }
   const site = defineSite(input.site);
@@ -47,6 +55,7 @@ export default function moo(input = {}) {
   const baseRegistry = buildRegistry(plugins, {
     taxonomies: input.taxonomies,
     taxonomyBasePath: input.taxonomyBasePath,
+    taxonomyRoutes: input.taxonomyRoutes,
   });
   let registry = baseRegistry;
   const active = plugins.length > 0 || registry.taxonomies.length > 0;

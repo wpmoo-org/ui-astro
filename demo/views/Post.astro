@@ -1,0 +1,67 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+import Single from "@wpmoo/astro/plugins/post/views/Single.astro";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { getLanguageLinks, getLocaleHref } from "@wpmoo/astro/i18n";
+import { resolveSeoMetadata } from "@wpmoo/astro/seo";
+import { getDemoEntryContext } from "../settings.js";
+
+interface Props {
+  entry: CollectionEntry<"post">;
+}
+
+const { entry } = Astro.props;
+const { site, plugins, i18n } = getSiteContext();
+const locale = i18n ? entry.data.locale : undefined;
+const post = plugins.find((plugin) => plugin.id === "post");
+if (!post) throw new TypeError("The demo Post view requires the post plugin");
+const { sidebar, ...options } = resolvePageOptions(
+  site,
+  "post",
+  "single",
+  entry.data.options,
+  locale,
+);
+const languageLinks = i18n ? await getLanguageLinks("post", entry) : [];
+const archiveHref = getLocaleHref(
+  post.locales?.[locale ?? ""]?.basePath ?? post.basePath,
+  locale ?? site.defaults.lang,
+);
+const label = post.locales?.[locale ?? ""]?.label ?? post.label;
+const metadata = Astro.site
+  ? resolveSeoMetadata(site, {
+      title: entry.data.title,
+      description: entry.data.description,
+      status: entry.data.status,
+      type: "post",
+      view: "single",
+      lang: options.lang,
+      url: new URL(getEntryHref("post", entry), Astro.site).href,
+      alternates: languageLinks.map((link) => ({
+        locale: link.locale,
+        url: new URL(link.href, Astro.site).href,
+      })),
+      created_at: entry.data.created_at,
+      published_at: entry.data.published_at,
+      updated_at: entry.data.updated_at,
+    })
+  : undefined;
+const { Content } = await render(entry);
+---
+
+<Layout
+  {...options}
+  title={entry.data.title}
+  description={entry.data.description}
+  metadata={metadata}
+  sidebarOptions={sidebar}
+  languageLinks={languageLinks}
+  breadcrumbItems={[{ label, href: archiveHref }, { label: entry.data.title }]}
+  pageContext={{ view: "single", entry: getDemoEntryContext("post", entry) }}
+>
+  <Single entry={entry} parts={options.parts} lang={options.lang}>
+    <Content />
+  </Single>
+</Layout>

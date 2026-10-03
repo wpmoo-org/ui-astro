@@ -1,5 +1,5 @@
 ---
-interface SidebarItem {
+interface SidebarLink {
   title: string;
   href?: string;
   icon?: string;
@@ -8,6 +8,11 @@ interface SidebarItem {
   disabled?: boolean;
   tooltip?: string;
   ariaLabel?: string;
+}
+
+interface SidebarItem extends SidebarLink {
+  children?: SidebarLink[];
+  open?: boolean;
 }
 
 interface SidebarGroup {
@@ -20,6 +25,7 @@ interface Props {
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "icon" | "offcanvas" | "none";
   rail?: boolean;
+  railAriaLabel?: string;
   id?: string;
   ariaLabel?: string;
   ariaLabelledBy?: string;
@@ -40,6 +46,7 @@ const {
   variant = "sidebar",
   collapsible = "icon",
   rail = true,
+  railAriaLabel = "Toggle sidebar",
   id = "sidebar",
   ariaLabel = "Sidebar",
   ariaLabelledBy = "",
@@ -68,6 +75,12 @@ if (!["icon", "offcanvas", "none"].includes(collapsible))
 if (typeof rail !== "boolean")
   throw new TypeError("Sidebar rail must be boolean");
 if (
+  typeof railAriaLabel !== "string" ||
+  !railAriaLabel.trim() ||
+  /[\x00-\x1f\x7f]/u.test(railAriaLabel)
+)
+  throw new TypeError("Sidebar railAriaLabel must be nonempty plain text");
+if (
   typeof id !== "string" ||
   id === "main-content" ||
   !/^[A-Za-z][A-Za-z0-9_-]*$/.test(id)
@@ -77,22 +90,51 @@ if (
 if (typeof ariaLabel !== "string" || typeof ariaLabelledBy !== "string") {
   throw new TypeError("Sidebar accessibility labels must be strings");
 }
+function validateLink(item: SidebarLink, path: string) {
+  for (const [field, value] of Object.entries({
+    title: item.title,
+    ariaLabel: item.ariaLabel ?? item.title,
+  })) {
+    if (
+      typeof value !== "string" ||
+      !value.trim() ||
+      /[\x00-\x1f\x7f]/u.test(value)
+    ) {
+      throw new TypeError(`${path}.${field} must be nonempty plain text`);
+    }
+  }
+  if (item.href !== undefined) navigationHref(item.href, `${path}.href`);
+}
+
 for (const [groupIndex, group] of navigationGroups.entries()) {
   for (const [itemIndex, item] of group.items.entries()) {
-    for (const [field, value] of Object.entries({
-      title: item.title,
-      ariaLabel: item.ariaLabel ?? item.title,
-    })) {
-      if (
-        typeof value !== "string" ||
-        !value.trim() ||
-        /[\x00-\x1f\x7f]/u.test(value)
-      ) {
+    const path = `Sidebar groups[${groupIndex}].items[${itemIndex}]`;
+    validateLink(item, path);
+    if (item.children !== undefined) {
+      if (!Array.isArray(item.children) || !item.children.length)
         throw new TypeError(
-          `Sidebar groups[${groupIndex}].items[${itemIndex}].${field} must be nonempty plain text`,
+          `${path}.children must be a nonempty array of links`,
         );
+      if (item.href !== undefined)
+        throw new TypeError(
+          `${path}.href cannot accompany a submenu disclosure`,
+        );
+      for (const [childIndex, child] of item.children.entries()) {
+        const childPath = `${path}.children[${childIndex}]`;
+        validateLink(child, childPath);
+        if ("children" in child || "open" in child)
+          throw new TypeError(
+            `${childPath} must be a link, not another submenu`,
+          );
       }
     }
+    if (
+      item.open !== undefined &&
+      (typeof item.open !== "boolean" || !item.children)
+    )
+      throw new TypeError(
+        `${path}.open requires a submenu and a boolean value`,
+      );
   }
 }
 ---
@@ -157,7 +199,7 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
           data-slot="sidebar-content"
         >
           <nav aria-label={ariaLabel}>
-            {navigationGroups.map((group) => (
+            {navigationGroups.map((group, groupIndex) => (
               <section class="sidebar-group" data-slot="sidebar-group">
                 {group.label ? (
                   <div
@@ -168,43 +210,156 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
                   </div>
                 ) : null}
                 <ul class="sidebar-menu" data-slot="sidebar-menu">
-                  {group.items.map((item) => (
-                    <li class="sidebar-menu-item" data-slot="sidebar-menu-item">
-                      <a
-                        class:list={[
-                          "sidebar-menu-button",
-                          item.active ? "active" : "",
-                        ]}
-                        href={item.disabled ? undefined : item.href || "#"}
-                        data-slot="sidebar-menu-button"
-                        data-sidebar-tooltip={item.tooltip || item.title}
-                        aria-label={item.ariaLabel ?? item.title}
-                        aria-current={item.active ? "page" : undefined}
-                        aria-disabled={item.disabled ? "true" : undefined}
-                        tabindex={item.disabled ? -1 : undefined}
+                  {group.items.map((item, itemIndex) => {
+                    const children = item.children ?? [];
+                    const submenuId = `${id}-submenu-${groupIndex}-${itemIndex}`;
+                    const open =
+                      item.open ?? children.some((child) => child.active);
+                    const Control = children.length ? "button" : "a";
+                    return (
+                      <li
+                        class="sidebar-menu-item"
+                        data-slot="sidebar-menu-item"
                       >
-                        <span
-                          class="sidebar-menu-button__lead"
-                          aria-hidden="true"
+                        <Control
+                          class:list={[
+                            "sidebar-menu-button",
+                            item.active ? "active" : "",
+                            children.length
+                              ? "sidebar-menu-button--disclosure sidebar-menu-sub-trigger"
+                              : "",
+                          ]}
+                          href={
+                            children.length || item.disabled
+                              ? undefined
+                              : item.href || "#"
+                          }
+                          type={children.length ? "button" : undefined}
+                          disabled={
+                            children.length && item.disabled ? true : undefined
+                          }
+                          data-slot="sidebar-menu-button"
+                          data-bs-toggle={
+                            children.length ? "collapse" : undefined
+                          }
+                          data-bs-target={
+                            children.length ? `#${submenuId}` : undefined
+                          }
+                          aria-expanded={
+                            children.length
+                              ? open
+                                ? "true"
+                                : "false"
+                              : undefined
+                          }
+                          aria-controls={
+                            children.length ? submenuId : undefined
+                          }
+                          data-sidebar-tooltip={item.tooltip || item.title}
+                          aria-label={item.ariaLabel ?? item.title}
+                          aria-current={
+                            !children.length && item.active ? "page" : undefined
+                          }
+                          aria-disabled={item.disabled ? "true" : undefined}
+                          tabindex={item.disabled ? -1 : undefined}
                         >
-                          {item.icon ? <Icon name={item.icon} /> : null}
-                        </span>
-                        <span class="sidebar-menu-button__text">
-                          <span class="sidebar-menu-button__title">
-                            {item.title}
-                          </span>
-                        </span>
-                        {item.badge !== undefined ? (
                           <span
-                            class="sidebar-menu-badge"
-                            data-slot="sidebar-menu-badge"
+                            class="sidebar-menu-button__lead"
+                            aria-hidden="true"
                           >
-                            {item.badge}
+                            {item.icon ? <Icon name={item.icon} /> : null}
                           </span>
+                          <span class="sidebar-menu-button__text">
+                            <span class="sidebar-menu-button__title">
+                              {item.title}
+                            </span>
+                          </span>
+                          {children.length ? (
+                            <span
+                              class="sidebar-menu-button__end"
+                              aria-hidden="true"
+                            >
+                              <Icon
+                                name="chevron-right"
+                                position="inline-end"
+                              />
+                            </span>
+                          ) : null}
+                          {item.badge !== undefined ? (
+                            <span
+                              class="sidebar-menu-badge"
+                              data-slot="sidebar-menu-badge"
+                            >
+                              {item.badge}
+                            </span>
+                          ) : null}
+                        </Control>
+                        {children.length ? (
+                          <ul
+                            id={submenuId}
+                            class:list={[
+                              "sidebar-menu-sub collapse",
+                              open ? "show" : "",
+                            ]}
+                            data-slot="sidebar-menu-sub"
+                          >
+                            {children.map((child) => (
+                              <li
+                                class="sidebar-menu-sub-item"
+                                data-slot="sidebar-menu-sub-item"
+                              >
+                                <a
+                                  class:list={[
+                                    "sidebar-menu-button sidebar-menu-sub-button",
+                                    child.active ? "active" : "",
+                                  ]}
+                                  href={
+                                    child.disabled
+                                      ? undefined
+                                      : child.href || "#"
+                                  }
+                                  data-slot="sidebar-menu-button"
+                                  data-sidebar-tooltip={
+                                    child.tooltip || child.title
+                                  }
+                                  aria-label={child.ariaLabel ?? child.title}
+                                  aria-current={
+                                    child.active ? "page" : undefined
+                                  }
+                                  aria-disabled={
+                                    child.disabled ? "true" : undefined
+                                  }
+                                  tabindex={child.disabled ? -1 : undefined}
+                                >
+                                  {child.icon ? (
+                                    <span
+                                      class="sidebar-menu-button__lead"
+                                      aria-hidden="true"
+                                    >
+                                      <Icon name={child.icon} />
+                                    </span>
+                                  ) : null}
+                                  <span class="sidebar-menu-button__text">
+                                    <span class="sidebar-menu-button__title">
+                                      {child.title}
+                                    </span>
+                                  </span>
+                                </a>
+                                {child.badge !== undefined ? (
+                                  <span
+                                    class="sidebar-menu-badge"
+                                    data-slot="sidebar-menu-badge"
+                                  >
+                                    {child.badge}
+                                  </span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
                         ) : null}
-                      </a>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             ))}
@@ -228,7 +383,7 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
         class="sidebar-rail"
         type="button"
         data-sidebar-rail
-        aria-label="Toggle sidebar"
+        aria-label={railAriaLabel}
         tabindex="-1"
       />
     ) : null

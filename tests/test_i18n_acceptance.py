@@ -2,6 +2,8 @@
 
 Acceptance: 2026-10-02, desktop/narrow, light/dark and LTR/RTL. These
 measure the shown control and ownership, not the final theme's appearance.
+The demo locale is now German; the previously accepted geometry checks are
+unchanged. Navigation grouping is still a visual candidate.
 """
 
 import os
@@ -43,7 +45,7 @@ class AcceptedLanguageControls(unittest.TestCase):
         self.assertEqual(owner.count(), 1)
         self.assertEqual(owner.get_attribute("data-bs-theme"), theme)
         self.assertEqual(page.locator("html").get_attribute("dir"), direction)
-        self.assertEqual(page.locator("html").get_attribute("lang"), "en-gb")
+        self.assertEqual(page.locator("html").get_attribute("lang"), "de")
         self.assertEqual(page.locator("main").count(), 1)
         self.assertEqual(page.locator("main h1").count(), 1)
         self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), width)
@@ -53,8 +55,8 @@ class AcceptedLanguageControls(unittest.TestCase):
         for width, theme, direction in [(1440, "light", "ltr"), (1440, "dark", "rtl"),
                                         (390, "light", "ltr"), (390, "dark", "rtl")]:
             with self.subTest(width=width, theme=theme, direction=direction):
-                page, errors = self.inspect_profile(width, theme, direction, "en-gb/getting-started")
-                trigger = page.get_by_role("button", name="Choose page language", exact=True)
+                page, errors = self.inspect_profile(width, theme, direction, "de/einrichtung")
+                trigger = page.get_by_role("button", name="Seitensprache wählen", exact=True)
                 expect(trigger).to_be_visible()
                 trigger.focus()
                 page.keyboard.press("Enter")
@@ -62,8 +64,8 @@ class AcceptedLanguageControls(unittest.TestCase):
                 menu = page.locator("header .dropdown-menu")
                 expect(menu).to_be_visible()
                 selected = menu.locator('[aria-current="true"]')
-                expect(selected).to_have_accessible_name("English (UK)")
-                expect(selected).to_have_attribute("href", "/en-gb/getting-started")
+                expect(selected).to_have_accessible_name("Deutsch")
+                expect(selected).to_have_attribute("href", "/de/einrichtung")
                 expect(menu.get_by_role("link", name="English", exact=True)).to_have_attribute("href", "/guide/setup")
                 menu_box = menu.bounding_box()
                 self.assertGreater(menu_box["width"], 0)
@@ -81,11 +83,11 @@ class AcceptedLanguageControls(unittest.TestCase):
         for width, theme, direction in [(1440, "light", "ltr"), (1440, "dark", "rtl"),
                                         (390, "light", "ltr"), (390, "dark", "rtl")]:
             with self.subTest(width=width, theme=theme, direction=direction):
-                page, errors = self.inspect_profile(width, theme, direction, "en-gb/contact-us")
-                breadcrumb = page.get_by_role("navigation", name="Breadcrumb", exact=True)
-                expect(breadcrumb.get_by_role("link", name="Moo UI Astro", exact=True)).to_have_attribute("href", "/en-gb/contact-us")
-                expect(breadcrumb.locator('[aria-current="page"]')).to_have_text("Contact")
-                trigger = page.get_by_role("button", name="Choose page language", exact=True)
+                page, errors = self.inspect_profile(width, theme, direction, "de/kontakt")
+                breadcrumb = page.get_by_role("navigation", name="Navigationspfad", exact=True)
+                expect(breadcrumb.get_by_role("link", name="Moo UI Astro", exact=True)).to_have_attribute("href", "/de/kontakt")
+                expect(breadcrumb.locator('[aria-current="page"]')).to_have_text("Kontakt")
+                trigger = page.get_by_role("button", name="Seitensprache wählen", exact=True)
                 breadcrumb_box, trigger_box = breadcrumb.bounding_box(), trigger.bounding_box()
                 self.assertGreater(breadcrumb_box["width"], 0)
                 self.assertLess(abs(breadcrumb_box["y"] + breadcrumb_box["height"] / 2

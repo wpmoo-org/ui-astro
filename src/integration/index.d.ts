@@ -8,6 +8,7 @@ export interface MooInput {
   plugins?: readonly Plugin[];
   taxonomies?: readonly Taxonomy[];
   taxonomyBasePath?: string;
+  taxonomyRoutes?: { archive?: "plugin" | "host" };
 }
 
 export default function moo(input?: MooInput): AstroIntegration;

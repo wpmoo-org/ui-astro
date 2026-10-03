@@ -19,21 +19,12 @@ import Sidebar from "@wpmoo/astro/components/Sidebar.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
 import { getDemoNavigation } from "../navigation.js";
+import { demoControls } from "../settings.js";
 
 const { site } = getSiteContext();
 const { lang, parts, theme, pageWidth, headerWidth, dir, shellMode } =
   site.defaults;
 const { groups, homeHref } = await getDemoNavigation(Astro.url.pathname, lang);
-const sidebarGroups = [
-  ...groups,
-  {
-    label: "Workspace",
-    items: [
-      { title: "Components", href: "#components", icon: "layout-grid" },
-      { title: "About", href: "#about", icon: "circle-info" },
-    ],
-  },
-];
 ---
 
 <Layout
@@ -47,15 +38,15 @@ const sidebarGroups = [
   headerWidth={headerWidth}
   dir={dir}
   shellMode={shellMode}
-  sidebarKey="astro-home"
-  sidebarId="astro-sidebar"
+  sidebarKey={demoControls.sidebar.key}
+  sidebarId={demoControls.sidebar.id}
 >
   <Sidebar
     slot="sidebar"
-    id="astro-sidebar"
+    id={demoControls.sidebar.id}
     brand={site.brand}
     brandHref={homeHref}
-    groups={sidebarGroups}
+    groups={groups}
   />
 
   <nav
@@ -192,7 +183,7 @@ const sidebarGroups = [
         ariaLabel="Theme views"
         items={[
           { label: "Overview", href: "/", active: true },
-          { label: "Activity", href: "#activity" },
+          { label: "Activity", href: "#theme-activity" },
         ]}
       />
       <DropdownMenu

@@ -1,5 +1,12 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": [".astro/types.d.ts", "src/**/*", "demo/**/*", "tests/public-api.ts", "tests/theme-types.ts"],
+  "include": [
+    ".astro/types.d.ts",
+    "src/**/*",
+    "demo/**/*",
+    "tests/public-api.ts",
+    "tests/theme-types.ts",
+    "tests/integration-types.ts"
+  ],
   "exclude": ["dist", "tests/fixtures"]
 }

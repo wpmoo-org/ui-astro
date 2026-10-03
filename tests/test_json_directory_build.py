@@ -1,7 +1,10 @@
 """A host-defined JSON-directory content type uses the public Astro loader."""
 
 from pathlib import Path
+import json
+import shutil
 import subprocess
+import tempfile
 import unittest
 
 
@@ -21,6 +24,33 @@ class JsonDirectoryBuild(unittest.TestCase):
         result = subprocess.run([str(ASTRO), "build"], cwd=fixture, text=True, capture_output=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse((fixture / "dist/__moo_content_integrity").exists())
+
+    def test_native_json_array_retains_legacy_id_and_independent_slug(self):
+        with tempfile.TemporaryDirectory(prefix=".json-array-id-", dir=ROOT / "tests/fixtures") as directory:
+            fixture = Path(directory)
+            shutil.copytree(
+                ROOT / "tests/fixtures/json-file", fixture, dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns("dist", ".astro", "node_modules", ".cache"),
+            )
+            (fixture / "src/content/team.json").write_text(json.dumps([
+                {"id": "cng_1", "slug": "member", "title": "Member", "status": "publish"},
+            ]) + "\n")
+            config = fixture / "src/content.config.mjs"
+            config.write_text(config.read_text().replace("title: z.string(),", "title: z.string(), slug: z.string(),"))
+            (fixture / "src/pages/records.json.ts").write_text(
+                'import { getCollection } from "astro:content";\n'
+                'export async function GET() {\n'
+                '  return Response.json((await getCollection("team")).map(entry => ({\n'
+                '    id: entry.id, slug: entry.data.slug, filePath: entry.filePath,\n'
+                '  })));\n'
+                '}\n'
+            )
+            result = subprocess.run([str(ASTRO), "build"], cwd=fixture, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(json.loads((fixture / "dist/records.json").read_text()), [
+                {"id": "cng_1", "slug": "member", "filePath": "src/content/team.json"},
+            ])
+            self.assertFalse((fixture / "dist/__moo_content_integrity").exists())
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Positive contracts for taxonomy archive views accepted on 2026-10-01.
+"""Positive contracts for taxonomy archive foundations accepted on 2026-10-03.
 
 Archives inherit the shared Layout and render supplied mixed-type items. This
 acceptance covers that foundation, rather than a finished theme or pixel baseline.
@@ -49,7 +49,7 @@ class AcceptedTaxonomyArchives(unittest.TestCase):
         response = self.page.goto(urljoin(BASE_URL, path), wait_until="domcontentloaded")
         self.assertEqual(response.status, 200)
         self.page.locator('[data-moo-document-owner][data-moo-state="ready"]').wait_for()
-        self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-ready]').wait_for()
+        self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state-ready]').wait_for()
         self.assertEqual(self.page.title(), title)
         self.assertEqual(self.page.locator('[data-moo-document-owner]').count(), 1)
         self.assertEqual(self.page.locator('[data-layout="app"]').count(), 1)
@@ -103,10 +103,15 @@ class AcceptedTaxonomyArchives(unittest.TestCase):
         self.assertEqual(self.page.locator("main h1").all_text_contents(), ["Guides"])
         links = self.page.locator("main h2 a")
         self.assertEqual(links.all_text_contents(),
-                         ["Setup guide", "A published announcement", "One Post with a Sidebar"])
+                         ["Page with sections", "Setup guide", "A published announcement", "One Post with a Sidebar"])
         self.assertEqual(links.evaluate_all("links => links.map(link => link.getAttribute('href'))"),
-                         ["/guide/setup", "/posts/announcement", "/posts/layout-options"])
-        for identity in ["page-id--guide_002f_setup_002e_md", "post-announcement", "post-layout-options"]:
+                         ["/editable", "/guide/setup", "/posts/announcement", "/posts/layout-options"])
+        for identity in [
+            "page-id--en_002f_editable_002e_md",
+            "page-id--en_002f_guide_002f_setup_002e_md",
+            "post-id--en_002f_announcement_002e_md",
+            "post-id--en_002f_layout-options_002e_md",
+        ]:
             self.assertEqual(self.page.locator(f"main li.{identity}").count(), 1)
         self.page.locator('main h2 a[href="/guide/setup"]').click()
         self.page.wait_for_url("**/guide/setup")
@@ -125,8 +130,8 @@ class AcceptedTaxonomyArchives(unittest.TestCase):
         self.open_archive("topics/sector/foundation", "Foundation")
         self.assertEqual(self.page.locator('.moo-ui.archive.tax-sector.tax-sector--foundation').count(), 1)
         self.assertEqual(self.page.locator("main h2 a").all_text_contents(),
-                         ["Setup guide", "A published announcement"])
-        self.assertEqual(self.page.locator("main time").get_attribute("datetime"),
+                         ["Page with sections", "Setup guide", "A published announcement"])
+        self.assertEqual(self.page.locator("main li.post time").get_attribute("datetime"),
                          "2026-09-21T01:30:00.000Z")
 
     def test_narrow_archive_sidebar_restores_aria_and_keyboard_focus(self):
@@ -144,7 +149,8 @@ class AcceptedTaxonomyArchives(unittest.TestCase):
                 self.page.locator('[data-slot="sidebar"].show').wait_for()
                 expect(trigger).to_have_attribute("aria-expanded", "true")
                 expect(sidebar).to_have_attribute("aria-modal", "true")
-                sidebar.get_by_role("link", name="Contact", exact=True).focus()
+                sidebar.get_by_role("button", name="Pages", exact=True).click()
+                sidebar.get_by_role("link", name="Contact · no Sidebar", exact=True).focus()
                 self.page.keyboard.press("Escape")
                 self.page.locator('[data-slot="sidebar"].show').wait_for(state="hidden")
                 expect(trigger).to_have_attribute("aria-expanded", "false")

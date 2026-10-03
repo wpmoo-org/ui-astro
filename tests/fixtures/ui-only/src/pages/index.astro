@@ -127,8 +127,34 @@ const items: ComponentProps<typeof Loop>["items"] = [
 <Layout
   title="UI-only consumer"
   {...options}
+  sidebar
+  sidebarId="ui-only-sidebar"
+  sidebarKey="ui-only-consumer"
   pageContext={{ view: "native", key: "ui-only" }}
 >
+  <SidebarInclude
+    slot="sidebar"
+    id="ui-only-sidebar"
+    brand={site.brand}
+    brandHref="/"
+    groups={[
+      {
+        items: [
+          {
+            title: "Content",
+            icon: "file-text",
+            children: [
+              {
+                title: "Supplied content",
+                href: "#supplied-item",
+                active: true,
+              },
+            ],
+          },
+        ],
+      },
+    ]}
+  />
   <Header
     slot="header"
     parts={options.parts}

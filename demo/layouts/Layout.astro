@@ -9,19 +9,21 @@ import DropdownMenu from "@wpmoo/astro/components/DropdownMenu.astro";
 import type { LanguageLink } from "@wpmoo/astro/i18n";
 import { getSiteContext } from "@wpmoo/astro/context";
 import type { PageOptions } from "@wpmoo/astro/config";
-import { getDemoMessages } from "../messages.js";
+import { getDemoLanguageLabel, getDemoMessages } from "../messages.js";
 import { getDemoNavigation } from "../navigation.js";
 import { demoControls, getDemoOptions } from "../settings.js";
 
 type Props = ComponentProps<typeof Layout> & {
   sidebarOptions?: PageOptions["sidebar"];
   languageLinks?: readonly LanguageLink[];
+  breadcrumbItems?: readonly { label: string; href?: string }[];
 };
 const {
   title,
-  sidebar = false,
+  sidebar,
   sidebarOptions,
   languageLinks = [],
+  breadcrumbItems,
   ...options
 } = Astro.props;
 const context = getSiteContext();
@@ -31,15 +33,23 @@ const type =
     ? pageContext.entry.type
     : pageContext?.view === "archive"
       ? pageContext.type
-      : "page";
-const view = pageContext?.view === "archive" ? "archive" : "single";
-const defaults = getDemoOptions(type, view, {
-  parts: options.parts,
-  lang: options.lang,
-});
+      : pageContext?.view === "taxonomy"
+        ? pageContext.taxonomy
+        : "page";
+const view =
+  pageContext?.view === "archive" || pageContext?.view === "taxonomy"
+    ? "archive"
+    : "single";
+const defaults = getDemoOptions(
+  type,
+  view,
+  { parts: options.parts, lang: options.lang },
+  context.i18n ? (options.lang ?? Astro.currentLocale) : undefined,
+);
 const { lang, parts } = defaults;
 const selectedSidebar =
   sidebarOptions === undefined ? defaults.sidebar : sidebarOptions;
+const enabledSidebar = sidebar ?? selectedSidebar !== null;
 const copy = getDemoMessages(lang);
 const { groups, homeHref, homeLabel } = await getDemoNavigation(
   Astro.url.pathname,
@@ -47,7 +57,7 @@ const { groups, homeHref, homeLabel } = await getDemoNavigation(
 );
 const breadcrumbs = [
   { label: context.site.brand, href: homeHref },
-  { label: title },
+  ...(breadcrumbItems ?? [{ label: title }]),
 ];
 const { sidebar: _sidebar, ...layoutDefaults } = defaults;
 const layoutProps = {
@@ -58,17 +68,17 @@ const layoutProps = {
   parts,
   skipText: options.skipText ?? parts.header.skipLabel,
 };
-const sidebarId = options.sidebarId ?? "demo-sidebar";
-const sidebarKey = options.sidebarKey ?? "astro-demo";
+const sidebarId = options.sidebarId ?? demoControls.sidebar.id;
+const sidebarKey = options.sidebarKey ?? demoControls.sidebar.key;
 const languageItems = languageLinks.map((link) => ({
-  label: link.locale === "en-gb" ? "English (UK)" : "English",
+  label: getDemoLanguageLabel(link.locale),
   href: link.href,
   active: link.locale === lang,
 }));
 ---
 
 {
-  sidebar ? (
+  enabledSidebar ? (
     <Layout
       {...layoutProps}
       sidebar
@@ -102,8 +112,8 @@ const languageItems = languageLinks.map((link) => ({
         {languageItems.length > 1 ? (
           <DropdownMenu
             slot="actions"
-            label="Language"
-            ariaLabel="Choose page language"
+            label={copy.language}
+            ariaLabel={copy.choosePageLanguage}
             items={languageItems}
             class="ms-auto"
             size="sm"
@@ -139,8 +149,8 @@ const languageItems = languageLinks.map((link) => ({
         {languageItems.length > 1 ? (
           <DropdownMenu
             slot="actions"
-            label="Language"
-            ariaLabel="Choose page language"
+            label={copy.language}
+            ariaLabel={copy.choosePageLanguage}
             items={languageItems}
             class="ms-auto"
             size="sm"

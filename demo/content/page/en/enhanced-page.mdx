@@ -10,13 +10,24 @@ options:
     content:
       utilities: [py-3]
 ---
-import Hero from "../../components/Hero.astro";
+
+import Hero from "../../../components/Hero.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
 import { resolvePageOptions } from "@wpmoo/astro/config";
 
 This collection entry keeps the same Page schema, identity and Layout as Markdown.
 
-<Hero id="mdx-example" title="Reusable MDX Hero" description="The host composes published Moo UI components and shares this section with a native Astro page." parts={resolvePageOptions(getSiteContext().site, "page", "single").parts} />
+<Hero
+  id="mdx-example"
+  title="Reusable MDX Hero"
+  description="The host composes published Moo UI components and shares this section with a native Astro page."
+  parts={resolvePageOptions(getSiteContext().site, "page", "single").parts}
+/>
 
-<Button element="a" href="/landing" variant="outline">Open native Astro page</Button>
+<Button
+  element="a"
+  href="/landing"
+  variant="outline"
+  label="Open native Astro page"
+/>

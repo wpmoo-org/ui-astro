@@ -1,0 +1,74 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Archive from "@wpmoo/astro/plugins/post/views/Archive.astro";
+import { resolvePageOptions } from "@wpmoo/astro/config";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getLocaleHref, getRouteLocale } from "@wpmoo/astro/i18n";
+import { getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
+import { resolveSeoMetadata } from "@wpmoo/astro/seo";
+
+const { site, plugins, i18n, base, trailingSlash } = getSiteContext();
+const locale = i18n ? getRouteLocale(Astro.routePattern) : undefined;
+const post = plugins.find((plugin) => plugin.id === "post");
+if (!post)
+  throw new TypeError("The demo Post archive requires the post plugin");
+const label = post.locales?.[locale ?? ""]?.label ?? post.label;
+const href = getLocaleHref(
+  post.locales?.[locale ?? ""]?.basePath ?? post.basePath,
+  locale ?? site.defaults.lang,
+);
+// The native helper supplies the locale prefix; the view adds the host base once.
+const basePath =
+  base === "/" ? href : href.slice(base.replace(/\/$/u, "").length);
+const { sidebar, ...options } = resolvePageOptions(
+  site,
+  "post",
+  "archive",
+  undefined,
+  locale,
+);
+const entries = await getPublishedPosts({ locale });
+const languageLinks =
+  i18n?.locales.map((value) => ({
+    locale: value,
+    href: getLocaleHref(
+      post.locales?.[value]?.basePath ?? post.basePath,
+      value,
+    ),
+  })) ?? [];
+const metadata = Astro.site
+  ? resolveSeoMetadata(site, {
+      title: label,
+      status: "publish",
+      type: "post",
+      view: "archive",
+      lang: options.lang,
+      url: new URL(href, Astro.site).href,
+      alternates: languageLinks.map((link) => ({
+        locale: link.locale,
+        url: new URL(link.href, Astro.site).href,
+      })),
+    })
+  : undefined;
+---
+
+<Layout
+  {...options}
+  title={label}
+  metadata={metadata}
+  sidebarOptions={sidebar}
+  languageLinks={languageLinks}
+  pageContext={{ view: "archive", type: "post" }}
+>
+  <Archive
+    entries={entries}
+    title={label}
+    parts={options.parts}
+    basePath={basePath}
+    base={base}
+    trailingSlash={trailingSlash}
+    locale={locale}
+    lang={locale ?? site.defaults.lang}
+    dateLang={options.lang}
+  />
+</Layout>

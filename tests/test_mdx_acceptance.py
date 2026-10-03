@@ -70,7 +70,7 @@ class AcceptedMixedPages(unittest.TestCase):
             with self.subTest(width=width, theme=theme, direction=direction):
                 page, errors = self.open_profile(width, theme, direction, "enhanced-page")
                 expect(page.locator("main h1")).to_have_text("Enhanced Page")
-                expect(page.locator("main article.page.page-id--enhanced-page_002e_mdx")).to_have_count(1)
+                expect(page.locator("main article.page.page-id--en_002f_enhanced-page_002e_mdx")).to_have_count(1)
                 self.assert_hero(page, "mdx-example-heading", "Reusable MDX Hero")
                 action = page.get_by_role("button", name="Open native Astro page", exact=True)
                 expect(action).to_be_visible()
@@ -103,7 +103,7 @@ class AcceptedMixedPages(unittest.TestCase):
                 expect(page.locator("main h1")).to_have_text("Native Astro page")
                 expect(page.locator('.moo-ui.page.route-mdx-landing')).to_have_count(1)
                 self.assert_hero(page, "native-example-heading", "Reusable Astro Hero")
-                self.assertEqual(page.locator('[data-slot="sidebar"]').count(), 0)
+                self.assertEqual(page.locator('[data-slot="sidebar"]').count(), 1)
                 action = page.get_by_role("button", name="Open MDX Page", exact=True)
                 expect(action).to_have_attribute("href", "/enhanced-page")
                 action.click()

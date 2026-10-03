@@ -10,5 +10,4 @@ taxonomies:
   sector: [foundation]
 navOrder: 2
 ---
-
 Setup guide body.

@@ -26,13 +26,7 @@ export async function getDemoNavigation(currentPath, locale) {
     : undefined;
   const siteItems = navigation
     .filter((link) => link.href !== postHref)
-    .map((link) =>
-      item(
-        link.label === "Contact" ? copy.contact : link.label,
-        link.href,
-        "file-text",
-      ),
-    );
+    .map((link) => item(link.label, link.href, "file-text"));
   const defaultLocale = i18n?.defaultLocale ?? site.defaults.lang;
   const fixtures = locale === defaultLocale;
   const homeHref = fixtures
@@ -41,10 +35,7 @@ export async function getDemoNavigation(currentPath, locale) {
   const homeLabel = fixtures
     ? copy.overview
     : (navigation.find((link) => link.href === homeHref)?.label ?? site.brand);
-  if (fixtures && !siteItems.some((link) => link.href === homeHref))
-    siteItems.unshift(item(copy.overview, homeHref, "panel-left"));
-
-  const examples = fixtures
+  const viewItems = fixtures
     ? [
         item(
           copy.single,
@@ -57,28 +48,25 @@ export async function getDemoNavigation(currentPath, locale) {
           "layout-grid",
         ),
         item(
-          copy.pageArchive,
-          getLocaleHref("/preview/page-archive", locale),
-          "layout-grid",
-        ),
-        item(
-          copy.customArchive,
-          getLocaleHref("/preview/page-archive-slots", locale),
+          copy.emptyStateTitle,
+          getLocaleHref("/preview/i18n-empty", locale),
           "layout-grid",
         ),
       ]
     : [];
+  const postItems = [];
   if (post) {
-    examples.push(item(copy.postArchive, postHref, "layout-grid"));
+    postItems.push(item(copy.postArchive, postHref, "layout-grid"));
     const entries = await getPublishedPosts({
       locale: i18n ? locale : undefined,
     });
     for (const entry of [...entries].reverse()) {
-      examples.push(
+      postItems.push(
         item(entry.data.title, getEntryHref("post", entry), "file-text"),
       );
     }
   }
+  const taxonomyItems = [];
   if (taxonomies.some((taxonomy) => taxonomy.archive)) {
     const paths = await getTaxonomyPaths({ locale });
     for (const [taxonomy, id, title] of [
@@ -92,31 +80,61 @@ export async function getDemoNavigation(currentPath, locale) {
         (value) =>
           value.props.taxonomy === taxonomy && value.props.term.id === id,
       );
-      if (route) examples.push(item(title, route.props.href, "layout-grid"));
+      if (route)
+        taxonomyItems.push(item(title, route.props.href, "layout-grid"));
     }
   }
   if (fixtures)
-    examples.push(
-      item("Native Astro page", getLocaleHref("/landing", locale), "file-text"),
+    siteItems.push(
+      item(copy.nativePage, getLocaleHref("/landing", locale), "file-text"),
       item(
-        copy.emptyStateTitle,
-        getLocaleHref("/preview/i18n-empty", locale),
+        copy.pageArchive,
+        getLocaleHref("/preview/page-archive", locale),
         "layout-grid",
       ),
-      ...Object.entries(copy.layoutProfiles).map(([id, title]) =>
+      item(
+        copy.customArchive,
+        getLocaleHref("/preview/page-archive-slots", locale),
+        "layout-grid",
+      ),
+    );
+  const layoutItems = fixtures
+    ? Object.entries(copy.layoutProfiles).map(([id, title]) =>
         item(
           title,
           getLocaleHref(`/preview/layouts/${id}`, locale),
           "panel-left",
         ),
-      ),
-    );
+      )
+    : [];
+  const overviewItems = fixtures
+    ? [
+        item(copy.overview, homeHref, "panel-left"),
+        item(copy.components, `${homeHref}#components`, "layout-grid"),
+      ]
+    : [];
   return {
     homeHref,
     homeLabel,
     groups: [
-      { label: copy.site, items: siteItems },
-      { label: copy.examples, items: examples },
+      {
+        items: [
+          { title: copy.site, icon: "panel-left", children: overviewItems },
+          { title: copy.pages, icon: "file-text", children: siteItems },
+          { title: copy.posts, icon: "file-text", children: postItems },
+          {
+            title: copy.taxonomies,
+            icon: "layout-grid",
+            children: taxonomyItems,
+          },
+          { title: copy.views, icon: "layout-grid", children: viewItems },
+          {
+            title: copy.layoutLabel,
+            icon: "panel-left",
+            children: layoutItems,
+          },
+        ].filter((item) => item.children.length > 0),
+      },
     ],
   };
 }

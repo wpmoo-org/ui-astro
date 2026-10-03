@@ -10,6 +10,7 @@ taxonomies:
 created_at: "2026-09-27"
 published_at: "2026-09-28T18:25:03+02:00"
 navOrder: 1
+navLabel: "Contact · no Sidebar"
 options:
   sidebar: null
   pageWidth: lg
