@@ -33,7 +33,7 @@ const fixtureLock = JSON.parse(
 );
 const core = JSON.parse(
   await readFile(
-    new URL("../contracts/rc9-package.json", import.meta.url),
+    new URL("../contracts/rc10-package.json", import.meta.url),
     "utf8",
   ),
 );
@@ -96,7 +96,7 @@ test("public fixture imports distinguish executed declarations from comments and
   );
 });
 
-test("consumer lock keeps the published RC9 URL and integrity while pinning the local adapter", () => {
+test("consumer lock keeps the published Core release URL and integrity while pinning the local adapter", () => {
   assert.doesNotThrow(() =>
     validateConsumerLock({ fixtureManifest, fixtureLock, manifest, core }),
   );

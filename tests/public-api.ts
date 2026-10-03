@@ -38,7 +38,8 @@ import {
   validateSiteContent,
 } from "@wpmoo/astro/context";
 import MooUI, {
-  Chart,
+  loadChart,
+  initSheets,
   Combobox,
   ContextMenu,
   DataTable,
@@ -171,7 +172,8 @@ export const publicServerFunctions = {
   getEntryHref,
   validateSiteContent,
 };
-export function initializeRuntime(root: Element) {
+export async function initializeRuntime(root: Element) {
+  const Chart = await loadChart();
   for (const ctor of [
     Chart,
     Combobox,
@@ -186,7 +188,14 @@ export function initializeRuntime(root: Element) {
     ctor.getOrCreateInstance(root).dispose();
   }
   MooUI.Sidebar.getInstance(root)?.dispose();
+  const disposeSheets: () => void = initSheets(root);
+  disposeSheets();
+  const defaultChart = await MooUI.loadChart();
+  defaultChart.getInstance(root)?.dispose();
 }
+
+// @ts-expect-error RC10 loads Chart asynchronously rather than exporting it on the aggregate.
+void MooUI.Chart;
 
 // These are compile-only cases: strict public input boundaries must reject them.
 // @ts-expect-error Loop is not a layout preference view.
@@ -203,7 +212,7 @@ export const invalidHostRoute: PluginInput["routes"][number] = {
   prerender: true,
   entrypoint: new URL("file:///tmp/single.astro"),
 };
-// @ts-expect-error The published RC9 runtime has no private component export.
+// @ts-expect-error The published Core runtime has no private component export.
 export const invalidRuntime = MooUI.PrivateComponent;
 // @ts-expect-error Normalized type Sidebar settings cannot mutate shared site state.
 site.types.page.sidebar!.rail = true;

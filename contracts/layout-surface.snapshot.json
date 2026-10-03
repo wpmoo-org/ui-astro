@@ -2,14 +2,14 @@
   "schema_version": 1,
   "upstream": {
     "package": "@wpmoo/ui",
-    "version": "1.0.0-rc.9"
+    "version": "1.0.0-rc.10"
   },
   "source": {
     "repository": "projects/ui/html",
-    "commit": "e2ef1b28cb4ab6f882b801ee6ea242630696548a",
+    "commit": "29191dc0c65ed1dfb8e41d2cfbeed054269415cc",
     "files": {
       "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
-      "src/layouts/app.html.jinja": "b95f6d4b89d4083858ac88e3d81666ebc4a00aae24a31d4f6b1444741361f364",
+      "src/layouts/app.html.jinja": "3dac8d000fe8f0c583ca0a3d74df1e42f5e9fe93baa3b49481169549bcb671f3",
       "src/layouts/page.html.jinja": "b3072f00df72651abc30efae0cd165a9843efb6d8d84c23b4cf2994e1d434deb"
     }
   },
@@ -20,8 +20,12 @@
       "status": "preview",
       "description": "Compose a direct application shell with an optional Sidebar sibling and one independent Page sibling.",
       "source": "src/layouts/app.html.jinja",
-      "parts": ["sidebar"],
-      "layoutParts": ["page"]
+      "parts": [
+        "sidebar"
+      ],
+      "layoutParts": [
+        "page"
+      ]
     },
     {
       "slug": "page",
@@ -35,18 +39,41 @@
   ],
   "layout_surface": {
     "app": {
-      "navigation": ["sidebar", "none"],
-      "shell_mode": ["viewport", "contained"],
-      "side": ["left", "right"],
-      "variant": ["sidebar", "floating", "inset"],
-      "collapsible": ["icon", "offcanvas", "none"],
+      "navigation": [
+        "sidebar",
+        "none"
+      ],
+      "shell_mode": [
+        "viewport",
+        "contained"
+      ],
+      "side": [
+        "left",
+        "right"
+      ],
+      "variant": [
+        "sidebar",
+        "floating",
+        "inset"
+      ],
+      "collapsible": [
+        "icon",
+        "offcanvas",
+        "none"
+      ],
       "root": {
         "class": "wrapper",
         "data_layout": "app",
         "data_shell_mode": "viewport|contained"
       },
-      "direct_children": ["sidebar", "page"],
-      "named_slots": ["sidebar", "page"]
+      "direct_children": [
+        "sidebar",
+        "page"
+      ],
+      "named_slots": [
+        "sidebar",
+        "page"
+      ]
     },
     "page": {
       "width": {
@@ -58,14 +85,21 @@
         "xxl": "container-xxl",
         "fluid": "container-fluid"
       },
-      "regions": ["header", "main", "footer"],
+      "regions": [
+        "header",
+        "main",
+        "footer"
+      ],
       "root": {
         "data_slot": "page"
       },
       "main": {
         "id": "main-content",
         "tabindex": "-1",
-        "class": ["scroll-fade-y", "no-scrollbar"],
+        "class": [
+          "scroll-fade-y",
+          "no-scrollbar"
+        ],
         "rail_attribute": "data-page-container"
       }
     }

@@ -88,7 +88,7 @@ test("prepared consumers allow only the retained tarballs and their exact peer c
   const packageManifest = await read("../package.json");
   const manifest = await read("./fixtures/consumer/package.json");
   const lock = await read("./fixtures/consumer/package-lock.json");
-  const core = await read("../contracts/rc9-package.json");
+  const core = await read("../contracts/rc10-package.json");
   const artifacts = {
     "@wpmoo/astro": {
       filename: "wpmoo-astro-0.1.0.tgz",
@@ -136,7 +136,7 @@ test("prepared consumers allow only the retained tarballs and their exact peer c
         value.lock.packages["node_modules/@wpmoo/ui"].resolved =
           "file:../dev-ui.tgz";
       },
-      /published RC9/,
+      /published Core release/,
     ],
     [
       (value) => {

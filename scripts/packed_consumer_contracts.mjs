@@ -166,7 +166,7 @@ export function validateProfileLock({
     upstream.integrity !== core.integrity
   ) {
     throw new Error(
-      `${profile}: published RC9 version, registry URL and integrity must be unchanged`,
+      `${profile}: published Core release version, registry URL and integrity must be unchanged`,
     );
   }
   const packagePaths = Object.keys(lock.packages);

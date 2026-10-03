@@ -24,6 +24,6 @@ test("the approved checker tools are exact development pins and MDX stays an exp
     assert.equal(manifest.dependencies[name], undefined);
     assert.equal(manifest.peerDependencies?.[name], undefined);
   }
-  assert.equal(manifest.dependencies["@wpmoo/ui"], "1.0.0-rc.9");
+  assert.equal(manifest.dependencies["@wpmoo/ui"], "1.0.0-rc.10");
   assert.equal(manifest.dependencies.bootstrap, "5.3.8");
 });

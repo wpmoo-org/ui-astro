@@ -337,6 +337,15 @@ void [
   import "@wpmoo/astro/runtime/bootstrap.js";
   import MooUI from "@wpmoo/astro/runtime/moo-ui.js";
   void MooUI.Sidebar;
+  const disposeSheets = MooUI.initSheets(document);
+  window.addEventListener("pagehide", disposeSheets, { once: true });
+  async function initializeCharts() {
+    const roots = document.querySelectorAll(".chart");
+    if (!roots.length) return;
+    const Chart = await MooUI.loadChart();
+    roots.forEach((root) => Chart.getOrCreateInstance(root));
+  }
+  void initializeCharts();
   const combobox = document
     .getElementById("consumer-multiple-input")
     ?.closest(".combobox");

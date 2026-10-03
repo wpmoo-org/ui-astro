@@ -78,7 +78,7 @@ export async function assertSourceClosure({
   coreExports,
 } = {}) {
   const packed = new Set(files);
-  const exports = coreExports ?? (await readJson(join(ASTRO_ROOT, "contracts/rc9-package.json"))).exports;
+  const exports = coreExports ?? (await readJson(join(ASTRO_ROOT, "contracts/rc10-package.json"))).exports;
   for (const file of files.filter((path) => /^src\/.+\.(?:astro|js|css)$/.test(path))) {
     const source = await readFile(join(root, file), "utf8");
     const imports = [

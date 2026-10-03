@@ -217,7 +217,7 @@ export function validateConsumerLock({
     installedCore.resolved !== core.registry_url ||
     installedCore.integrity !== core.integrity
   ) {
-    throw new Error("consumer Core release pin differs from published RC9");
+    throw new Error("consumer Core release pin differs from published Core release");
   }
 }
 
@@ -315,7 +315,7 @@ export async function verifyPackedConsumer({
     await readFile(join(ASTRO_ROOT, "package.json"), "utf8"),
   );
   const core = JSON.parse(
-    await readFile(join(ASTRO_ROOT, "contracts/rc9-package.json"), "utf8"),
+    await readFile(join(ASTRO_ROOT, "contracts/rc10-package.json"), "utf8"),
   );
   const surface = JSON.parse(
     await readFile(

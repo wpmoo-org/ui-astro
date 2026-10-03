@@ -206,7 +206,7 @@ const sidebarGroups = [
       <Chart
         id="theme-activity"
         ariaLabel="Theme activity"
-        data={{ labels: ["A", "B"], datasets: [{ data: [1, 2] }] }}
+        data={{ labels: ["A", "B"], datasets: [{ label: "Activity", data: [1, 2] }] }}
         class="mt-4"
       />
       <DataTable
@@ -224,14 +224,18 @@ const sidebarGroups = [
 
 <script>
   import MooUI from "@wpmoo/astro/runtime/moo-ui.js";
-  const { Datepicker, Chart, DataTable } = MooUI;
+  const { Datepicker, DataTable } = MooUI;
 
   document.querySelectorAll("[data-datepicker]").forEach((root) => {
     Datepicker.getOrCreateInstance(root);
   });
-  document.querySelectorAll(".chart").forEach((root) => {
-    Chart.getOrCreateInstance(root);
-  });
+  async function initializeCharts() {
+    const roots = document.querySelectorAll(".chart");
+    if (!roots.length) return;
+    const Chart = await MooUI.loadChart();
+    roots.forEach((root) => Chart.getOrCreateInstance(root));
+  }
+  void initializeCharts();
   document.querySelectorAll(".datatable").forEach((root) => {
     DataTable.getOrCreateInstance(root);
   });

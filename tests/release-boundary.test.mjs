@@ -23,7 +23,7 @@ function boundary(args = ["--mode", "release"]) {
   });
 }
 
-test("published RC9 bytes and the current adapter archive satisfy the release boundary", () => {
+test("published Core release bytes and the current adapter archive satisfy the release boundary", () => {
   const result = boundary();
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout, /Astro release boundary: OK/);

@@ -13,19 +13,19 @@ import {
   checkRelease,
 } from "../scripts/sync_package_baseline.mjs";
 
-test("workspace release pin uses the published RC9 registry package", async () => {
+test("workspace release pin uses the published Core release registry package", async () => {
   const declared = JSON.parse(
     await readFile(join(ASTRO_ROOT, "package.json"), "utf8"),
   );
   const lock = JSON.parse(
     await readFile(join(ASTRO_ROOT, "package-lock.json"), "utf8"),
   );
-  assert.equal(declared.dependencies["@wpmoo/ui"], "1.0.0-rc.9");
-  assert.equal(lock.packages[""].dependencies["@wpmoo/ui"], "1.0.0-rc.9");
-  assert.equal(lock.packages["node_modules/@wpmoo/ui"].version, "1.0.0-rc.9");
+  assert.equal(declared.dependencies["@wpmoo/ui"], "1.0.0-rc.10");
+  assert.equal(lock.packages[""].dependencies["@wpmoo/ui"], "1.0.0-rc.10");
+  assert.equal(lock.packages["node_modules/@wpmoo/ui"].version, "1.0.0-rc.10");
   assert.equal(
     lock.packages["node_modules/@wpmoo/ui"].resolved,
-    "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.9.tgz",
+    "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.10.tgz",
   );
 });
 
@@ -155,7 +155,7 @@ test("package retains all 45 public wrappers and the explicit integration, Page 
 
 const packageJson = {
   dependencies: {
-    "@wpmoo/ui": "1.0.0-rc.9",
+    "@wpmoo/ui": "1.0.0-rc.10",
   },
 };
 
@@ -164,10 +164,10 @@ const packageLock = {
   packages: {
     "": packageJson,
     "node_modules/@wpmoo/ui": {
-      version: "1.0.0-rc.9",
-      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.9.tgz",
+      version: "1.0.0-rc.10",
+      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.10.tgz",
       integrity:
-        "sha512-gSRNTKA6dfh0RpJ4+KFjQZX9KAHOqxSEMMVG0vHwuAPd+UcNj0TtpDoKMa8xYA++/ZyDDtccYEYIZ5FwJ7UASg==",
+        "sha512-iCDsnKnp82kAArwJGCpRVQBVHCH2T5ikVohfZml4ZHfP1NtwkCSItanqDsMXCuJ1Ij8xUCNPtLKd9v47GXTk+Q==",
     },
   },
 };
@@ -282,7 +282,7 @@ test("package compatibility rejects a different package name or version", () => 
   assert.doesNotThrow(() =>
     assertPackageCompatibility({
       packageName: "@wpmoo/ui",
-      packageVersion: "1.0.0-rc.9",
+      packageVersion: "1.0.0-rc.10",
       packageJson,
     }),
   );
@@ -290,7 +290,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@other/ui",
-        packageVersion: "1.0.0-rc.9",
+        packageVersion: "1.0.0-rc.10",
         packageJson,
       }),
     /package name/,

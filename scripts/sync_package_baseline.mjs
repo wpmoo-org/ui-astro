@@ -11,7 +11,7 @@ const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
 export const ASTRO_ROOT = resolve(SCRIPT_ROOT, "..");
 export const MOO_PACKAGE_NAME = "@wpmoo/ui";
 const RELEASE_RECORD = JSON.parse(
-  readFileSync(new URL("../contracts/rc9-package.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../contracts/rc10-package.json", import.meta.url), "utf8"),
 );
 
 function declaredPackageVersion(packageJson) {
@@ -65,10 +65,10 @@ export function assertReleasePin({ packageJson, packageLock }) {
     throw new Error("file dependency is not release-valid");
   }
   if (installed.resolved !== RELEASE_RECORD.registry_url) {
-    throw new Error("release package lock registry URL differs from RC9");
+    throw new Error("release package lock registry URL differs from Core release");
   }
   if (installed.integrity !== RELEASE_RECORD.integrity) {
-    throw new Error("release package lock integrity differs from RC9");
+    throw new Error("release package lock integrity differs from Core release");
   }
 }
 
@@ -76,13 +76,13 @@ export async function assertCoreArtifact({ astroRoot = ASTRO_ROOT } = {}) {
   const coreRoot = join(astroRoot, "node_modules/@wpmoo/ui");
   const installed = await readJson(join(coreRoot, "package.json"));
   if (installed.name !== RELEASE_RECORD.package || installed.version !== RELEASE_RECORD.version) {
-    throw new Error("installed Moo UI package identity differs from RC9");
+    throw new Error("installed Moo UI package identity differs from Core release");
   }
   const expectedExports = Object.fromEntries(
     Object.entries(RELEASE_RECORD.exports).map(([name, entry]) => [name, entry.target]),
   );
   if (JSON.stringify(installed.exports) !== JSON.stringify(expectedExports)) {
-    throw new Error("installed Moo UI public export map differs from RC9");
+    throw new Error("installed Moo UI public export map differs from Core release");
   }
   for (const [name, entry] of Object.entries(RELEASE_RECORD.exports)) {
     const target = join(coreRoot, entry.target);
@@ -91,7 +91,7 @@ export async function assertCoreArtifact({ astroRoot = ASTRO_ROOT } = {}) {
     });
     const actualHash = createHash("sha256").update(bytes).digest("hex");
     if (actualHash !== entry.sha256) {
-      throw new Error(`installed Moo UI ${name} artifact hash differs from RC9`);
+      throw new Error(`installed Moo UI ${name} artifact hash differs from Core release`);
     }
   }
 }

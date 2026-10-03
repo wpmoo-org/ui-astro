@@ -129,7 +129,7 @@
     "src/views/Loop.astro",
     "src/views/Single.astro",
     "contracts/astro-public-surface.json",
-    "contracts/rc9-package.json",
+    "contracts/rc10-package.json",
     "README.md",
     "COMPATIBILITY.md",
     "THIRD_PARTY_NOTICES.md",
@@ -224,7 +224,7 @@
     "./i18n": "./src/i18n/index.js"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.0.0-rc.9",
+    "@wpmoo/ui": "1.0.0-rc.10",
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {

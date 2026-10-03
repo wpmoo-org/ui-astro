@@ -105,7 +105,7 @@ async function resolution(directory, request) {
     assert.equal(
       hash,
       entry.sha256,
-      `Published RC9 bytes differ: ${specifier}`,
+      `Published Core release bytes differ: ${specifier}`,
     );
     upstreamFiles[specifier] = hash;
   }

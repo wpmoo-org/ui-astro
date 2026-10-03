@@ -1,4 +1,4 @@
-// The published RC9 constructors share this public initialization lifecycle.
+// The published Core constructors share this public initialization lifecycle.
 interface RuntimeInstance {
   dispose(): void;
 }
@@ -9,7 +9,8 @@ interface RuntimeConstructor {
   getOrCreateInstance(element: Element, config?: Readonly<Record<string, unknown>>): RuntimeInstance;
 }
 
-export declare const Chart: RuntimeConstructor;
+export declare function loadChart(): Promise<RuntimeConstructor>;
+export declare function initSheets(root?: Document | Element): () => void;
 export declare const Combobox: RuntimeConstructor;
 export declare const ContextMenu: RuntimeConstructor;
 export declare const DataTable: RuntimeConstructor;
@@ -20,7 +21,8 @@ export declare const Sidebar: RuntimeConstructor;
 export declare const Slider: RuntimeConstructor;
 
 declare const MooUI: {
-  readonly Chart: typeof Chart;
+  readonly loadChart: typeof loadChart;
+  readonly initSheets: typeof initSheets;
   readonly Combobox: typeof Combobox;
   readonly ContextMenu: typeof ContextMenu;
   readonly DataTable: typeof DataTable;
