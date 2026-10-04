@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import moo from "../src/integration/index.js";
-import { buildRegistry } from "../src/integration/registry.js";
-import { page } from "../src/plugins/page/index.js";
-import { post } from "../src/plugins/post/index.js";
-import { getEntryClasses } from "../src/config/index.js";
+import moo from "../packages/astro/src/integration/index.js";
+import { buildRegistry } from "../packages/astro/src/integration/registry.js";
+import { page } from "../packages/astro/src/plugins/page/index.js";
+import { post } from "../packages/astro/src/plugins/post/index.js";
+import { getEntryClasses } from "../packages/astro/src/config/index.js";
 
 const api = await import("@wpmoo/astro/taxonomies").catch(() => null);
 const content = await import("@wpmoo/astro/taxonomies/content").catch(() => null);
-const paths = await import("../src/taxonomies/paths.js").catch(() => null);
+const paths = await import("../packages/astro/src/taxonomies/paths.js").catch(() => null);
 function definition(changes = {}) {
   assert.ok(api, "The exact public taxonomy factory must be available");
   return api.defineTaxonomy({ id: "category", label: "Categories", source: new URL("file:///tmp/category.json"), ...changes });

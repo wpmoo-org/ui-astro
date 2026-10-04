@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { dirname, join, resolve, relative } from "node:path";
 
-const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
-const ASTRO_ROOT = resolve(SCRIPT_ROOT, "..");
-const SNAPSHOT_PATH = join(ASTRO_ROOT, "contracts", "layout-surface.snapshot.json");
+import { REPO_ROOT, SDK_ROOT } from "./project-paths.mjs";
+
+const SNAPSHOT_PATH = join(SDK_ROOT, "contracts/layout-surface.snapshot.json");
 const SOURCE_FILES = [
   "src/registry/layouts.json",
   "src/layouts/app.html.jinja",
@@ -170,13 +169,13 @@ async function main() {
   if (!mode) {
     throw new Error("Usage: node scripts/sync_layout_contract.mjs --check|--write [--html-root PATH]");
   }
-  const htmlRoot = argumentValue(args, "--html-root", join(ASTRO_ROOT, "../html"));
+  const htmlRoot = argumentValue(args, "--html-root", join(REPO_ROOT, "../html"));
   const expected = serializeSnapshot(await buildSnapshot(htmlRoot));
 
   if (mode === "write") {
     await mkdir(dirname(SNAPSHOT_PATH), { recursive: true });
     await writeFile(SNAPSHOT_PATH, expected, "utf8");
-    console.log(`Wrote ${relative(ASTRO_ROOT, SNAPSHOT_PATH)}`);
+    console.log(`Wrote ${relative(REPO_ROOT, SNAPSHOT_PATH)}`);
     return;
   }
 

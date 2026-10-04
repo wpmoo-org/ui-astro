@@ -13,27 +13,27 @@ import {
 } from "../scripts/verify_packed_consumer.mjs";
 
 const fixture = await readFile(
-  new URL("./fixtures/consumer/src/pages/index.astro", import.meta.url),
+  new URL("../apps/consumer/src/pages/index.astro", import.meta.url),
   "utf8",
 );
 const manifest = JSON.parse(
-  await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  await readFile(new URL("../packages/astro/package.json", import.meta.url), "utf8"),
 );
 const fixtureManifest = JSON.parse(
   await readFile(
-    new URL("./fixtures/consumer/package.json", import.meta.url),
+    new URL("../apps/consumer/package.json", import.meta.url),
     "utf8",
   ),
 );
 const fixtureLock = JSON.parse(
   await readFile(
-    new URL("./fixtures/consumer/package-lock.json", import.meta.url),
+    new URL("../apps/consumer/package-lock.json", import.meta.url),
     "utf8",
   ),
 );
 const core = JSON.parse(
   await readFile(
-    new URL("../contracts/rc10-package.json", import.meta.url),
+    new URL("../packages/astro/contracts/rc10-package.json", import.meta.url),
     "utf8",
   ),
 );

@@ -3,12 +3,13 @@
 import { execFileSync } from "node:child_process";
 import { readFile, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { checkRelease } from "./sync_package_baseline.mjs";
 import { buildSnapshot } from "./sync_layout_contract.mjs";
 
-export const ASTRO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+import { REPO_ROOT, SDK_ROOT, projectPaths, corePackageRoot } from "./project-paths.mjs";
+
+export const ASTRO_ROOT = SDK_ROOT;
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
@@ -114,21 +115,22 @@ export function assertDevelopmentSnapshot({ stored, current }) {
   }
 }
 
-export async function verifyBoundary({ mode = "release", root = ASTRO_ROOT } = {}) {
+export async function verifyBoundary({ mode = "release", repoRoot = REPO_ROOT } = {}) {
+  const root = projectPaths(repoRoot).sdkRoot;
   if (mode !== "release" && mode !== "dev") {
     throw new Error("--mode must be release or dev");
   }
   if (mode === "release") {
-    await checkRelease({ astroRoot: root });
+    await checkRelease({ repoRoot });
   } else {
     const stored = await readJson(join(root, "contracts/layout-surface.snapshot.json"));
-    const current = await buildSnapshot(resolve(root, "../html"));
+    const current = await buildSnapshot(resolve(repoRoot, "../html"));
     assertDevelopmentSnapshot({ stored, current });
   }
   const files = archiveFiles(root);
   await assertAstroSurface({ root, files });
   const coreExports = mode === "dev"
-    ? (await readJson(join(root, "node_modules/@wpmoo/ui/package.json"))).exports
+    ? (await readJson(join(corePackageRoot(repoRoot), "package.json"))).exports
     : undefined;
   await assertSourceClosure({ root, files, coreExports });
 }

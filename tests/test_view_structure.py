@@ -10,8 +10,9 @@ import tempfile
 import unittest
 
 
-DIST = Path(__file__).resolve().parents[1] / "dist"
-ROOT = DIST.parent
+ROOT = Path(__file__).resolve().parents[1]
+SDK = ROOT / "packages/astro"
+DIST = ROOT / "apps/demo/dist"
 
 
 class Markup(HTMLParser):
@@ -85,7 +86,7 @@ class PublicComponentRendering(unittest.TestCase):
         cls.package_directory = tempfile.TemporaryDirectory(prefix="astro-render-package-")
         archive_root = Path(cls.package_directory.name)
         packed = subprocess.run(["npm", "pack", "--json", "--pack-destination", str(archive_root)],
-                                cwd=ROOT, text=True, capture_output=True)
+                                cwd=SDK, text=True, capture_output=True)
         if packed.returncode != 0:
             cls.package_directory.cleanup()
             raise RuntimeError(packed.stdout + packed.stderr)
@@ -129,7 +130,7 @@ class PublicComponentRendering(unittest.TestCase):
                 target = modules / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(package_root, target)
-            manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+            manifest = json.loads((SDK / "package.json").read_text(encoding="utf-8"))
             (root / "package.json").write_text(json.dumps({
                 "name": "public-render-contract", "private": True, "type": "module",
                 "dependencies": {"astro": manifest["peerDependencies"]["astro"],

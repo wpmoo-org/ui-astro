@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { definePlugin } from "../src/plugins/index.js";
+import { definePlugin } from "../packages/astro/src/plugins/index.js";
 
 function descriptor(changes = {}) {
   return {
@@ -15,7 +15,7 @@ function descriptor(changes = {}) {
     }],
     routes: [{
       id: "single", pattern: "/[...slug]", prerender: true,
-      entrypoint: new URL("./fixtures/consumer/src/pages/index.astro", import.meta.url),
+      entrypoint: new URL("../apps/consumer/src/pages/index.astro", import.meta.url),
     }],
     navigation: [{ label: "Sample", path: "/sample", match: "prefix" }],
     ...changes,

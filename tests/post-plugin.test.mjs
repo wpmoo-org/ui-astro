@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { z } from "astro/zod";
 
-import { getEntryClasses } from "../src/config/index.js";
-import { post } from "../src/plugins/post/index.js";
-import { postSchema } from "../src/plugins/post/content.js";
-import { postHrefFromEntry, postLoopItems, postPathsFromEntries, publishedPostsFromEntries } from "../src/plugins/post/paths.js";
+import { getEntryClasses } from "../packages/astro/src/config/index.js";
+import { post } from "../packages/astro/src/plugins/post/index.js";
+import { postSchema } from "../packages/astro/src/plugins/post/content.js";
+import { postHrefFromEntry, postLoopItems, postPathsFromEntries, publishedPostsFromEntries } from "../packages/astro/src/plugins/post/paths.js";
 
 function entry(id, data = {}) {
   return { id, collection: "post", data: postSchema.parse({

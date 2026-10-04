@@ -1,7 +1,7 @@
 import { page, type PageOptions } from "@wpmoo/astro/plugins/page";
 import type { Plugin } from "@wpmoo/astro/plugins";
 import { getEntryClasses } from "@wpmoo/astro/config";
-import { pageLoopItems } from "../src/plugins/page/paths.js";
+import { pageLoopItems } from "../packages/astro/src/plugins/page/paths.js";
 
 const options: PageOptions = {
   formats: ["md", "mdx"], routes: { single: "host" }, taxonomies: ["category"],

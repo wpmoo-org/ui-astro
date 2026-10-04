@@ -83,7 +83,7 @@ Layout also supplies a Moo Button link to `#main-content`, hidden until keyboard
 
 RC9 forced the `contained` Sidebar into document flow below 992 px. That rejected long-navigation result remains historical evidence. The RC10 artifact removes the Core override; the adapter consumes its published CSS and Sidebar runtime directly, without a local CSS override or replacement controller. The current mobile behavior is verified separately from desktop containment.
 
-The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `demo/pages/index.astro` demonstrates this composition; it is not part of the package.
+The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `apps/demo/pages/index.astro` demonstrates this composition; it is not part of the package.
 
 The running demo exposes `/preview/single` and `/preview/archive` through its
 shared Sidebar. Only explicitly Sidebarless examples opt out. Both routes
@@ -429,7 +429,7 @@ and the public `termSchema` from `@wpmoo/astro/taxonomies/content`. Its source
 is a JSON array of `{ id, name, slug, description?, parent? }`. Directory mode
 uses native `glob({ base, pattern: "*.json", generateId: jsonEntryId })` and
 one record per exact `<id>.json` file. IDs remain stable when names or slugs
-change. See `demo/definitions.js` and `demo/content.config.ts` for both recipes.
+change. See `apps/demo/definitions.js` and `apps/demo/content.config.ts` for both recipes.
 
 Bind the definition with `page({ taxonomies: ["category"] })`, `post(...)`,
 or a custom plugin's content type. Extend the host's static schema with only
@@ -852,29 +852,32 @@ Published Moo UI RC10 still writes English labels from its DataTable runtime (fo
 
 ## Develop and verify
 
-This repository maintains one npm package. `src/` contains its product source;
-the closed `package.json` file list also selects the README, licenses and
-contract records. `demo/` is a separate example host that imports the public
-`@wpmoo/astro` entrypoints. Demo routes, content, configuration and helpers are
-excluded from the npm archive.
+The private repository root shares package orchestration, EditorConfig,
+TypeScript settings, scripts and tests. `packages/astro` owns the SDK manifest
+and source. Its explicit file selection excludes apps and repository tooling.
+`apps/demo` imports only public SDK entrypoints. `apps/consumer` retains an
+independent template lock and installs a real archive outside the checkout.
 
 ```text
 ui-astro/
-├── src/                  # Published source and required private transitives
-├── demo/
-│   ├── content.config.ts # Native example collections
-│   ├── content/          # Authored Page and Post Markdown
-│   ├── layouts/          # Host composition using public includes and Layout
-│   ├── pages/            # Example routes and preview endpoints
-│   └── *.js              # Host navigation, copy and settings
-├── contracts/            # Closed exports/files and immutable release provenance
-├── scripts/              # Nonpacked verification tools
-└── tests/                # Nonpacked unit, native and consumer fixtures
+├── packages/astro/
+│   ├── src/              # Public source and required private transitives
+│   ├── contracts/        # Closed surface and release provenance
+│   └── package.json      # SDK dependencies, peers, exports and file selection
+├── apps/
+│   ├── demo/             # Development workspace, authored content and config
+│   └── consumer/         # Independent tarball template, outside workspaces
+├── scripts/              # Shared nonpacked verification tools
+├── tests/                # Nonpacked unit/native tests and other profiles
+├── .editorconfig         # Portable shared formatting policy
+├── tsconfig.json         # Shared strict module and source checking
+└── package-lock.json     # Single development workspace lock
 ```
 
-The root Astro config uses `srcDir: "./demo"`. Existing npm/Make commands run
-this host; package export paths remain under `src/`. Consumer fixtures keep
-their own source directories and install the packed package independently.
+The demo's Astro config uses `srcDir: "./"` from `apps/demo`. Existing root
+npm/Make commands forward to that host; SDK export targets remain relative to
+its own `src/`. Root development tools and the demo's opt-in MDX integration
+are outside SDK runtime dependencies. Other sealed profiles keep their locks.
 
 The npm archive contains the public adapter source, its private transitive
 helpers and injected routes, declarations, the CSS/runtime facades, the
@@ -919,13 +922,13 @@ For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_
 
 The `moo()` integration separates the default build and sync Vite caches from the development cache, so these commands can run while the existing development server stays open. An explicit host `vite.cacheDir` remains unchanged; a host choosing its own cache must keep concurrent commands isolated. After a runtime upgrade, reload the browser to request the current modules. The live regression `python3 tests/test_dev_runtime_build.py` uses the existing 4322 server and checks that a build preserves public runtime responses and selected Page/Post routes.
 
-From this package directory:
+From the repository root:
 
 ```bash
 npm test
 npm run check
 npm run build
-npm pack --dry-run
+npm pack --workspace @wpmoo/astro --dry-run
 node scripts/sync_package_baseline.mjs --check-release
 node scripts/verify_astro_boundary.mjs --mode release
 python3 tests/test_page_collection.py -v
@@ -933,11 +936,11 @@ python3 tests/test_visual_acceptance.py -v
 python3 tests/test_shared_parts_acceptance.py -v
 ```
 
-The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
+The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `packages/astro/contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
 For an independent install, prime an isolated npm cache from the reviewed
 consumer lockfiles and the current package archives. Select an existing local
-Node image, then run the controller from this package directory:
+Node image, then run the controller from the repository root:
 
 ```bash
 node scripts/verify_packed_consumer.mjs \
@@ -973,7 +976,7 @@ the primary built page in Chromium without a server. See
 [COMPATIBILITY.md](../COMPATIBILITY.md) for verified runtime scope and remaining
 release gates.
 
-The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc10-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/rc10-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
 
 ## Upgrade a theme or plugin
 

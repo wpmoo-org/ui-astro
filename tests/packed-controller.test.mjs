@@ -85,10 +85,10 @@ test("prepared consumers allow only the retained tarballs and their exact peer c
   );
   const read = async (path) =>
     JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
-  const packageManifest = await read("../package.json");
-  const manifest = await read("./fixtures/consumer/package.json");
-  const lock = await read("./fixtures/consumer/package-lock.json");
-  const core = await read("../contracts/rc10-package.json");
+  const packageManifest = await read("../packages/astro/package.json");
+  const manifest = await read("../apps/consumer/package.json");
+  const lock = await read("../apps/consumer/package-lock.json");
+  const core = await read("../packages/astro/contracts/rc10-package.json");
   const artifacts = {
     "@wpmoo/astro": {
       filename: "wpmoo-astro-0.1.0.tgz",

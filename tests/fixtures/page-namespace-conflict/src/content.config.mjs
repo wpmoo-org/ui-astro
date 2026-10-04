@@ -1,7 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
-import { sourceEntryId, jsonEntryId } from "../../../../src/content/index.js";
-import { pageSchema } from "../../../../src/plugins/page/content.js";
+import { sourceEntryId, jsonEntryId } from "../../../../packages/astro/src/content/index.js";
+import { pageSchema } from "../../../../packages/astro/src/plugins/page/content.js";
 
 export const collections = {
   page: defineCollection({

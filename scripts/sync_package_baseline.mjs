@@ -4,14 +4,13 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join, resolve } from "node:path";
+import { join } from "node:path";
+import { REPO_ROOT, SDK_ROOT, projectPaths, corePackageRoot } from "./project-paths.mjs";
 
-const SCRIPT_ROOT = dirname(fileURLToPath(import.meta.url));
-export const ASTRO_ROOT = resolve(SCRIPT_ROOT, "..");
+export const ASTRO_ROOT = REPO_ROOT;
 export const MOO_PACKAGE_NAME = "@wpmoo/ui";
 const RELEASE_RECORD = JSON.parse(
-  readFileSync(new URL("../contracts/rc10-package.json", import.meta.url), "utf8"),
+  readFileSync(join(SDK_ROOT, "contracts/rc10-package.json"), "utf8"),
 );
 
 function declaredPackageVersion(packageJson) {
@@ -25,6 +24,8 @@ function declaredPackageVersion(packageJson) {
 export function developmentInstallCommand(tarball) {
   return [
     "install",
+    "--workspace",
+    "@wpmoo/astro",
     "--no-save",
     "--ignore-scripts",
     "--force",
@@ -49,8 +50,8 @@ export function assertReleasePin({ packageJson, packageLock }) {
   if (expectedVersion !== RELEASE_RECORD.version) {
     throw new Error(`declared ${MOO_PACKAGE_NAME} version must be ${RELEASE_RECORD.version}`);
   }
-  if (packageLock?.packages?.[""]?.dependencies?.[MOO_PACKAGE_NAME] !== expectedVersion) {
-    throw new Error("package-lock.json root dependency differs from the release pin");
+  if (packageLock?.packages?.["packages/astro"]?.dependencies?.[MOO_PACKAGE_NAME] !== expectedVersion) {
+    throw new Error("package-lock.json SDK workspace dependency differs from the release pin");
   }
   const installed = packageLock?.packages?.[`node_modules/${MOO_PACKAGE_NAME}`];
   if (!installed || typeof installed !== "object") {
@@ -72,8 +73,8 @@ export function assertReleasePin({ packageJson, packageLock }) {
   }
 }
 
-export async function assertCoreArtifact({ astroRoot = ASTRO_ROOT } = {}) {
-  const coreRoot = join(astroRoot, "node_modules/@wpmoo/ui");
+export async function assertCoreArtifact({ repoRoot = ASTRO_ROOT } = {}) {
+  const coreRoot = corePackageRoot(repoRoot);
   const installed = await readJson(join(coreRoot, "package.json"));
   if (installed.name !== RELEASE_RECORD.package || installed.version !== RELEASE_RECORD.version) {
     throw new Error("installed Moo UI package identity differs from Core release");
@@ -100,10 +101,10 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
-async function projectMetadata(astroRoot) {
+async function projectMetadata(repoRoot) {
   return {
-    packageJson: await readJson(join(astroRoot, "package.json")),
-    packageLock: await readJson(join(astroRoot, "package-lock.json")),
+    packageJson: await readJson(join(projectPaths(repoRoot).sdkRoot, "package.json")),
+    packageLock: await readJson(join(repoRoot, "package-lock.json")),
   };
 }
 
@@ -126,36 +127,35 @@ function runCommand(command, { cwd }) {
 
 export async function installDevelopmentPackage({
   tarball,
-  astroRoot = ASTRO_ROOT,
+  repoRoot = ASTRO_ROOT,
   runner = runCommand,
 }) {
-  const { packageJson } = await projectMetadata(astroRoot);
+  const { packageJson } = await projectMetadata(repoRoot);
   const declaredVersion = declaredPackageVersion(packageJson);
   assertPackageCompatibility({
     packageName: MOO_PACKAGE_NAME,
     packageVersion: declaredVersion,
     packageJson,
   });
-  await runner(["npm", ...developmentInstallCommand(tarball)], { cwd: astroRoot });
-  await rm(join(astroRoot, "node_modules/.vite"), {
-    recursive: true,
-    force: true,
-  });
+  await runner(["npm", ...developmentInstallCommand(tarball)], { cwd: repoRoot });
+  for (const root of [repoRoot, projectPaths(repoRoot).demoRoot]) {
+    await rm(join(root, "node_modules/.vite"), { recursive: true, force: true });
+  }
 }
 
 export async function checkPackage({
   packageName,
   packageVersion,
-  astroRoot = ASTRO_ROOT,
+  repoRoot = ASTRO_ROOT,
 }) {
-  const { packageJson } = await projectMetadata(astroRoot);
+  const { packageJson } = await projectMetadata(repoRoot);
   assertPackageCompatibility({ packageName, packageVersion, packageJson });
 }
 
-export async function checkRelease({ astroRoot = ASTRO_ROOT } = {}) {
-  const { packageJson, packageLock } = await projectMetadata(astroRoot);
+export async function checkRelease({ repoRoot = ASTRO_ROOT } = {}) {
+  const { packageJson, packageLock } = await projectMetadata(repoRoot);
   assertReleasePin({ packageJson, packageLock });
-  await assertCoreArtifact({ astroRoot });
+  await assertCoreArtifact({ repoRoot });
 }
 
 function argumentValue(args, name) {

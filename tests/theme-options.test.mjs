@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { defineSite, formatDate, layoutSchema, resolvePageOptions, resolveParts } from "../src/config/index.js";
+import { defineSite, formatDate, layoutSchema, resolvePageOptions, resolveParts } from "../packages/astro/src/config/index.js";
 
 test("date display follows the caller locale and style without changing its instant", () => {
   const date = new Date("2026-10-01T23:30:00Z");

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { navigationHref } from "../src/internal/href.js";
+import { navigationHref } from "../packages/astro/src/internal/href.js";
 
 test("semantic links retain supported local and contact destinations", () => {
   for (const href of ["/", "/docs/start", "guide/start", "../parent", "#details", "?tab=1", "https://example.test/path", "http://example.test/", "mailto:hello@example.test", "tel:+491234567"]) {

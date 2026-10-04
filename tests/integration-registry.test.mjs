@@ -4,10 +4,10 @@ import test from "node:test";
 import {
   buildRegistry,
   validateResolvedRoutes,
-} from "../src/integration/registry.js";
-import { definePlugin } from "../src/plugins/index.js";
-import { page } from "../src/plugins/page/index.js";
-import moo from "../src/integration/index.js";
+} from "../packages/astro/src/integration/registry.js";
+import { definePlugin } from "../packages/astro/src/plugins/index.js";
+import { page } from "../packages/astro/src/plugins/page/index.js";
+import moo from "../packages/astro/src/integration/index.js";
 
 test("omitted plugin selection registers Page and Post, while an explicit list replaces it", () => {
   for (const [input, expected] of [
@@ -19,7 +19,7 @@ test("omitted plugin selection registers Page and Post, while an explicit list r
     moo(input).hooks["astro:config:setup"]({
       command: "dev",
       config: {
-        root: new URL("./fixtures/consumer/", import.meta.url),
+        root: new URL("../apps/consumer/", import.meta.url),
         vite: {},
       },
       injectRoute(value) {
@@ -51,7 +51,7 @@ function external(id, basePath, { collection = id, type = id } = {}) {
         source: {
           kind: "json-directory",
           base: new URL(
-            "./fixtures/consumer/src/content/page/",
+            "../apps/consumer/src/content/page/",
             import.meta.url,
           ),
         },
@@ -63,7 +63,7 @@ function external(id, basePath, { collection = id, type = id } = {}) {
         pattern: "/[...slug]",
         prerender: true,
         entrypoint: new URL(
-          "./fixtures/consumer/src/pages/index.astro",
+          "../apps/consumer/src/pages/index.astro",
           import.meta.url,
         ),
       },
@@ -166,7 +166,7 @@ test("the Page integration registers a private pre-middleware only for developme
     moo().hooks["astro:config:setup"]({
       command,
       config: {
-        root: new URL("./fixtures/consumer/", import.meta.url),
+        root: new URL("../apps/consumer/", import.meta.url),
         vite: {},
       },
       injectRoute() {},
@@ -187,7 +187,7 @@ test("the Page integration registers a private pre-middleware only for developme
 });
 
 test("build and sync use a separate cache from the running development server", () => {
-  const root = new URL("./fixtures/consumer/", import.meta.url);
+  const root = new URL("../apps/consumer/", import.meta.url);
   const devCache = new URL("node_modules/.vite/", root).pathname;
   for (const command of ["dev", "build", "sync", "preview"]) {
     const updates = [];
@@ -220,7 +220,7 @@ test("an explicit host Vite cache directory remains host-owned", () => {
   moo({ plugins: [] }).hooks["astro:config:setup"]({
     command: "build",
     config: {
-      root: new URL("./fixtures/consumer/", import.meta.url),
+      root: new URL("../apps/consumer/", import.meta.url),
       vite: { cacheDir: "/tmp/site-vite-cache" },
     },
     injectRoute() {},
@@ -246,7 +246,7 @@ test("explicit host save-stability and disabled watcher settings remain host-own
     moo().hooks["astro:config:setup"]({
       command: "dev",
       config: {
-        root: new URL("./fixtures/consumer/", import.meta.url),
+        root: new URL("../apps/consumer/", import.meta.url),
         vite: { server: { watch } },
       },
       injectRoute() {},

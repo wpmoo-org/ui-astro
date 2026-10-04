@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineSite } from "../src/config/index.js";
-import { resolveSeoMetadata } from "../src/seo/index.js";
+import { defineSite } from "../packages/astro/src/config/index.js";
+import { resolveSeoMetadata } from "../packages/astro/src/seo/index.js";
 
 const route = {
   title: "Contact",

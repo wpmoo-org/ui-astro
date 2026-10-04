@@ -1,4 +1,4 @@
 import { defineConfig } from "astro/config";
-import moo from "../../../src/integration/index.js";
+import moo from "../../../packages/astro/src/integration/index.js";
 
 export default defineConfig({ integrations: [moo()] });

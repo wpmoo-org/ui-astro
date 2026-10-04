@@ -6,10 +6,10 @@ import {
   entrySchema,
   jsonEntryId,
   sourceEntryId,
-} from "../src/content/index.js";
-import { pageSchema } from "../src/plugins/page/content.js";
-import { postSchema } from "../src/plugins/post/content.js";
-import { defineSite, resolvePageOptions } from "../src/config/index.js";
+} from "../packages/astro/src/content/index.js";
+import { pageSchema } from "../packages/astro/src/plugins/page/content.js";
+import { postSchema } from "../packages/astro/src/plugins/post/content.js";
+import { defineSite, resolvePageOptions } from "../packages/astro/src/config/index.js";
 
 test("native source IDs retain exact relative MD and MDX filenames", () => {
   assert.equal(

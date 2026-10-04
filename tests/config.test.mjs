@@ -9,7 +9,7 @@ import {
   layoutSchema,
   normalizeSlug,
   resolvePageOptions,
-} from "../src/config/index.js";
+} from "../packages/astro/src/config/index.js";
 
 test("layout options are strict partial data and five layers preserve false and null", () => {
   assert.deepEqual(layoutSchema.parse({}), {});

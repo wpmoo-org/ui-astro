@@ -5,12 +5,16 @@
     "moduleResolution": "Bundler"
   },
   "include": [
-    ".astro/types.d.ts",
-    "src/**/*",
-    "demo/**/*",
+    "apps/demo/.astro/types.d.ts",
+    "packages/astro/src/**/*",
+    "apps/demo/**/*",
     "tests/public-api.ts",
     "tests/theme-types.ts",
     "tests/integration-types.ts"
   ],
-  "exclude": ["dist", "tests/fixtures"]
+  "exclude": [
+    "**/dist",
+    "tests/fixtures",
+    "apps/consumer"
+  ]
 }

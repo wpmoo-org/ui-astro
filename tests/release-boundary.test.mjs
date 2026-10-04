@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import test from "node:test";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -10,8 +9,10 @@ import * as boundaryModule from "../scripts/verify_astro_boundary.mjs";
 
 const { assertAstroSurface } = boundaryModule;
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const script = join(root, "scripts/verify_astro_boundary.mjs");
+import { REPO_ROOT, SDK_ROOT } from "../scripts/project-paths.mjs";
+
+const root = SDK_ROOT;
+const script = join(REPO_ROOT, "scripts/verify_astro_boundary.mjs");
 const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const record = JSON.parse(await readFile(join(root, "contracts/astro-public-surface.json"), "utf8"));
 
@@ -58,7 +59,7 @@ test("the accepted CSS and runtime facades are exact public entrypoints", async 
       /public export map/,
     );
   }
-  for (const privatePath of ["demo/pages/index.astro", "demo/content.config.ts", "demo/content/page/contact.md", "src/styles/layout.css", "contracts/layout-surface.snapshot.json"]) {
+  for (const privatePath of ["apps/demo/pages/index.astro", "apps/demo/content.config.ts", "apps/demo/content/page/en/contact.md", "src/styles/layout.css", "contracts/layout-surface.snapshot.json"]) {
     assert.equal(record.files.includes(privatePath), false, `${privatePath} must stay outside the published archive`);
   }
 });
@@ -145,4 +146,8 @@ test("development snapshot rejects a moved HTML dev commit until reviewed sync",
     () => boundaryModule.assertDevelopmentSnapshot({ stored, current }),
     /development layout snapshot.*source commit/,
   );
+});
+
+test("packing the private repository root cannot certify it as the SDK", async () => {
+  await assert.rejects(() => assertAstroSurface({ root: REPO_ROOT, record, files: record.files }), /package identity/);
 });

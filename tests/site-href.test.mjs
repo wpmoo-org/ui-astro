@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { siteHref } from "../src/content/paths.js";
+import { siteHref } from "../packages/astro/src/content/paths.js";
 
 test("canonical local paths follow the host base and trailing slash policy", () => {
   assert.equal(siteHref("/", { base: "/", trailingSlash: "ignore" }), "/");

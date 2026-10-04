@@ -1,6 +1,6 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
-import { jsonEntryId } from "../../../../src/content/index.js";
+import { jsonEntryId } from "../../../../packages/astro/src/content/index.js";
 
 export const collections = {
   team: defineCollection({

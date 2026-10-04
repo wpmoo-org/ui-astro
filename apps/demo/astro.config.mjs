@@ -3,8 +3,8 @@ import mdx from "@astrojs/mdx";
 import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
 import { post } from "@wpmoo/astro/plugins/post";
-import { taxonomies, bindings } from "./demo/definitions.js";
-import { getDemoMessages } from "./demo/messages.js";
+import { taxonomies, bindings } from "./definitions.js";
+import { getDemoMessages } from "./messages.js";
 
 const i18n = {
   locales: ["en", "de"],
@@ -39,7 +39,7 @@ const localePreferences = Object.fromEntries(
 
 export default defineConfig({
   site: "https://example.test",
-  srcDir: "./demo",
+  srcDir: "./",
   i18n,
   integrations: [
     mdx(),

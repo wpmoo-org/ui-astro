@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineSite, resolvePageOptions } from "../src/config/index.js";
-import { entrySchema } from "../src/content/index.js";
-import { page } from "../src/plugins/page/index.js";
-import { post } from "../src/plugins/post/index.js";
-import { buildRegistry } from "../src/integration/registry.js";
-import { validateTerms } from "../src/taxonomies/paths.js";
-import { defineTaxonomy } from "../src/taxonomies/index.js";
+import { defineSite, resolvePageOptions } from "../packages/astro/src/config/index.js";
+import { entrySchema } from "../packages/astro/src/content/index.js";
+import { page } from "../packages/astro/src/plugins/page/index.js";
+import { post } from "../packages/astro/src/plugins/post/index.js";
+import { buildRegistry } from "../packages/astro/src/integration/registry.js";
+import { validateTerms } from "../packages/astro/src/taxonomies/paths.js";
+import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
-const profileApi = await import("../src/i18n/profile.js").catch(() => null);
-const graphApi = await import("../src/i18n/graph.js").catch(() => null);
+const profileApi = await import("../packages/astro/src/i18n/profile.js").catch(() => null);
+const graphApi = await import("../packages/astro/src/i18n/graph.js").catch(() => null);
 const native = {
   locales: ["en", "de"],
   defaultLocale: "en",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { page } from "../src/plugins/page/index.js";
+import { page } from "../packages/astro/src/plugins/page/index.js";
 
 test("Page factory owns one content type and one static Single route", () => {
   const plugin = page();

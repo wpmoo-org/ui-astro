@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { pageHrefFromEntry, pageLoopItems, pagePathsFromEntries } from "../src/plugins/page/paths.js";
+import { pageHrefFromEntry, pageLoopItems, pagePathsFromEntries } from "../packages/astro/src/plugins/page/paths.js";
 
 function page(id, status = "publish", extra = {}) {
   return { id, collection: "page", data: { title: id, status, ...extra } };

@@ -4,7 +4,7 @@ from pathlib import Path
 import unittest
 
 
-DIST = Path(__file__).resolve().parents[1] / "dist"
+DIST = Path(__file__).resolve().parents[1] / "apps/demo/dist"
 
 
 class BuiltPageRoutes(unittest.TestCase):

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import moo from "../src/integration/index.js";
+import moo from "../packages/astro/src/integration/index.js";
 import {
   buildRegistry,
   validateResolvedRoutes,
-} from "../src/integration/registry.js";
-import { localizeRegistry, resolveI18n } from "../src/i18n/profile.js";
-import { defineSite } from "../src/config/index.js";
-import { defineTaxonomy } from "../src/taxonomies/index.js";
+} from "../packages/astro/src/integration/registry.js";
+import { localizeRegistry, resolveI18n } from "../packages/astro/src/i18n/profile.js";
+import { defineSite } from "../packages/astro/src/config/index.js";
+import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
 const taxonomy = defineTaxonomy({
   id: "category",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as published from "@wpmoo/ui/moo-ui.js";
-import * as facade from "../src/runtime/moo-ui.js";
+import * as facade from "../packages/astro/src/runtime/moo-ui.js";
 
 test("the facade forwards the published RC10 exports without a synchronous Chart", () => {
   const names = ["Combobox", "ContextMenu", "DataTable", "Datepicker", "MooCalendar", "MooDateRangePicker", "Sidebar", "Slider"];
