@@ -194,6 +194,48 @@ export function buildRegistry(
   const taxonomyGroups = [...groups.values()].map((group) =>
     Object.freeze({ ...group, taxonomies: Object.freeze(group.taxonomies) }),
   );
+  for (const group of taxonomyGroups.filter((item) => item.root)) {
+    const existing = routeClaims.find(
+      (claim) => claim.pattern === group.pattern,
+    );
+    if (existing) {
+      const plugin = plugins.find((item) => item.id === existing.owner);
+      if (
+        plugin.id !== "page" ||
+        !plugin.contentTypes.some(
+          (type) => type.id === "page" && type.collection === "page",
+        )
+      )
+        throw new TypeError(
+          `moo root taxonomy archives conflict with ${plugin.id} renderer; use explicit host composition without automatic root archives`,
+        );
+      if (existing.routeOwner !== group.routeOwner)
+        throw new TypeError(
+          `Page routes.single (${existing.routeOwner}) and moo.taxonomyRoutes.archive (${group.routeOwner}) at ${group.pattern} must select the same owner`,
+        );
+      routeClaims.splice(routeClaims.indexOf(existing), 1);
+      const injected = routes.findIndex(
+        (route) => route.pattern === group.pattern,
+      );
+      if (injected !== -1) routes.splice(injected, 1);
+    }
+    routeClaims.push(
+      Object.freeze({
+        owner: "root",
+        pattern: group.pattern,
+        routeOwner: group.routeOwner,
+      }),
+    );
+    if (group.routeOwner === "plugin")
+      routes.push(
+        Object.freeze({
+          owner: "root",
+          pattern: group.pattern,
+          entrypoint: new URL("./routes/[...root].astro", import.meta.url),
+          prerender: true,
+        }),
+      );
+  }
   for (const group of taxonomyGroups.filter((item) => !item.root)) {
     const pattern = group.pattern;
     if (patterns.has(pattern))

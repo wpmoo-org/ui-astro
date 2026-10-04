@@ -314,3 +314,5 @@ export async function validateSiteContent() {
     await writeFile(target, JSON.stringify(expected));
   }
 }
+
+export { getRootPaths } from "./root-paths.js";

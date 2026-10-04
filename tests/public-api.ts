@@ -317,3 +317,7 @@ localizedSite.locales!.de.parts!.loop!.emptyText = "Changed";
 languageLinks[0].href = "/missing";
 // @ts-expect-error Unknown Page query preferences are outside the public contract.
 getPublishedPages({ language: "de" });
+
+import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+const rootPaths: Promise<RootPath[]> = getRootPaths({ locale: "de" });
+void rootPaths;

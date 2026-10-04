@@ -1,0 +1,16 @@
+---
+import type { GetStaticPathsOptions } from "astro";
+import { getRootPaths, type RootPath } from "../../context/index.js";
+import { getRouteLocale } from "../../i18n/index.js";
+import Page from "../views/Page.astro";
+import Taxonomy from "../views/Taxonomy.astro";
+
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getRootPaths({ locale: getRouteLocale(routePattern) });
+}
+type Props = RootPath["props"];
+const props = Astro.props;
+---
+
+{props.kind === "page" ? <Page entry={props.entry} /> : <Taxonomy {...props} />}

@@ -212,3 +212,69 @@ test("explicit archive groups share one producer and project their actual locale
     );
   }
 });
+
+test("root archives combine only the built-in Page producer with matching ownership", async () => {
+  const { page } = await import("../packages/astro/src/plugins/page/index.js");
+  const { definePlugin } =
+    await import("../packages/astro/src/plugins/index.js");
+  const root = defineTaxonomy({
+    ...taxonomy,
+    source: new URL(taxonomy.source),
+    archive: { basePath: "/" },
+  });
+  const combined = buildRegistry([page()], { taxonomies: [root] });
+  assert.deepEqual(combined.routeClaims, [
+    { owner: "root", pattern: "/[...slug]", routeOwner: "plugin" },
+  ]);
+  assert.equal(combined.routes.length, 1);
+  assert.match(
+    combined.routes[0].entrypoint.href,
+    /integration\/routes\/\[\.\.\.root\]\.astro$/,
+  );
+  const host = buildRegistry([page({ routes: { single: "host" } })], {
+    taxonomies: [root],
+    taxonomyRoutes: { archive: "host" },
+  });
+  assert.deepEqual(host.routes, []);
+  assert.deepEqual(host.routeClaims, [
+    { owner: "root", pattern: "/[...slug]", routeOwner: "host" },
+  ]);
+  assert.equal(buildRegistry([], { taxonomies: [root] }).routes.length, 1);
+  for (const [pageOwner, taxonomyOwner] of [
+    ["host", "plugin"],
+    ["plugin", "host"],
+  ])
+    assert.throws(
+      () =>
+        buildRegistry([page({ routes: { single: pageOwner } })], {
+          taxonomies: [root],
+          taxonomyRoutes: { archive: taxonomyOwner },
+        }),
+      /Page routes.single.*moo.taxonomyRoutes.archive.*same owner/,
+    );
+  const custom = definePlugin({
+    apiVersion: 1,
+    id: "page",
+    label: "Custom",
+    basePath: "/",
+    contentTypes: [
+      {
+        id: "article",
+        collection: "article",
+        singleRoute: "single",
+        source: { kind: "markdown", formats: ["md"] },
+      },
+    ],
+    routes: [
+      { id: "single", pattern: "/[...slug]", owner: "host", prerender: true },
+    ],
+  });
+  assert.throws(
+    () =>
+      buildRegistry([custom], {
+        taxonomies: [root],
+        taxonomyRoutes: { archive: "host" },
+      }),
+    /root.*page.*renderer.*host composition/,
+  );
+});

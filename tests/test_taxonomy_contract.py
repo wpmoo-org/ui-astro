@@ -128,6 +128,77 @@ export const GET = async () => Response.json(await getTaxonomyPaths({ routePatte
         self.assertNotEqual(invalid.returncode, 0)
         self.assertIn("routePattern /de/kategorie/[slug] locale de disagrees with locale en", invalid.stdout + invalid.stderr)
 
+    def test_root_archives_and_pages_have_one_producer(self):
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"').replace('archive: {}', 'archive: { basePath: "/" }')
+        terms = json.loads(files["src/data/category.json"])
+        terms[0]["slug"] = "layouts"
+        terms[1]["slug"] = "guides"
+        files["src/data/category.json"] = json.dumps(terms)
+        files["src/content/page/index.md"] = "---\ntitle: Home\nstatus: publish\n---\nHome body.\n"
+        files["src/content/page/guide/setup.md"] = "---\ntitle: Setup\nstatus: publish\n---\nSetup body.\n"
+        files["src/pages/root.json.ts"] = '''import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+export const GET = async () => { const paths: RootPath[] = await getRootPaths(); return Response.json(paths.map(path => ({ slug: path.params.slug ?? null, kind: path.props.kind }))); };
+'''
+        files["tsconfig.json"] = json.dumps({"extends": "astro/tsconfigs/strict", "include": [".astro/types.d.ts", "src/**/*"], "exclude": ["dist"]})
+        config = 'site: "https://example.test", base: "/docs", trailingSlash: "always", integrations: [moo({ plugins: [page({ taxonomies: bindings })], taxonomies })]'
+        for owner in ["plugin", "host"]:
+            with self.subTest(owner=owner):
+                selected = files.copy()
+                configuration = config
+                if owner == "host":
+                    configuration = config.replace('page({ taxonomies:', 'page({ routes: { single: "host" }, taxonomies:').replace('], taxonomies })', '], taxonomies, taxonomyRoutes: { archive: "host" } })')
+                    selected["src/pages/[...slug].astro"] = '''---
+import type { GetStaticPathsOptions } from "astro";
+import { render } from "astro:content";
+import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+import { getRouteLocale } from "@wpmoo/astro/i18n";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Page from "@wpmoo/astro/plugins/page/views/Single.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) { return getRootPaths({ locale: getRouteLocale(routePattern) }); }
+type Props = RootPath["props"];
+const props = Astro.props;
+const Content = props.kind === "page" ? (await render(props.entry)).Content : null;
+---
+<Layout title={props.kind === "page" ? props.entry.data.title : props.term.name}>
+  {props.kind === "page" ? <Page entry={props.entry}>{Content && <Content />}</Page> : <Archive title={props.term.name} items={[...props.items]} />}
+</Layout>
+'''
+                result, _ = self.build(None, files=selected, config_imports=CONFIG_IMPORTS, configuration=configuration, check=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(set(result.generated_html), {"index.html", "contact/index.html", "guide/setup/index.html", "layouts/index.html", "guides/index.html", "astro/index.html", "empty/index.html"})
+                contract = json.loads(result.generated_data["root.json"])
+                self.assertEqual({(item["slug"], item["kind"]) for item in contract}, {(None, "page"), ("contact", "page"), ("guide/setup", "page"), ("layouts", "taxonomy"), ("guides", "taxonomy"), ("astro", "taxonomy"), ("empty", "taxonomy")})
+                self.assertIn("Setup body.", result.generated_html["guide/setup/index.html"])
+                self.assertIn("No items yet.", result.generated_html["empty/index.html"])
+                for html in result.generated_html.values():
+                    markup = native.Markup(); markup.feed(html)
+                    self.assertEqual(sum(tag == "main" for tag, _ in markup.elements), 1)
+                    self.assertEqual(sum(tag == "html" for tag, _ in markup.elements), 1)
+                    self.assertEqual(sum(attrs.get("data-moo-document-owner") == "true" for _, attrs in markup.elements), 1)
+
+    def test_root_taxonomy_only_empty_and_mixed_locale_producers(self):
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"').replace('archive: {}', 'archive: { basePath: "/" }')
+        config = 'integrations: [moo({ plugins: [], taxonomies })]'
+        result, _ = self.taxonomy_build(files, configuration=config)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(set(result.generated_html), {"parent/index.html", "child/index.html", "astro/index.html", "empty/index.html"})
+        files["src/data/category.json"] = files["src/data/tag.json"] = "[]"
+        empty, _ = self.taxonomy_build(files, configuration=config)
+        self.assertEqual(empty.returncode, 0, empty.stdout + empty.stderr)
+        self.assertEqual(empty.generated_html, {})
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/"').replace('include: "descendants"', 'include: "descendants", basePath: "/c"')
+        mixed, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration())
+        self.assertEqual(mixed.returncode, 0, mixed.stdout + mixed.stderr)
+        for path in ["contact/index.html", "c/child/index.html", "de/kontakt/index.html", "de/aepfel/index.html"]:
+            self.assertIn(path, mixed.generated_html)
+        self.assertFalse(any(path.startswith("de/c/") or "kategorie/" in path for path in mixed.generated_html))
+
     def test_data_only_terms_and_explicit_host_archive_paths_share_public_types(self):
         source = '''---
 import Layout from "@wpmoo/astro/Layout.astro";

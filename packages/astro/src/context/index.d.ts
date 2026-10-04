@@ -55,3 +55,16 @@ export declare function getEntryHref(
   },
 ): string;
 export declare function validateSiteContent(): Promise<void>;
+
+export type RootPath = {
+  params: { slug: string | undefined };
+  props:
+    | { kind: "page"; entry: import("astro:content").CollectionEntry<"page"> }
+    | ({
+        kind: "taxonomy";
+      } & import("../taxonomies/queries.js").TaxonomyPath["props"]);
+};
+/** One native rest route for built-in Pages and flat taxonomy archives. */
+export declare function getRootPaths(options?: {
+  locale?: string;
+}): Promise<RootPath[]>;
