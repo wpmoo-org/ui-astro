@@ -17,7 +17,7 @@ import {
   relative,
   resolve,
 } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   assertPackedContainer,
   assertPlainInputTree,
@@ -32,7 +32,6 @@ import {
 export { assertPlainInputTree };
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const WORKSPACE = resolve(REPO, "../../..");
 const SITE = join(REPO, "apps/theme-pilot");
 const inside = (parent, child) => {
   const path = relative(parent, child);
@@ -75,8 +74,8 @@ export async function assertPilotLocations({ cache, output }) {
   const outputPath = await canonical(output, false);
   for (const path of [cachePath, outputPath])
     assert.ok(
-      !inside(WORKSPACE, path) && !inside(path, WORKSPACE),
-      "proof/cache must be outside workspace",
+      !inside(REPO, path) && !inside(path, REPO),
+      "proof/cache must be outside checkout",
     );
   assert.ok(
     !inside(cachePath, outputPath) && !inside(outputPath, cachePath),
@@ -128,6 +127,7 @@ export async function archiveRecord(path) {
     "archive cannot be a symlink",
   );
   const members = run("tar", ["-tzf", path]).trim().split("\n");
+  const literalNames = run("tar", ["--version"]).includes("GNU tar");
   const files = {};
   for (const name of members) {
     assert.ok(
@@ -140,10 +140,10 @@ export async function archiveRecord(path) {
       !Object.hasOwn(files, name.slice(8)),
       `duplicate archive member: ${name}`,
     );
-    const literal = name.replace(
-      /[\\*?\[\]]/gu,
-      (character) => `\\${character}`,
-    );
+    // GNU tar selects literal names; bsdtar selects glob patterns by default.
+    const literal = literalNames
+      ? name
+      : name.replace(/[\\*?\[\]]/gu, (character) => `\\${character}`);
     const result = spawnSync("tar", ["-xOf", path, literal], {
       maxBuffer: 16 * 1024 * 1024,
     });
@@ -363,7 +363,7 @@ export async function verifyThemePilot(options) {
       image: image.Id,
       output: outputPath,
       cache: cachePath,
-      workspace: WORKSPACE,
+      workspace: REPO,
     });
     return records[0];
   }
@@ -399,7 +399,10 @@ export async function verifyThemePilot(options) {
   );
   return proof;
 }
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   const options = {};
   const args = process.argv.slice(2);
   try {

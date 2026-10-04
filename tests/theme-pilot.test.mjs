@@ -6,13 +6,16 @@ import {
   writeFile,
   symlink,
   rm,
+  mkdir,
+  copyFile,
+  realpath,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   defineSite,
   resolvePageOptions,
@@ -160,6 +163,9 @@ test("theme_manifest_has_exact_peers", async () => {
 // Runs npm's real pack inventory, catching app/SDK/tooling leakage and absent exports.
 test("theme_pack_has_only_owned_source", async () => {
   const manifest = await json(new URL("package.json", theme));
+  const cache = await realpath(
+    await mkdtemp(join(tmpdir(), "pilot-pack-cache-")),
+  );
   const packed = spawnSync(
     "npm",
     [
@@ -168,11 +174,13 @@ test("theme_pack_has_only_owned_source", async () => {
       manifest.name,
       "--dry-run",
       "--json",
+      "--offline",
       "--cache",
-      "/private/tmp/astro-options-20261002/full-cache",
+      cache,
     ],
     { cwd: root, encoding: "utf8" },
   );
+  await rm(cache, { recursive: true });
   assert.equal(packed.status, 0, packed.stderr);
   const files = JSON.parse(packed.stdout)[0]
     .files.map((file) => file.path)
@@ -280,61 +288,140 @@ test("sealed_pilot_rejects_changed_archives", async () => {
 
 test("sealed_archive_accepts_native_rest_route_filenames", async () => {
   const { archiveRecord } = await import("../scripts/verify_theme_pilot.mjs");
-  const record = await archiveRecord(
-    join(root, "artifacts/theme-pilot/wpmoo-astro-0.1.0.tgz"),
+  const directory = await realpath(
+    await mkdtemp(join(tmpdir(), "pilot-archive-")),
   );
-  assert.ok(record.files["src/integration/routes/[...probe].astro"]);
-  assert.equal(
-    record.sha256,
-    "03b3a082a90681a1ebf8c3d3a5ae03dee0bae8146a3430e07b21a3ead61b8141",
-  );
-});
-
-test("theme_patch_archive_changes_only_version_and_fallback", async () => {
-  const { archiveRecord } = await import("../scripts/verify_theme_pilot.mjs");
-  const original = await archiveRecord(
-    join(root, "artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.0.tgz"),
-  );
-  const updated = await archiveRecord(
-    join(root, "artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.1.tgz"),
-  );
-  assert.notEqual(original.filename, updated.filename);
-  assert.notEqual(original.integrity, updated.integrity);
-  assert.equal(updated.manifest.version, "0.1.1");
-  assert.deepEqual(
-    Object.keys(updated.files).sort(),
-    Object.keys(original.files).sort(),
-  );
-  assert.deepEqual(
-    Object.keys(updated.files)
-      .filter((name) => updated.files[name] !== original.files[name])
-      .sort(),
-    ["package.json", "src/preferences.js"],
-  );
+  try {
+    const source = join(directory, "source");
+    await mkdir(join(source, "src/integration/routes"), { recursive: true });
+    await writeFile(
+      join(source, "package.json"),
+      JSON.stringify({
+        name: "pilot-archive-fixture",
+        version: "0.0.0",
+        private: true,
+        files: ["src"],
+      }),
+    );
+    const filename = "src/integration/routes/[...probe].astro";
+    const body = "---\nexport const prerender = true;\n---\n";
+    await writeFile(join(source, filename), body);
+    const packed = spawnSync(
+      "npm",
+      [
+        "pack",
+        "--json",
+        "--offline",
+        "--ignore-scripts",
+        "--pack-destination",
+        directory,
+        "--cache",
+        join(directory, "cache"),
+      ],
+      { cwd: source, encoding: "utf8" },
+    );
+    assert.equal(packed.status, 0, packed.stderr);
+    const record = await archiveRecord(
+      join(directory, JSON.parse(packed.stdout)[0].filename),
+    );
+    assert.equal(
+      record.files[filename],
+      createHash("sha256").update(body).digest("hex"),
+    );
+    assert.deepEqual(Object.keys(record.files).sort(), [
+      "package.json",
+      filename,
+    ]);
+  } finally {
+    await rm(directory, { recursive: true });
+  }
 });
 
 test("sealed_pilot_rejects_symlinked_source_and_nonempty_output", async () => {
   const { assertPilotLocations, assertPlainInputTree } =
     await import("../scripts/verify_theme_pilot.mjs");
-  const directory = await mkdtemp("/private/tmp/theme-pilot-input-");
+  const directory = await realpath(
+    await mkdtemp(join(tmpdir(), "theme-pilot-input-")),
+  );
   try {
+    const cache = join(directory, "cache");
+    const output = join(directory, "output");
+    await mkdir(cache);
+    await mkdir(output);
+    await writeFile(join(output, "retained"), "owned");
     await writeFile(join(directory, "source"), "owned");
     await symlink(join(directory, "source"), join(directory, "alias"));
     await assert.rejects(assertPlainInputTree(directory), /symlink/);
     await assert.rejects(
       assertPilotLocations({
-        cache: "/private/tmp/astro-options-20261002/full-cache",
-        output: directory,
+        cache,
+        output,
       }),
       /empty/,
     );
     await assert.rejects(
       assertPilotLocations({
-        cache: "/private/tmp/astro-options-20261002/full-cache",
+        cache,
         output: root,
       }),
-      /workspace/,
+      /checkout/,
     );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+async function copyController(directory) {
+  const checkout = join(directory, "checkout with spaces");
+  await mkdir(join(checkout, "scripts"), { recursive: true });
+  for (const name of [
+    "verify_theme_pilot.mjs",
+    "packed_consumer_contracts.mjs",
+    "theme_pilot_contracts.mjs",
+  ]) {
+    await copyFile(
+      join(root, "scripts", name),
+      join(checkout, "scripts", name),
+    );
+  }
+  return join(checkout, "scripts/verify_theme_pilot.mjs");
+}
+
+test("sealed_pilot_locations_work_in_an_independent_checkout", async () => {
+  const directory = await realpath(
+    await mkdtemp(join(tmpdir(), "pilot-checkout-")),
+  );
+  try {
+    const controller = await copyController(directory);
+    const { assertPilotLocations } = await import(pathToFileURL(controller));
+    const cache = join(directory, "cache");
+    const output = join(directory, "proof");
+    await mkdir(cache);
+    assert.deepEqual(await assertPilotLocations({ cache, output }), {
+      cachePath: cache,
+      outputPath: output,
+    });
+    await assert.rejects(
+      assertPilotLocations({
+        cache,
+        output: join(directory, "checkout with spaces/proof"),
+      }),
+      /outside/,
+    );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("sealed_pilot_cli_runs_when_its_checkout_path_contains_spaces", async () => {
+  const directory = await realpath(await mkdtemp(join(tmpdir(), "pilot-cli-")));
+  try {
+    const controller = await copyController(directory);
+    const result = spawnSync(process.execPath, [controller, "--unexpected"], {
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 1, "the CLI must reject invalid arguments");
+    assert.match(result.stderr, /unknown argument/);
   } finally {
     await rm(directory, { recursive: true });
   }

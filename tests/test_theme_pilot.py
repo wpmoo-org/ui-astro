@@ -3,6 +3,7 @@
 import base64
 import copy
 import hashlib
+import io
 from html.parser import HTMLParser
 import json
 from pathlib import Path
@@ -191,6 +192,18 @@ def phase_artifacts(proof, phase):
     return result
 
 
+def verify_theme_update(root, proof):
+    baseline = proof["artifacts"]["@wpmoo/astro-theme-pilot"]
+    updated = proof["update_artifact"]
+    for record in (baseline, updated):
+        verify_archives(root, {"@wpmoo/astro-theme-pilot": record})
+    require(baseline["filename"] != updated["filename"] and baseline["integrity"] != updated["integrity"], "theme update must have a separate archive identity")
+    require(baseline["manifest"]["version"] == "0.1.0" and updated["manifest"]["version"] == "0.1.1", "theme update version differs")
+    require(set(baseline["files"]) == set(updated["files"]), "theme update inventory differs")
+    changed = {name for name, digest in updated["files"].items() if digest != baseline["files"][name]}
+    require(changed == {"package.json", "src/preferences.js"}, "theme patch changed unrelated files")
+
+
 def verify_profile(root, profile, artifacts, inset="py-2"):
     directory = owned(root, profile["directory"])
     require(profile["authored_before"] == profile["authored_after"] == profile["authored_sha256"], "authored source changed")
@@ -252,6 +265,32 @@ class PilotTests(unittest.TestCase):
         require(set(self.proof["profiles"]) == {f"{lang}-{kind}" for lang in ("en", "de") for kind in ("category", "short", "root")}, "six profiles required")
         for profile in self.proof["profiles"].values():
             verify_profile(ROOT, profile, self.proof["artifacts"])
+
+    def test_update_archive_changes_only_version_and_fallback(self):
+        verify_theme_update(ROOT, self.proof)
+
+    def test_unrelated_theme_change_is_rejected_after_archive_rebinding(self):
+        proof = copy.deepcopy(self.proof)
+        baseline = proof["artifacts"]["@wpmoo/astro-theme-pilot"]
+        updated = proof["update_artifact"]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            shutil.copyfile(ROOT / baseline["filename"], directory / baseline["filename"])
+            target = directory / updated["filename"]
+            with tarfile.open(ROOT / updated["filename"], "r:gz") as source:
+                with tarfile.open(target, "w:gz") as archive:
+                    for member in source.getmembers():
+                        data = source.extractfile(member).read()
+                        if member.name == "package/README.md":
+                            data += b"\nUnrelated change.\n"
+                        member.size = len(data)
+                        archive.addfile(member, io.BytesIO(data))
+                        updated["files"][member.name[8:]] = hashlib.sha256(data).hexdigest()
+            updated["sha256"] = sha(target)
+            updated["integrity"] = "sha512-" + base64.b64encode(hashlib.sha512(target.read_bytes()).digest()).decode()
+            verify_archives(directory, {"@wpmoo/astro-theme-pilot": updated})
+            with self.assertRaisesRegex(AssertionError, "theme patch changed unrelated files"):
+                verify_theme_update(directory, proof)
 
     def test_update_preserves_all_authored_source_and_urls(self):
         updates = self.proof.get("updates", {})
@@ -342,7 +381,7 @@ class PilotTests(unittest.TestCase):
 if __name__ == "__main__":
     if "--profiles-only" in sys.argv:
         sys.argv.remove("--profiles-only")
-        excluded = {"test_update_preserves_all_authored_source_and_urls", "test_project_override_survives_new_fallback", "test_rollback_restores_manifest_lock_and_installed_version"}
+        excluded = {"test_update_preserves_all_authored_source_and_urls", "test_project_override_survives_new_fallback", "test_rollback_restores_manifest_lock_and_installed_version", "test_update_archive_changes_only_version_and_fallback", "test_unrelated_theme_change_is_rejected_after_archive_rebinding"}
         suite = unittest.TestSuite(PilotTests(name) for name in unittest.defaultTestLoader.getTestCaseNames(PilotTests) if name not in excluded)
         result = unittest.TextTestRunner(verbosity=2).run(suite)
         sys.exit(0 if result.wasSuccessful() else 1)
