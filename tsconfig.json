@@ -7,6 +7,7 @@
   "include": [
     "apps/demo/.astro/types.d.ts",
     "packages/astro/src/**/*",
+    "packages/theme-pilot/src/**/*",
     "apps/demo/**/*",
     "tests/public-api.ts",
     "tests/theme-types.ts",

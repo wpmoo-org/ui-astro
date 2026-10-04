@@ -1,0 +1,38 @@
+{
+  "name": "@wpmoo/astro-theme-pilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reference presentation theme for independent Moo Astro sites.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "exports": {
+    "./preferences": {
+      "types": "./src/preferences.d.ts",
+      "default": "./src/preferences.js"
+    },
+    "./types": {
+      "types": "./src/types.d.ts",
+      "default": "./src/types.js"
+    },
+    "./Layout.astro": "./src/Layout.astro",
+    "./views/Page.astro": "./src/views/Page.astro",
+    "./views/Post.astro": "./src/views/Post.astro",
+    "./views/Archive.astro": "./src/views/Archive.astro",
+    "./views/NotFound.astro": "./src/views/NotFound.astro",
+    "./sections/Action.astro": "./src/sections/Action.astro",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "@wpmoo/astro": "0.1.0",
+    "astro": "7.3.3"
+  }
+}

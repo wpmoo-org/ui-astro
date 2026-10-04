@@ -1,0 +1,13 @@
+---
+import Archive from "@wpmoo/astro/views/Archive.astro";
+import type { ThemeArchiveProps } from "../types.js";
+type Props = ThemeArchiveProps;
+const { options, items, ...content } = Astro.props;
+---
+
+<Archive
+  {...content}
+  items={[...items]}
+  parts={options.parts}
+  lang={options.lang}
+/>
