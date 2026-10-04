@@ -6,8 +6,7 @@ status: publish
 locale: en
 translationKey: about
 taxonomies:
-  category: [guides]
-  tag: [astro]
+  category: [company]
   sector: [foundation]
 ---
 

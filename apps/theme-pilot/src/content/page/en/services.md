@@ -6,9 +6,9 @@ status: publish
 locale: en
 translationKey: services
 taxonomies:
-  category: [guides]
+  category: [company]
   tag: [astro]
-  sector: [foundation]
+  sector: [development]
 ---
 
 This authored content belongs to the project and survives theme updates.

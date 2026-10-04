@@ -6,8 +6,8 @@ locale: en
 translationKey: announcement
 published_at: "2026-10-01T10:00:00Z"
 taxonomies:
-  category: [guides]
-  tag: [astro]
+  category: [news]
+  tag: [release]
   sector: [foundation]
 ---
 

@@ -18,6 +18,25 @@ import unittest
 SDK_SHA = "03b3a082a90681a1ebf8c3d3a5ae03dee0bae8146a3430e07b21a3ead61b8141"
 PINS = {"astro": "7.3.3", "@wpmoo/ui": "1.0.0", "bootstrap": "5.3.8",
         "@astrojs/mdx": "8.0.2", "@astrojs/check": "0.9.10", "typescript": "6.0.3"}
+ARCHIVE_ITEMS = {
+    "archive": ("announcement", "update"),
+    "category": ("enhanced", "update"),
+    "categoryCompany": ("about", "services"),
+    "categoryNews": ("announcement", "update"),
+    "tag": ("enhanced", "services", "update"),
+    "tagMdx": ("enhanced",),
+    "tagRelease": ("announcement", "update"),
+    "sector": ("about", "announcement", "update"),
+    "sectorDevelopment": ("enhanced", "services", "update"),
+}
+ENTRY_TERMS = {
+    "home": (), "contact": (),
+    "about": ("categoryCompany", "sector"),
+    "services": ("categoryCompany", "tag", "sectorDevelopment"),
+    "enhanced": ("category", "tag", "tagMdx", "sectorDevelopment"),
+    "announcement": ("categoryNews", "tagRelease", "sector"),
+    "update": ("category", "categoryNews", "tag", "tagRelease", "sector", "sectorDevelopment"),
+}
 ROOT = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
 
 
@@ -46,13 +65,30 @@ class Document(HTMLParser):
         self.tags = []
         self.anchors = []
         self.anchor = None
+        self.in_main = False
+        self.list_items = []
+        self.in_article = False
+        self.in_taxonomies = False
+        self.taxonomy_metadata_count = 0
+        self.container_ids = []
         self.feed(html)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         self.tags.append((tag, attrs))
+        if tag in ("div", "ul"):
+            self.container_ids.append(attrs.get("id"))
+        if tag == "main":
+            self.in_main = True
+        if tag == "article" and self.in_main:
+            self.in_article = True
+        if tag == "dl" and self.in_article and "data-entry-taxonomies" in attrs:
+            self.in_taxonomies = True
+            self.taxonomy_metadata_count += 1
+        if tag == "li":
+            self.list_items.append(self.in_main and bool({"page", "post"} & set(attrs.get("class", "").split())))
         if tag == "a":
-            self.anchor = {**attrs, "text": "", "paragraph": False}
+            self.anchor = {**attrs, "text": "", "paragraph": False, "loop_item": any(self.list_items), "term_link": self.in_taxonomies, "containers": tuple(self.container_ids)}
             self.anchors.append(self.anchor)
         if tag == "p" and self.anchor is not None:
             self.anchor["paragraph"] = True
@@ -60,6 +96,16 @@ class Document(HTMLParser):
     def handle_endtag(self, tag):
         if tag == "a":
             self.anchor = None
+        if tag in ("div", "ul") and self.container_ids:
+            self.container_ids.pop()
+        if tag == "li" and self.list_items:
+            self.list_items.pop()
+        if tag == "main":
+            self.in_main = False
+        if tag == "article":
+            self.in_article = False
+        if tag == "dl":
+            self.in_taxonomies = False
 
     def handle_data(self, data):
         if self.anchor is not None:
@@ -80,7 +126,12 @@ def routes(profile):
         "update": ("blog/project-update", "beitraege/projektupdate"),
         "archive": ("blog", "beitraege"),
         "category": (prefixes[0] + "guides", prefixes[1] + "anleitungen"),
+        "categoryCompany": (prefixes[0] + "company", prefixes[1] + "unternehmen"),
+        "categoryNews": (prefixes[0] + "news", prefixes[1] + "neuigkeiten"),
         "tag": ("tag/astro", "schlagwort/astro"), "sector": ("foundation", "grundlagen"),
+        "tagMdx": ("tag/mdx", "schlagwort/mdx"),
+        "tagRelease": ("tag/release", "schlagwort/veroeffentlichung"),
+        "sectorDevelopment": ("development", "entwicklung"),
         "native": ("native-action", "native-action"), "error": ("404", "404"),
     }
     result = {}
@@ -131,6 +182,18 @@ def verify_rendered(directory, profile, inset="py-2"):
                 require(by_url[href]["locale"] == route["locale"], "sidebar link loses selected language")
             if "btn" in anchor.get("class", "").split():
                 require(not anchor["paragraph"], "Action contains paragraph")
+        labels = () if route["key"] == "error" else ("Kategorien", "Schlagwörter", "Bereiche") if route["locale"] == "de" else ("Categories", "Tags", "Sectors")
+        keys = (("category", "categoryCompany", "categoryNews"), ("tag", "tagMdx", "tagRelease"), ("sector", "sectorDevelopment"))
+        taxonomy_navigation = {}
+        for label, wanted_keys in zip(labels, keys):
+            controls = [tag for tag in doc.find("button") if tag.get("aria-label") == label]
+            require(len(controls) == 1 and controls[0].get("aria-controls"), "one taxonomy submenu required: " + label)
+            container = controls[0]["aria-controls"]
+            require(any(tag.get("id") == container for tag in doc.find("div") + doc.find("ul")), "controlled submenu missing")
+            links = sorted(a.get("href") for a in doc.anchors if container in a["containers"])
+            wanted = sorted(r["href"] for r in expected.values() if r["key"] in wanted_keys and r["locale"] == route["locale"])
+            require(links == wanted, "taxonomy navigation differs: " + label)
+            taxonomy_navigation[label] = links
         canonical = [link["href"] for link in doc.find("link") if link.get("rel") == "canonical"]
         alternates = {link["hreflang"]: link["href"] for link in doc.find("link") if link.get("rel") == "alternate"}
         pair = {r["locale"]: r["href"] for r in expected.values() if r["key"] == route["key"]}
@@ -156,12 +219,28 @@ def verify_rendered(directory, profile, inset="py-2"):
             target = next(r["href"] for r in expected.values() if r["key"] == target_key and r["locale"] == route["locale"])
             require(len(controls) == 1 and controls[0].get("href") == target, "literal Action label/target differs")
         dates = [tag.get("datetime") for tag in doc.find("time")]
-        if route["key"] in ("announcement", "update", "archive", "category", "tag", "sector"):
-            require(bool(dates), "published ISO date missing")
+        term_links = []
+        if route["key"] in ENTRY_TERMS:
+            wanted_terms = ENTRY_TERMS[route["key"]]
+            term_links = sorted(a.get("href") for a in doc.anchors if a["term_link"])
+            wanted = sorted(r["href"] for r in expected.values() if r["key"] in wanted_terms and r["locale"] == route["locale"])
+            require(term_links == wanted, "entry taxonomy links differ: " + route["href"])
+            require(doc.taxonomy_metadata_count == (1 if wanted_terms else 0), "taxonomy metadata count differs")
+            require(all(a.get("rel") == "tag" and a["text"].strip() for a in doc.anchors if a["term_link"]), "term label/relationship differs")
+        items = []
+        if route["key"] in ARCHIVE_ITEMS:
+            wanted_keys = ARCHIVE_ITEMS[route["key"]]
+            wanted = sorted(r["href"] for r in expected.values() if r["key"] in wanted_keys and r["locale"] == route["locale"])
+            items = sorted(a.get("href") for a in doc.anchors if a["loop_item"])
+            require(items == wanted, "archive membership differs: " + route["href"])
+            require(len(dates) == len({"announcement", "update"} & set(wanted_keys)), "published item date count differs")
+        elif route["key"] in ("announcement", "update"):
+            require(len(dates) == 1, "published ISO date missing")
         require(all(date == "2026-10-01T10:00:00.000Z" for date in dates), "ISO date changed with display locale")
         observations[name] = {"href": route["href"], "locale": route["locale"], "canonical": canonical[0] if canonical else None,
                               "alternates": [{"locale": locale, "href": href} for locale, href in sorted(alternates.items())],
-                              "links": sorted(a["href"] for a in doc.anchors if a.get("href")), "dates": dates, "inset": inset}
+                              "links": sorted(a["href"] for a in doc.anchors if a.get("href")), "dates": dates, "items": items, "termLinks": term_links,
+                              "taxonomyNavigation": taxonomy_navigation, "inset": inset}
     require(observations == output["observations"], "recorded HTML observations differ from actual markup")
     return observations
 
@@ -376,6 +455,19 @@ class PilotTests(unittest.TestCase):
 
     def test_paragraph_inside_action_is_rejected_after_hash_rebinding(self):
         self.mutate("enhanced/index.html", lambda html: html.replace("Explore the native page", "<p>Explore the native page</p>"), "Action contains paragraph")
+
+    def test_unrelated_item_is_rejected_after_hash_rebinding(self):
+        # Both URLs exist; the failure must concern membership, not link validity.
+        self.mutate("category/guides/index.html", lambda html: re.sub(r'(<li\b[^>]*class="[^"]*\bpage\b[^>]*>[\s\S]*?<a\b[^>]*href=")/enhanced"', r'\1/about"', html), "archive membership differs")
+
+    def test_missing_item_is_rejected_after_hash_rebinding(self):
+        self.mutate("category/guides/index.html", lambda html: re.sub(r'<li\b[^>]*class="[^"]*\bpost\b[^>]*>[\s\S]*?</li>', "", html, count=1), "archive membership differs")
+
+    def test_wrong_entry_term_is_rejected_after_hash_rebinding(self):
+        self.mutate("enhanced/index.html", lambda html: re.sub(r'(<a\b[^>]*href=")/tag/mdx("[^>]*rel="tag")', r'\1/tag/release\2', html), "entry taxonomy links differ")
+
+    def test_sidebar_term_in_wrong_group_is_rejected_after_hash_rebinding(self):
+        self.mutate("enhanced/index.html", lambda html: html.replace('href="/category/company"', 'href="/tag/astro"', 1), "taxonomy navigation differs")
 
 
 if __name__ == "__main__":

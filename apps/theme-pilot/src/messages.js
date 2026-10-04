@@ -2,7 +2,7 @@ const messages = {
   en: {
     pages: "Pages",
     posts: "Blog",
-    topics: "Topics",
+    taxonomies: "Taxonomies",
     native: "Native action",
     toggle: "Toggle sidebar",
     navigation: "Site navigation",
@@ -14,7 +14,7 @@ const messages = {
   de: {
     pages: "Seiten",
     posts: "Beiträge",
-    topics: "Themen",
+    taxonomies: "Taxonomien",
     native: "Native Aktion",
     toggle: "Seitenleiste umschalten",
     navigation: "Seitennavigation",

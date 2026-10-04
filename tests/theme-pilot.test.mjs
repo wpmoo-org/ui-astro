@@ -73,6 +73,71 @@ test("project_preferences_replace_theme_seed", () => {
   assert.ok(actual.site.sidebar);
 });
 
+test("taxonomy_groups_keep_localized_custom_terms_and_entry_membership", async () => {
+  const { groupTaxonomyLinks, entryTaxonomyGroups } =
+    await import("../apps/theme-pilot/src/taxonomy-links.js");
+  const taxonomies = [
+    {
+      id: "category",
+      label: "Categories",
+      locales: { de: { label: "Kategorien" } },
+    },
+    {
+      id: "audience",
+      label: "Audiences",
+      locales: { de: { label: "Zielgruppen" } },
+    },
+  ];
+  const paths = [
+    {
+      props: {
+        taxonomy: "category",
+        term: { id: "guides", name: "Anleitungen" },
+        href: "/de/anleitungen",
+      },
+    },
+    {
+      props: {
+        taxonomy: "audience",
+        term: { id: "teachers", name: "Lehrkräfte" },
+        href: "/de/fuer-lehrkraefte",
+      },
+    },
+    {
+      props: {
+        taxonomy: "audience",
+        term: { id: "students", name: "Lernende" },
+        href: "/de/lernende",
+      },
+    },
+  ];
+  const groups = groupTaxonomyLinks(taxonomies, paths, "de");
+  assert.deepEqual(groups, [
+    {
+      id: "category",
+      label: "Kategorien",
+      links: [{ id: "guides", label: "Anleitungen", href: "/de/anleitungen" }],
+    },
+    {
+      id: "audience",
+      label: "Zielgruppen",
+      links: [
+        { id: "teachers", label: "Lehrkräfte", href: "/de/fuer-lehrkraefte" },
+        { id: "students", label: "Lernende", href: "/de/lernende" },
+      ],
+    },
+  ]);
+  const entry = { taxonomies: { audience: ["students", "teachers"] } };
+  assert.deepEqual(entryTaxonomyGroups(entry, groups), [groups[1]]);
+  assert.deepEqual(entryTaxonomyGroups({ taxonomies: {} }, groups), []);
+  assert.deepEqual(entryTaxonomyGroups({}, groups), []);
+  assert.deepEqual(groupTaxonomyLinks(taxonomies, [], "en"), []);
+  assert.equal(
+    groupTaxonomyLinks(taxonomies, paths, "en")[1].label,
+    "Audiences",
+  );
+});
+
 test("selected_native_tree_has_only_required_literal_routes", async () => {
   for (const [main, wanted] of [
     [

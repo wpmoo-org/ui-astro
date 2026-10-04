@@ -5,10 +5,7 @@ slug: "index"
 status: publish
 locale: en
 translationKey: index
-taxonomies:
-  category: [guides]
-  tag: [astro]
-  sector: [foundation]
+taxonomies: {}
 ---
 
 This authored content belongs to the project and survives theme updates.

@@ -2,13 +2,22 @@ import { getSiteContext, getSiteNavigation } from "@wpmoo/astro/context";
 import { getLocaleHref } from "@wpmoo/astro/i18n";
 import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
 import { getMessages } from "./messages.js";
+import { groupTaxonomyLinks } from "./taxonomy-links.js";
 
-/** @param {string} currentPath @param {string} locale @param {string} title @param {readonly import("@wpmoo/astro/i18n").LanguageLink[]} languageLinks @returns {Promise<import("@wpmoo/astro-theme-pilot/types").ThemeChrome>} */
-export async function getChrome(currentPath, locale, title, languageLinks) {
-  const { site, plugins } = getSiteContext();
+/** @param {string} currentPath @param {string} locale @param {string} title @param {readonly import("@wpmoo/astro/i18n").LanguageLink[]} languageLinks @param {readonly import("./taxonomy-links.js").TaxonomyLinkGroup[]} [taxonomyGroups] @returns {Promise<import("@wpmoo/astro-theme-pilot/types").ThemeChrome>} */
+export async function getChrome(
+  currentPath,
+  locale,
+  title,
+  languageLinks,
+  taxonomyGroups,
+) {
+  const { site, plugins, taxonomies } = getSiteContext();
   const copy = getMessages(locale);
   const links = await getSiteNavigation(currentPath, locale);
-  const taxonomyPaths = await getTaxonomyPaths({ locale });
+  const groups =
+    taxonomyGroups ??
+    groupTaxonomyLinks(taxonomies, await getTaxonomyPaths({ locale }), locale);
   const post = plugins.find((plugin) => plugin.id === "post");
   const archiveHref = getLocaleHref(
     post.locales?.[locale]?.basePath ?? post.basePath,
@@ -52,16 +61,16 @@ export async function getChrome(currentPath, locale, title, languageLinks) {
             icon: "file-text",
             active: active(archiveHref),
           },
-          {
-            title: copy.topics,
+          ...groups.map((group) => ({
+            title: group.label,
             icon: "layout-grid",
-            open: taxonomyPaths.some((path) => active(path.props.href)),
-            children: taxonomyPaths.map((path) => ({
-              title: path.props.term.name,
-              href: path.props.href,
-              active: active(path.props.href),
+            open: group.links.some((link) => active(link.href)),
+            children: group.links.map((link) => ({
+              title: link.label,
+              href: link.href,
+              active: active(link.href),
             })),
-          },
+          })),
         ],
       },
     ],

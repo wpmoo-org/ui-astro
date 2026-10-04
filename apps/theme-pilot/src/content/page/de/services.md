@@ -6,9 +6,9 @@ status: publish
 locale: de
 translationKey: services
 taxonomies:
-  category: [guides]
+  category: [company]
   tag: [astro]
-  sector: [foundation]
+  sector: [development]
 ---
 
 Dieser Inhalt gehört dem Projekt und bleibt bei einem Theme-Update erhalten.

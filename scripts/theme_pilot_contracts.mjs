@@ -120,8 +120,13 @@ export function pilotRoutes(profile) {
       update: "blog/project-update",
       archive: "blog",
       category: [category.en, "guides"].filter(Boolean).join("/"),
+      categoryCompany: [category.en, "company"].filter(Boolean).join("/"),
+      categoryNews: [category.en, "news"].filter(Boolean).join("/"),
       tag: "tag/astro",
+      tagMdx: "tag/mdx",
+      tagRelease: "tag/release",
       sector: "foundation",
+      sectorDevelopment: "development",
       native: "native-action",
       error: "404",
     },
@@ -135,8 +140,13 @@ export function pilotRoutes(profile) {
       update: "beitraege/projektupdate",
       archive: "beitraege",
       category: [category.de, "anleitungen"].filter(Boolean).join("/"),
+      categoryCompany: [category.de, "unternehmen"].filter(Boolean).join("/"),
+      categoryNews: [category.de, "neuigkeiten"].filter(Boolean).join("/"),
       tag: "schlagwort/astro",
+      tagMdx: "schlagwort/mdx",
+      tagRelease: "schlagwort/veroeffentlichung",
       sector: "grundlagen",
+      sectorDevelopment: "entwicklung",
       native: "native-action",
       error: "404",
     },
@@ -170,6 +180,34 @@ function attrs(source) {
     ),
   );
 }
+// Hand-checked pilot membership, independent of the SDK's filtering queries.
+const archiveItems = {
+  archive: ["announcement", "update"],
+  category: ["enhanced", "update"],
+  categoryCompany: ["about", "services"],
+  categoryNews: ["announcement", "update"],
+  tag: ["enhanced", "services", "update"],
+  tagMdx: ["enhanced"],
+  tagRelease: ["announcement", "update"],
+  sector: ["about", "announcement", "update"],
+  sectorDevelopment: ["enhanced", "services", "update"],
+};
+const entryTerms = {
+  home: [],
+  contact: [],
+  about: ["categoryCompany", "sector"],
+  services: ["categoryCompany", "tag", "sectorDevelopment"],
+  enhanced: ["category", "tag", "tagMdx", "sectorDevelopment"],
+  announcement: ["categoryNews", "tagRelease", "sector"],
+  update: [
+    "category",
+    "categoryNews",
+    "tag",
+    "tagRelease",
+    "sector",
+    "sectorDevelopment",
+  ],
+};
 export function inspectPilotHtml(html, route, routes, inset) {
   const tags = (name) =>
     [...html.matchAll(new RegExp(`<${name}\\b([^>]*)>`, "gu"))].map((match) =>
@@ -217,6 +255,45 @@ export function inspectPilotHtml(html, route, routes, inset) {
   const urls = new Map(
     Object.values(routes).map((value) => [value.href, value]),
   );
+  const taxonomyNavigation = {};
+  const groupLabels =
+    route.key === "error"
+      ? []
+      : route.locale === "de"
+        ? ["Kategorien", "Schlagwörter", "Bereiche"]
+        : ["Categories", "Tags", "Sectors"];
+  const groupKeys = [
+    ["category", "categoryCompany", "categoryNews"],
+    ["tag", "tagMdx", "tagRelease"],
+    ["sector", "sectorDevelopment"],
+  ];
+  for (const [index, label] of groupLabels.entries()) {
+    const controls = tags("button").filter(
+      (tag) => tag["aria-label"] === label,
+    );
+    assert.equal(controls.length, 1, `one taxonomy submenu: ${label}`);
+    const id = controls[0]["aria-controls"];
+    assert.match(id, /^[\w-]+$/u, "submenu control target");
+    const container = html.match(
+      new RegExp(`<(div|ul)\\b[^>]*id="${id}"[^>]*>([\\s\\S]*?)<\\/\\1>`, "u"),
+    );
+    assert.ok(container, "controlled submenu exists");
+    taxonomyNavigation[label] = [...container[2].matchAll(/<a\b([^>]*)>/gu)]
+      .map((link) => attrs(link[1]).href)
+      .sort();
+    assert.deepEqual(
+      taxonomyNavigation[label],
+      groupKeys[index]
+        .map(
+          (key) =>
+            Object.values(routes).find(
+              (value) => value.key === key && value.locale === route.locale,
+            ).href,
+        )
+        .sort(),
+      `taxonomy navigation differs: ${label}`,
+    );
+  }
   for (const anchor of anchors) {
     if (!anchor.href || anchor.href.startsWith("#")) continue;
     assert.ok(
@@ -301,12 +378,77 @@ export function inspectPilotHtml(html, route, routes, inset) {
     assert.equal(controls[0].href, target, "locale Action target");
   }
   const dates = tags("time").map((tag) => tag.datetime);
-  if (
-    ["announcement", "update", "archive", "category", "tag", "sector"].includes(
-      route.key,
-    )
-  )
-    assert.ok(dates.length > 0, "published ISO date retained");
+  const termLinks = [];
+  if (Object.hasOwn(entryTerms, route.key)) {
+    const article = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/u)?.[1];
+    assert.ok(article, "entry article required");
+    const metadata = article.match(
+      /<dl\b[^>]*data-entry-taxonomies[^>]*>([\s\S]*?)<\/dl>/u,
+    );
+    if (metadata) {
+      for (const link of metadata[1].matchAll(
+        /<a\b([^>]*)>([\s\S]*?)<\/a>/gu,
+      )) {
+        assert.equal(attrs(link[1]).rel, "tag", "term relationship link");
+        assert.ok(
+          decode(link[2].replace(/<[^>]*>/gu, "")).trim(),
+          "visible term label",
+        );
+        termLinks.push(attrs(link[1]).href);
+      }
+    }
+    termLinks.sort();
+    assert.deepEqual(
+      termLinks,
+      entryTerms[route.key]
+        .map(
+          (key) =>
+            Object.values(routes).find(
+              (value) => value.key === key && value.locale === route.locale,
+            ).href,
+        )
+        .sort(),
+      `entry taxonomy links differ: ${route.href}`,
+    );
+    assert.equal(
+      Boolean(metadata),
+      entryTerms[route.key].length > 0,
+      "taxonomy metadata only for assigned entries",
+    );
+  }
+  const items = [];
+  if (Object.hasOwn(archiveItems, route.key)) {
+    const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/u)?.[1];
+    for (const item of main.matchAll(/<li\b([^>]*)>([\s\S]*?)<\/li>/gu)) {
+      const classes = attrs(item[1]).class?.split(/\s/u) ?? [];
+      if (!classes.some((name) => name === "page" || name === "post")) continue;
+      const anchor = item[2].match(/<a\b([^>]*)>/u);
+      assert.ok(anchor, "archive item link required");
+      items.push(attrs(anchor[1]).href);
+    }
+    items.sort();
+    assert.deepEqual(
+      items,
+      archiveItems[route.key]
+        .map(
+          (key) =>
+            Object.values(routes).find(
+              (value) => value.key === key && value.locale === route.locale,
+            ).href,
+        )
+        .sort(),
+      `archive membership differs: ${route.href}`,
+    );
+    assert.equal(
+      dates.length,
+      archiveItems[route.key].filter((key) =>
+        ["announcement", "update"].includes(key),
+      ).length,
+      "published item date count",
+    );
+  } else if (["announcement", "update"].includes(route.key)) {
+    assert.equal(dates.length, 1, "published ISO date retained");
+  }
   for (const date of dates)
     assert.equal(
       date,
@@ -323,6 +465,9 @@ export function inspectPilotHtml(html, route, routes, inset) {
       .map((a) => a.href)
       .sort(),
     dates,
+    items,
+    termLinks,
+    taxonomyNavigation,
     inset,
   };
 }
