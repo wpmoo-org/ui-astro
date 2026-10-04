@@ -9,11 +9,10 @@ import { resolveSeoMetadata } from "../../../seo/index.js";
 import { getSiteContext, getSiteNavigation } from "../../../context/index.js";
 import { getTaxonomyPaths, type TaxonomyPath } from "../../queries.js";
 import type { GetStaticPathsOptions } from "astro";
-import { getRouteLocale } from "../../../i18n/index.js";
 
 export const prerender = true;
 export async function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
-  return getTaxonomyPaths({ locale: getRouteLocale(routePattern) });
+  return getTaxonomyPaths({ routePattern });
 }
 type Props = TaxonomyPath["props"];
 const { taxonomy, term, href, breadcrumbs, items, locale, alternates } =

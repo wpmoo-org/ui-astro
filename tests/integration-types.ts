@@ -19,3 +19,22 @@ moo({
   // @ts-expect-error Null cannot replace the taxonomy route ownership object.
   taxonomyRoutes: null,
 });
+
+import { defineTaxonomy } from "@wpmoo/astro/taxonomies";
+import {
+  getTaxonomyPaths,
+  type TaxonomyPath,
+} from "@wpmoo/astro/taxonomies/queries";
+const category = defineTaxonomy({
+  id: "category",
+  label: "Categories",
+  source: new URL("file:///site/category.json"),
+  archive: { basePath: "/c" },
+  locales: { de: { basePath: "/kategorie" } },
+});
+moo({ taxonomies: [category] });
+const paths: Promise<TaxonomyPath[]> = getTaxonomyPaths({
+  routePattern: "/c/[slug]",
+  locale: "en",
+});
+void paths;

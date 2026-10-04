@@ -1,4 +1,5 @@
 ---
+import { taxonomyNamespaces } from "../../../taxonomies/urls.js";
 import { render } from "astro:content";
 import type { GetStaticPathsOptions } from "astro";
 import {
@@ -31,8 +32,12 @@ export async function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
     .map(
       (plugin) => plugin.locales?.[locale ?? ""]?.basePath ?? plugin.basePath,
     );
-  if (taxonomies.some((taxonomy) => taxonomy.archive))
-    reservedPrefixes.push(taxonomyBasePath);
+  reservedPrefixes.push(
+    ...taxonomyNamespaces(
+      { taxonomies, taxonomyBasePath },
+      locale ?? site.defaults.lang,
+    ),
+  );
   if (i18n) reservedPrefixes.push(...i18n.locales.map((value) => `/${value}`));
   return getPagePaths({
     lang: locale ?? site.defaults.lang,

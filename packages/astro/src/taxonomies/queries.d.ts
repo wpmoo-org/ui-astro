@@ -13,7 +13,8 @@ export interface TermItem {
 }
 
 export interface TaxonomyPath {
-  params: { taxonomy: string; slug: string };
+  routePattern: string;
+  params: { taxonomy?: string; slug: string };
   props: {
     taxonomy: string;
     term: Term;
@@ -35,6 +36,7 @@ export declare function getTermEntries(
   options?: { include?: "direct" | "descendants"; locale?: string },
 ): Promise<readonly TermItem[]>;
 export declare function getTaxonomyPaths(options?: {
+  routePattern?: string;
   taxonomies?: readonly string[];
   locale?: string;
 }): Promise<TaxonomyPath[]>;

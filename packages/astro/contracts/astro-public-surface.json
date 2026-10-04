@@ -202,6 +202,7 @@
     "src/taxonomies/queries.d.ts",
     "src/taxonomies/queries.js",
     "src/taxonomies/routes/[taxonomy]/[slug].astro",
+    "src/taxonomies/urls.js",
     "src/views/Archive.astro",
     "src/views/Loop.astro",
     "src/views/Single.astro"
@@ -226,6 +227,7 @@
     "src/plugins/post/routes/index.astro",
     "src/runtime/moo-ui.d.ts",
     "src/taxonomies/paths.js",
-    "src/taxonomies/routes/[taxonomy]/[slug].astro"
+    "src/taxonomies/routes/[taxonomy]/[slug].astro",
+    "src/taxonomies/urls.js"
   ]
 }

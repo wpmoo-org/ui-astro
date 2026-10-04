@@ -1,3 +1,4 @@
+import { taxonomyNamespaces, taxonomyTermPath } from "../taxonomies/urls.js";
 import context, { collections } from "virtual:wpmoo-astro/routes";
 import { mkdir, writeFile } from "node:fs/promises";
 import {
@@ -50,9 +51,7 @@ function reservedPrefixes(typeId, locale) {
           plugin.basePath !== "/",
       )
       .map((plugin) => plugin.locales?.[locale]?.basePath ?? plugin.basePath),
-    ...(context.taxonomies.some((taxonomy) => taxonomy.archive)
-      ? [context.taxonomyBasePath]
-      : []),
+    ...taxonomyNamespaces(context, locale ?? context.site.defaults.lang),
     ...(context.i18n ? context.i18n.locales.map((value) => `/${value}`) : []),
   ];
 }
@@ -296,11 +295,13 @@ export async function validateSiteContent() {
         for (const term of validateTerms(taxonomy, loaded.get(taxonomy.id), {
           lang: locale,
         }).values()) {
-          const { normalizeSlug } = await import("../config/index.js");
           expected.push({
             id: `${taxonomy.id}/${term.id}/${locale}`,
             path: localePath(
-              `${context.taxonomyBasePath}/${taxonomy.locales?.[locale]?.slug ?? taxonomy.id}/${normalizeSlug(term.slug, { lang: locale })}`,
+              taxonomyTermPath(taxonomy, term, {
+                lang: locale,
+                taxonomyBasePath: context.taxonomyBasePath,
+              }),
               locale,
               context.i18n,
             ),

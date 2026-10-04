@@ -1,34 +1,11 @@
 import { normalizeSlug } from "../config/index.js";
 import { siteHref } from "../content/paths.js";
+import { taxonomyTermPath } from "./urls.js";
 import { termSchema } from "./content.js";
 
 const compare = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
-export function taxonomyMount(value = "/topics") {
-  const path =
-    typeof value === "string" && value !== "/"
-      ? value.replace(/\/$/u, "")
-      : value;
-  try {
-    siteHref(path);
-    if (
-      path === "/" ||
-      [
-        "404",
-        "_astro",
-        "_server_islands",
-        "_actions",
-        "__moo_content_integrity",
-      ].includes(path.split("/")[1])
-    )
-      throw new Error();
-  } catch {
-    throw new TypeError(
-      `moo.taxonomyBasePath must be a canonical nonroot namespace: ${String(value)}`,
-    );
-  }
-  return path;
-}
+export { taxonomyMount } from "./urls.js";
 
 export function validateTerms(taxonomy, entries, { lang = "en" } = {}) {
   if (!Array.isArray(entries))
@@ -182,7 +159,7 @@ export function termHref(
   { lang = "en", taxonomyBasePath = "/topics", base, trailingSlash } = {},
 ) {
   return siteHref(
-    `${taxonomyMount(taxonomyBasePath)}/${taxonomy.id}/${normalizeSlug(term.slug, { lang })}`,
+    taxonomyTermPath(taxonomy, term, { lang, taxonomyBasePath }),
     { base, trailingSlash },
   );
 }

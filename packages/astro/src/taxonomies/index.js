@@ -1,3 +1,5 @@
+import { archiveBasePath } from "./urls.js";
+
 const identifier = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
 function record(value, field, keys) {
@@ -58,7 +60,7 @@ export function defineTaxonomy(input) {
     throw new TypeError("taxonomy.hierarchical must be boolean");
   let archive = false;
   if (input.archive !== undefined && input.archive !== false) {
-    record(input.archive, "taxonomy.archive", ["include"]);
+    record(input.archive, "taxonomy.archive", ["include", "basePath"]);
     const include = input.archive.include ?? "direct";
     if (include !== "direct" && include !== "descendants")
       throw new TypeError(
@@ -68,7 +70,17 @@ export function defineTaxonomy(input) {
       throw new TypeError(
         "taxonomy.archive.include descendants requires hierarchical: true",
       );
-    archive = Object.freeze({ include });
+    archive = Object.freeze({
+      include,
+      ...(input.archive.basePath === undefined
+        ? {}
+        : {
+            basePath: archiveBasePath(
+              input.archive.basePath,
+              "taxonomy.archive.basePath",
+            ),
+          }),
+    });
   }
   let locales;
   if (input.locales !== undefined) {
@@ -82,7 +94,25 @@ export function defineTaxonomy(input) {
             `taxonomy.locales.${locale} must be a valid locale`,
           );
         }
-        record(value, `taxonomy.locales.${locale}`, ["label", "slug"]);
+        record(value, `taxonomy.locales.${locale}`, [
+          "label",
+          "slug",
+          "basePath",
+        ]);
+        const field = `taxonomy.locales.${locale}`;
+        const basePath =
+          value.basePath === undefined
+            ? undefined
+            : archiveBasePath(value.basePath, `${field}.basePath`);
+        if (basePath !== undefined && !archive)
+          throw new TypeError(`${field}.basePath requires an enabled archive`);
+        if (
+          value.slug !== undefined &&
+          (basePath !== undefined || archive.basePath !== undefined)
+        )
+          throw new TypeError(
+            `${field}.slug competes with explicit basePath; use basePath to choose the complete prefix`,
+          );
         if (
           value.label !== undefined &&
           (typeof value.label !== "string" ||
@@ -99,7 +129,13 @@ export function defineTaxonomy(input) {
           throw new TypeError(
             `taxonomy.locales.${locale}.slug must be a canonical URL segment`,
           );
-        return [locale, Object.freeze({ ...value })];
+        return [
+          locale,
+          Object.freeze({
+            ...value,
+            ...(basePath === undefined ? {} : { basePath }),
+          }),
+        ];
       }),
     );
   }

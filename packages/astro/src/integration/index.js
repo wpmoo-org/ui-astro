@@ -56,6 +56,7 @@ export default function moo(input = {}) {
     taxonomies: input.taxonomies,
     taxonomyBasePath: input.taxonomyBasePath,
     taxonomyRoutes: input.taxonomyRoutes,
+    lang: site.defaults.lang,
   });
   let registry = baseRegistry;
   const active = plugins.length > 0 || registry.taxonomies.length > 0;
@@ -265,6 +266,7 @@ declare module ${JSON.stringify(virtualId)} {
     readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix" }[];
     readonly projectionFile: string | null;
     readonly archivePaths: readonly string[];
+    readonly taxonomyGroups: readonly { readonly pattern: string; readonly root: boolean; readonly taxonomies: readonly string[]; readonly routeOwner: "plugin" | "host"; readonly locale?: string }[];
   };
   export const collections: Record<string, ReturnType<typeof import("astro:content").defineCollection>>;
   export default context;
@@ -299,6 +301,7 @@ declare module ${JSON.stringify(virtualId)} {
               ({ source, ...metadata }) => metadata,
             ),
             taxonomyBasePath: registry.taxonomyBasePath,
+            taxonomyGroups: registry.taxonomyGroups,
             sources: [
               ...registry.contentTypes.map((type) => ({
                 collection: type.collection,

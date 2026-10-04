@@ -6,7 +6,9 @@ import {
 } from "../context/index.js";
 import { normalizeSlug } from "../config/index.js";
 import { termItems, validateTerms } from "./paths.js";
-import { getLocaleHref } from "../i18n/index.js";
+import { resolveTaxonomyArchive, taxonomyTermPath } from "./urls.js";
+import { localePath } from "../i18n/profile.js";
+import { getLocaleHref, getRouteLocale } from "../i18n/index.js";
 
 function activeTaxonomy(context, id) {
   const taxonomy = context.taxonomies.find((item) => item.id === id);
@@ -89,14 +91,47 @@ export async function getTaxonomyPaths(options = {}) {
     !options ||
     typeof options !== "object" ||
     Array.isArray(options) ||
-    Object.keys(options).some((key) => !["taxonomies", "locale"].includes(key))
+    Object.keys(options).some(
+      (key) => !["taxonomies", "locale", "routePattern"].includes(key),
+    )
   )
     throw new TypeError(
-      "Taxonomy path options support only taxonomies and locale",
+      "Taxonomy path options support only taxonomies, locale and routePattern",
+    );
+  const routeLocale =
+    options.routePattern === undefined
+      ? undefined
+      : getRouteLocale(options.routePattern);
+  if (
+    routeLocale !== undefined &&
+    options.locale !== undefined &&
+    routeLocale !== options.locale
+  )
+    throw new TypeError(
+      `routePattern ${options.routePattern} locale ${routeLocale} disagrees with locale ${options.locale}`,
     );
   const { context, graphs, getCollection, locale } = await inputs(
-    options.locale,
+    routeLocale ?? options.locale,
   );
+  const patternFor = (taxonomy) =>
+    localePath(
+      resolveTaxonomyArchive(taxonomy, {
+        lang: locale,
+        taxonomyBasePath: context.taxonomyBasePath,
+      }).pattern,
+      locale,
+      context.i18n,
+    );
+  if (
+    options.routePattern !== undefined &&
+    !context.taxonomies.some(
+      (taxonomy) =>
+        taxonomy.archive && patternFor(taxonomy) === options.routePattern,
+    )
+  )
+    throw new TypeError(
+      `taxonomy routePattern ${options.routePattern} has no active archive group`,
+    );
   const selected =
     options.taxonomies ??
     context.taxonomies
@@ -114,6 +149,16 @@ export async function getTaxonomyPaths(options = {}) {
   const paths = [];
   for (const id of selected) {
     const taxonomy = activeTaxonomy(context, id);
+    const routePattern = patternFor(taxonomy);
+    if (
+      options.routePattern !== undefined &&
+      (!taxonomy.archive || routePattern !== options.routePattern)
+    )
+      continue;
+    const archive = resolveTaxonomyArchive(taxonomy, {
+      lang: locale,
+      taxonomyBasePath: context.taxonomyBasePath,
+    });
     const terms = graphs.get(id);
     const sources = await sourcesFor(taxonomy, context, getCollection);
     const authoredTerms = new Map(
@@ -122,9 +167,11 @@ export async function getTaxonomyPaths(options = {}) {
     const localized = taxonomy.locales?.[locale];
     const hrefFor = (value, language = locale) => {
       const authored = authoredTerms.get(value.id);
-      const slug = authored.locales?.[language]?.slug ?? authored.slug;
       return getLocaleHref(
-        `${context.taxonomyBasePath}/${taxonomy.locales?.[language]?.slug ?? taxonomy.id}/${normalizeSlug(slug, { lang: language })}`,
+        taxonomyTermPath(taxonomy, authored, {
+          lang: language,
+          taxonomyBasePath: context.taxonomyBasePath,
+        }),
         language,
       );
     };
@@ -142,8 +189,11 @@ export async function getTaxonomyPaths(options = {}) {
         { label: `${localized?.label ?? taxonomy.label}: ${term.name}` },
       ];
       paths.push({
+        routePattern,
         params: {
-          taxonomy: localized?.slug ?? id,
+          ...(archive.taxonomySegment === undefined
+            ? {}
+            : { taxonomy: archive.taxonomySegment }),
           slug: normalizeSlug(term.slug, { lang: locale }),
         },
         props: {

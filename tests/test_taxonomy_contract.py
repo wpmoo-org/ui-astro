@@ -92,6 +92,42 @@ class TaxonomyContracts(unittest.TestCase):
         self.assertIn("category-root", single)
         self.assertIn("tag-astro", single)
 
+    def test_explicit_nonroot_archives_use_actual_route_selectors_and_release_legacy_namespace(self):
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+        files["src/content/page/about.md"] = "---\ntitle: About\nstatus: publish\nslug: topics/about\n---\nAbout body.\n"
+        files["src/pages/paths.json.ts"] = '''import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
+export const GET = async () => Response.json(await getTaxonomyPaths({ routePattern: "/c/[slug]" }));
+'''
+        result, _ = self.taxonomy_build(files)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(set(result.generated_html), {"contact/index.html", "topics/about/index.html", "posts/index.html", "posts/announcement/index.html", "c/parent/index.html", "c/child/index.html", "c/astro/index.html", "c/empty/index.html"})
+        paths = json.loads(result.generated_data["paths.json"])
+        self.assertEqual({path["routePattern"] for path in paths}, {"/c/[slug]"})
+        self.assertEqual({path["props"]["href"] for path in paths}, {"/docs/c/parent/", "/docs/c/child/", "/docs/c/astro/", "/docs/c/empty/"})
+        self.assertTrue(all(set(path["params"]) == {"slug"} for path in paths))
+        self.assertIn('href="/docs/c/parent/"', result.generated_html["c/child/index.html"])
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants", basePath: "/c"', 'include: "descendants"')
+        legacy, _ = self.taxonomy_build(files)
+        self.assertNotEqual(legacy.returncode, 0)
+        self.assertIn("inside reserved namespace /topics", legacy.stdout + legacy.stderr)
+
+    def test_explicit_archive_locale_override_and_selector_mismatch(self):
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/kategorie"').replace('include: "descendants"', 'include: "descendants", basePath: "/c"')
+        result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration(base="/docs", slash="always"))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("c/child/index.html", result.generated_html)
+        self.assertIn("de/kategorie/aepfel/index.html", result.generated_html)
+        self.assertIn('href="https://example.test/docs/c/child/"', result.generated_html["de/kategorie/aepfel/index.html"])
+        files["src/pages/paths.json.ts"] = '''import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
+export const GET = async () => Response.json(await getTaxonomyPaths({ routePattern: "/de/kategorie/[slug]", locale: "en" }));
+'''
+        invalid, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration())
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn("routePattern /de/kategorie/[slug] locale de disagrees with locale en", invalid.stdout + invalid.stderr)
+
     def test_data_only_terms_and_explicit_host_archive_paths_share_public_types(self):
         source = '''---
 import Layout from "@wpmoo/astro/Layout.astro";

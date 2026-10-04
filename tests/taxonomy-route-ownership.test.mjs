@@ -5,7 +5,10 @@ import {
   buildRegistry,
   validateResolvedRoutes,
 } from "../packages/astro/src/integration/registry.js";
-import { localizeRegistry, resolveI18n } from "../packages/astro/src/i18n/profile.js";
+import {
+  localizeRegistry,
+  resolveI18n,
+} from "../packages/astro/src/i18n/profile.js";
 import { defineSite } from "../packages/astro/src/config/index.js";
 import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
@@ -138,5 +141,74 @@ test("taxonomy route selection rejects unsupported fields and owners with named 
     [{ archive: null }, /moo\.taxonomyRoutes\.archive must be plugin or host/],
   ]) {
     assert.throws(() => moo({ plugins: [], taxonomyRoutes }), diagnostic);
+  }
+});
+
+test("explicit archive groups share one producer and project their actual locale patterns", () => {
+  const category = defineTaxonomy({
+    ...taxonomy,
+    source: new URL(taxonomy.source),
+    archive: { basePath: "/c" },
+    locales: { de: { basePath: "/kategorie" } },
+  });
+  const tag = defineTaxonomy({
+    ...category,
+    id: "tag",
+    source: new URL(taxonomy.source),
+  });
+  const registry = buildRegistry([], { taxonomies: [category, tag] });
+  assert.deepEqual(
+    registry.routes.map((route) => route.pattern),
+    ["/c/[slug]"],
+  );
+  assert.deepEqual(registry.taxonomyGroups, [
+    {
+      pattern: "/c/[slug]",
+      root: false,
+      taxonomies: ["category", "tag"],
+      routeOwner: "plugin",
+    },
+  ]);
+  const profile = resolveI18n(
+    { locales: ["en", "de"], defaultLocale: "en" },
+    defineSite(),
+  );
+  const localized = localizeRegistry(registry, profile);
+  assert.deepEqual(
+    localized.routes.map((route) => route.pattern),
+    ["/c/[slug]", "/de/kategorie/[slug]"],
+  );
+  assert.deepEqual(
+    localized.taxonomyGroups.map((group) => group.pattern),
+    ["/c/[slug]", "/de/kategorie/[slug]"],
+  );
+  assert.ok(Object.isFrozen(registry.taxonomyGroups[0].taxonomies));
+  const root = defineTaxonomy({
+    ...category,
+    source: new URL(taxonomy.source),
+    locales: { de: { basePath: "/" } },
+  });
+  const mixed = localizeRegistry(
+    buildRegistry([], { taxonomies: [root] }),
+    profile,
+  );
+  assert.deepEqual(
+    mixed.taxonomyGroups.map(({ pattern, root }) => ({ pattern, root })),
+    [
+      { pattern: "/c/[slug]", root: false },
+      { pattern: "/de/[...slug]", root: true },
+    ],
+  );
+  for (const basePath of ["/de/c", "/en"]) {
+    const invalid = defineTaxonomy({
+      ...category,
+      source: new URL(taxonomy.source),
+      locales: { de: { basePath } },
+    });
+    assert.throws(
+      () =>
+        localizeRegistry(buildRegistry([], { taxonomies: [invalid] }), profile),
+      /taxonomy.*basePath.*native locale prefix/,
+    );
   }
 });

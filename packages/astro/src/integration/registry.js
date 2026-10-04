@@ -1,6 +1,6 @@
 import { siteHref } from "../content/paths.js";
 import { defineTaxonomy } from "../taxonomies/index.js";
-import { taxonomyMount } from "../taxonomies/paths.js";
+import { taxonomyMount, resolveTaxonomyArchive } from "../taxonomies/urls.js";
 
 function fullPattern(basePath, pattern) {
   return basePath === "/"
@@ -36,7 +36,12 @@ function resolveTaxonomyRoutes(input = {}) {
 
 export function buildRegistry(
   plugins,
-  { taxonomies = [], taxonomyBasePath = "/topics", taxonomyRoutes } = {},
+  {
+    taxonomies = [],
+    taxonomyBasePath = "/topics",
+    taxonomyRoutes,
+    lang = "en",
+  } = {},
 ) {
   if (!Array.isArray(plugins))
     throw new TypeError("moo.plugins must be an array");
@@ -147,17 +152,50 @@ export function buildRegistry(
         );
     }
   }
-  if ([...selected.values()].some((taxonomy) => taxonomy.archive)) {
-    for (const [namespace, owner] of namespaces) {
+  const groups = new Map();
+  const archiveNamespaces = new Map();
+  for (const taxonomy of selected.values()) {
+    if (!taxonomy.archive) continue;
+    const archive = resolveTaxonomyArchive(taxonomy, {
+      lang,
+      taxonomyBasePath: mount,
+    });
+    const group = groups.get(archive.pattern) ?? {
+      pattern: archive.pattern,
+      root: archive.root,
+      taxonomies: [],
+      routeOwner: taxonomyOwnership.archive,
+    };
+    group.taxonomies.push(taxonomy.id);
+    groups.set(archive.pattern, group);
+    if (archive.root) continue;
+    const namespace =
+      archive.taxonomySegment === undefined ? archive.basePath : mount;
+    for (const [other, owner] of namespaces) {
       if (
-        insideNamespace(mount, namespace) ||
-        insideNamespace(namespace, mount)
+        insideNamespace(namespace, other) ||
+        insideNamespace(other, namespace)
       )
         throw new TypeError(
-          `moo namespace ${mount} conflicts between taxonomy and ${owner}`,
+          `moo namespace ${namespace} conflicts between taxonomy ${taxonomy.id} and ${owner}`,
         );
     }
-    const pattern = `${mount}/[taxonomy]/[slug]`;
+    for (const [other, pattern] of archiveNamespaces) {
+      if (
+        pattern !== archive.pattern &&
+        (insideNamespace(namespace, other) || insideNamespace(other, namespace))
+      )
+        throw new TypeError(
+          `moo taxonomy namespace ${namespace} conflicts between ${pattern} and ${archive.pattern}`,
+        );
+    }
+    archiveNamespaces.set(namespace, archive.pattern);
+  }
+  const taxonomyGroups = [...groups.values()].map((group) =>
+    Object.freeze({ ...group, taxonomies: Object.freeze(group.taxonomies) }),
+  );
+  for (const group of taxonomyGroups.filter((item) => !item.root)) {
+    const pattern = group.pattern;
     if (patterns.has(pattern))
       throw new TypeError(
         `moo taxonomy route pattern ${pattern} conflicts with ${patterns.get(pattern)}`,
@@ -166,10 +204,10 @@ export function buildRegistry(
       Object.freeze({
         owner: "taxonomy",
         pattern,
-        routeOwner: taxonomyOwnership.archive,
+        routeOwner: group.routeOwner,
       }),
     );
-    if (taxonomyOwnership.archive === "plugin") {
+    if (group.routeOwner === "plugin")
       routes.push(
         Object.freeze({
           owner: "taxonomy",
@@ -181,7 +219,6 @@ export function buildRegistry(
           prerender: true,
         }),
       );
-    }
   }
   return Object.freeze({
     plugins: Object.freeze([...plugins]),
@@ -191,6 +228,8 @@ export function buildRegistry(
     taxonomies: Object.freeze([...selected.values()]),
     taxonomyBasePath: mount,
     taxonomyRoutes: taxonomyOwnership,
+    taxonomyGroups: Object.freeze(taxonomyGroups),
+    lang,
   });
 }
 

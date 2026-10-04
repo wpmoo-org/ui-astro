@@ -1,3 +1,4 @@
+import { resolveTaxonomyArchive } from "../taxonomies/urls.js";
 import { buildRegistry } from "../integration/registry.js";
 
 export function validLocale(value) {
@@ -93,7 +94,14 @@ export function localizeRegistry(registry, profile) {
   for (const item of [...registry.plugins, ...registry.taxonomies])
     validateLocaleKeys(item.locales, profile, `${item.id}.locales`);
   if (
-    registry.taxonomies.some((taxonomy) => taxonomy.archive) &&
+    registry.taxonomies.some(
+      (taxonomy) =>
+        taxonomy.archive &&
+        taxonomy.archive.basePath === undefined &&
+        profile.locales.some(
+          (locale) => taxonomy.locales?.[locale]?.basePath === undefined,
+        ),
+    ) &&
     profile.locales.some(
       (locale) =>
         registry.taxonomyBasePath === `/${locale}` ||
@@ -107,7 +115,22 @@ export function localizeRegistry(registry, profile) {
   const projections = profile.locales.map((locale) => {
     const taxonomySlugs = new Map();
     for (const taxonomy of registry.taxonomies.filter((item) => item.archive)) {
-      const slug = taxonomy.locales?.[locale]?.slug ?? taxonomy.id;
+      const archive = resolveTaxonomyArchive(taxonomy, {
+        lang: locale,
+        taxonomyBasePath: registry.taxonomyBasePath,
+      });
+      if (
+        profile.locales.some(
+          (value) =>
+            archive.basePath === `/${value}` ||
+            archive.basePath.startsWith(`/${value}/`),
+        )
+      )
+        throw new TypeError(
+          `taxonomy ${taxonomy.id} locales.${locale}.basePath ${archive.basePath} conflicts with a native locale prefix`,
+        );
+      if (archive.taxonomySegment === undefined) continue;
+      const slug = archive.taxonomySegment;
       const previous = taxonomySlugs.get(slug);
       if (previous)
         throw new TypeError(
@@ -146,12 +169,24 @@ export function localizeRegistry(registry, profile) {
       taxonomies: registry.taxonomies,
       taxonomyBasePath: registry.taxonomyBasePath,
       taxonomyRoutes: registry.taxonomyRoutes,
+      lang: locale,
     });
     return { locale, registry: selected };
   });
   return Object.freeze({
     ...registry,
     projections: Object.freeze(projections),
+    taxonomyGroups: Object.freeze(
+      projections.flatMap(({ locale, registry: selected }) =>
+        selected.taxonomyGroups.map((group) =>
+          Object.freeze({
+            ...group,
+            locale,
+            pattern: localePath(group.pattern, locale, profile),
+          }),
+        ),
+      ),
+    ),
     routeClaims: Object.freeze(
       projections.flatMap(({ locale, registry: selected }) =>
         selected.routeClaims.map((claim) =>
