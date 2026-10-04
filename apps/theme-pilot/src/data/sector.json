@@ -1,0 +1,13 @@
+[
+  {
+    "id": "foundation",
+    "name": "Foundation",
+    "slug": "foundation",
+    "locales": {
+      "de": {
+        "name": "Grundlagen",
+        "slug": "grundlagen"
+      }
+    }
+  }
+]

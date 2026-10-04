@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -11,6 +11,90 @@ import {
 const root = fileURLToPath(new URL("../", import.meta.url));
 const theme = new URL("../packages/theme-pilot/", import.meta.url);
 const json = async (url) => JSON.parse(await readFile(url, "utf8"));
+const siteRoot = new URL("../apps/theme-pilot/", import.meta.url);
+
+function projectProfile(main, category) {
+  const script = `const c = await import(${JSON.stringify(new URL("src/config.js", siteRoot).href)}); const d = await import(${JSON.stringify(new URL("src/definitions.js", siteRoot).href)}); const a = (await import(${JSON.stringify(new URL("astro.config.mjs", siteRoot).href)})).default; process.stdout.write(JSON.stringify({main:c.mainLanguage, src:c.srcDir.href, category:c.categoryPrefixes, site:d.site.defaults, i18n:a.i18n, bases:d.taxonomies.map(t=>[t.id,t.archive.basePath,t.locales.de.basePath])}));`;
+  const result = spawnSync(
+    process.execPath,
+    ["--input-type=module", "-e", script],
+    {
+      env: {
+        ...process.env,
+        PILOT_MAIN_LANGUAGE: main,
+        PILOT_CATEGORY_PROFILE: category,
+      },
+      encoding: "utf8",
+    },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+}
+
+test("main_language_is_one_project_input", () => {
+  for (const main of ["en", "de"]) {
+    for (const [profile, prefixes] of [
+      ["category", { en: "/category", de: "/kategorie" }],
+      ["short", { en: "/c", de: "/k" }],
+      ["root", { en: "/", de: "/" }],
+    ]) {
+      const actual = projectProfile(main, profile);
+      assert.equal(actual.main, main);
+      assert.equal(actual.site.lang, main);
+      assert.equal(actual.i18n.defaultLocale, main);
+      assert.equal(actual.i18n.routing.prefixDefaultLocale, false);
+      assert.deepEqual(actual.category, prefixes);
+      assert.deepEqual(actual.bases, [
+        ["category", prefixes.en, prefixes.de],
+        ["tag", "/tag", "/schlagwort"],
+        ["sector", "/", "/"],
+      ]);
+      assert.ok(actual.src.endsWith(`/routes/${main}/`));
+    }
+  }
+});
+
+test("project_preferences_replace_theme_seed", () => {
+  const actual = projectProfile("en", "category");
+  assert.deepEqual(actual.site.parts.content.utilities, ["py-2"]);
+  assert.ok(actual.site.sidebar);
+});
+
+test("selected_native_tree_has_only_required_literal_routes", async () => {
+  for (const [main, wanted] of [
+    [
+      "en",
+      [
+        "404.astro",
+        "blog/index.astro",
+        "native-action.astro",
+        "de/404.astro",
+        "de/beitraege/index.astro",
+        "de/native-action.astro",
+      ],
+    ],
+    [
+      "de",
+      [
+        "404.astro",
+        "beitraege/index.astro",
+        "native-action.astro",
+        "en/404.astro",
+        "en/blog/index.astro",
+        "en/native-action.astro",
+      ],
+    ],
+  ]) {
+    const dir = new URL(`routes/${main}/pages/`, siteRoot);
+    const files = await readdir(dir, { recursive: true });
+    assert.deepEqual(
+      files
+        .filter((path) => path.endsWith(".astro") && !path.includes("["))
+        .sort(),
+      wanted.sort(),
+    );
+  }
+});
 
 // Catches a theme seed that merges utilities or bypasses SDK diagnostics.
 test("theme_defaults_replace_without_merging_arrays", async () => {

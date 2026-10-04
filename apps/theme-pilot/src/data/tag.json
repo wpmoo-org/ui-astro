@@ -1,0 +1,13 @@
+[
+  {
+    "id": "astro",
+    "name": "Astro",
+    "slug": "astro",
+    "locales": {
+      "de": {
+        "name": "Astro",
+        "slug": "astro"
+      }
+    }
+  }
+]

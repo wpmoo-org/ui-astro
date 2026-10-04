@@ -1,0 +1,13 @@
+[
+  {
+    "id": "guides",
+    "name": "Guides",
+    "slug": "guides",
+    "locales": {
+      "de": {
+        "name": "Anleitungen",
+        "slug": "anleitungen"
+      }
+    }
+  }
+]

@@ -1,0 +1,22 @@
+---
+title: "Erweiterte Seite"
+description: "Ein unabhängiges Projekt mit einem wiederverwendbaren Theme."
+slug: "erweitert"
+status: publish
+locale: de
+translationKey: enhanced
+taxonomies:
+  category: [guides]
+  tag: [astro]
+  sector: [foundation]
+---
+
+import Action from "@wpmoo/astro-theme-pilot/sections/Action.astro";
+import { getLocaleHref } from "@wpmoo/astro/i18n";
+
+Dieser Inhalt gehört dem Projekt und bleibt bei einem Theme-Update erhalten.
+
+<Action
+  label="Native Seite öffnen"
+  href={getLocaleHref("/native-action", "de")}
+/>

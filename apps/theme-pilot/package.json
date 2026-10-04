@@ -1,0 +1,25 @@
+{
+  "name": "@wpmoo/theme-pilot-site",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "check": "astro check",
+    "build": "astro build",
+    "dev": "astro dev --host 127.0.0.1 --port 4327"
+  },
+  "dependencies": {
+    "@wpmoo/astro": "file:../../artifacts/theme-pilot/wpmoo-astro-0.1.0.tgz",
+    "@wpmoo/astro-theme-pilot": "file:../../artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.0.tgz",
+    "astro": "7.3.3",
+    "@astrojs/mdx": "8.0.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "6.0.3"
+  }
+}

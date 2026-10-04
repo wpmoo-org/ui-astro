@@ -1,0 +1,13 @@
+---
+import type { GetStaticPathsOptions } from "astro";
+import type { TaxonomyPath } from "@wpmoo/astro/taxonomies/queries";
+import Taxonomy from "../../../../../src/views/Taxonomy.astro";
+import { getPilotTaxonomyPaths } from "../../../../../src/routes.js";
+type Props = TaxonomyPath["props"];
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getPilotTaxonomyPaths(routePattern);
+}
+---
+
+<Taxonomy {...Astro.props} />
