@@ -19,7 +19,7 @@
     "README.md",
     "THIRD_PARTY_NOTICES.md",
     "contracts/astro-public-surface.json",
-    "contracts/rc10-package.json",
+    "contracts/ui-1.0.0-package.json",
     "src/components/Accordion.astro",
     "src/components/Alert.astro",
     "src/components/AlertDialog.astro",
@@ -221,7 +221,7 @@
     "./i18n": "./src/i18n/index.js"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.0.0-rc.10",
+    "@wpmoo/ui": "1.0.0",
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {

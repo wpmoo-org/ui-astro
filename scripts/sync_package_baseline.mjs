@@ -5,18 +5,25 @@ import { createHash } from "node:crypto";
 import { readFile, rm } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { REPO_ROOT, SDK_ROOT, projectPaths, corePackageRoot } from "./project-paths.mjs";
+import {
+  REPO_ROOT,
+  SDK_ROOT,
+  projectPaths,
+  corePackageRoot,
+} from "./project-paths.mjs";
 
 export const ASTRO_ROOT = REPO_ROOT;
 export const MOO_PACKAGE_NAME = "@wpmoo/ui";
 const RELEASE_RECORD = JSON.parse(
-  readFileSync(join(SDK_ROOT, "contracts/rc10-package.json"), "utf8"),
+  readFileSync(join(SDK_ROOT, "contracts/ui-1.0.0-package.json"), "utf8"),
 );
 
 function declaredPackageVersion(packageJson) {
   const version = packageJson?.dependencies?.[MOO_PACKAGE_NAME];
   if (typeof version !== "string" || version.length === 0) {
-    throw new Error(`package.json must declare ${MOO_PACKAGE_NAME} in dependencies`);
+    throw new Error(
+      `package.json must declare ${MOO_PACKAGE_NAME} in dependencies`,
+    );
   }
   return version;
 }
@@ -33,9 +40,15 @@ export function developmentInstallCommand(tarball) {
   ];
 }
 
-export function assertPackageCompatibility({ packageName, packageVersion, packageJson }) {
+export function assertPackageCompatibility({
+  packageName,
+  packageVersion,
+  packageJson,
+}) {
   if (packageName !== MOO_PACKAGE_NAME) {
-    throw new Error(`package name ${packageName} is not compatible; expected ${MOO_PACKAGE_NAME}`);
+    throw new Error(
+      `package name ${packageName} is not compatible; expected ${MOO_PACKAGE_NAME}`,
+    );
   }
   const declaredVersion = declaredPackageVersion(packageJson);
   if (packageVersion !== declaredVersion) {
@@ -48,14 +61,24 @@ export function assertPackageCompatibility({ packageName, packageVersion, packag
 export function assertReleasePin({ packageJson, packageLock }) {
   const expectedVersion = declaredPackageVersion(packageJson);
   if (expectedVersion !== RELEASE_RECORD.version) {
-    throw new Error(`declared ${MOO_PACKAGE_NAME} version must be ${RELEASE_RECORD.version}`);
+    throw new Error(
+      `declared ${MOO_PACKAGE_NAME} version must be ${RELEASE_RECORD.version}`,
+    );
   }
-  if (packageLock?.packages?.["packages/astro"]?.dependencies?.[MOO_PACKAGE_NAME] !== expectedVersion) {
-    throw new Error("package-lock.json SDK workspace dependency differs from the release pin");
+  if (
+    packageLock?.packages?.["packages/astro"]?.dependencies?.[
+      MOO_PACKAGE_NAME
+    ] !== expectedVersion
+  ) {
+    throw new Error(
+      "package-lock.json SDK workspace dependency differs from the release pin",
+    );
   }
   const installed = packageLock?.packages?.[`node_modules/${MOO_PACKAGE_NAME}`];
   if (!installed || typeof installed !== "object") {
-    throw new Error(`package-lock.json is missing node_modules/${MOO_PACKAGE_NAME}`);
+    throw new Error(
+      `package-lock.json is missing node_modules/${MOO_PACKAGE_NAME}`,
+    );
   }
   if (installed.version !== expectedVersion) {
     throw new Error(
@@ -66,7 +89,9 @@ export function assertReleasePin({ packageJson, packageLock }) {
     throw new Error("file dependency is not release-valid");
   }
   if (installed.resolved !== RELEASE_RECORD.registry_url) {
-    throw new Error("release package lock registry URL differs from Core release");
+    throw new Error(
+      "release package lock registry URL differs from Core release",
+    );
   }
   if (installed.integrity !== RELEASE_RECORD.integrity) {
     throw new Error("release package lock integrity differs from Core release");
@@ -76,14 +101,24 @@ export function assertReleasePin({ packageJson, packageLock }) {
 export async function assertCoreArtifact({ repoRoot = ASTRO_ROOT } = {}) {
   const coreRoot = corePackageRoot(repoRoot);
   const installed = await readJson(join(coreRoot, "package.json"));
-  if (installed.name !== RELEASE_RECORD.package || installed.version !== RELEASE_RECORD.version) {
-    throw new Error("installed Moo UI package identity differs from Core release");
+  if (
+    installed.name !== RELEASE_RECORD.package ||
+    installed.version !== RELEASE_RECORD.version
+  ) {
+    throw new Error(
+      "installed Moo UI package identity differs from Core release",
+    );
   }
   const expectedExports = Object.fromEntries(
-    Object.entries(RELEASE_RECORD.exports).map(([name, entry]) => [name, entry.target]),
+    Object.entries(RELEASE_RECORD.exports).map(([name, entry]) => [
+      name,
+      entry.target,
+    ]),
   );
   if (JSON.stringify(installed.exports) !== JSON.stringify(expectedExports)) {
-    throw new Error("installed Moo UI public export map differs from Core release");
+    throw new Error(
+      "installed Moo UI public export map differs from Core release",
+    );
   }
   for (const [name, entry] of Object.entries(RELEASE_RECORD.exports)) {
     const target = join(coreRoot, entry.target);
@@ -92,7 +127,9 @@ export async function assertCoreArtifact({ repoRoot = ASTRO_ROOT } = {}) {
     });
     const actualHash = createHash("sha256").update(bytes).digest("hex");
     if (actualHash !== entry.sha256) {
-      throw new Error(`installed Moo UI ${name} artifact hash differs from Core release`);
+      throw new Error(
+        `installed Moo UI ${name} artifact hash differs from Core release`,
+      );
     }
   }
 }
@@ -103,7 +140,9 @@ async function readJson(path) {
 
 async function projectMetadata(repoRoot) {
   return {
-    packageJson: await readJson(join(projectPaths(repoRoot).sdkRoot, "package.json")),
+    packageJson: await readJson(
+      join(projectPaths(repoRoot).sdkRoot, "package.json"),
+    ),
     packageLock: await readJson(join(repoRoot, "package-lock.json")),
   };
 }
@@ -120,7 +159,9 @@ function runCommand(command, { cwd }) {
         resolvePromise();
         return;
       }
-      reject(new Error(`${command[0]} exited with ${signal ?? `status ${code}`}`));
+      reject(
+        new Error(`${command[0]} exited with ${signal ?? `status ${code}`}`),
+      );
     });
   });
 }
@@ -137,9 +178,14 @@ export async function installDevelopmentPackage({
     packageVersion: declaredVersion,
     packageJson,
   });
-  await runner(["npm", ...developmentInstallCommand(tarball)], { cwd: repoRoot });
+  await runner(["npm", ...developmentInstallCommand(tarball)], {
+    cwd: repoRoot,
+  });
   for (const root of [repoRoot, projectPaths(repoRoot).demoRoot]) {
-    await rm(join(root, "node_modules/.vite"), { recursive: true, force: true });
+    await rm(join(root, "node_modules/.vite"), {
+      recursive: true,
+      force: true,
+    });
   }
 }
 
@@ -174,7 +220,9 @@ async function main() {
     const packageName = argumentValue(args, "--package-name");
     const packageVersion = argumentValue(args, "--package-version");
     if (!packageName || !packageVersion) {
-      throw new Error("--check-package requires --package-name and --package-version");
+      throw new Error(
+        "--check-package requires --package-name and --package-version",
+      );
     }
     await checkPackage({ packageName, packageVersion });
     console.log("Moo UI Astro package compatibility: OK");

@@ -89,7 +89,7 @@
     "README.md",
     "THIRD_PARTY_NOTICES.md",
     "contracts/astro-public-surface.json",
-    "contracts/rc10-package.json",
+    "contracts/ui-1.0.0-package.json",
     "package.json",
     "src/components/Accordion.astro",
     "src/components/Alert.astro",

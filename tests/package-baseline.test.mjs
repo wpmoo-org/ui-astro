@@ -12,7 +12,12 @@ import {
   installDevelopmentPackage,
   checkRelease,
 } from "../scripts/sync_package_baseline.mjs";
-import { REPO_ROOT, SDK_ROOT, CONSUMER_ROOT, corePackageRoot } from "../scripts/project-paths.mjs";
+import {
+  REPO_ROOT,
+  SDK_ROOT,
+  CONSUMER_ROOT,
+  corePackageRoot,
+} from "../scripts/project-paths.mjs";
 
 test("workspace release pin uses the published Core release registry package", async () => {
   const declared = JSON.parse(
@@ -21,12 +26,15 @@ test("workspace release pin uses the published Core release registry package", a
   const lock = JSON.parse(
     await readFile(join(REPO_ROOT, "package-lock.json"), "utf8"),
   );
-  assert.equal(declared.dependencies["@wpmoo/ui"], "1.0.0-rc.10");
-  assert.equal(lock.packages["packages/astro"].dependencies["@wpmoo/ui"], "1.0.0-rc.10");
-  assert.equal(lock.packages["node_modules/@wpmoo/ui"].version, "1.0.0-rc.10");
+  assert.equal(declared.dependencies["@wpmoo/ui"], "1.0.0");
+  assert.equal(
+    lock.packages["packages/astro"].dependencies["@wpmoo/ui"],
+    "1.0.0",
+  );
+  assert.equal(lock.packages["node_modules/@wpmoo/ui"].version, "1.0.0");
   assert.equal(
     lock.packages["node_modules/@wpmoo/ui"].resolved,
-    "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.10.tgz",
+    "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0.tgz",
   );
 });
 
@@ -38,10 +46,7 @@ test("the MIT Astro package carries its license while publication remains separa
     await readFile(join(REPO_ROOT, "package-lock.json"), "utf8"),
   );
   const consumerLock = JSON.parse(
-    await readFile(
-      join(CONSUMER_ROOT, "package-lock.json"),
-      "utf8",
-    ),
+    await readFile(join(CONSUMER_ROOT, "package-lock.json"), "utf8"),
   );
   const surface = JSON.parse(
     await readFile(
@@ -156,7 +161,7 @@ test("package retains all 45 public wrappers and the explicit integration, Page 
 
 const packageJson = {
   dependencies: {
-    "@wpmoo/ui": "1.0.0-rc.10",
+    "@wpmoo/ui": "1.0.0",
   },
 };
 
@@ -166,10 +171,10 @@ const packageLock = {
     "": { name: "@wpmoo/astro-workspace" },
     "packages/astro": packageJson,
     "node_modules/@wpmoo/ui": {
-      version: "1.0.0-rc.10",
-      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0-rc.10.tgz",
+      version: "1.0.0",
+      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0.tgz",
       integrity:
-        "sha512-iCDsnKnp82kAArwJGCpRVQBVHCH2T5ikVohfZml4ZHfP1NtwkCSItanqDsMXCuJ1Ij8xUCNPtLKd9v47GXTk+Q==",
+        "sha512-9eY15tN90zqR6Laz/AjL2b5iLBZ+AmkN5dXjSoNLkCxaJqzvec7kOTqyQKq9K5ELUUDFcGLkz1sj8dy8irM0zw==",
     },
   },
 };
@@ -189,7 +194,9 @@ test("release pin reads the SDK workspace owner rather than the private root", (
   const lock = structuredClone(packageLock);
   lock.packages[""] = { name: "@wpmoo/astro-workspace" };
   lock.packages["packages/astro"] = packageJson;
-  assert.doesNotThrow(() => assertReleasePin({ packageJson, packageLock: lock }));
+  assert.doesNotThrow(() =>
+    assertReleasePin({ packageJson, packageLock: lock }),
+  );
 });
 
 test("a correct root declaration cannot hide an incorrect SDK workspace pin", () => {
@@ -206,7 +213,14 @@ test("a correct root declaration cannot hide an incorrect SDK workspace pin", ()
 
 async function writeProject(root, lock = packageLock) {
   await mkdir(join(root, "packages/astro"), { recursive: true });
-  await writeFile(join(root, "package.json"), JSON.stringify({ name: "@wpmoo/astro-workspace", private: true, workspaces: ["packages/*", "apps/demo"] }));
+  await writeFile(
+    join(root, "package.json"),
+    JSON.stringify({
+      name: "@wpmoo/astro-workspace",
+      private: true,
+      workspaces: ["packages/*", "apps/demo"],
+    }),
+  );
   await writeFile(
     join(root, "packages/astro/package.json"),
     `${JSON.stringify(packageJson)}\n`,
@@ -217,13 +231,9 @@ async function writeProject(root, lock = packageLock) {
 async function writeReleaseFixture(root) {
   await writeProject(root);
   await mkdir(join(root, "node_modules/@wpmoo"), { recursive: true });
-  await cp(
-    corePackageRoot(),
-    join(root, "node_modules/@wpmoo/ui"),
-    {
-      recursive: true,
-    },
-  );
+  await cp(corePackageRoot(), join(root, "node_modules/@wpmoo/ui"), {
+    recursive: true,
+  });
 }
 
 test("development install never rewrites tracked dependency inputs", async () => {
@@ -242,7 +252,10 @@ test("development install never rewrites tracked dependency inputs", async () =>
     await writeProject(root);
     const beforePackage = await readFile(join(root, "package.json"), "utf8");
     const beforeLock = await readFile(join(root, "package-lock.json"), "utf8");
-    const beforeSdk = await readFile(join(root, "packages/astro/package.json"), "utf8");
+    const beforeSdk = await readFile(
+      join(root, "packages/astro/package.json"),
+      "utf8",
+    );
     await mkdir(join(root, "node_modules/.vite"), { recursive: true });
     await writeFile(join(root, "node_modules/keep.txt"), "keep");
     const commands = [];
@@ -268,7 +281,10 @@ test("development install never rewrites tracked dependency inputs", async () =>
       await readFile(join(root, "package-lock.json"), "utf8"),
       beforeLock,
     );
-    assert.equal(await readFile(join(root, "packages/astro/package.json"), "utf8"), beforeSdk);
+    assert.equal(
+      await readFile(join(root, "packages/astro/package.json"), "utf8"),
+      beforeSdk,
+    );
     await assert.rejects(() => readFile(join(root, "node_modules/.vite")));
     assert.equal(
       await readFile(join(root, "node_modules/keep.txt"), "utf8"),
@@ -309,7 +325,7 @@ test("package compatibility rejects a different package name or version", () => 
   assert.doesNotThrow(() =>
     assertPackageCompatibility({
       packageName: "@wpmoo/ui",
-      packageVersion: "1.0.0-rc.10",
+      packageVersion: "1.0.0",
       packageJson,
     }),
   );
@@ -317,7 +333,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@other/ui",
-        packageVersion: "1.0.0-rc.10",
+        packageVersion: "1.0.0",
         packageJson,
       }),
     /package name/,
@@ -379,7 +395,10 @@ test("Core resolved by the SDK cannot be shadowed by a different local artifact"
     await cp(join(root, "node_modules/@wpmoo/ui"), shadow, { recursive: true });
     const file = join(shadow, "dist/js/sidebar.js");
     await writeFile(file, `${await readFile(file, "utf8")}\n `);
-    await assert.rejects(() => assertCoreArtifact({ repoRoot: root }), /sidebar\.js.*artifact hash/);
+    await assert.rejects(
+      () => assertCoreArtifact({ repoRoot: root }),
+      /sidebar\.js.*artifact hash/,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

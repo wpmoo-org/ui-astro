@@ -17,7 +17,10 @@ const fixture = await readFile(
   "utf8",
 );
 const manifest = JSON.parse(
-  await readFile(new URL("../packages/astro/package.json", import.meta.url), "utf8"),
+  await readFile(
+    new URL("../packages/astro/package.json", import.meta.url),
+    "utf8",
+  ),
 );
 const fixtureManifest = JSON.parse(
   await readFile(
@@ -33,7 +36,10 @@ const fixtureLock = JSON.parse(
 );
 const core = JSON.parse(
   await readFile(
-    new URL("../packages/astro/contracts/rc10-package.json", import.meta.url),
+    new URL(
+      "../packages/astro/contracts/ui-1.0.0-package.json",
+      import.meta.url,
+    ),
     "utf8",
   ),
 );

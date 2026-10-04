@@ -217,7 +217,9 @@ export function validateConsumerLock({
     installedCore.resolved !== core.registry_url ||
     installedCore.integrity !== core.integrity
   ) {
-    throw new Error("consumer Core release pin differs from published Core release");
+    throw new Error(
+      "consumer Core release pin differs from published Core release",
+    );
   }
 }
 
@@ -315,7 +317,7 @@ export async function verifyPackedConsumer({
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
   const core = JSON.parse(
-    await readFile(join(SDK_ROOT, "contracts/rc10-package.json"), "utf8"),
+    await readFile(join(SDK_ROOT, "contracts/ui-1.0.0-package.json"), "utf8"),
   );
   const surface = JSON.parse(
     await readFile(
@@ -402,11 +404,10 @@ export async function verifyPackedConsumer({
   await mkdir(join(outputPath, "template-locks"));
   const profiles = [];
   for (const name of selected) {
-    const sourceRoot = name === "default" ? CONSUMER_ROOT : join(
-      REPO_ROOT,
-      "tests/fixtures",
-      PACKED_PROFILES[name],
-    );
+    const sourceRoot =
+      name === "default"
+        ? CONSUMER_ROOT
+        : join(REPO_ROOT, "tests/fixtures", PACKED_PROFILES[name]);
     const directory = name === "default" ? "consumer" : name;
     const target = join(outputPath, directory);
     const names = await copyFixture(sourceRoot, target);

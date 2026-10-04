@@ -7,16 +7,16 @@ evidence before it is advertised.
 
 ## Version contract
 
-| Dependency or contract   | Version     | Ownership                                                                     |
-| ------------------------ | ----------- | ----------------------------------------------------------------------------- |
-| Astro                    | 7.3.3       | One exact host peer; also the local development dependency                    |
-| Moo UI                   | 1.0.0-rc.10 | Published dependency; immutable registry URL, integrity and file hashes       |
-| Bootstrap                | 5.3.8       | Exact runtime dependency                                                      |
-| Plugin API               | 1           | Built-in and separately packaged descriptors                                  |
-| Node                     | >=22.12.0   | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
-| Astro checker            | 0.9.10      | Consumer verification tooling                                                 |
-| TypeScript               | 6.0.3       | Consumer verification tooling                                                 |
-| Official MDX integration | 8.0.2       | Explicit optional host integration, tested with Astro 7.3.3                   |
+| Dependency or contract   | Version   | Ownership                                                                     |
+| ------------------------ | --------- | ----------------------------------------------------------------------------- |
+| Astro                    | 7.3.3     | One exact host peer; also the local development dependency                    |
+| Moo UI                   | 1.0.0     | Published dependency; immutable registry URL, integrity and file hashes       |
+| Bootstrap                | 5.3.8     | Exact runtime dependency                                                      |
+| Plugin API               | 1         | Built-in and separately packaged descriptors                                  |
+| Node                     | >=22.12.0 | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
+| Astro checker            | 0.9.10    | Consumer verification tooling                                                 |
+| TypeScript               | 6.0.3     | Consumer verification tooling                                                 |
+| Official MDX integration | 8.0.2     | Explicit optional host integration, tested with Astro 7.3.3                   |
 
 MD-only consumers do not install MDX. All certification profiles are independent
 of React, CMS, authentication and database dependencies. An editor adapter and
@@ -160,13 +160,21 @@ no replacement loader, private store mutation or request retry is introduced.
 
 ## Release intake and upgrade procedure
 
-The maintainer approved the 2026-10-03 RC10 intake. It replaces the exact Core
-pin only; Astro, Bootstrap, checker, TypeScript and optional MDX pins remain
-unchanged. The verified registry
-archive and 25 public export hashes are in `contracts/rc10-package.json`.
-Registry metadata has no `gitHead`, so that field is null rather than inferred.
-Historical RC9 records remain immutable in the source repository and prior
-evidence. The active npm archive includes the RC10 record.
+The maintainer approved moving to the exact published Core `1.0.0` when
+available. The 2026-10-04 stable intake replaces the Core pin only; Astro,
+Bootstrap, checker, TypeScript and optional MDX resolutions remain unchanged.
+The verified registry archive and 25 public export hashes are recorded in
+`contracts/ui-1.0.0-package.json`. Its public export names and targets match
+RC10. Registry metadata has no `gitHead`, so that field remains null.
+Historical RC9/RC10 records and dated proofs remain immutable in the source
+repository and retained evidence. The active npm archive includes only the
+stable Core record.
+
+Fresh stable SDK/consumer evidence is retained in the dated parent handoff,
+outside npm. Each result identifies its exact archive bytes and execution
+runtime. Earlier RC10 browser and layout acceptance is historical; this intake
+does not claim fresh rendered acceptance after browser access was blocked.
+Foundation publication remains a separate decision.
 
 RC10 replaces the synchronous aggregate `Chart` export with
 `await MooUI.loadChart()` or `await loadChart()`. The dedicated Core Chart
