@@ -29,6 +29,15 @@ const required = [
   "local-node-image",
 ];
 
+test("the finite certification matrix includes default and host native errors", () => {
+  assert.equal(Object.keys(controller.PACKED_PROFILES).length, 12);
+  for (const name of ["not-found", "not-found-host"])
+    assert.equal(
+      controller.parsePackedArguments(["--fixture", name, ...required]).fixture,
+      name,
+    );
+});
+
 test("the controller rechecks immutable retained archives after execution", async () => {
   assert.equal(typeof controller.assertRetainedArtifacts, "function");
   const root = await mkdtemp(join(tmpdir(), "astro-retained-archive-"));

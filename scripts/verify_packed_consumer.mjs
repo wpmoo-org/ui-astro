@@ -32,6 +32,7 @@ export {
   assertConsumerOutput,
   assertPackedPageOutput,
   assertThemeOutput,
+  assertNotFoundOutput,
   assertPrivateSubpathError,
   assertPeerConflict,
 } from "./packed_consumer_contracts.mjs";
@@ -62,6 +63,8 @@ export const PACKED_PROFILES = Object.freeze({
   taxonomy: "taxonomy",
   "external-taxonomy": "external-taxonomy",
   "content-editing": "content-editing",
+  "not-found": "not-found",
+  "not-found-host": "not-found-host",
 });
 
 const USAGE =
@@ -412,7 +415,12 @@ export async function verifyPackedConsumer({
     const target = join(outputPath, directory);
     const names = await copyFixture(sourceRoot, target);
     for (const probe of [
-      ...(name !== "ui-only" ? ["content-contract.json.ts"] : []),
+      ...(!["ui-only", "not-found", "not-found-host"].includes(name)
+        ? ["content-contract.json.ts"]
+        : []),
+      ...(!names.includes("src/pages/not-found-contract.json.ts")
+        ? ["not-found-contract.json.ts"]
+        : []),
       ...(name === "default" ? ["namespaces.json.ts"] : []),
     ]) {
       const path = `src/pages/${probe}`;

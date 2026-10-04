@@ -125,7 +125,7 @@ test("the integration activates host taxonomy metadata without injecting its arc
   });
   assert.deepEqual(
     patterns.filter((value) => !value.startsWith("/__moo_content_integrity")),
-    [],
+    ["/404"],
   );
 });
 

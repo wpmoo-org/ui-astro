@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import * as errorContracts from "../scripts/packed_consumer_contracts.mjs";
 
 import {
   assertConsumerOutput,
@@ -44,8 +45,44 @@ const core = JSON.parse(
   ),
 );
 
+test("packed native errors retain locale recovery and real error content", () => {
+  assert.equal(typeof errorContracts.assertNotFoundOutput, "function");
+  const data = {
+    locale: "de",
+    title: "Seite nicht gefunden",
+    homeHref: "/site/de/",
+  };
+  const html =
+    '<html lang="de"><body><div data-moo-document-owner="true"><main><span>404</span><h1>Seite nicht gefunden</h1><a class="btn" href="/site/de/">Zur Startseite</a></main></div></body></html>';
+  assert.doesNotThrow(() => errorContracts.assertNotFoundOutput(html, data));
+  assert.throws(
+    () =>
+      errorContracts.assertNotFoundOutput(
+        html.replace("/site/de/", "/site/"),
+        data,
+      ),
+    /recovery/,
+  );
+  assert.throws(
+    () =>
+      errorContracts.assertNotFoundOutput(html.replace(">404<", ">200<"), data),
+    /404/,
+  );
+  assert.throws(
+    () =>
+      errorContracts.assertNotFoundOutput(
+        html.replace(
+          "</body>",
+          '<link rel="canonical" href="https://example.test/404"></body>',
+        ),
+        data,
+      ),
+    /metadata/,
+  );
+});
+
 test("the independent fixture resolves every published Astro source entrypoint", () => {
-  assert.equal(validateConsumerFixture({ source: fixture, manifest }), 78);
+  assert.equal(validateConsumerFixture({ source: fixture, manifest }), 80);
   assert.throws(
     () =>
       validateConsumerFixture({
@@ -72,7 +109,7 @@ test("public fixture imports distinguish executed declarations from comments and
     );
     assert.equal(
       validateConsumerFixture({ source: withExample, manifest }),
-      78,
+      80,
     );
     const withoutDeclaration = fixture.replace(
       'import "@wpmoo/astro/styles.css";',
@@ -87,7 +124,7 @@ test("public fixture imports distinguish executed declarations from comments and
     '<!-- <script>import "@wpmoo/astro/styles.css";</script> -->';
   assert.equal(
     validateConsumerFixture({ source: `${fixture}\n${htmlExample}`, manifest }),
-    78,
+    80,
   );
   assert.throws(
     () =>
@@ -174,7 +211,7 @@ test("incompatible peer evidence must be npm ERESOLVE for the exact certified As
 
 test("packed consumer HTML must show public wrappers, Layout, Page grid, and escaped text", () => {
   const html =
-    '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45" data-public-part-count="7" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/contact" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
+    '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45" data-public-part-count="8" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/contact" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
   const controls =
     '<input id="consumer-checkbox" type="checkbox"><button aria-label="Remove Pages"></button><button aria-label="Remove Posts"></button>';
   const compiled = html + controls;

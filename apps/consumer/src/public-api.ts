@@ -338,11 +338,16 @@ getPublishedPages({ language: "de" });
 import {
   getNotFoundOptions,
   type NotFoundInput,
+  type NotFoundMessages,
   type NotFoundOptions,
 } from "@wpmoo/astro/not-found";
+const errorMessages: Partial<NotFoundMessages> = {
+  homeLabel: "Zurück",
+  title: undefined,
+};
 const errorInput: NotFoundInput = {
   routeOwner: "host",
-  messages: { de: { homeLabel: "Zurück", title: undefined } },
+  messages: { de: errorMessages },
 };
 const errorOptions: NotFoundOptions = getNotFoundOptions("de");
 moo({ plugins: [], notFound: errorInput });

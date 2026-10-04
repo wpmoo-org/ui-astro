@@ -236,7 +236,7 @@ export function assertConsumerOutput(html) {
     ["data-page-container", "Page rail"],
     ['data-layout="page-grid"', "Page grid"],
     ['data-public-wrapper-count="45"', "45 public wrapper imports"],
-    ['data-public-part-count="7"', "seven public include and view imports"],
+    ['data-public-part-count="8"', "eight public include and view imports"],
     ['data-public-page-view-count="3"', "three public Page view imports"],
     ['data-context-plugin="page"', "public Page route context"],
     ['data-context-link="/contact"', "canonical Page context link"],
@@ -267,6 +267,35 @@ export function assertConsumerOutput(html) {
   if (html.includes("<svg onload=alert(2)>")) {
     throw new Error("Toast untrusted body must be escaped");
   }
+}
+
+export function assertNotFoundOutput(html, data) {
+  const escaped = (value) =>
+    value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  if (
+    !html.includes(`lang="${data.locale}"`) ||
+    !html.includes(escaped(data.title)) ||
+    !html.includes(">404<")
+  )
+    throw new Error("native 404 copy or locale differs");
+  const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/u)?.[1];
+  if (!main?.includes(`href="${escaped(data.homeHref)}"`))
+    throw new Error("native 404 recovery link differs");
+  for (const tag of ["html", "body", "main", "h1"])
+    if ([...html.matchAll(new RegExp(`<${tag}(?:\\s|>)`, "gu"))].length !== 1)
+      throw new Error(`native 404 requires one ${tag}`);
+  if ([...html.matchAll(/data-moo-document-owner="true"/gu)].length !== 1)
+    throw new Error("native 404 requires one Moo document owner");
+  if (
+    /<link\b[^>]*rel="(?:canonical|alternate)"|<meta\b[^>]*(?:property="og:|name="twitter:)|<script\b[^>]*type="application\/ld\+json"/u.test(
+      html,
+    )
+  )
+    throw new Error("native 404 has successful-page metadata");
 }
 
 export function assertPackedPageOutput({ contact, guide, draftExists }) {

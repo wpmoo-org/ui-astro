@@ -22,6 +22,7 @@ class PackedMatrix(unittest.TestCase):
         self.assertEqual(namespaces["context"], ["getEntryHref", "getRootPaths", "getSiteContext", "getSiteNavigation", "validateSiteContent"])
         self.assertEqual(namespaces["i18n"], ["getLanguageLinks", "getLocaleHref", "getRouteLocale"])
         self.assertEqual(namespaces["seo"], ["resolveSeoMetadata"])
+        self.assertEqual(namespaces["notFound"], ["getNotFoundOptions"])
         evidence_path = PROOF_ROOT / "consumer/dist/content-contract.json"
         self.assertTrue(evidence_path.is_file(), "Native loaded IDs and file paths must be retained")
         evidence = json.loads(evidence_path.read_text())
@@ -38,9 +39,9 @@ class PackedMatrix(unittest.TestCase):
         proof = json.loads((PROOF_ROOT / "proof.json").read_text())
         self.assertEqual(proof["schema_version"], 2, "The legacy single consumer is not the matrix")
         self.assertEqual(proof["selection"], "all")
-        expected_counts = {"default": 3, "theme": 8, "ui-only": 1, "page-only": 1,
-                           "post-only": 2, "mdx": 6, "external-plugin": 3, "taxonomy": 20,
-                           "external-taxonomy": 13, "content-editing": 3}
+        expected_counts = {"default": 4, "theme": 9, "ui-only": 2, "page-only": 2,
+                           "post-only": 3, "mdx": 7, "external-plugin": 4, "taxonomy": 22,
+                           "external-taxonomy": 14, "content-editing": 4, "not-found": 4, "not-found-host": 4}
         self.assertEqual(set(proof["profiles"]), set(expected_counts))
         archive = proof["artifacts"]["@wpmoo/astro"]
         archive_hash = hashlib.sha256((PROOF_ROOT / archive["filename"]).read_bytes()).hexdigest()

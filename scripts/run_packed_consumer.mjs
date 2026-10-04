@@ -19,6 +19,7 @@ import {
   assertConsumerOutput,
   assertPackedPageOutput,
   assertThemeOutput,
+  assertNotFoundOutput,
   assertPeerConflict,
   validateProfileLock,
 } from "./packed_consumer_contracts.mjs";
@@ -290,6 +291,27 @@ async function main() {
       distFiles.filter((path) => path.endsWith(".html")),
     );
     const after = await hashes(directory, profile.authored_files);
+    const errors = await readJson(
+      join(directory, "dist/not-found-contract.json"),
+    );
+    assertNotFoundOutput(
+      await readFile(join(directory, "dist/404.html"), "utf8"),
+      errors[0],
+    );
+    for (const file of distFiles.filter((path) =>
+      /^[^/]+\/404\/index\.html$/u.test(path),
+    )) {
+      const locale = file.split("/")[0];
+      const data = errors.find((item) => item.locale === locale);
+      if (!data)
+        throw new Error(
+          `${profile.name}: error locale ${locale} is not active`,
+        );
+      assertNotFoundOutput(
+        await readFile(join(directory, "dist", file), "utf8"),
+        data,
+      );
+    }
     assert.deepEqual(
       before,
       after,

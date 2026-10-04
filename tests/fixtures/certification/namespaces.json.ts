@@ -15,6 +15,7 @@ import * as taxonomyContent from "@wpmoo/astro/taxonomies/content";
 import * as taxonomyQueries from "@wpmoo/astro/taxonomies/queries";
 import * as seo from "@wpmoo/astro/seo";
 import * as i18n from "@wpmoo/astro/i18n";
+import * as notFound from "@wpmoo/astro/not-found";
 
 export const GET: APIRoute = () =>
   Response.json(
@@ -36,6 +37,7 @@ export const GET: APIRoute = () =>
         taxonomyQueries,
         seo,
         i18n,
+        notFound,
       }).map(([name, module]) => [name, Object.keys(module).sort()]),
     ),
   );
