@@ -30,6 +30,19 @@ test("published Core release bytes and the current adapter archive satisfy the r
   assert.match(result.stdout, /Astro release boundary: OK/);
 });
 
+test("the release boundary works without a platform-specific cache override", () => {
+  const env = { ...process.env };
+  delete env.npm_config_cache;
+  delete env.NPM_CONFIG_CACHE;
+  const result = spawnSync(process.execPath, [script, "--mode", "release"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+    env,
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /Astro release boundary: OK/);
+});
+
 test("the adapter rejects an added or missing public export", async () => {
   for (const changed of [
     { ...manifest, exports: { ...manifest.exports, "./extra.astro": "./src/components/Badge.astro" } },

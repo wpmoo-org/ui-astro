@@ -2,6 +2,7 @@
 
 import { execFileSync } from "node:child_process";
 import { readFile, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 
 import { checkRelease } from "./sync_package_baseline.mjs";
@@ -21,7 +22,7 @@ export function archiveFiles(root = ASTRO_ROOT) {
     encoding: "utf8",
     env: {
       ...process.env,
-      npm_config_cache: process.env.npm_config_cache ?? "/private/tmp/moo-astro-npm-cache",
+      npm_config_cache: process.env.npm_config_cache ?? join(tmpdir(), "moo-astro-npm-cache"),
     },
   });
   return JSON.parse(output)[0].files.map((entry) => entry.path).sort();
