@@ -1,5 +1,15 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import {
+  readFile,
+  readdir,
+  mkdtemp,
+  writeFile,
+  symlink,
+  rm,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -212,5 +222,97 @@ test("theme_pack_has_only_owned_source", async () => {
         `unpacked export: ${path}`,
       );
     }
+  }
+});
+
+test("sealed_pilot_rejects_workspace_resolution", async () => {
+  const { validatePilotLock } =
+    await import("../scripts/theme_pilot_contracts.mjs");
+  const manifest = await json(new URL("package.json", siteRoot));
+  const lock = await json(new URL("package-lock.json", siteRoot));
+  const artifacts = Object.fromEntries(
+    ["@wpmoo/astro", "@wpmoo/astro-theme-pilot"].map((name) => [
+      name,
+      {
+        filename: manifest.dependencies[name].split("/").at(-1),
+        integrity: lock.packages[`node_modules/${name}`].integrity,
+        manifest: { version: "0.1.0" },
+      },
+    ]),
+  );
+  for (const [name, artifact] of Object.entries(artifacts)) {
+    manifest.dependencies[name] = `file:../${artifact.filename}`;
+    lock.packages[""].dependencies[name] = manifest.dependencies[name];
+    lock.packages[`node_modules/${name}`].resolved =
+      manifest.dependencies[name];
+  }
+  validatePilotLock(manifest, lock, artifacts);
+  lock.packages["node_modules/@wpmoo/astro"].link = true;
+  assert.throws(
+    () => validatePilotLock(manifest, lock, artifacts),
+    /link|workspace/,
+  );
+});
+
+test("sealed_pilot_rejects_changed_archives", async () => {
+  const { assertPilotArchives } =
+    await import("../scripts/theme_pilot_contracts.mjs");
+  const directory = await mkdtemp(join(tmpdir(), "theme-pilot-archive-"));
+  try {
+    await writeFile(join(directory, "owned.tgz"), "original");
+    const artifacts = {
+      theme: {
+        filename: "owned.tgz",
+        sha256: createHash("sha256").update("original").digest("hex"),
+        integrity: `sha512-${createHash("sha512").update("original").digest("base64")}`,
+      },
+    };
+    await assertPilotArchives(directory, artifacts);
+    await writeFile(join(directory, "owned.tgz"), "substitution");
+    await assert.rejects(
+      assertPilotArchives(directory, artifacts),
+      /archive changed/,
+    );
+  } finally {
+    await rm(directory, { recursive: true });
+  }
+});
+
+test("sealed_archive_accepts_native_rest_route_filenames", async () => {
+  const { archiveRecord } = await import("../scripts/verify_theme_pilot.mjs");
+  const record = await archiveRecord(
+    join(root, "artifacts/theme-pilot/wpmoo-astro-0.1.0.tgz"),
+  );
+  assert.ok(record.files["src/integration/routes/[...probe].astro"]);
+  assert.equal(
+    record.sha256,
+    "03b3a082a90681a1ebf8c3d3a5ae03dee0bae8146a3430e07b21a3ead61b8141",
+  );
+});
+
+test("sealed_pilot_rejects_symlinked_source_and_nonempty_output", async () => {
+  const { assertPilotLocations, assertPlainInputTree } =
+    await import("../scripts/verify_theme_pilot.mjs");
+  const directory = await mkdtemp("/private/tmp/theme-pilot-input-");
+  try {
+    await writeFile(join(directory, "source"), "owned");
+    await symlink(join(directory, "source"), join(directory, "alias"));
+    await assert.rejects(assertPlainInputTree(directory), /symlink/);
+    await assert.rejects(
+      assertPilotLocations({
+        cache: "/private/tmp/astro-options-20261002/full-cache",
+        output: directory,
+      }),
+      /empty/,
+    );
+    await assert.rejects(
+      assertPilotLocations({
+        cache: "/private/tmp/astro-options-20261002/full-cache",
+        output: root,
+      }),
+      /workspace/,
+    );
+  } finally {
+    await rm(directory, { recursive: true });
   }
 });
