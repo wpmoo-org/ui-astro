@@ -394,6 +394,21 @@ export const collections = { post: defineCollection({ loader: glob({ base: new U
         self.assertIn("about", result.stdout + result.stderr)
         self.assertRegex(result.stdout + result.stderr, r"[Cc]onflict|[Dd]uplicate")
 
+    def test_legacy_host_page_can_split_a_declared_catchall_without_root_archives(self):
+        files = self.integrated_files()
+        files["src/content/page/about.md"] = "---\ntitle: About\nstatus: publish\n---\nAbout content.\n"
+        files["src/pages/about.astro"] = '<h1>Native About</h1>'
+        files["src/pages/[...slug].astro"] = '''---
+import { getPagePaths } from "@wpmoo/astro/plugins/page/queries";
+import Layout from "@wpmoo/astro/Layout.astro";
+export async function getStaticPaths() { return (await getPagePaths()).filter(path => path.props.entry.id !== "about.md"); }
+const { entry } = Astro.props;
+---
+<Layout title={entry.data.title}><h1>{entry.data.title}</h1></Layout>'''
+        result, _ = self.build(None, configuration='integrations: [moo({ plugins: [page({ routes: { single: "host" } })] })]', files=files)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("about/index.html", result.generated_html)
+
     def test_ui_only_native_urls_are_host_owned(self):
         files = {"src/pages/About.astro": "<h1>Native page</h1>"}
         result, _ = self.build("<h1>Home</h1>", configuration="integrations: [moo({ plugins: [] })]", files=files)

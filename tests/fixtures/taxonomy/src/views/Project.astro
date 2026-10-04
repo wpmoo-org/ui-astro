@@ -1,0 +1,56 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
+import { getLanguageLinks } from "@wpmoo/astro/i18n";
+import { resolveSeoMetadata } from "@wpmoo/astro/seo";
+import {
+  resolvePageOptions,
+  type EntryClassContext,
+} from "@wpmoo/astro/config";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Single from "@wpmoo/astro/views/Single.astro";
+interface Props {
+  entry: CollectionEntry<"project">;
+}
+const { entry } = Astro.props;
+const { site } = getSiteContext();
+const options = resolvePageOptions(
+  site,
+  "project",
+  "single",
+  entry.data.options,
+  entry.data.locale,
+);
+const href = getEntryHref("project", entry);
+const links = await getLanguageLinks("project", entry);
+const metadata = resolveSeoMetadata(site, {
+  title: entry.data.title,
+  status: entry.data.status,
+  type: "project",
+  view: "single",
+  lang: options.lang,
+  url: new URL(href, Astro.site).href,
+  alternates: links.map((link) => ({
+    locale: link.locale,
+    url: new URL(link.href, Astro.site).href,
+  })),
+});
+const entryContext: EntryClassContext = {
+  type: "project",
+  id: entry.id,
+  source: "markdown",
+};
+const { Content } = await render(entry);
+---
+
+<Layout
+  title={entry.data.title}
+  lang={options.lang}
+  dir={options.dir}
+  metadata={metadata}
+  pageContext={{ view: "single", entry: entryContext }}
+>
+  <Single title={entry.data.title} entryContext={entryContext}
+    ><Content /></Single
+  >
+</Layout>

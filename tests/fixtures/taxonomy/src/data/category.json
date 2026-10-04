@@ -1,4 +1,25 @@
 [
-  { "id": "root", "name": "Parent category", "slug": "parent" },
-  { "id": "child", "name": "Child category", "slug": "child", "parent": "root" }
+  {
+    "id": "root",
+    "name": "Parent category",
+    "slug": "parent",
+    "locales": {
+      "de": {
+        "name": "Übergeordnet",
+        "slug": "eltern"
+      }
+    }
+  },
+  {
+    "id": "child",
+    "name": "Child category",
+    "slug": "child",
+    "parent": "root",
+    "locales": {
+      "de": {
+        "name": "Anleitungen",
+        "slug": "anleitungen"
+      }
+    }
+  }
 ]

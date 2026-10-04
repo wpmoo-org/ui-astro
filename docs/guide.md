@@ -389,10 +389,11 @@ prerendered route and return `getPagePaths()` from its `getStaticPaths()`.
 If `/about` also has an explicit native route, filter that entry out of the
 theme catch-all so that only `/about` produces its URL. Use the entry's stable
 source ID for the filter, not its display title. Missing/duplicate host route
-declarations fail validation. With native i18n enabled, a build also compares
-advertised published URLs with emitted routes. A single-language host must
-check its own concrete output for every intended Page; a matching catch-all
-alone does not prove that its `getStaticPaths()` emits those Pages.
+declarations fail validation. Every active content build compares advertised
+published URLs with emitted routes, including single-language hosts. A
+matching catch-all alone does not prove that its `getStaticPaths()` emits those
+Pages. This companion-route recipe applies when no root taxonomy shares the
+Page producer; a combined root group uses the dispatcher described below.
 Choosing host ownership retains
 active collection, source, schema, taxonomy, navigation and canonical metadata;
 it suppresses only package route injection.
@@ -408,13 +409,65 @@ namespaced by the plugin ID. A separately distributed plugin declares and
 tests its compatible `@wpmoo/astro` and Astro peers and commits its own lock.
 This foundation supplies no importer, plugin auto-discovery or template lookup.
 
+Define a site's Projects type in its own `definitions.js`, for example:
+
+```js
+import { definePlugin } from "@wpmoo/astro/plugins";
+
+export function projects() {
+  return definePlugin({
+    apiVersion: 1,
+    id: "projects",
+    label: "Projects",
+    basePath: "/project",
+    locales: { de: { label: "Projekte", basePath: "/projekt" } },
+    contentTypes: [
+      {
+        id: "project",
+        collection: "project",
+        singleRoute: "single",
+        source: {
+          kind: "markdown",
+          formats: ["md"],
+          base: new URL("./content/project/", import.meta.url),
+        },
+        taxonomies: ["category", "tag"],
+      },
+    ],
+    routes: [
+      { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" },
+    ],
+  });
+}
+```
+
+Select `projects()` in `moo({ plugins: [...] })`, select its bound taxonomies,
+and declare the native `project` collection using `entrySchema` extended with
+the matching references and `glob({ generateId: sourceEntryId, ... })`. For an
+English-default host, implement `pages/project/[...slug].astro` and
+`pages/de/projekt/[...slug].astro`. A German-default host instead uses
+`pages/projekt/[...slug].astro` and `pages/en/project/[...slug].astro`. Derive
+each published Single path with `getEntryHref("project", entry)` and select its
+route locale with `getRouteLocale(routePattern)`; render with the public generic
+Single and one host Layout. The complete compiled recipe is in
+`tests/fixtures/project-routes/`.
+
+`slug: test-project` produces `/project/test-project`; its German translation
+can use `slug: test-projekt` for `/de/projekt/test-projekt` in the
+English-default configuration. Stable source IDs and `translationKey` connect
+the translations. Adding several category/tag references leaves both Single
+addresses unchanged. The CPT definition owns its prefix; taxonomy archive
+prefixes describe separate lists. Changing either prefix requires site-owned
+redirects for previously published URLs.
+
 ### Optional shared taxonomies
 
 Select taxonomies explicitly in `moo({ plugins, taxonomies })`; the default is
 `[]`. `defineTaxonomy` from `@wpmoo/astro/taxonomies` creates a pure, owned
 descriptor. A definition has a stable lowercase kebab `id`, plain `label`,
 local `source: URL`, optional `sourceKind: "json" | "json-directory"`,
-`hierarchical`, and `archive: false | { include: "direct" | "descendants" }`.
+`hierarchical`, and
+`archive: false | { include?: "direct" | "descendants", basePath?: string }`.
 Archives are disabled by default; descendants requires hierarchy.
 
 ```js
@@ -468,26 +521,118 @@ then blocks requests until native content is current. Invalid source remains
 fatal, and a cold build is the authoritative release check.
 
 Server-only `@wpmoo/astro/taxonomies/queries` exports `getTaxonomyTerms(id)`,
-`getTermEntries(id, termId, { include }?)`, and `getTaxonomyPaths({ taxonomies }?)`.
+`getTermEntries(id, termId, { include, locale }?)`, and
+`getTaxonomyPaths({ taxonomies, routePattern, locale }?)`.
 Items contain published Page/Post/custom-type summaries, canonical Single
 hrefs, owned direct membership context and optional copied publication dates.
 Ordering is type ID then exact entry ID; descendant matches deduplicate each
 entry. Source locations and full entries are not exposed.
 
-Enabled archives share one `/topics/[taxonomy]/[slug]` route, with an optional
-canonical `taxonomyBasePath`. By default the integration owns this route.
+Without an explicit prefix, enabled archives retain the shared
+`/topics/[taxonomy]/[slug]` route and optional root `taxonomyBasePath` setting.
+Each taxonomy can instead choose its complete prefix through
+`archive.basePath`. The rule is identical for category, tag and a later custom
+taxonomy:
+
+| `archive.basePath`  | Term slug `layouts`                     | Native producer             |
+| ------------------- | --------------------------------------- | --------------------------- |
+| omitted             | `/topics/category/layouts` for category | `/topics/[taxonomy]/[slug]` |
+| `"/category"`       | `/category/layouts`                     | `/category/[slug]`          |
+| `"/c"`              | `/c/layouts`                            | `/c/[slug]`                 |
+| `"/"`               | `/layouts`                              | `/[...slug]`                |
+| `"/library/topics"` | `/library/topics/layouts`               | `/library/topics/[slug]`    |
+
+Explicit prefixes are canonical literal paths, without query, fragment or
+dynamic segments. One terminal slash is normalized away except for `/`.
+They are independent of the host's `base`, native locale prefixes and
+trailing-slash policy. A localized
+`locales.<locale>.basePath` replaces the whole prefix:
+
+```js
+defineTaxonomy({
+  id: "category",
+  label: "Categories",
+  source: new URL("./data/category.json", import.meta.url),
+  hierarchical: true,
+  archive: { include: "descendants", basePath: "/category" },
+  locales: { de: { label: "Kategorien", basePath: "/kategorie" } },
+});
+```
+
+A stable term ID `guides` can have `slug: guides` and
+`locales: { de: { name: "Anleitungen", slug: "anleitungen" } }`. With German
+as the main language, this example produces `/kategorie/anleitungen` and
+`/en/category/guides`. The same fields support a flat German archive and an
+English `/c` archive. Existing `locales.<locale>.slug` remains the segment
+under the legacy `taxonomyBasePath`; it cannot be combined with an effective
+explicit `basePath`. Missing localized term fields inherit their base fields;
+term IDs, parents and content references remain stable.
+
+By default the integration owns one producer per distinct archive pattern.
 They compose the existing Layout/includes/Archive/Loop and resolve
 `site.types[taxonomyId].views.archive`. There is no taxonomy
 index, pagination or automatic navigation. Breadcrumb ancestors link to actual
 term routes; the current item includes the taxonomy label because Moo
 Breadcrumb has no plain intermediate-item contract. To compose archives in a
-theme Layout, select root `taxonomyRoutes: { archive: "host" }` and supply the
-matching native prerendered route using `getTaxonomyPaths()`. Retain each
+theme Layout, select root `taxonomyRoutes: { archive: "host" }` and supply each
+matching native prerendered route using
+`getTaxonomyPaths({ routePattern, locale: getRouteLocale(routePattern) })`.
+The selector names the actual native route, including its locale prefix; the
+returned `params.taxonomy` exists only for the legacy shared pattern.
+Retain each
 taxonomy's enabled `archive` metadata and membership policy. Ownership applies
 to the shared pattern and its native locale projections; missing, duplicate,
 nonproject or nonprerendered host routes fail validation. Omitting this option
 preserves plugin ownership. Term URLs follow the canonical site language,
 independent of display-language preferences.
+
+#### Flat archives and the shared Page route
+
+Several taxonomies may use `/` together. Built-in Pages and those flat terms
+then share exactly one `/[...slug]` producer per locale. All participants must
+select the same ownership: injected by the package, or host-owned. A host
+selects both `page({ routes: { single: "host" } })` and
+`taxonomyRoutes: { archive: "host" }`, then uses the public context helper:
+
+```astro
+---
+import type { GetStaticPathsOptions } from "astro";
+import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+import { getRouteLocale } from "@wpmoo/astro/i18n";
+import Page from "../views/Page.astro";
+import Taxonomy from "../views/Taxonomy.astro";
+
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getRootPaths({ locale: getRouteLocale(routePattern) });
+}
+type Props = RootPath["props"];
+const props = Astro.props;
+---
+
+{props.kind === "page" ? <Page entry={props.entry} /> : <Taxonomy {...props} />}
+```
+
+These `Page` and `Taxonomy` imports are the site's compositions, each using
+one Layout and the public Page/Archive views; private package compositions
+are not importable. For a locale that has no root group, retain its ordinary
+Page route and selected nonroot archive producers. A taxonomy-only root group
+also works without enabling Page.
+
+Canonical validation rejects Page/term collisions, collisions between
+taxonomies after locale normalization, occupied plugin prefixes, reserved
+paths and competing native owners. Root terms reserve their concrete URLs;
+nonroot archives reserve their active namespace. The unused `/topics`
+namespace is released when every archive chooses an explicit prefix. Builds
+check every advertised public output, including host-owned routes in a
+single-language site. One missing archive or Page output fails certification.
+
+When adopting root archives, replace the old Page producer with this shared
+dispatcher and remove competing native dynamic routes. Before changing
+prefixes or the main language, retain old and new canonical URL inventories,
+check collisions, and configure redirects in the site's deployment. The
+package does not silently rewrite memberships, source IDs or published URLs,
+and it creates no automatic redirects.
 
 ### Native JSON storage and integrity
 
@@ -830,7 +975,7 @@ Plugin-owned routes apply the selected locale automatically. This follows
 options, including `parts`, `dir` and theme preferences. Route language must
 agree with the entry locale; a contradictory `options.lang` fails. Display
 labels and segments use `plugin.locales.<locale>.{label,basePath}` and
-`taxonomy.locales.<locale>.{label,slug}`. Term records use partial
+`taxonomy.locales.<locale>.{label,slug,basePath}`. Term records use partial
 `locales.<locale>.{name,description,slug}` with base-field fallback; stable term
 IDs and content membership do not change.
 

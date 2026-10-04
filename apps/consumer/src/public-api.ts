@@ -35,9 +35,11 @@ import {
   getSiteContext,
   getSiteNavigation,
   getEntryHref,
+  getRootPaths,
   validateSiteContent,
   type SiteContext,
   type NavigationItem,
+  type RootPath,
 } from "@wpmoo/astro/context";
 import MooUI, {
   loadChart,
@@ -172,9 +174,11 @@ export const publicServerFunctions = {
   getSiteContext,
   getSiteNavigation,
   getEntryHref,
+  getRootPaths,
   validateSiteContent,
 };
 export const publicContext: SiteContext = getSiteContext();
+export const publicRootPaths: Promise<RootPath[]> = getRootPaths();
 export const publicNavigation: Promise<readonly NavigationItem[]> =
   getSiteNavigation("/contact");
 export async function initializeRuntime(root: Element) {

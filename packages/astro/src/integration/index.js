@@ -194,6 +194,7 @@ export default function moo(input = {}) {
               regexFlags: route.patternRegex.flags,
               type: route.type,
               entrypoint: route.entrypoint,
+              origin: route.origin,
             }));
       },
       "astro:build:done": ({ pages }) => {
@@ -266,8 +267,8 @@ declare module ${JSON.stringify(virtualId)} {
     readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix" }[];
     readonly projectionFile: string | null;
     readonly archivePaths: readonly { readonly id: string; readonly locale: string; readonly path: string; readonly pattern: string }[];
-    readonly singleRoutes: readonly { readonly type: string; readonly locale: string; readonly pattern: string }[];
-    readonly resolvedRoutes: readonly { readonly pattern: string; readonly patternRegex: string; readonly regexFlags: string; readonly type: "page"; readonly entrypoint: string }[];
+    readonly singleRoutes: readonly { readonly type: string; readonly locale: string; readonly pattern: string; readonly allowNativeHost: boolean }[];
+    readonly resolvedRoutes: readonly { readonly pattern: string; readonly patternRegex: string; readonly regexFlags: string; readonly type: "page"; readonly entrypoint: string; readonly origin: string }[];
     readonly taxonomyGroups: readonly { readonly pattern: string; readonly root: boolean; readonly taxonomies: readonly string[]; readonly routeOwner: "plugin" | "host"; readonly locale?: string }[];
   };
   export const collections: Record<string, ReturnType<typeof import("astro:content").defineCollection>>;
@@ -297,14 +298,20 @@ declare module ${JSON.stringify(virtualId)} {
                   const route = plugin.routes.find(
                     (route) => route.id === type.singleRoute,
                   );
+                  const pattern = localePath(
+                    `${prefix === "/" ? "" : prefix}${route.pattern}`,
+                    locale,
+                    i18n,
+                  );
                   return {
                     type: type.id,
                     locale,
-                    pattern: localePath(
-                      `${prefix === "/" ? "" : prefix}${route.pattern}`,
-                      locale,
-                      i18n,
-                    ),
+                    pattern,
+                    allowNativeHost:
+                      route.owner === "host" &&
+                      !registry.taxonomyGroups.some(
+                        (group) => group.root && group.pattern === pattern,
+                      ),
                   };
                 }),
               ),

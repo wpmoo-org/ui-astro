@@ -59,8 +59,10 @@ The required matrix is:
 5. `post-only`: Post with a host-selected namespace, without Page or MDX.
 6. `mdx`: native MD/MDX identity, official activation and host Astro sections.
 7. `external-plugin`: a separately packed API-1 content plugin.
-8. `taxonomy`: shared Page/Post category and tag queries and archives.
-9. `external-taxonomy`: mixed built-in/external types and custom taxonomy.
+8. `taxonomy`: German-default Page/Post/Projects, localized category prefixes,
+   shared root tag/sector archives, canonical links and translation alternates.
+9. `external-taxonomy`: built-in/separately packed types, independent category,
+   root tag and custom sector prefixes in a single-language site.
 10. `content-editing`: CMS-free Markdown and flat JSON directories, stable
     identity, native references and host-owned finite section data.
 
@@ -88,6 +90,33 @@ the parent handoff, outside the npm archive.
 Each retained proof identifies its own artifact and runtime. Final packed
 documentation changes require repeating that proof against the final archive;
 a historical successful output is not reused for different package bytes.
+
+## Unpublished flexible archive URL API
+
+The candidate adds taxonomy `archive.basePath` and
+`locales.<locale>.basePath`, actual-pattern selection in `getTaxonomyPaths`,
+and the named `getRootPaths` export through the existing context subpath.
+Explicit prefixes apply to any selected taxonomy. Omitted prefixes preserve
+the legacy `/topics/[taxonomy]/[slug]` fallback. Public subpaths remain 79;
+the five new private implementation files raise the reviewed archive inventory
+from 121 to 126 regular members, without exposing private deep imports.
+
+Root archives share one producer with built-in Pages in each selected locale.
+Host themes adopting this configuration must replace their separate Page/root
+archive routes with the discriminated `getRootPaths` dispatcher. Host-owned
+Page companion routes remain supported when no root group shares that
+producer. All active builds now verify emitted published content and archive
+URLs, including single-language hosts; a declared but empty host producer no
+longer passes. Custom type Single prefixes remain owned by their plugin
+definitions and independent of taxonomy memberships.
+
+These are unpublished API and validation changes, not a dependency upgrade or
+a release. Existing sites must compare canonical inventories and plan their
+own redirects when changing prefixes or the main language. The repository
+guide contains complete definition and native route recipes. Current URL
+certification is recorded separately in the dated parent handoff; prior browser
+and acceptance evidence below remains historical. Live warm-save/browser
+inspection of this URL change was not executed because access was blocked.
 
 ## Local evidence and capability limits
 

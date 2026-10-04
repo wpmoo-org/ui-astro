@@ -370,7 +370,7 @@ export function validateBuiltPagePaths(pages, routes) {
 }
 
 export function validateExpectedRouteOwners(expected, routes) {
-  for (const { id, locale, path, pattern } of expected) {
+  for (const { id, locale, path, pattern, allowNativeHost } of expected) {
     const owner = routes.find((route) => {
       if (route.type !== "page") return false;
       const regex =
@@ -381,7 +381,10 @@ export function validateExpectedRouteOwners(expected, routes) {
       // follows trailingSlash and may require the directory slash.
       return regex?.test(path) || regex?.test(`${path.replace(/\/$/u, "")}/`);
     });
-    if (owner?.pattern !== pattern)
+    if (
+      owner?.pattern !== pattern &&
+      !(allowNativeHost && owner?.origin === "project")
+    )
       throw new TypeError(
         `moo published content ${id} (locale ${locale}) at ${path} has an owner conflict: expected ${pattern}, resolved ${owner?.entrypoint ?? "(no page owner)"} (${owner?.pattern ?? "none"})`,
       );

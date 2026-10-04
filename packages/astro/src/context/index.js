@@ -301,6 +301,7 @@ export async function validateSiteContent() {
           locale,
           path: href.slice(mount.length).replace(/\/$/u, "") || "/",
           pattern: route.pattern,
+          allowNativeHost: route.allowNativeHost,
         },
         href,
         type.id,

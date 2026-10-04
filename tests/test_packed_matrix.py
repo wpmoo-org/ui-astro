@@ -19,7 +19,7 @@ class PackedMatrix(unittest.TestCase):
         namespaces = json.loads(namespace_path.read_text())
         self.assertEqual(namespaces["root"], ["default"])
         self.assertEqual(namespaces["config"], ["defineSite", "formatDate", "getEntryClasses", "getPageClasses", "layoutSchema", "normalizeSlug", "resolvePageOptions", "resolveParts"])
-        self.assertEqual(namespaces["context"], ["getEntryHref", "getSiteContext", "getSiteNavigation", "validateSiteContent"])
+        self.assertEqual(namespaces["context"], ["getEntryHref", "getRootPaths", "getSiteContext", "getSiteNavigation", "validateSiteContent"])
         self.assertEqual(namespaces["i18n"], ["getLanguageLinks", "getLocaleHref", "getRouteLocale"])
         self.assertEqual(namespaces["seo"], ["resolveSeoMetadata"])
         evidence_path = PROOF_ROOT / "consumer/dist/content-contract.json"
@@ -39,7 +39,7 @@ class PackedMatrix(unittest.TestCase):
         self.assertEqual(proof["schema_version"], 2, "The legacy single consumer is not the matrix")
         self.assertEqual(proof["selection"], "all")
         expected_counts = {"default": 3, "theme": 8, "ui-only": 1, "page-only": 1,
-                           "post-only": 2, "mdx": 6, "external-plugin": 3, "taxonomy": 7,
+                           "post-only": 2, "mdx": 6, "external-plugin": 3, "taxonomy": 20,
                            "external-taxonomy": 13, "content-editing": 3}
         self.assertEqual(set(proof["profiles"]), set(expected_counts))
         archive = proof["artifacts"]["@wpmoo/astro"]

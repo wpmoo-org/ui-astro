@@ -1,6 +1,7 @@
 """Installed public taxonomy queries retain mixed built-in and packaged types."""
 
 import json
+import re
 from pathlib import Path
 import unittest
 
@@ -9,6 +10,17 @@ import test_view_structure as native
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+TAXONOMY_OUTPUT = {
+    "kontakt/index.html", "en/contact/index.html", "posts/index.html", "en/posts/index.html",
+    "posts/ankuendigung/index.html", "en/posts/announcement/index.html",
+    "projekt/test-projekt/index.html", "en/project/test-project/index.html",
+    "kategorie/eltern/index.html", "kategorie/anleitungen/index.html",
+    "en/category/parent/index.html", "en/category/child/index.html",
+    "astro/index.html", "empty/index.html", "oeffentlich/index.html", "gemeinschaft/index.html",
+    "en/astro/index.html", "en/empty/index.html", "en/public/index.html", "en/community/index.html",
+}
 
 
 def profile_files(name):
@@ -36,14 +48,24 @@ class MixedTaxonomyConsumers(unittest.TestCase):
         result, _ = self.build(None, files=files, check=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         contract = json.loads(result.generated_data["taxonomy.json"])
-        self.assertEqual(contract["direct"], ["post:announcement.md"])
-        self.assertEqual(contract["descendants"], ["page:contact.md", "post:announcement.md"])
+        self.assertEqual(contract["direct"], ["post:de/announcement.md", "project:de/test.md"])
+        self.assertEqual(contract["descendants"], ["page:de/contact.md", "post:de/announcement.md", "project:de/test.md"])
         self.assertEqual(contract["empty"], [])
-        self.assertEqual(contract["hrefs"], ["/docs/contact/", "/docs/posts/announcement/"])
-        self.assertEqual(len(contract["paths"]), 4)
-        self.assertEqual(set(result.generated_html), {"contact/index.html", "posts/index.html", "posts/announcement/index.html",
-            "topics/category/parent/index.html", "topics/category/child/index.html", "topics/tag/astro/index.html", "topics/tag/empty/index.html"})
-        self.assertIn("No items yet.", result.generated_html["topics/tag/empty/index.html"])
+        self.assertEqual(contract["hrefs"], ["/docs/kontakt/", "/docs/posts/ankuendigung/", "/docs/projekt/test-projekt/"])
+        self.assertEqual(len(contract["paths"]), 12)
+        self.assertEqual(set(result.generated_html), TAXONOMY_OUTPUT)
+        self.assertEqual({(row["slug"], row["kind"]) for row in contract["rootKinds"]}, {("kontakt", "page"), ("astro", "taxonomy"), ("empty", "taxonomy"), ("oeffentlich", "taxonomy"), ("gemeinschaft", "taxonomy")})
+        self.assertIn("No items yet.", result.generated_html["empty/index.html"])
+        child = result.generated_html["kategorie/anleitungen/index.html"]
+        self.assertIn('href="/docs/kategorie/eltern/"', child)
+        self.assertIn('href="https://example.test/docs/en/category/child/"', child)
+        for filename, canonical, alternate in [
+            ("projekt/test-projekt/index.html", "/docs/projekt/test-projekt/", "/docs/en/project/test-project/"),
+            ("en/project/test-project/index.html", "/docs/en/project/test-project/", "/docs/projekt/test-projekt/"),
+        ]:
+            self.assertIn('rel="canonical" href="https://example.test' + canonical + '"', result.generated_html[filename])
+            self.assertIn('href="https://example.test' + alternate + '"', result.generated_html[filename])
+        self.assertIn('href="/docs/projekt/test-projekt/"', result.generated_html["oeffentlich/index.html"])
 
     def test_custom_taxonomy_profile_combines_page_post_and_separately_packed_samples(self):
         files = profile_files("external-taxonomy")
@@ -57,7 +79,7 @@ class MixedTaxonomyConsumers(unittest.TestCase):
         self.assertEqual(contract["sectorEmpty"], [])
         self.assertEqual(contract["sectorHrefs"], ["/docs/contact", "/docs/posts/announcement", "/docs/sample/ueber"])
         self.assertEqual(len(contract["paths"]), 7)
-        archive = result.generated_html["topics/sector/oeffentlich/index.html"]
+        archive = result.generated_html["s/oeffentlich/index.html"]
         main = archive.split("<main", 1)[1].split("</main>", 1)[0]
         for href in ["/docs/contact", "/docs/posts/announcement", "/docs/sample/ueber"]:
             self.assertEqual(main.count(f'href="{href}"'), 1)
@@ -79,7 +101,7 @@ class MixedTaxonomyConsumers(unittest.TestCase):
     def test_disabled_archives_keep_the_same_queryable_references_without_term_routes(self):
         files = profile_files("external-taxonomy")
         self.assertIn("src/definitions.mjs", files)
-        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('{ include: "descendants" }', "false").replace("archive: {}", "archive: false")
+        files["src/definitions.mjs"] = re.sub(r'archive: \{[^{}]*\}', "archive: false", files["src/definitions.mjs"])
         result, _ = self.build(None, files=files,
                               packed_modules={"@wpmoo-test/astro-content": self.packed_plugin()})
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -87,7 +109,7 @@ class MixedTaxonomyConsumers(unittest.TestCase):
         self.assertEqual(contract["paths"], [])
         self.assertEqual(contract["sectorDescendants"], ["page:contact.md", "post:announcement.md", "sample:alpha"])
         self.assertEqual(contract["sectorHrefs"], ["/docs/contact", "/docs/posts/announcement", "/docs/sample/ueber"])
-        self.assertTrue(all(not path.startswith("topics/") for path in result.generated_html))
+        self.assertEqual(len(result.generated_html), 6)
         self.assertIn("tax-sector--community", result.generated_html["sample/ueber/index.html"])
 
 
