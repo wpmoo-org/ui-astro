@@ -175,7 +175,16 @@ test("one common archive route is optional and has one namespace owner", () => {
   );
   assert.throws(
     () =>
-      moo({ plugins: [post({ basePath: "/topics" })], taxonomies: [category] }),
+      moo({
+        plugins: [post({ basePath: "/topics" })],
+        taxonomies: [category],
+      }).hooks["astro:config:setup"]({
+        command: "sync",
+        config: { root: new URL("file:///tmp/host/"), vite: {} },
+        injectRoute() {},
+        updateConfig() {},
+        addMiddleware() {},
+      }),
     /namespace.*topics/,
   );
   for (const taxonomyBasePath of [

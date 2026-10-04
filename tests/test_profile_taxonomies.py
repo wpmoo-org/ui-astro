@@ -98,6 +98,34 @@ class MixedTaxonomyConsumers(unittest.TestCase):
                 self.assertEqual(sum(tag == "main" for tag, _ in markup.elements), 1)
                 self.assertEqual(sum(attrs.get("data-moo-document-owner") == "true" for _, attrs in markup.elements), 1)
 
+    def test_german_default_projects_namespaces_before_testing_collisions(self):
+        files = profile_files("taxonomy")
+        files["astro.config.mjs"] = files["astro.config.mjs"].replace(
+            "post({ taxonomies: bindings })",
+            'post({ taxonomies: bindings, locales: { de: { basePath: "/beitraege" } } })',
+        )
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace(
+            'basePath: "/kategorie"', 'basePath: "/posts"',
+        ).replace('basePath: "/category"', 'basePath: "/c"')
+        result, _ = self.build(None, files=files, check=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        contract = json.loads(result.generated_data["taxonomy.json"])
+        self.assertEqual(contract["hrefs"], ["/docs/kontakt/", "/docs/beitraege/ankuendigung/", "/docs/projekt/test-projekt/"])
+        self.assertEqual(len(result.generated_html), 20)
+        for filename, canonical, alternate in [
+            ("posts/anleitungen/index.html", "/docs/posts/anleitungen/", "/docs/en/c/child/"),
+            ("en/c/child/index.html", "/docs/en/c/child/", "/docs/posts/anleitungen/"),
+            ("beitraege/ankuendigung/index.html", "/docs/beitraege/ankuendigung/", "/docs/en/posts/announcement/"),
+            ("en/posts/announcement/index.html", "/docs/en/posts/announcement/", "/docs/beitraege/ankuendigung/"),
+        ]:
+            html = result.generated_html[filename]
+            self.assertIn('rel="canonical" href="https://example.test' + canonical + '"', html)
+            self.assertIn('href="https://example.test' + alternate + '"', html)
+        files["astro.config.mjs"] = files["astro.config.mjs"].replace('"/beitraege"', '"/posts"')
+        rejected, _ = self.build(None, files=files)
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertRegex(rejected.stdout + rejected.stderr, r"namespace /posts.*taxonomy category.*post")
+
     def test_disabled_archives_keep_the_same_queryable_references_without_term_routes(self):
         files = profile_files("external-taxonomy")
         self.assertIn("src/definitions.mjs", files)

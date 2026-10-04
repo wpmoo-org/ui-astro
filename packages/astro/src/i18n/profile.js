@@ -89,7 +89,12 @@ export function localizeRegistry(registry, profile) {
   if (!profile) {
     for (const item of [...registry.plugins, ...registry.taxonomies])
       validateLocaleKeys(item.locales, null, `${item.id}.locales`);
-    return registry;
+    return buildRegistry(registry.plugins, {
+      taxonomies: registry.taxonomies,
+      taxonomyBasePath: registry.taxonomyBasePath,
+      taxonomyRoutes: registry.taxonomyRoutes,
+      lang: registry.lang,
+    });
   }
   for (const item of [...registry.plugins, ...registry.taxonomies])
     validateLocaleKeys(item.locales, profile, `${item.id}.locales`);

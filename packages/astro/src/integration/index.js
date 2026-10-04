@@ -7,7 +7,7 @@ import { page } from "../plugins/page/index.js";
 import { post } from "../plugins/post/index.js";
 import { localePath, localizeRegistry, resolveI18n } from "../i18n/profile.js";
 import {
-  buildRegistry,
+  prepareRegistry,
   validateBuiltPagePaths,
   validateNativePageRoutes,
   validateResolvedRoutes,
@@ -53,7 +53,7 @@ export default function moo(input = {}) {
   }
   const site = defineSite(input.site);
   const plugins = input.plugins ?? [page(), post()];
-  const baseRegistry = buildRegistry(plugins, {
+  const baseRegistry = prepareRegistry(plugins, {
     taxonomies: input.taxonomies,
     taxonomyBasePath: input.taxonomyBasePath,
     taxonomyRoutes: input.taxonomyRoutes,

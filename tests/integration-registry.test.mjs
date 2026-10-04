@@ -8,6 +8,7 @@ import {
 } from "../packages/astro/src/integration/registry.js";
 import { definePlugin } from "../packages/astro/src/plugins/index.js";
 import { page } from "../packages/astro/src/plugins/page/index.js";
+import { post } from "../packages/astro/src/plugins/post/index.js";
 import moo from "../packages/astro/src/integration/index.js";
 import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
@@ -37,6 +38,99 @@ test("omitted plugin selection registers Page and Post, while an explicit list r
       expected,
     );
   }
+});
+
+function localizedSetup(plugins, taxonomy) {
+  const routes = [];
+  moo({
+    site: { defaults: { lang: "de" } },
+    plugins,
+    taxonomies: [taxonomy],
+  }).hooks["astro:config:setup"]({
+    command: "build",
+    config: {
+      root: new URL("../apps/consumer/", import.meta.url),
+      vite: {},
+      i18n: {
+        locales: ["en", "de"],
+        defaultLocale: "de",
+        routing: { prefixDefaultLocale: false },
+      },
+    },
+    injectRoute(value) {
+      routes.push(value.pattern);
+    },
+    updateConfig() {},
+    addMiddleware() {},
+  });
+  return routes.filter(
+    (pattern) => !pattern.startsWith("/__moo_content_integrity"),
+  );
+}
+
+test("moo checks plugin and taxonomy namespaces in the same active locale", () => {
+  const taxonomy = defineTaxonomy({
+    id: "category",
+    label: "Categories",
+    source: new URL(
+      "./fixtures/taxonomy/src/data/category.json",
+      import.meta.url,
+    ),
+    archive: { basePath: "/c" },
+    locales: { de: { basePath: "/posts" } },
+  });
+  const plugins = [post({ locales: { de: { basePath: "/beitraege" } } })];
+  assert.deepEqual(localizedSetup(plugins, taxonomy), [
+    "/en/posts",
+    "/en/posts/[...slug]",
+    "/en/c/[slug]",
+    "/beitraege",
+    "/beitraege/[...slug]",
+    "/posts/[slug]",
+  ]);
+  assert.equal(plugins[0].basePath, "/posts");
+  assert.equal(taxonomy.archive.basePath, "/c");
+});
+
+test("moo ignores authored namespaces overridden in every active locale", () => {
+  const taxonomy = defineTaxonomy({
+    id: "category",
+    label: "Categories",
+    source: new URL(
+      "./fixtures/taxonomy/src/data/category.json",
+      import.meta.url,
+    ),
+    archive: { basePath: "/posts" },
+  });
+  assert.deepEqual(
+    localizedSetup(
+      [
+        post({
+          locales: {
+            en: { basePath: "/articles" },
+            de: { basePath: "/beitraege" },
+          },
+        }),
+      ],
+      taxonomy,
+    ),
+    [
+      "/en/articles",
+      "/en/articles/[...slug]",
+      "/en/posts/[slug]",
+      "/beitraege",
+      "/beitraege/[...slug]",
+      "/posts/[slug]",
+    ],
+  );
+  assert.throws(
+    () =>
+      localizedSetup(
+        [post({ locales: { en: { basePath: "/articles" } } })],
+        taxonomy,
+      ),
+    /namespace \/posts.*taxonomy category.*post/,
+  );
 });
 
 function external(id, basePath, { collection = id, type = id } = {}) {
@@ -262,9 +356,10 @@ test("explicit host save-stability and disabled watcher settings remain host-own
 
 function finalConfig(integration, overrides = {}) {
   const root = new URL("./fixtures/page-base/", import.meta.url);
-  return {
+  const config = {
     root,
     srcDir: new URL("src/", root),
+    vite: {},
     base: "/docs",
     trailingSlash: "ignore",
     output: "static",
@@ -272,6 +367,14 @@ function finalConfig(integration, overrides = {}) {
     integrations: [integration],
     ...overrides,
   };
+  integration.hooks["astro:config:setup"]({
+    command: "sync",
+    config,
+    injectRoute() {},
+    updateConfig() {},
+    addMiddleware() {},
+  });
+  return config;
 }
 
 test("active content makes concrete prerender conflicts fatal", () => {

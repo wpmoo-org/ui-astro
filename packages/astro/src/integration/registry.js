@@ -34,7 +34,9 @@ function resolveTaxonomyRoutes(input = {}) {
   return Object.freeze({ archive });
 }
 
-export function buildRegistry(
+// Validate authored identities before Astro supplies its active locale profile.
+// Namespace and route ownership checks need a complete locale projection.
+export function prepareRegistry(
   plugins,
   {
     taxonomies = [],
@@ -48,11 +50,7 @@ export function buildRegistry(
   const ids = new Set();
   const types = new Map();
   const collections = new Map();
-  const namespaces = new Map();
-  const patterns = new Map();
   const contentTypes = [];
-  const routeClaims = [];
-  const routes = [];
   const mount = taxonomyMount(taxonomyBasePath);
   const taxonomyOwnership = resolveTaxonomyRoutes(taxonomyRoutes);
   if (!Array.isArray(taxonomies))
@@ -72,20 +70,6 @@ export function buildRegistry(
     if (ids.has(plugin.id))
       throw new TypeError(`moo.plugins has duplicate plugin ${plugin.id}`);
     ids.add(plugin.id);
-    if (plugin.basePath !== "/") {
-      for (const [namespace, owner] of namespaces) {
-        if (
-          insideNamespace(plugin.basePath, namespace) ||
-          insideNamespace(namespace, plugin.basePath)
-        ) {
-          throw new TypeError(
-            `moo namespace ${plugin.basePath} conflicts between ${owner} and ${plugin.id}`,
-          );
-        }
-      }
-      namespaces.set(plugin.basePath, plugin.id);
-    }
-
     for (const type of plugin.contentTypes) {
       if (types.has(type.id))
         throw new TypeError(
@@ -99,31 +83,6 @@ export function buildRegistry(
       types.set(type.id, plugin.id);
       collections.set(type.collection, plugin.id);
       contentTypes.push(Object.freeze({ owner: plugin.id, ...type }));
-    }
-    for (const route of plugin.routes) {
-      const pattern = fullPattern(plugin.basePath, route.pattern);
-      if (patterns.has(pattern)) {
-        throw new TypeError(
-          `moo route pattern ${pattern} is owned by both ${patterns.get(pattern)} and ${plugin.id}`,
-        );
-      }
-      patterns.set(pattern, plugin.id);
-      const claim = Object.freeze({
-        owner: plugin.id,
-        pattern,
-        routeOwner: route.owner,
-      });
-      routeClaims.push(claim);
-      if (route.owner === "plugin") {
-        routes.push(
-          Object.freeze({
-            owner: plugin.id,
-            pattern,
-            entrypoint: new URL(route.entrypoint),
-            prerender: true,
-          }),
-        );
-      }
     }
   }
   const selected = new Map();
@@ -152,9 +111,71 @@ export function buildRegistry(
         );
     }
   }
+  return Object.freeze({
+    plugins: Object.freeze([...plugins]),
+    contentTypes: Object.freeze(contentTypes),
+    taxonomies: Object.freeze([...selected.values()]),
+    taxonomyBasePath: mount,
+    taxonomyRoutes: taxonomyOwnership,
+    lang,
+  });
+}
+
+export function buildRegistry(plugins, options = {}) {
+  const registry = prepareRegistry(plugins, options);
+  const {
+    taxonomyBasePath: mount,
+    taxonomyRoutes: taxonomyOwnership,
+    lang,
+  } = registry;
+  const namespaces = new Map();
+  const patterns = new Map();
+  const routeClaims = [];
+  const routes = [];
+  for (const plugin of plugins) {
+    if (plugin.basePath !== "/") {
+      for (const [namespace, owner] of namespaces) {
+        if (
+          insideNamespace(plugin.basePath, namespace) ||
+          insideNamespace(namespace, plugin.basePath)
+        ) {
+          throw new TypeError(
+            `moo namespace ${plugin.basePath} conflicts between ${owner} and ${plugin.id}`,
+          );
+        }
+      }
+      namespaces.set(plugin.basePath, plugin.id);
+    }
+    for (const route of plugin.routes) {
+      const pattern = fullPattern(plugin.basePath, route.pattern);
+      if (patterns.has(pattern)) {
+        throw new TypeError(
+          `moo route pattern ${pattern} is owned by both ${patterns.get(pattern)} and ${plugin.id}`,
+        );
+      }
+      patterns.set(pattern, plugin.id);
+      routeClaims.push(
+        Object.freeze({
+          owner: plugin.id,
+          pattern,
+          routeOwner: route.owner,
+        }),
+      );
+      if (route.owner === "plugin") {
+        routes.push(
+          Object.freeze({
+            owner: plugin.id,
+            pattern,
+            entrypoint: new URL(route.entrypoint),
+            prerender: true,
+          }),
+        );
+      }
+    }
+  }
   const groups = new Map();
   const archiveNamespaces = new Map();
-  for (const taxonomy of selected.values()) {
+  for (const taxonomy of registry.taxonomies) {
     if (!taxonomy.archive) continue;
     const archive = resolveTaxonomyArchive(taxonomy, {
       lang,
@@ -263,15 +284,10 @@ export function buildRegistry(
       );
   }
   return Object.freeze({
-    plugins: Object.freeze([...plugins]),
-    contentTypes: Object.freeze(contentTypes),
+    ...registry,
     routeClaims: Object.freeze(routeClaims),
     routes: Object.freeze(routes),
-    taxonomies: Object.freeze([...selected.values()]),
-    taxonomyBasePath: mount,
-    taxonomyRoutes: taxonomyOwnership,
     taxonomyGroups: Object.freeze(taxonomyGroups),
-    lang,
   });
 }
 
