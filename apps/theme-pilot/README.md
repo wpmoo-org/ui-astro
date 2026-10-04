@@ -10,6 +10,10 @@ selects `en` or `de`; `PILOT_CATEGORY_PROFILE` selects `category`, `short` or
 `root`. The main language has no URL prefix. The native route tree follows
 that setting; shared source stays under `src/`.
 
+The Page adapter prepares locale-aware links on the server and passes them to
+MDX as `props.links`. MDX sections receive ready-to-render data; they do not
+import server query facades into Astro's propagated asset graph.
+
 Site preferences replace the theme's inset via `projectDefaults`. Update a
 versioned archive dependency and its lock to replace theme presentation;
 content and route files stay in this project. No live deployment, CMS or

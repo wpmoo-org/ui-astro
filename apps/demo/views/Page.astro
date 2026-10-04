@@ -67,7 +67,7 @@ const { Content } = await render(entry);
   pageContext={{ view: "single", entry: getDemoEntryContext("page", entry) }}
 >
   <Single parts={options.parts} entry={entry}>
-    <Content />
+    <Content parts={options.parts} />
     {
       (entry.data.sections ?? []).map((section) =>
         section.type === "text" ? (

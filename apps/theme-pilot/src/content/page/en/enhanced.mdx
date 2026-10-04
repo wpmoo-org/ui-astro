@@ -12,11 +12,7 @@ taxonomies:
 ---
 
 import Action from "@wpmoo/astro-theme-pilot/sections/Action.astro";
-import { getLocaleHref } from "@wpmoo/astro/i18n";
 
 This authored content belongs to the project and survives theme updates.
 
-<Action
-  label="Explore the native page"
-  href={getLocaleHref("/native-action", "en")}
-/>
+<Action label="Explore the native page" href={props.links.nativeAction} />
