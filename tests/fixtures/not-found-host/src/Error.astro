@@ -1,0 +1,39 @@
+---
+import { getNotFoundOptions } from "@wpmoo/astro/not-found";
+import Layout from "@wpmoo/astro/Layout.astro";
+import NotFound from "@wpmoo/astro/views/NotFound.astro";
+import Typography from "@wpmoo/astro/components/Typography.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+const data = getNotFoundOptions(Astro.currentLocale);
+const { options } = data;
+---
+
+<Layout
+  title={data.title}
+  description={data.description}
+  lang={data.locale}
+  theme={options.theme}
+  dir={options.dir}
+  shellMode={options.shellMode}
+  pageWidth={options.pageWidth}
+  headerWidth={options.headerWidth}
+  parts={options.parts}
+  metadata={null}
+  pageContext={{ view: "native", key: "not-found" }}
+>
+  <NotFound {...data} parts={options.parts}>
+    <Typography
+      slot="page-header"
+      variant="page-title"
+      content={data.title}
+      data-host-error-title
+    />
+    <Button
+      slot="actions"
+      element="a"
+      href={data.homeHref}
+      label={data.homeLabel}
+      data-host-error-action
+    />
+  </NotFound>
+</Layout>

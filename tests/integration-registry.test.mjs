@@ -14,9 +14,9 @@ import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
 test("omitted plugin selection registers Page and Post, while an explicit list replaces it", () => {
   for (const [input, expected] of [
-    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]"]],
-    [{ plugins: [page()] }, ["/[...slug]"]],
-    [{ plugins: [] }, []],
+    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]", "/404"]],
+    [{ plugins: [page()] }, ["/[...slug]", "/404"]],
+    [{ plugins: [] }, ["/404"]],
   ]) {
     const routes = [];
     moo(input).hooks["astro:config:setup"]({
@@ -87,6 +87,8 @@ test("moo checks plugin and taxonomy namespaces in the same active locale", () =
     "/beitraege",
     "/beitraege/[...slug]",
     "/posts/[slug]",
+    "/404",
+    "/en/404",
   ]);
   assert.equal(plugins[0].basePath, "/posts");
   assert.equal(taxonomy.archive.basePath, "/c");
@@ -121,6 +123,8 @@ test("moo ignores authored namespaces overridden in every active locale", () => 
       "/beitraege",
       "/beitraege/[...slug]",
       "/posts/[slug]",
+      "/404",
+      "/en/404",
     ],
   );
   assert.throws(
@@ -437,16 +441,25 @@ test("one host cannot register the Moo integration twice", () => {
   );
 });
 
-test("UI-only composition owns its output mode, base, and route policy", () => {
+test("UI-only composition keeps its output policy and uses a canonical recovery base", () => {
   const integration = moo({ plugins: [] });
   assert.doesNotThrow(() =>
     integration.hooks["astro:config:done"]({
       config: finalConfig(integration, {
         output: "server",
-        base: "/Docs",
+        base: "/docs",
         prerenderConflictBehavior: "warn",
       }),
+      injectTypes() {},
     }),
+  );
+  assert.throws(
+    () =>
+      integration.hooks["astro:config:done"]({
+        config: finalConfig(integration, { base: "/Docs" }),
+        injectTypes() {},
+      }),
+    /base.*canonical/,
   );
 });
 

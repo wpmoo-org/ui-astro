@@ -7,6 +7,14 @@ import { page } from "../plugins/page/index.js";
 import { post } from "../plugins/post/index.js";
 import { localePath, localizeRegistry, resolveI18n } from "../i18n/profile.js";
 import {
+  normalizeNotFound,
+  resolveNotFoundOptions,
+} from "../not-found/options.js";
+import {
+  notFoundRouteClaims,
+  validateNotFoundRoutes,
+} from "../not-found/routes.js";
+import {
   prepareRegistry,
   validateBuiltPagePaths,
   validateNativePageRoutes,
@@ -28,6 +36,11 @@ const integrityEntrypoint = new URL(
   "./routes/[...probe].astro",
   import.meta.url,
 );
+const errorVirtualId = "virtual:wpmoo-astro/not-found";
+const resolvedErrorVirtualId = "\0virtual:wpmoo-astro/not-found";
+const errorFacadePath = fileURLToPath(
+  new URL("../not-found/index.js", import.meta.url),
+);
 
 function plainRecord(value) {
   if (value === null || typeof value !== "object" || Array.isArray(value))
@@ -47,11 +60,13 @@ export default function moo(input = {}) {
         "taxonomies",
         "taxonomyBasePath",
         "taxonomyRoutes",
+        "notFound",
       ].includes(key)
     )
       throw new TypeError(`moo.${key} is unsupported`);
   }
   const site = defineSite(input.site);
+  const notFound = normalizeNotFound(input.notFound);
   const plugins = input.plugins ?? [page(), post()];
   const baseRegistry = prepareRegistry(plugins, {
     taxonomies: input.taxonomies,
@@ -62,6 +77,8 @@ export default function moo(input = {}) {
   let registry = baseRegistry;
   const active = plugins.length > 0 || registry.taxonomies.length > 0;
   let context = null;
+  let errorProfile = null;
+  let errorClaims = [];
   let resolvedRoutes = [];
   let root = null;
   let projectionFile = null;
@@ -78,7 +95,8 @@ export default function moo(input = {}) {
       }) => {
         root = config.root;
         commandName = command;
-        const i18n = active ? resolveI18n(config.i18n, site) : null;
+        const i18n = resolveI18n(config.i18n, site);
+        errorClaims = notFoundRouteClaims({ site, i18n, notFound });
         registry = localizeRegistry(baseRegistry, i18n);
         // Content sync starts a temporary Vite server during build and sync.
         // Its optimizer must not replace files used by a running dev server.
@@ -100,9 +118,15 @@ export default function moo(input = {}) {
             entrypoint: route.entrypoint,
             prerender: route.prerender,
           });
-        if (!active) return;
-        updateConfig({ prerenderConflictBehavior: "error" });
-        if (command === "dev") {
+        for (const claim of errorClaims)
+          if (claim.routeOwner === "plugin")
+            injectRoute({
+              pattern: claim.pattern,
+              entrypoint: claim.entrypoint,
+              prerender: true,
+            });
+        if (active) updateConfig({ prerenderConflictBehavior: "error" });
+        if (active && command === "dev") {
           // Save + format-on-save may write twice inside Chokidar's 50ms
           // change throttle. Load native content after the complete save.
           if (
@@ -135,6 +159,16 @@ export default function moo(input = {}) {
               {
                 name: "wpmoo-astro-context",
                 resolveId(source, importer, options) {
+                  if (source === errorVirtualId) {
+                    if (
+                      !options?.ssr ||
+                      importer?.split("?")[0] !== errorFacadePath
+                    )
+                      throw new Error(
+                        `${errorVirtualId} is private and server-only`,
+                      );
+                    return resolvedErrorVirtualId;
+                  }
                   if (source === localeVirtualId) {
                     if (
                       !options?.ssr ||
@@ -155,17 +189,24 @@ export default function moo(input = {}) {
                   return resolvedVirtualId;
                 },
                 load(id) {
+                  if (id === resolvedErrorVirtualId) {
+                    if (!errorProfile)
+                      throw new Error(
+                        `${errorVirtualId} is unavailable before Astro config resolves`,
+                      );
+                    return `export default ${JSON.stringify(errorProfile)};`;
+                  }
                   if (id === resolvedLocaleVirtualId) {
-                    if (!context)
+                    if (!errorProfile)
                       throw new Error(
                         `${localeVirtualId} is unavailable before Astro config resolves`,
                       );
-                    return context.privateData.i18n
+                    return errorProfile.i18n
                       ? 'export { getRelativeLocaleUrl } from "astro:i18n";'
                       : "export const getRelativeLocaleUrl = null;";
                   }
                   if (id !== resolvedVirtualId) return null;
-                  if (!context)
+                  if (!active || !context)
                     throw new Error(
                       `${virtualId} is unavailable before Astro config resolves`,
                     );
@@ -175,13 +216,15 @@ export default function moo(input = {}) {
             ],
           },
         });
-        injectRoute({
-          pattern: "/__moo_content_integrity/[...probe]",
-          entrypoint: integrityEntrypoint,
-          prerender: true,
-        });
+        if (active)
+          injectRoute({
+            pattern: "/__moo_content_integrity/[...probe]",
+            entrypoint: integrityEntrypoint,
+            prerender: true,
+          });
       },
       "astro:routes:resolved": ({ routes }) => {
+        validateNotFoundRoutes(errorClaims, routes, root);
         validateResolvedRoutes(registry, routes);
         if (active) validateNativePageRoutes(routes, integrityEntrypoint, root);
         resolvedRoutes = routes;
@@ -201,7 +244,12 @@ export default function moo(input = {}) {
         if (active) validateBuiltPagePaths(pages, resolvedRoutes);
         if (projectionFile) {
           const expected = JSON.parse(readFileSync(projectionFile, "utf8"));
-          validateExpectedPagePaths(pages, resolvedRoutes, expected);
+          validateExpectedPagePaths(
+            pages,
+            resolvedRoutes,
+            expected,
+            errorClaims.map((claim) => claim.pattern),
+          );
         }
       },
       "astro:config:done": ({ config, injectTypes }) => {
@@ -222,12 +270,25 @@ export default function moo(input = {}) {
               "moo requires Astro prerenderConflictBehavior: error for active content",
             );
           }
-          siteHref("/", {
-            base: config.base,
-            trailingSlash: config.trailingSlash,
-          });
         }
-        const i18n = active ? resolveI18n(config.i18n, site) : null;
+        siteHref("/", {
+          base: config.base,
+          trailingSlash: config.trailingSlash,
+        });
+        const i18n = resolveI18n(config.i18n, site);
+        errorProfile = {
+          site,
+          base: config.base,
+          trailingSlash: config.trailingSlash,
+          i18n,
+          notFound,
+        };
+        for (const locale of i18n?.locales ?? [site.defaults.lang])
+          resolveNotFoundOptions(errorProfile, locale);
+        injectTypes({
+          filename: "not-found-context.d.ts",
+          content: `declare module ${JSON.stringify(errorVirtualId)} { const profile: import("@wpmoo/astro/not-found").NotFoundInput & { site: import("@wpmoo/astro/config").SiteConfig; base: string; trailingSlash: "always" | "never" | "ignore"; i18n: import("@wpmoo/astro/context").SiteContext["i18n"]; notFound: { routeOwner: "plugin" | "host"; messages: Readonly<Record<string, Readonly<Partial<import("@wpmoo/astro/not-found").NotFoundMessages>>>> } }; export default profile; }`,
+        });
         projectionFile =
           active && commandName === "build"
             ? new URL("wpmoo-published-routes.json", config.cacheDir)
@@ -266,6 +327,7 @@ declare module ${JSON.stringify(virtualId)} {
     readonly singlePrefixes: Readonly<Record<string, string>>;
     readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix" }[];
     readonly projectionFile: string | null;
+    readonly errorPatterns: readonly string[];
     readonly archivePaths: readonly { readonly id: string; readonly locale: string; readonly path: string; readonly pattern: string }[];
     readonly singleRoutes: readonly { readonly type: string; readonly locale: string; readonly pattern: string; readonly allowNativeHost: boolean }[];
     readonly resolvedRoutes: readonly { readonly pattern: string; readonly patternRegex: string; readonly regexFlags: string; readonly type: "page"; readonly entrypoint: string; readonly origin: string }[];
@@ -281,6 +343,7 @@ declare module ${JSON.stringify(virtualId)} {
           privateData: {
             root: config.root.href,
             projectionFile: projectionFile?.href ?? null,
+            errorPatterns: errorClaims.map((claim) => claim.pattern),
             archivePaths: registry.routeClaims
               .filter((claim) => !claim.pattern.includes("["))
               .map((claim) => ({

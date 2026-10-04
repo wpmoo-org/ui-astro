@@ -334,3 +334,20 @@ localizedSite.locales!.de.parts!.loop!.emptyText = "Changed";
 languageLinks[0].href = "/missing";
 // @ts-expect-error Unknown Page query preferences are outside the public contract.
 getPublishedPages({ language: "de" });
+
+import {
+  getNotFoundOptions,
+  type NotFoundInput,
+  type NotFoundOptions,
+} from "@wpmoo/astro/not-found";
+const errorInput: NotFoundInput = {
+  routeOwner: "host",
+  messages: { de: { homeLabel: "Zurück", title: undefined } },
+};
+const errorOptions: NotFoundOptions = getNotFoundOptions("de");
+moo({ plugins: [], notFound: errorInput });
+void errorOptions.homeHref;
+// @ts-expect-error Error messages are returned immutable.
+errorOptions.title = "Changed";
+// @ts-expect-error Locale recovery links are returned immutable.
+errorOptions.languageLinks.push({ locale: "fr", href: "/fr" });

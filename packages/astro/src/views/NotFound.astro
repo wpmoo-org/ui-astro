@@ -1,0 +1,33 @@
+---
+import Typography from "../components/Typography.astro";
+import Button from "../components/Button.astro";
+import PageHeader from "../includes/PageHeader.astro";
+import { navigationHref } from "../internal/href.js";
+import type { PartsInput } from "../config/index.js";
+
+interface Props {
+  title: string;
+  description: string;
+  homeLabel: string;
+  homeHref: string;
+  parts?: PartsInput;
+}
+const { title, description, homeLabel, homeHref, parts } = Astro.props;
+navigationHref(homeHref, "NotFound homeHref");
+---
+
+<Typography variant="muted" content="404" />
+{
+  Astro.slots.has("page-header") ? (
+    <slot name="page-header" />
+  ) : (
+    <PageHeader title={title} description={description} parts={parts} />
+  )
+}
+{
+  Astro.slots.has("actions") ? (
+    <slot name="actions" />
+  ) : (
+    <Button element="a" href={homeHref} label={homeLabel} />
+  )
+}

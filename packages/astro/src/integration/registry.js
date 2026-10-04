@@ -385,8 +385,16 @@ export function validateBuiltPagePaths(pages, routes) {
   }
 }
 
-export function validateExpectedRouteOwners(expected, routes) {
+export function validateExpectedRouteOwners(
+  expected,
+  routes,
+  errorPatterns = [],
+) {
   for (const { id, locale, path, pattern, allowNativeHost } of expected) {
+    if (errorPatterns.includes(path.replace(/\/$/u, "")))
+      throw new TypeError(
+        `moo published content ${id} (locale ${locale}) at ${path} uses a reserved native error URL`,
+      );
     const owner = routes.find((route) => {
       if (route.type !== "page") return false;
       const regex =
@@ -407,7 +415,12 @@ export function validateExpectedRouteOwners(expected, routes) {
   }
 }
 
-export function validateExpectedPagePaths(pages, routes, expected) {
+export function validateExpectedPagePaths(
+  pages,
+  routes,
+  expected,
+  errorPatterns = [],
+) {
   const emitted = new Set();
   for (const { pathname } of pages) {
     const path = `/${pathname.replace(/^\//u, "")}`.replace(/\/$/u, "") || "/";
@@ -421,5 +434,5 @@ export function validateExpectedPagePaths(pages, routes, expected) {
         `moo published content ${id} has no emitted route at ${path} (locale ${locale})`,
       );
   }
-  validateExpectedRouteOwners(expected, routes);
+  validateExpectedRouteOwners(expected, routes, errorPatterns);
 }

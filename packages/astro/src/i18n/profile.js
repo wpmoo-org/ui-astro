@@ -50,7 +50,7 @@ export function resolveI18n(native, site) {
     Object.keys(native.fallback ?? {}).length
   ) {
     throw new TypeError(
-      "moo i18n active static content does not support manual routing, domains or automatic fallback pages",
+      "moo i18n content and native errors do not support manual routing, domains or automatic fallback pages",
     );
   }
   if (site.defaults.lang !== native.defaultLocale)

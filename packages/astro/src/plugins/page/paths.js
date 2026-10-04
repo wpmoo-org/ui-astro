@@ -5,7 +5,6 @@ import { entryClassContext } from "../../taxonomies/paths.js";
 import { urlEntry } from "../../i18n/graph.js";
 
 const reservedRoots = new Set([
-  "404",
   "_astro",
   "_server_islands",
   "_actions",
@@ -72,6 +71,10 @@ function pagePath(entry, options, mounts) {
   if (parts.at(-1) === "index") parts.pop();
   const slug = parts.join("/");
   const href = slug ? `/${slug}` : "/";
+  if (href === "/404")
+    throw new TypeError(
+      `Page entry ${entry.id} uses reserved namespace ${href}`,
+    );
   const root = parts[0];
   if (reservedRoots.has(root))
     throw new TypeError(

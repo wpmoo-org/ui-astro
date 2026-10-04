@@ -363,7 +363,11 @@ export async function validateSiteContent() {
     }
   }
   if (context.resolvedRoutes.length)
-    validateExpectedRouteOwners(expected, context.resolvedRoutes);
+    validateExpectedRouteOwners(
+      expected,
+      context.resolvedRoutes,
+      context.errorPatterns,
+    );
   if (context.projectionFile) {
     const target = new URL(context.projectionFile);
     await mkdir(new URL("./", target), { recursive: true });

@@ -38,3 +38,23 @@ const paths: Promise<TaxonomyPath[]> = getTaxonomyPaths({
   locale: "en",
 });
 void paths;
+
+moo({
+  notFound: { routeOwner: "plugin", messages: { de: { title: "Fehler" } } },
+});
+moo({
+  notFound: {
+    // @ts-expect-error Native errors have only plugin or host ownership.
+    routeOwner: "theme",
+  },
+});
+moo({
+  notFound: {
+    messages: {
+      de: {
+        // @ts-expect-error Error messages use the published finite fields.
+        heading: "Fehler",
+      },
+    },
+  },
+});

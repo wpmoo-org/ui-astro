@@ -321,3 +321,20 @@ getPublishedPages({ language: "de" });
 import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
 const rootPaths: Promise<RootPath[]> = getRootPaths({ locale: "de" });
 void rootPaths;
+
+import {
+  getNotFoundOptions,
+  type NotFoundInput,
+  type NotFoundOptions,
+} from "@wpmoo/astro/not-found";
+const errorInput: NotFoundInput = {
+  routeOwner: "host",
+  messages: { de: { homeLabel: "Zurück", title: undefined } },
+};
+const errorOptions: NotFoundOptions = getNotFoundOptions("de");
+moo({ plugins: [], notFound: errorInput });
+void errorOptions.homeHref;
+// @ts-expect-error Error messages are returned immutable.
+errorOptions.title = "Changed";
+// @ts-expect-error Locale recovery links are returned immutable.
+errorOptions.languageLinks.push({ locale: "fr", href: "/fr" });

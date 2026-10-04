@@ -65,6 +65,35 @@ The required matrix is:
    root tag and custom sector prefixes in a single-language site.
 10. `content-editing`: CMS-free Markdown and flat JSON directories, stable
     identity, native references and host-owned finite section data.
+11. `not-found`: default English/German native error pages without collections.
+12. `not-found-host`: explicit host ownership, copy overrides and public slots.
+
+The two error profiles and additional literal errors are the current unpublished
+candidate. Historical ten-profile certification does not cover these new bytes.
+
+## Native error contract
+
+Every integration registers native root and configured locale 404 pages by
+default, even with content plugins disabled. `notFound.routeOwner: "host"`
+requires one prerendered literal project page at each error pattern instead.
+The root fallback always exists, including a prefixed default language.
+Page/term URLs cannot take an error address; neighboring `/404/child` content
+remains valid. Error preferences inherit Page single options and Layout owns
+the content inset.
+
+`getNotFoundOptions` is server-only and collection-free. Each message field
+resolves requested project copy, requested built-in copy, main-language
+project/built-in copy, then English. Fallback copy keeps the selected locale
+and recovery URL. The same certified string-locale profile applies when
+content is disabled; manual routing, alias objects, domains and automatic
+fallback pages require separate certification. Recovery uses canonical host
+base/slash rules, including UI-only integration hosts.
+
+Error Layouts use `metadata: null`: no canonical, translation alternates,
+Open Graph, Twitter or JSON-LD are asserted for a nonexistent page. Generation
+does not prove HTTP 404, unknown-request handling or locale error selection on
+a static deployment. Those depend on native runtime/static-host behavior;
+rendered acceptance and real HTTP checks remain separate gates.
 
 The preceding RC9 candidate ran all ten on Linux ARM64 Node 22.23.2 and
 26.8.1, using immutable identities of existing local images. Its parent proof

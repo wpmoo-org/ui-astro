@@ -96,6 +96,10 @@
     "src/integration/views/Taxonomy.astro",
     "src/internal/href.js",
     "src/layouts/Layout.astro",
+    "src/not-found/index.d.ts",
+    "src/not-found/index.js",
+    "src/not-found/options.js",
+    "src/not-found/routes.js",
     "src/plugins/index.d.ts",
     "src/plugins/index.js",
     "src/plugins/page/content.d.ts",
@@ -137,6 +141,7 @@
     "src/taxonomies/urls.js",
     "src/views/Archive.astro",
     "src/views/Loop.astro",
+    "src/views/NotFound.astro",
     "src/views/Single.astro"
   ],
   "exports": {
@@ -218,7 +223,9 @@
     "./taxonomies/content": "./src/taxonomies/content.js",
     "./taxonomies/queries": "./src/taxonomies/queries.js",
     "./seo": "./src/seo/index.js",
-    "./i18n": "./src/i18n/index.js"
+    "./i18n": "./src/i18n/index.js",
+    "./not-found": "./src/not-found/index.js",
+    "./views/NotFound.astro": "./src/views/NotFound.astro"
   },
   "dependencies": {
     "@wpmoo/ui": "1.0.0",

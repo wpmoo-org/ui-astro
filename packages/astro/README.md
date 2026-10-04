@@ -65,6 +65,20 @@ The Sidebar's `id` must match `sidebarId`. Omit the Sidebar prop and slot for a
 page without one. Layout owns the shared CSS, runtime and content spacing;
 the site supplies its content and configuration.
 
+## Native 404
+
+Register `moo()` to receive the default native 404, including configured locale
+errors. It also works with `moo({ plugins: [] })` without content collections.
+Partial `notFound.messages` dictionaries replace individual English/German
+defaults; missing fields fall back to the main language, then English.
+
+For a theme override, select `notFound: { routeOwner: "host" }` and provide each
+required native `404.astro`. Use `getNotFoundOptions(Astro.currentLocale)` from
+`@wpmoo/astro/not-found`, the public `views/NotFound.astro` and Layout with
+`metadata={null}`. The view exposes `page-header` and `actions` slots and inherits
+shared Page single preferences. A static host must serve the generated error
+document with HTTP 404 and configure locale error selection separately.
+
 ## Documentation
 
 - [Package guide](https://github.com/wpmoo-org/ui-astro/blob/main/docs/guide.md):
