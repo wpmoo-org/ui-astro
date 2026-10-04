@@ -159,7 +159,10 @@ export default function moo(input = {}) {
               {
                 name: "wpmoo-astro-context",
                 resolveId(source, importer, options) {
-                  if (source === errorVirtualId) {
+                  if (
+                    source === errorVirtualId ||
+                    source === resolvedErrorVirtualId
+                  ) {
                     if (
                       !options?.ssr ||
                       importer?.split("?")[0] !== errorFacadePath
@@ -169,7 +172,10 @@ export default function moo(input = {}) {
                       );
                     return resolvedErrorVirtualId;
                   }
-                  if (source === localeVirtualId) {
+                  if (
+                    source === localeVirtualId ||
+                    source === resolvedLocaleVirtualId
+                  ) {
                     if (
                       !options?.ssr ||
                       importer?.split("?")[0] !== localeFacadePath
@@ -179,7 +185,8 @@ export default function moo(input = {}) {
                       );
                     return resolvedLocaleVirtualId;
                   }
-                  if (source !== virtualId) return null;
+                  if (source !== virtualId && source !== resolvedVirtualId)
+                    return null;
                   if (!options?.ssr)
                     throw new Error(`${virtualId} is server-only`);
                   if (importer?.split("?")[0] !== facadePath)
@@ -188,7 +195,18 @@ export default function moo(input = {}) {
                     );
                   return resolvedVirtualId;
                 },
-                load(id) {
+                load(id, options) {
+                  if (
+                    [
+                      resolvedErrorVirtualId,
+                      resolvedLocaleVirtualId,
+                      resolvedVirtualId,
+                    ].includes(id) &&
+                    !options?.ssr
+                  )
+                    throw new Error(
+                      `${id.slice(1)} is private and server-only`,
+                    );
                   if (id === resolvedErrorVirtualId) {
                     if (!errorProfile)
                       throw new Error(

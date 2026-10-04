@@ -222,7 +222,7 @@ test("error_context_has_no_content_import", () => {
     ),
     { ssr: true },
   );
-  const source = state.guard.load(id);
+  const source = state.guard.load(id, { ssr: true });
   assert.doesNotMatch(
     source,
     /content\.config|astro:content|import |collections/,
@@ -234,7 +234,7 @@ test("error_context_has_no_content_import", () => {
   assert.equal(data.base, "/site");
   assert.deepEqual(data.i18n.locales, ["en", "de"]);
   assert.throws(
-    () => state.guard.load("\0virtual:wpmoo-astro/routes"),
+    () => state.guard.load("\0virtual:wpmoo-astro/routes", { ssr: true }),
     /inactive|unavailable/,
   );
 });
@@ -276,8 +276,31 @@ test("private_error_context_requires_exact_ssr_facade", () => {
     .flatMap((value) => value.vite?.plugins ?? [])
     .find((plugin) => plugin.name === "wpmoo-astro-context");
   assert.throws(
-    () => guard.load("\0virtual:wpmoo-astro/not-found"),
+    () => guard.load("\0virtual:wpmoo-astro/not-found", { ssr: true }),
     /before Astro config resolves/,
+  );
+});
+test("resolved_private_profiles_reject_client_loading", () => {
+  const state = configured();
+  for (const name of ["not-found", "i18n", "routes"]) {
+    const source = `virtual:wpmoo-astro/${name}`;
+    const resolved = `\0${source}`;
+    for (const options of [{ ssr: false }, undefined]) {
+      assert.throws(() => state.guard.load(resolved, options), /server-only/);
+    }
+    assert.throws(
+      () => state.guard.resolveId(resolved, "/tmp/client.js", { ssr: false }),
+      /server-only/,
+    );
+    assert.throws(
+      () => state.guard.resolveId(resolved, "/tmp/spoof.js", { ssr: true }),
+      /private/,
+    );
+  }
+  assert.equal(state.guard.load("unrelated-module", { ssr: false }), null);
+  assert.match(
+    state.guard.load("\0virtual:wpmoo-astro/not-found", { ssr: true }),
+    /^export default /,
   );
 });
 test("error_owners_cannot_be_borrowed_by_published_content", () => {
