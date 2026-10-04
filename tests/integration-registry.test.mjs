@@ -4,10 +4,12 @@ import test from "node:test";
 import {
   buildRegistry,
   validateResolvedRoutes,
+  validateExpectedPagePaths,
 } from "../packages/astro/src/integration/registry.js";
 import { definePlugin } from "../packages/astro/src/plugins/index.js";
 import { page } from "../packages/astro/src/plugins/page/index.js";
 import moo from "../packages/astro/src/integration/index.js";
+import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
 test("omitted plugin selection registers Page and Post, while an explicit list replaces it", () => {
   for (const [input, expected] of [
@@ -50,10 +52,7 @@ function external(id, basePath, { collection = id, type = id } = {}) {
         singleRoute: "single",
         source: {
           kind: "json-directory",
-          base: new URL(
-            "../apps/consumer/src/content/page/",
-            import.meta.url,
-          ),
+          base: new URL("../apps/consumer/src/content/page/", import.meta.url),
         },
       },
     ],
@@ -345,5 +344,92 @@ test("UI-only composition owns its output mode, base, and route policy", () => {
         prerenderConflictBehavior: "warn",
       }),
     }),
+  );
+});
+
+test("root archive ownership rejects an undeclared dynamic companion but permits unclaimed native pages", () => {
+  const taxonomy = defineTaxonomy({
+    id: "tag",
+    label: "Tags",
+    source: new URL("./fixtures/tag.json", import.meta.url),
+    archive: { basePath: "/" },
+  });
+  const registry = buildRegistry([page()], { taxonomies: [taxonomy] });
+  const root = {
+    pattern: "/[...slug]",
+    origin: "external",
+    isPrerendered: true,
+    type: "page",
+  };
+  assert.doesNotThrow(() =>
+    validateResolvedRoutes(registry, [
+      root,
+      { ...root, pattern: "/native", origin: "project" },
+    ]),
+  );
+  assert.throws(
+    () =>
+      validateResolvedRoutes(registry, [
+        root,
+        {
+          ...root,
+          pattern: "/[slug]",
+          origin: "project",
+          entrypoint: "src/pages/[slug].astro",
+        },
+      ]),
+    /root.*conflict.*\[slug\]|\[slug\].*conflict.*root/,
+  );
+});
+
+test("emitted canonical inventory requires its declared owner and all outputs", () => {
+  const expected = [
+    {
+      id: "category/layouts",
+      locale: "en",
+      path: "/layouts",
+      pattern: "/[...slug]",
+    },
+  ];
+  const root = {
+    pattern: "/[...slug]",
+    type: "page",
+    origin: "external",
+    patternRegex: /^\/(.*?)\/?$/,
+    entrypoint: "root.astro",
+  };
+  assert.doesNotThrow(() =>
+    validateExpectedPagePaths([{ pathname: "layouts/" }], [root], expected),
+  );
+  assert.throws(
+    () => validateExpectedPagePaths([], [root], expected),
+    /category\/layouts.*no emitted route.*\/layouts/,
+  );
+  assert.throws(
+    () =>
+      validateExpectedPagePaths(
+        [{ pathname: "layouts/" }],
+        [
+          {
+            ...root,
+            pattern: "/layouts",
+            patternRegex: /^\/layouts\/?$/,
+            origin: "project",
+            entrypoint: "src/pages/layouts.astro",
+          },
+          root,
+        ],
+        expected,
+      ),
+    /category\/layouts.*en.*conflict.*layouts\.astro/,
+  );
+  assert.throws(
+    () =>
+      validateExpectedPagePaths(
+        [{ pathname: "layouts/" }, { pathname: "layouts" }],
+        [root],
+        expected,
+      ),
+    /multiple.*\/layouts/,
   );
 });

@@ -278,6 +278,26 @@ const { entry } = Astro.props;
         result, _ = self.render(files, host=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_host_archive_cannot_omit_terms_at_a_localized_prefix(self):
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/kategorie"').replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+        route = '''---
+import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
+export function getStaticPaths({ routePattern }) { return getTaxonomyPaths({ routePattern }); }
+---
+<h1>Host archive</h1>'''
+        files["src/pages/c/[slug].astro"] = route
+        files["src/pages/de/c/[slug].astro"] = route
+        files["src/pages/de/kategorie/[slug].astro"] = route.replace('return getTaxonomyPaths({ routePattern });', 'return [];')
+        config = configuration(base="/docs", slash="never").replace('], taxonomies })', '], taxonomies, taxonomyRoutes: { archive: "host" } })')
+        result, _ = self.build(None, configuration=config, files=files, config_imports=CONFIG_IMPORTS)
+        self.assertNotEqual(result.returncode, 0)
+        for evidence in ["category/child/de", "/de/kategorie/aepfel", "locale de", "no emitted route"]:
+            self.assertIn(evidence, result.stdout + result.stderr)
+        files["src/pages/de/kategorie/[slug].astro"] = route
+        valid, _ = self.build(None, configuration=config, files=files, config_imports=CONFIG_IMPORTS)
+        self.assertEqual(valid.returncode, 0, valid.stdout + valid.stderr)
+
     def test_each_real_locale_boundary_has_its_own_failure(self):
         cases = [
             ('locale: de', 'locale: fr', 'locale fr is not active'),
@@ -407,3 +427,7 @@ export const GET = async () => {
                         local_path = url.removeprefix(prefix).removesuffix("/")
                         self.assertIn(local_path + "/index.html", result.generated_html)
                     self.assertFalse(any("pending" in url or "missing" in url for url in actual))
+
+
+if __name__ == "__main__":
+    unittest.main()

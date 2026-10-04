@@ -5,12 +5,13 @@ import { defineSite } from "../config/index.js";
 import { siteHref } from "../content/paths.js";
 import { page } from "../plugins/page/index.js";
 import { post } from "../plugins/post/index.js";
-import { localizeRegistry, resolveI18n } from "../i18n/profile.js";
+import { localePath, localizeRegistry, resolveI18n } from "../i18n/profile.js";
 import {
   buildRegistry,
   validateBuiltPagePaths,
   validateNativePageRoutes,
   validateResolvedRoutes,
+  validateExpectedPagePaths,
 } from "./registry.js";
 
 const virtualId = "virtual:wpmoo-astro/routes";
@@ -184,23 +185,22 @@ export default function moo(input = {}) {
         validateResolvedRoutes(registry, routes);
         if (active) validateNativePageRoutes(routes, integrityEntrypoint, root);
         resolvedRoutes = routes;
+        if (context)
+          context.privateData.resolvedRoutes = routes
+            .filter((route) => route.type === "page")
+            .map((route) => ({
+              pattern: route.pattern,
+              patternRegex: route.patternRegex.source,
+              regexFlags: route.patternRegex.flags,
+              type: route.type,
+              entrypoint: route.entrypoint,
+            }));
       },
       "astro:build:done": ({ pages }) => {
         if (active) validateBuiltPagePaths(pages, resolvedRoutes);
         if (projectionFile) {
           const expected = JSON.parse(readFileSync(projectionFile, "utf8"));
-          const emitted = new Set(
-            pages.map(
-              ({ pathname }) =>
-                `/${pathname.replace(/^\//u, "")}`.replace(/\/$/u, "") || "/",
-            ),
-          );
-          for (const { id, path } of expected) {
-            if (!emitted.has(path))
-              throw new TypeError(
-                `moo published content ${id} has no emitted route at ${path}`,
-              );
-          }
+          validateExpectedPagePaths(pages, resolvedRoutes, expected);
         }
       },
       "astro:config:done": ({ config, injectTypes }) => {
@@ -228,7 +228,7 @@ export default function moo(input = {}) {
         }
         const i18n = active ? resolveI18n(config.i18n, site) : null;
         projectionFile =
-          i18n && commandName === "build"
+          active && commandName === "build"
             ? new URL("wpmoo-published-routes.json", config.cacheDir)
             : null;
         const files = [
@@ -265,7 +265,9 @@ declare module ${JSON.stringify(virtualId)} {
     readonly singlePrefixes: Readonly<Record<string, string>>;
     readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix" }[];
     readonly projectionFile: string | null;
-    readonly archivePaths: readonly string[];
+    readonly archivePaths: readonly { readonly id: string; readonly locale: string; readonly path: string; readonly pattern: string }[];
+    readonly singleRoutes: readonly { readonly type: string; readonly locale: string; readonly pattern: string }[];
+    readonly resolvedRoutes: readonly { readonly pattern: string; readonly patternRegex: string; readonly regexFlags: string; readonly type: "page"; readonly entrypoint: string }[];
     readonly taxonomyGroups: readonly { readonly pattern: string; readonly root: boolean; readonly taxonomies: readonly string[]; readonly routeOwner: "plugin" | "host"; readonly locale?: string }[];
   };
   export const collections: Record<string, ReturnType<typeof import("astro:content").defineCollection>>;
@@ -280,7 +282,33 @@ declare module ${JSON.stringify(virtualId)} {
             projectionFile: projectionFile?.href ?? null,
             archivePaths: registry.routeClaims
               .filter((claim) => !claim.pattern.includes("["))
-              .map((claim) => claim.pattern),
+              .map((claim) => ({
+                id: `${claim.owner}/archive`,
+                locale: claim.locale ?? site.defaults.lang,
+                path: claim.pattern,
+                pattern: claim.pattern,
+              })),
+            resolvedRoutes: [],
+            singleRoutes: plugins.flatMap((plugin) =>
+              plugin.contentTypes.flatMap((type) =>
+                (i18n?.locales ?? [site.defaults.lang]).map((locale) => {
+                  const prefix =
+                    plugin.locales?.[locale]?.basePath ?? plugin.basePath;
+                  const route = plugin.routes.find(
+                    (route) => route.id === type.singleRoute,
+                  );
+                  return {
+                    type: type.id,
+                    locale,
+                    pattern: localePath(
+                      `${prefix === "/" ? "" : prefix}${route.pattern}`,
+                      locale,
+                      i18n,
+                    ),
+                  };
+                }),
+              ),
+            ),
             i18n,
             singlePrefixes: Object.fromEntries(
               plugins.flatMap((plugin) =>

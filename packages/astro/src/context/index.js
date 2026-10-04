@@ -1,4 +1,8 @@
-import { taxonomyNamespaces, taxonomyTermPath } from "../taxonomies/urls.js";
+import {
+  resolveTaxonomyArchive,
+  taxonomyNamespaces,
+  taxonomyTermPath,
+} from "../taxonomies/urls.js";
 import context, { collections } from "virtual:wpmoo-astro/routes";
 import { mkdir, writeFile } from "node:fs/promises";
 import {
@@ -19,6 +23,7 @@ import { validateReferences, validateTerms } from "../taxonomies/paths.js";
 import { entryLocale, translationGraph, urlEntry } from "../i18n/graph.js";
 import { localePath, validateLocaleKeys } from "../i18n/profile.js";
 import { nativeLocaleHref } from "../i18n/href.js";
+import { validateExpectedRouteOwners } from "../integration/registry.js";
 
 function freezeData(value) {
   if (value !== null && typeof value === "object") {
@@ -262,53 +267,103 @@ export async function validateSiteContent() {
     getEntryHref,
   );
   const claimed = new Map();
-  const expected = context.archivePaths.map((path) => ({
-    id: "archive",
-    path,
-  }));
+  const expected = [];
+  const mount = context.base.replace(/\/$/u, "");
+  function claim(record, href, label, emit = true) {
+    const previous = claimed.get(href);
+    if (previous)
+      throw new TypeError(
+        `${label} URL collision (locale ${record.locale}): ${previous.id} and ${record.id} both map to ${href}`,
+      );
+    claimed.set(href, record);
+    if (emit) expected.push(record);
+  }
+  for (const record of context.archivePaths)
+    claim(record, siteHref(record.path, context), "archive");
   for (const type of context.plugins.flatMap((plugin) => plugin.contentTypes)) {
     const entries = loaded.get(type.collection);
     validateReferences(type, entries, terms);
-    if (!context.i18n && (type.id === "page" || type.id === "post")) continue;
     for (const entry of entries) {
       const href = entryHref(type.id, entry);
       if (entry.data.status !== "publish" && entry.data.status !== "future")
         continue;
-      const previous = claimed.get(href);
-      if (previous)
-        throw new TypeError(
-          `${type.id} URL collision: ${previous} and ${entry.id} both map to ${href}`,
-        );
-      claimed.set(href, `${type.id}/${entry.id}`);
-      if (entry.data.status === "publish") {
-        const mount = context.base.replace(/\/$/u, "");
-        expected.push({
+      const locale = entryLocale(
+        entry,
+        context.i18n,
+        context.site.defaults.lang,
+      );
+      const route = context.singleRoutes.find(
+        (route) => route.type === type.id && route.locale === locale,
+      );
+      claim(
+        {
           id: `${type.id}/${entry.id}`,
+          locale,
           path: href.slice(mount.length).replace(/\/$/u, "") || "/",
+          pattern: route.pattern,
+        },
+        href,
+        type.id,
+        entry.data.status === "publish",
+      );
+    }
+  }
+  for (const taxonomy of context.taxonomies.filter((item) => item.archive)) {
+    for (const locale of context.i18n?.locales ?? [
+      context.site.defaults.lang,
+    ]) {
+      const archive = resolveTaxonomyArchive(taxonomy, {
+        lang: locale,
+        taxonomyBasePath: context.taxonomyBasePath,
+      });
+      for (const term of validateTerms(taxonomy, loaded.get(taxonomy.id), {
+        lang: locale,
+      }).values()) {
+        const localPath = taxonomyTermPath(taxonomy, term, {
+          lang: locale,
+          taxonomyBasePath: context.taxonomyBasePath,
         });
+        if (archive.root) {
+          const label = `${taxonomy.id}/${term.id} (locale ${locale})`;
+          const raw = term.locales?.[locale]?.slug ?? term.slug;
+          if (
+            [
+              "404",
+              "_astro",
+              "_server_islands",
+              "_actions",
+              "__moo_content_integrity",
+            ].includes(raw.toLowerCase()) ||
+            localPath === "/404"
+          )
+            throw new TypeError(`${label} uses reserved root URL ${localPath}`);
+          for (const namespace of reservedPrefixes(null, locale)) {
+            if (
+              localPath === namespace ||
+              localPath.startsWith(`${namespace}/`)
+            )
+              throw new TypeError(
+                `${label} maps to ${localPath} inside reserved namespace ${namespace}`,
+              );
+          }
+        }
+        const path = localePath(localPath, locale, context.i18n);
+        claim(
+          {
+            id: `${taxonomy.id}/${term.id}/${locale}`,
+            locale,
+            path,
+            pattern: localePath(archive.pattern, locale, context.i18n),
+          },
+          siteHref(path, context),
+          taxonomy.id,
+        );
       }
     }
   }
+  if (context.resolvedRoutes.length)
+    validateExpectedRouteOwners(expected, context.resolvedRoutes);
   if (context.projectionFile) {
-    for (const taxonomy of context.taxonomies.filter((item) => item.archive)) {
-      for (const locale of context.i18n.locales) {
-        for (const term of validateTerms(taxonomy, loaded.get(taxonomy.id), {
-          lang: locale,
-        }).values()) {
-          expected.push({
-            id: `${taxonomy.id}/${term.id}/${locale}`,
-            path: localePath(
-              taxonomyTermPath(taxonomy, term, {
-                lang: locale,
-                taxonomyBasePath: context.taxonomyBasePath,
-              }),
-              locale,
-              context.i18n,
-            ),
-          });
-        }
-      }
-    }
     const target = new URL(context.projectionFile);
     await mkdir(new URL("./", target), { recursive: true });
     await writeFile(target, JSON.stringify(expected));

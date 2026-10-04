@@ -297,6 +297,32 @@ export function validateResolvedRoutes(registry, resolved) {
       );
     }
   }
+  for (const group of registry.taxonomyGroups) {
+    const prefix = group.pattern.slice(0, group.pattern.indexOf("["));
+    for (const route of resolved) {
+      if (
+        route.type !== "page" ||
+        route.origin === "internal" ||
+        route.pattern === group.pattern
+      )
+        continue;
+      if (group.root) {
+        if (
+          route.pattern.startsWith(prefix) &&
+          /^\[(?:\.\.\.)?[^\]]+\]$/u.test(route.pattern.slice(prefix.length))
+        )
+          throw new TypeError(
+            `moo root route ${group.pattern} conflicts with undeclared native owner ${route.entrypoint} (${route.pattern})`,
+          );
+      } else {
+        const namespace = prefix.replace(/\/$/u, "");
+        if (insideNamespace(route.pattern, namespace))
+          throw new TypeError(
+            `moo taxonomy namespace ${namespace} conflicts with native owner ${route.entrypoint} (${route.pattern})`,
+          );
+      }
+    }
+  }
 }
 
 export function validateNativePageRoutes(routes, integrityEntrypoint, root) {
@@ -341,4 +367,40 @@ export function validateBuiltPagePaths(pages, routes) {
       );
     }
   }
+}
+
+export function validateExpectedRouteOwners(expected, routes) {
+  for (const { id, locale, path, pattern } of expected) {
+    const owner = routes.find((route) => {
+      if (route.type !== "page") return false;
+      const regex =
+        typeof route.patternRegex === "string"
+          ? new RegExp(route.patternRegex, route.regexFlags)
+          : route.patternRegex;
+      // The inventory uses normalized output paths; Astro's public regex
+      // follows trailingSlash and may require the directory slash.
+      return regex?.test(path) || regex?.test(`${path.replace(/\/$/u, "")}/`);
+    });
+    if (owner?.pattern !== pattern)
+      throw new TypeError(
+        `moo published content ${id} (locale ${locale}) at ${path} has an owner conflict: expected ${pattern}, resolved ${owner?.entrypoint ?? "(no page owner)"} (${owner?.pattern ?? "none"})`,
+      );
+  }
+}
+
+export function validateExpectedPagePaths(pages, routes, expected) {
+  const emitted = new Set();
+  for (const { pathname } of pages) {
+    const path = `/${pathname.replace(/^\//u, "")}`.replace(/\/$/u, "") || "/";
+    if (emitted.has(path))
+      throw new TypeError(`moo multiple emitted page owners at ${path}`);
+    emitted.add(path);
+  }
+  for (const { id, locale, path } of expected) {
+    if (!emitted.has(path))
+      throw new TypeError(
+        `moo published content ${id} has no emitted route at ${path} (locale ${locale})`,
+      );
+  }
+  validateExpectedRouteOwners(expected, routes);
 }

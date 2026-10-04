@@ -374,6 +374,95 @@ const sample = definePlugin({ apiVersion: 1, id: "projects", label: "Projects", 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.generated_html, {})
 
+    def test_root_collision_names_both_sources(self):
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"').replace('slug: "kategorie"', 'basePath: "/"')
+        terms = json.loads(files["src/data/category.json"])
+        terms[0]["slug"] = "layouts"
+        files["src/data/category.json"] = json.dumps(terms)
+        files["src/content/page/en/layouts.md"] = "---\ntitle: Layouts\nstatus: publish\nlocale: en\n---\nLayouts body.\n"
+        result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration(base="/docs", slash="always"))
+        self.assertNotEqual(result.returncode, 0)
+        output = result.stdout + result.stderr
+        for evidence in ["URL collision", "locale en", "/docs/layouts/", "page/en/layouts.md", "category/root"]:
+            self.assertIn(evidence, output)
+
+    def test_archive_collisions_across_generic_taxonomies_and_locale_normalization(self):
+        for first, second in [("category", "tag"), ("category", "sector"), ("tag", "sector")]:
+            with self.subTest(first=first, second=second):
+                files = taxonomy_files()
+                files["src/definitions.mjs"] += '\nexport const sector = defineTaxonomy({ id: "sector", label: "Sectors", source: new URL("./data/sector.json", import.meta.url), archive: { basePath: "/c" } });\ntaxonomies.push(sector);\n'
+                files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+                for taxonomy in ["category", "tag", "sector"]:
+                    files[f"src/data/{taxonomy}.json"] = json.dumps([{"id": "collision", "name": taxonomy, "slug": "same" if taxonomy in [first, second] else "different"}])
+                result, _ = self.taxonomy_build(files, configuration='integrations: [moo({ plugins: [], taxonomies })]')
+                self.assertNotEqual(result.returncode, 0)
+                output = result.stdout + result.stderr
+                for evidence in ["locale en", "/c/same", f"{first}/collision", f"{second}/collision"]:
+                    self.assertIn(evidence, output)
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/"')
+        terms = json.loads(files["src/data/tag.json"])
+        terms[0]["locales"] = {"de": {"slug": "Aepfel"}}
+        files["src/data/tag.json"] = json.dumps(terms)
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('label: "Tags",', 'label: "Tags", locales: { de: { basePath: "/" } },')
+        result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration())
+        self.assertNotEqual(result.returncode, 0)
+        for evidence in ["locale de", "/de/aepfel", "category/child", "tag/astro"]:
+            self.assertIn(evidence, result.stdout + result.stderr)
+
+    def test_root_terms_reject_reserved_and_selected_plugin_namespaces(self):
+        for slug, diagnostic in [("404", "reserved"), ("posts", "namespace /posts")]:
+            with self.subTest(slug=slug):
+                files = taxonomy_files()
+                files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"')
+                terms = json.loads(files["src/data/category.json"])
+                terms[0]["slug"] = slug
+                files["src/data/category.json"] = json.dumps(terms)
+                result, _ = self.taxonomy_build(files)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("category/root", result.stdout + result.stderr)
+                self.assertIn(diagnostic, result.stdout + result.stderr)
+
+    def test_native_archive_companions_have_explicit_owner_diagnostics(self):
+        for filename, archive_base, diagnostic in [("parent.astro", "/", "category/root"), ("[slug].astro", "/", "root"), ("c/native.astro", "/c", "namespace /c")]:
+            with self.subTest(filename=filename):
+                files = taxonomy_files()
+                files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', f'include: "descendants", basePath: "{archive_base}"')
+                files[f"src/pages/{filename}"] = ('---\nexport function getStaticPaths() { return [{ params: { slug: "unrelated" } }]; }\n---\n' if "[" in filename else "") + "<h1>Native</h1>"
+                result, _ = self.taxonomy_build(files)
+                self.assertNotEqual(result.returncode, 0)
+                output = result.stdout + result.stderr
+                self.assertIn(diagnostic, output)
+                self.assertIn(filename, output)
+                self.assertRegex(output, r"[Cc]onflict")
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"')
+        files["src/pages/native.astro"] = "<h1>Unclaimed native page</h1>"
+        valid, _ = self.taxonomy_build(files)
+        self.assertEqual(valid.returncode, 0, valid.stdout + valid.stderr)
+        self.assertIn("native/index.html", valid.generated_html)
+
+    def test_single_language_host_cannot_omit_taxonomy_or_page_output(self):
+        for missing in ["taxonomy", "page"]:
+            with self.subTest(missing=missing):
+                files = taxonomy_files()
+                if missing == "taxonomy":
+                    files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+                    files["src/pages/c/[slug].astro"] = "---\nexport function getStaticPaths() { return []; }\n---\n<h1>Missing archive</h1>"
+                    config = 'integrations: [moo({ plugins: [page({ taxonomies: bindings }), post({ taxonomies: bindings })], taxonomies, taxonomyRoutes: { archive: "host" } })]'
+                    evidence = ["category/child", "locale en", "no emitted route at /c/child"]
+                else:
+                    files["src/pages/[...slug].astro"] = "---\nexport function getStaticPaths() { return []; }\n---\n<h1>Missing Page</h1>"
+                    config = 'integrations: [moo({ plugins: [page({ routes: { single: "host" }, taxonomies: bindings }), post({ taxonomies: bindings })], taxonomies })]'
+                    evidence = ["page/contact.md", "locale en", "no emitted route at /contact"]
+                result, _ = self.taxonomy_build(files, configuration=config)
+                self.assertNotEqual(result.returncode, 0)
+                for value in evidence:
+                    self.assertIn(value, result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
