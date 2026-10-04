@@ -36,6 +36,37 @@ class ExternalPluginConsumer(unittest.TestCase):
     def tearDownClass(cls):
         native.PublicComponentRendering.tearDownClass.__func__(cls)
 
+    def test_projects_definition_owns_single_urls_in_both_languages(self):
+        root = FIXTURES / "project-routes"
+        self.assertTrue((root / "src/definitions.mjs").is_file(), "Projects fixture is absent")
+        original = {str(path.relative_to(root)): path.read_text(encoding="utf-8")
+                    for path in root.rglob("*") if path.is_file()}
+        for base, slash, suffix in [("/", "never", ""), ("/docs", "always", "/")]:
+            expected = {"en": ("" if base == "/" else base) + "/project/test-project" + suffix,
+                        "de": ("" if base == "/" else base) + "/de/projekt/test-projekt" + suffix}
+            for memberships in [False, True]:
+                with self.subTest(base=base, memberships=memberships):
+                    files = original.copy()
+                    files["astro.config.mjs"] = files["astro.config.mjs"].replace('base: "/"', f'base: "{base}"').replace('trailingSlash: "never"', f'trailingSlash: "{slash}"')
+                    if memberships:
+                        for locale in ["en", "de"]:
+                            filename = f"src/content/project/{locale}/test.md"
+                            files[filename] = files[filename].replace("status: publish", "status: publish\ntaxonomies:\n  category: [guides, layouts]\n  tag: [astro]")
+                    result, _ = self.build(None, files=files, check=True)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertEqual(set(result.generated_html), {"project/test-project/index.html", "de/projekt/test-projekt/index.html"})
+                    contract = json.loads(result.generated_data["contract.json"])
+                    self.assertEqual({entry["id"]: entry["href"] for entry in contract},
+                                     {"en/test.md": expected["en"], "de/test.md": expected["de"]})
+                    for locale, filename in [("en", "project/test-project/index.html"), ("de", "de/projekt/test-projekt/index.html")]:
+                        parser = native.Markup()
+                        parser.feed(result.generated_html[filename])
+                        self.assertIn(("link", {"rel": "canonical", "href": "https://example.test" + expected[locale]}), parser.elements)
+                        self.assertEqual({attrs["hreflang"]: attrs["href"] for tag, attrs in parser.elements
+                                          if tag == "link" and attrs.get("rel") == "alternate"},
+                                         {language: "https://example.test" + href for language, href in expected.items()})
+                        self.assertEqual(sum(tag == "main" for tag, _ in parser.elements), 1)
+
     def packed_plugin(self):
         self.assertTrue((PACKAGE / "package.json").is_file(), "The separate sample package has not been implemented")
         temporary = tempfile.TemporaryDirectory(prefix="astro-external-archive-")

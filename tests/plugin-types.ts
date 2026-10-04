@@ -13,19 +13,60 @@ const input: PluginInput = {
   id: "sample",
   label: "Sample",
   basePath: "/sample",
-  contentTypes: [{ id: "entry", collection: "entry", singleRoute: "single", source }],
-  routes: [{ id: "single", pattern: "/[...slug]", prerender: true, entrypoint: route }],
+  contentTypes: [
+    { id: "entry", collection: "entry", singleRoute: "single", source },
+  ],
+  routes: [
+    { id: "single", pattern: "/[...slug]", prerender: true, entrypoint: route },
+  ],
 };
 const plugin: Plugin = definePlugin(input);
-const host: PluginRouteInput = { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" };
+const host: PluginRouteInput = {
+  id: "single",
+  pattern: "/[...slug]",
+  prerender: true,
+  owner: "host",
+};
 void [plugin, host];
 
 // @ts-expect-error only API v1 is supported
 const wrongVersion: PluginInput = { ...input, apiVersion: 2 };
 // @ts-expect-error host routes cannot provide an entrypoint
-const wrongHost: PluginRouteInput = { id: "single", pattern: "/[...slug]", prerender: true, owner: "host", entrypoint: route };
-// @ts-expect-error the route must prerender
-const wrongRoute: PluginRouteInput = { id: "single", pattern: "/[...slug]", prerender: false, entrypoint: route };
+const wrongHost: PluginRouteInput = {
+  id: "single",
+  pattern: "/[...slug]",
+  prerender: true,
+  owner: "host",
+  entrypoint: route,
+};
+const wrongRoute: PluginRouteInput = {
+  id: "single",
+  pattern: "/[...slug]",
+  // @ts-expect-error the route must prerender
+  prerender: false,
+  entrypoint: route,
+};
 // @ts-expect-error unsupported Markdown format selection
 const wrongSource: PluginSourceInput = { kind: "markdown", formats: ["mdx"] };
 void [wrongVersion, wrongHost, wrongRoute, wrongSource];
+
+const projects: PluginInput = {
+  apiVersion: 1,
+  id: "projects",
+  label: "Projects",
+  basePath: "/project",
+  locales: { de: { label: "Projekte", basePath: "/projekt" } },
+  contentTypes: [
+    {
+      id: "project",
+      collection: "project",
+      singleRoute: "single",
+      source: { kind: "markdown", formats: ["md"] },
+      taxonomies: ["category", "tag"],
+    },
+  ],
+  routes: [
+    { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" },
+  ],
+};
+definePlugin(projects);

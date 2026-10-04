@@ -301,9 +301,16 @@ import { resolveParts } from "@wpmoo/astro/config";
 const parts = resolveParts({ content: { utilities: ["py-3"] } });
 ---
 
-<Layout title="Landing" parts={parts} pageContext={{ view: "native", key: "landing" }}>
+<Layout
+  title="Landing"
+  parts={parts}
+  pageContext={{ view: "native", key: "landing" }}
+>
   <h1>Landing</h1>
-  <Hero title="Reusable host section" description="The same component used in MDX." />
+  <Hero
+    title="Reusable host section"
+    description="The same component used in MDX."
+  />
 </Layout>
 ```
 
@@ -985,3 +992,52 @@ explicit. Read [COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) before upd
 the application's old content/configuration first, then adopt new options
 deliberately and inspect its rendered result. A dependency update does not
 activate a new feature, migrate content, rename URLs or deploy the site.
+
+## Definition-owned custom content URLs
+
+The content type definition owns its permalink prefix. Taxonomy memberships
+never become part of a Page, Post or custom content permalink. A host factory
+can define Projects with translated prefixes using the existing plugin API:
+
+```js
+import { definePlugin } from "@wpmoo/astro/plugins";
+
+export function projects() {
+  return definePlugin({
+    apiVersion: 1,
+    id: "projects",
+    label: "Projects",
+    basePath: "/project",
+    locales: { de: { label: "Projekte", basePath: "/projekt" } },
+    contentTypes: [
+      {
+        id: "project",
+        collection: "project",
+        singleRoute: "single",
+        source: {
+          kind: "markdown",
+          formats: ["md"],
+          base: new URL("./content/project/", import.meta.url),
+        },
+        taxonomies: ["category", "tag"],
+      },
+    ],
+    routes: [
+      { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" },
+    ],
+  });
+}
+```
+
+The native host routes `src/pages/project/[...slug].astro` and
+`src/pages/de/projekt/[...slug].astro` use the actual `routePattern` to select
+`getRouteLocale(routePattern)`. They obtain canonical links from
+`getEntryHref("project", entry)` and strip the locale-aware prefix produced by
+`getLocaleHref()` to obtain the rest parameter. The packed consumer recipe in
+`tests/fixtures/project-routes` includes the native loader, schema, shared
+single Layout, translated content, SEO alternates and both route files.
+
+An English entry slug `test-project` has `/project/test-project`; its German
+translation with the same `translationKey` and slug `test-projekt` has
+`/de/projekt/test-projekt`. Source IDs such as `en/test.md` remain unchanged.
+A host base and trailing-slash policy apply once to these canonical URLs.

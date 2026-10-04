@@ -10,11 +10,8 @@
     "apps/demo/**/*",
     "tests/public-api.ts",
     "tests/theme-types.ts",
-    "tests/integration-types.ts"
+    "tests/integration-types.ts",
+    "tests/plugin-types.ts"
   ],
-  "exclude": [
-    "**/dist",
-    "tests/fixtures",
-    "apps/consumer"
-  ]
+  "exclude": ["**/dist", "tests/fixtures", "apps/consumer"]
 }
