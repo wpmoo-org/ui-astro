@@ -240,6 +240,65 @@ export async function verifyThemePilot(options) {
       });
     }
   }
+  const updateArtifact = await archiveRecord(
+    join(REPO, "artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.1.tgz"),
+  );
+  assert.equal(updateArtifact.manifest.version, "0.1.1");
+  assert.notEqual(
+    updateArtifact.filename,
+    artifacts["@wpmoo/astro-theme-pilot"].filename,
+  );
+  assert.deepEqual(
+    Object.keys(updateArtifact.files).sort(),
+    Object.keys(artifacts["@wpmoo/astro-theme-pilot"].files).sort(),
+    "compatible theme archive inventory",
+  );
+  assert.deepEqual(
+    Object.keys(updateArtifact.files)
+      .filter(
+        (name) =>
+          updateArtifact.files[name] !==
+          artifacts["@wpmoo/astro-theme-pilot"].files[name],
+      )
+      .sort(),
+    ["package.json", "src/preferences.js"],
+    "this rehearsal changes only version and fallback",
+  );
+  await writeFile(
+    join(outputPath, updateArtifact.filename),
+    await readFile(
+      join(REPO, "artifacts/theme-pilot", updateArtifact.filename),
+    ),
+  );
+  const rehearsals = [];
+  for (const mode of ["normal", "inherited"]) {
+    const name = `update-${mode}`;
+    const directory = join(outputPath, name);
+    const baseline = profiles.find((profile) => profile.name === "en-category");
+    for (const filename of [
+      ...baseline.authored_files,
+      "package.json",
+      "package-lock.json",
+    ]) {
+      await mkdir(dirname(join(directory, filename)), { recursive: true });
+      await writeFile(
+        join(directory, filename),
+        await readFile(join(outputPath, baseline.directory, filename)),
+      );
+    }
+    if (mode === "inherited")
+      await writeFile(
+        join(directory, "src/preferences.js"),
+        '/** @type {import("@wpmoo/astro/config").PageOptionsInput} */\nexport const projectDefaults = {};\n',
+      );
+    rehearsals.push({
+      ...baseline,
+      name,
+      directory: name,
+      mode,
+      authored_sha256: await fileHashes(directory, baseline.authored_files),
+    });
+  }
   for (const [source, target] of [
     ["run_theme_pilot.mjs", "run_packed_consumer.mjs"],
     ["theme_pilot_contracts.mjs", "theme_pilot_contracts.mjs"],
@@ -251,6 +310,8 @@ export async function verifyThemePilot(options) {
   const request = {
     schema_version: 1,
     artifacts,
+    update_artifact: updateArtifact,
+    rehearsals,
     profiles,
     core: await readJson(
       join(REPO, "packages/astro/contracts/ui-1.0.0-package.json"),
@@ -324,6 +385,7 @@ export async function verifyThemePilot(options) {
   assert.equal(after.State.ExitCode, 0);
   assert.equal(after.State.Running, false);
   await assertPilotArchives(outputPath, artifacts);
+  await assertPilotArchives(outputPath, { update: updateArtifact });
   const proof = await readJson(join(outputPath, "proof.json"));
   proof.container = {
     id,

@@ -113,7 +113,7 @@ test("theme_defaults_replace_without_merging_arrays", async () => {
   );
   const site = defineSite({ defaults: defaultPreferences });
   for (const [utilities, want] of [
-    [undefined, ["py-3"]],
+    [undefined, ["py-4"]],
     [["py-2"], ["py-2"]],
     [[], []],
   ]) {
@@ -145,7 +145,7 @@ test("theme_defaults_replace_without_merging_arrays", async () => {
 test("theme_manifest_has_exact_peers", async () => {
   const manifest = await json(new URL("package.json", theme));
   assert.equal(manifest.name, "@wpmoo/astro-theme-pilot");
-  assert.equal(manifest.version, "0.1.0");
+  assert.equal(manifest.version, "0.1.1");
   assert.equal(manifest.private, true);
   assert.equal(manifest.license, "MIT");
   assert.deepEqual(manifest.peerDependencies, {
@@ -287,6 +287,29 @@ test("sealed_archive_accepts_native_rest_route_filenames", async () => {
   assert.equal(
     record.sha256,
     "03b3a082a90681a1ebf8c3d3a5ae03dee0bae8146a3430e07b21a3ead61b8141",
+  );
+});
+
+test("theme_patch_archive_changes_only_version_and_fallback", async () => {
+  const { archiveRecord } = await import("../scripts/verify_theme_pilot.mjs");
+  const original = await archiveRecord(
+    join(root, "artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.0.tgz"),
+  );
+  const updated = await archiveRecord(
+    join(root, "artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.1.tgz"),
+  );
+  assert.notEqual(original.filename, updated.filename);
+  assert.notEqual(original.integrity, updated.integrity);
+  assert.equal(updated.manifest.version, "0.1.1");
+  assert.deepEqual(
+    Object.keys(updated.files).sort(),
+    Object.keys(original.files).sort(),
+  );
+  assert.deepEqual(
+    Object.keys(updated.files)
+      .filter((name) => updated.files[name] !== original.files[name])
+      .sort(),
+    ["package.json", "src/preferences.js"],
   );
 });
 

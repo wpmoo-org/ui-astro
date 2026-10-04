@@ -184,7 +184,14 @@ def verify_archives(root, artifacts):
             require(len(actual) == 14 and manifest["peerDependencies"] == {"@wpmoo/astro": "0.1.0", "astro": "7.3.3"}, "theme archive ownership/peers differ")
 
 
-def verify_profile(root, profile, artifacts):
+def phase_artifacts(proof, phase):
+    result = dict(proof["artifacts"])
+    if phase == "updated":
+        result["@wpmoo/astro-theme-pilot"] = proof["update_artifact"]
+    return result
+
+
+def verify_profile(root, profile, artifacts, inset="py-2"):
     directory = owned(root, profile["directory"])
     require(profile["authored_before"] == profile["authored_after"] == profile["authored_sha256"], "authored source changed")
     for name, digest in profile["authored_sha256"].items():
@@ -228,7 +235,7 @@ def verify_profile(root, profile, artifacts):
             require(all(value in text for value in ("0 errors", "0 warnings", "0 hints")), "configured diagnostics not green")
         if name == "install":
             require(all(flag in command["args"] for flag in ("--offline", "--strict-peer-deps")), "strict offline installation absent")
-    verify_rendered(directory, profile)
+    verify_rendered(directory, profile, inset)
 
 
 class PilotTests(unittest.TestCase):
@@ -245,6 +252,44 @@ class PilotTests(unittest.TestCase):
         require(set(self.proof["profiles"]) == {f"{lang}-{kind}" for lang in ("en", "de") for kind in ("category", "short", "root")}, "six profiles required")
         for profile in self.proof["profiles"].values():
             verify_profile(ROOT, profile, self.proof["artifacts"])
+
+    def test_update_preserves_all_authored_source_and_urls(self):
+        updates = self.proof.get("updates", {})
+        require(set(updates) == {"normal", "inherited"}, "actual update phases are absent")
+        for rehearsal in updates.values():
+            phases = rehearsal["phases"]
+            require(set(phases) == {"baseline", "updated", "rolled-back"}, "three update phases required")
+            baseline = phases["baseline"]
+            for phase in phases.values():
+                require(phase["authored_before"] == phase["authored_after"] == baseline["authored_before"], "update changed authored source")
+                baseline_urls = {name: {k: v for k, v in item.items() if k != "inset"} for name, item in baseline["output"]["observations"].items()}
+                phase_urls = {name: {k: v for k, v in item.items() if k != "inset"} for name, item in phase["output"]["observations"].items()}
+                require(phase_urls == baseline_urls, "update changed canonical/alternate/content URLs")
+                verify_profile(ROOT, phase, phase_artifacts(self.proof, phase["phase"]), phase["inset"])
+
+    def test_project_override_survives_new_fallback(self):
+        updates = self.proof.get("updates", {})
+        require(set(updates) == {"normal", "inherited"}, "actual update phases are absent")
+        for name, insets in (("normal", ("py-2", "py-2", "py-2")), ("inherited", ("py-3", "py-4", "py-3"))):
+            for phase, inset in zip(("baseline", "updated", "rolled-back"), insets):
+                record = updates[name]["phases"][phase]
+                require(record["inset"] == inset, "theme fallback/project replacement differs")
+                verify_rendered(owned(ROOT, record["directory"]), record, inset)
+
+    def test_rollback_restores_manifest_lock_and_installed_version(self):
+        updates = self.proof.get("updates", {})
+        require(set(updates) == {"normal", "inherited"}, "actual update phases are absent")
+        verify_archives(ROOT, {"@wpmoo/astro-theme-pilot": self.proof["update_artifact"]})
+        for rehearsal in updates.values():
+            baseline = rehearsal["phases"]["baseline"]
+            rolled = rehearsal["phases"]["rolled-back"]
+            for filename in ("package.json", "package-lock.json"):
+                require((owned(ROOT, baseline["directory"]) / filename).read_bytes() == (owned(ROOT, rolled["directory"]) / filename).read_bytes(), "rollback changed manifest/lock bytes")
+            require(rolled["output"] == baseline["output"], "rollback output differs from baseline")
+            for phase in rehearsal["phases"].values():
+                artifact = phase_artifacts(self.proof, phase["phase"])["@wpmoo/astro-theme-pilot"]
+                version = "0.1.1" if phase["phase"] == "updated" else "0.1.0"
+                require(phase["installed"]["packages"]["@wpmoo/astro-theme-pilot"]["version"] == artifact["manifest"]["version"] == version, "installed theme version differs")
 
     def test_sealed_runtime_and_retained_runner(self):
         proof = self.proof
@@ -295,4 +340,10 @@ class PilotTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if "--profiles-only" in sys.argv:
+        sys.argv.remove("--profiles-only")
+        excluded = {"test_update_preserves_all_authored_source_and_urls", "test_project_override_survives_new_fallback", "test_rollback_restores_manifest_lock_and_installed_version"}
+        suite = unittest.TestSuite(PilotTests(name) for name in unittest.defaultTestLoader.getTestCaseNames(PilotTests) if name not in excluded)
+        result = unittest.TextTestRunner(verbosity=2).run(suite)
+        sys.exit(0 if result.wasSuccessful() else 1)
     unittest.main()
