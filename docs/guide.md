@@ -973,7 +973,7 @@ runs are local checks, not release certification. Run
 `python3 tests/test_packed_matrix.py /absolute/proof -v` for the retained matrix
 and `python3 tests/test_packed_runtime.py /absolute/proof/consumer/dist -v` for
 the primary built page in Chromium without a server. See
-[COMPATIBILITY.md](../COMPATIBILITY.md) for verified runtime scope and remaining
+[COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) for verified runtime scope and remaining
 release gates.
 
 The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/rc10-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
@@ -981,7 +981,7 @@ The exact public exports and packed files are recorded in `packages/astro/contra
 ## Upgrade a theme or plugin
 
 Keep the application's tested package, Astro, optional integrations and lockfile
-explicit. Read [COMPATIBILITY.md](../COMPATIBILITY.md) before updating them. Check
+explicit. Read [COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) before updating them. Check
 the application's old content/configuration first, then adopt new options
 deliberately and inspect its rendered result. A dependency update does not
 activate a new feature, migrate content, rename URLs or deploy the site.
