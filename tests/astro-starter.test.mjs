@@ -6,6 +6,7 @@ import {
   mkdtemp,
   readFile,
   realpath,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -116,6 +117,25 @@ test("preparation_accepts_paths_with_spaces", async (t) => {
   const result = await prepare(input);
   assert.equal(result.sitePath, join(input.outputPath, "site"));
   assert.deepEqual(result.sourceHashes, input.sourceHashes);
+});
+
+test("prepared_archive_with_spaces_in_input_basename_passes_retained_contract", async (t) => {
+  const input = await fixture(t, "source with spaces");
+  const sdkArchive = join(input.root, "SDK archive.tgz");
+  await rename(input.sdkArchive, sdkArchive);
+  const result = await prepare({ ...input, sdkArchive });
+  const { assertStarterArchives } =
+    await import("../scripts/astro_starter_contracts.mjs");
+  await assertStarterArchives(input.outputPath, { "@wpmoo/astro": result.sdk });
+  assert.equal(
+    hash(await readFile(result.archivePath)),
+    hash(await readFile(sdkArchive)),
+  );
+  assert.deepEqual(result.sourceHashes, input.sourceHashes);
+  assert.equal(
+    await readFile(join(input.starterPath, "package.json"), "utf8"),
+    input.manifest,
+  );
 });
 
 test("preparation_rejects_nonempty_output_before_writing", async (t) => {

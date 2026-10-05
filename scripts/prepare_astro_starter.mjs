@@ -177,6 +177,8 @@ export async function prepareAstroStarter({
     "SDK version differs from the selected dependency",
   );
   assert.ok(sdk.filename.endsWith(".tgz"), "SDK tarball filename required");
+  // Use npm's standard artifact name regardless of the selected input basename.
+  sdk.filename = `wpmoo-astro-${sdk.manifest.version}.tgz`;
   let lock;
   if (lockPath) {
     assert.ok(isAbsolute(lockPath), "absolute lock seed path required");

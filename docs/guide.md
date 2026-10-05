@@ -1191,7 +1191,9 @@ node scripts/prepare_astro_starter.mjs \
 ```
 
 Preparation keeps the portable manifest unchanged and binds the archive only
-in `<output>/site`. Its optional external lock seed preserves verified transitive
+in `<output>/site`. The copied archive uses the standard name
+`wpmoo-astro-0.1.0.tgz`, preserving its bytes even when the selected input path
+or basename contains spaces. Its optional external lock seed preserves verified transitive
 versions when an offline cache contains tarballs without package metadata.
 From the prepared site, install using `npm ci --offline --strict-peer-deps
 --ignore-scripts --cache /absolute/primed-cache`, then run its check/build/dev
