@@ -212,3 +212,88 @@ test("preparation_reuses_locked_transitives_without_changing_source", async (t) 
     input.manifest,
   );
 });
+
+test("direct_starter_rejects_extra_artifacts_or_links", async () => {
+  const { validateStarterLock } =
+    await import("../scripts/astro_starter_contracts.mjs");
+  const lock = JSON.parse(
+    await readFile(
+      new URL("./fixtures/astro-starter/package-lock.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const manifest = {
+    ...lock.packages[""],
+    dependencies: {
+      ...lock.packages[""].dependencies,
+      "@wpmoo/astro": "file:../wpmoo-astro-0.1.0.tgz",
+    },
+  };
+  lock.packages[""].dependencies = { ...manifest.dependencies };
+  const sdk = {
+    filename: "wpmoo-astro-0.1.0.tgz",
+    manifest: { version: "0.1.0" },
+    integrity:
+      "sha512-Qfin4cuGooa87UrghOpqnm/TSDYBwQ7eZwz9q6HukxMCgioI9DbxtnA/qo126uZowHZf4ordBX9sc9i35fKP8Q==",
+  };
+  const artifacts = { "@wpmoo/astro": sdk };
+  validateStarterLock(manifest, lock, artifacts);
+  assert.throws(
+    () =>
+      validateStarterLock(manifest, lock, {
+        ...artifacts,
+        "@wpmoo/astro-theme-starter": sdk,
+      }),
+    /one SDK artifact/,
+  );
+  for (const mutation of [
+    (d) => {
+      d.packages["node_modules/@wpmoo/astro"].link = true;
+    },
+    (d) => {
+      d.packages["node_modules/@wpmoo/astro"].integrity = "wrong";
+    },
+    (d) => {
+      d.packages["node_modules/@wpmoo/astro-theme-starter"] = {
+        version: "0.1.0",
+      };
+    },
+  ]) {
+    const changed = structuredClone(lock);
+    mutation(changed);
+    assert.throws(() => validateStarterLock(manifest, changed, artifacts));
+  }
+});
+
+test("direct_starter_rejects_overlapping_proof_paths", async (t) => {
+  const { assertStarterLocations } =
+    await import("../scripts/verify_astro_starter.mjs");
+  const input = await fixture(t);
+  const cache = join(input.root, "cache");
+  await mkdir(cache);
+  const valid = {
+    starterPath: input.starterPath,
+    cache,
+    output: input.outputPath,
+  };
+  assert.deepEqual(await assertStarterLocations(valid), {
+    starterPath: input.starterPath,
+    cachePath: cache,
+    outputPath: input.outputPath,
+  });
+  await assert.rejects(
+    assertStarterLocations({
+      ...valid,
+      output: join(input.starterPath, "proof"),
+    }),
+    /outside checkout/,
+  );
+  await assert.rejects(
+    assertStarterLocations({ ...valid, output: join(cache, "proof") }),
+    /disjoint/,
+  );
+  await mkdir(input.outputPath);
+  await writeFile(join(input.outputPath, "owner"), "keep");
+  await assert.rejects(assertStarterLocations(valid), /empty/);
+  assert.equal(await readFile(join(input.outputPath, "owner"), "utf8"), "keep");
+});
