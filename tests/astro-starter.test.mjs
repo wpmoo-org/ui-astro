@@ -12,6 +12,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createRequire } from "node:module";
 import test from "node:test";
 
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -296,4 +297,19 @@ test("direct_starter_rejects_overlapping_proof_paths", async (t) => {
   await writeFile(join(input.outputPath, "owner"), "keep");
   await assert.rejects(assertStarterLocations(valid), /empty/);
   assert.equal(await readFile(join(input.outputPath, "owner"), "utf8"), "keep");
+});
+
+test("sdk_workspace_retires_reference_theme", async () => {
+  const lock = JSON.parse(
+    await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
+  );
+  assert.ok(
+    !Object.hasOwn(lock.packages, "node_modules/@wpmoo/astro-theme-starter"),
+    "SDK development graph still installs the reference theme",
+  );
+  const require = createRequire(new URL("../package.json", import.meta.url));
+  assert.throws(
+    () => require.resolve("@wpmoo/astro-theme-starter/package.json"),
+    { code: "MODULE_NOT_FOUND" },
+  );
 });

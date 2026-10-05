@@ -1,18 +1,13 @@
 # Moo UI Astro
 
 A shared foundation for Astro websites and themes, built on Moo UI.
-This repository contains the package, a development demo and a reference theme
-with an independent multilingual pilot site.
+This repository contains the SDK, its development demo and verification tools.
 
-The packages are currently unpublished candidates.
+The SDK is currently an unpublished candidate.
 
-## Packages
+## Get Started
 
 - [Moo UI Astro](packages/astro/README.md): components, layouts and site features.
-- [Reference theme](packages/theme-starter/README.md): an example presentation theme.
-
-## Get started
-
+- [Moo Astro Starter](https://github.com/wpmoo-org/astro-moo-starter): a separate Astro project using the foundation directly.
 - [Guide](docs/guide.md): installation, examples and development.
 - [Compatibility](packages/astro/COMPATIBILITY.md): supported versions.
-- [Reference theme and pilot](docs/guide.md#reference-theme-and-pilot): theme usage and updates.

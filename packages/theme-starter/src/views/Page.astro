@@ -1,8 +1,0 @@
----
-import Single from "@wpmoo/astro/views/Single.astro";
-import type { ThemeSingleProps } from "../types.js";
-type Props = ThemeSingleProps;
-const { options, ...content } = Astro.props;
----
-
-<Single {...content} parts={options.parts}><slot /></Single>

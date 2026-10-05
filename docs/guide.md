@@ -1031,15 +1031,13 @@ independent template lock and installs a real archive outside the checkout.
 ```text
 ui-astro/
 ├── packages/
-│   ├── astro/
+│   └── astro/
 │   │   ├── src/          # Public source and required private transitives
 │   │   ├── contracts/    # Closed surface and release provenance
 │   │   └── package.json  # SDK dependencies, peers, exports and file selection
-│   └── theme-pilot/      # Private reference presentation theme
 ├── apps/
 │   ├── demo/             # Development workspace, authored content and config
-│   ├── consumer/         # Independent tarball template, outside workspaces
-│   └── theme-pilot/      # Independent multilingual theme site
+│   └── consumer/         # Independent tarball template, outside workspaces
 ├── scripts/              # Shared nonpacked verification tools
 ├── tests/                # Nonpacked unit/native tests and other profiles
 ├── .editorconfig         # Portable shared formatting policy
@@ -1056,8 +1054,10 @@ npm run dev
 
 The demo opens on `http://localhost:4322`. Root commands forward additional
 arguments to the demo. Shared EditorConfig and TypeScript settings live here.
-The root and demo are private npm workspaces; `apps/consumer` and
-`apps/theme-pilot` remain outside workspace membership with their own locks.
+The root and demo are private npm workspaces. `apps/consumer` remains an
+independent proof template with its own lock. The separate
+[Moo Astro Starter](https://github.com/wpmoo-org/astro-moo-starter) repository
+is a copyable site project, outside SDK workspace membership.
 
 To create a local SDK archive from the same repository root:
 
@@ -1171,37 +1171,69 @@ release gates.
 
 The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.0.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
 
-## Reference theme and pilot
+## Direct Moo Astro Starter
 
-The private MIT package in `packages/theme-starter` composes the public SDK
-and uses exact SDK/Astro peers. The independent
-[pilot site](../apps/theme-pilot/README.md) owns content, routes and locale
-settings; it installs versioned archives with its own manifest and lock.
+[astro-moo-starter](https://github.com/wpmoo-org/astro-moo-starter) is an ordinary
+Astro project that consumes `@wpmoo/astro` directly. The foundation supplies the
+Moo appearance, components and runtime. The project owns its local composition,
+content, configuration, navigation, native routes and term data.
 
-Resolve the theme's `defaultPreferences` through the SDK's `defineSite` and
-`resolvePageOptions`, then pass prepared data into its `Layout` and Page,
-Post, Archive or NotFound views. `sections/Action.astro` accepts `label`,
-`href` and public Button choices as data, including from MDX. The theme owns
-no collections, routes or runtime.
-
-The sealed pilot proof checks six locale/URL profiles and rehearses a theme
-update and exact rollback. From the Astro repository root:
+Once the selected SDK version is published, use normal `npm install`,
+`npm run check`, `npm run build` and `npm run dev` in the starter. The current
+unpublished phase uses an external prepared copy with the exact SDK archive:
 
 ```bash
-npm run verify:theme-pilot -- \
+node scripts/prepare_astro_starter.mjs \
+  --starter /absolute/astro-moo-starter \
+  --sdk /absolute/wpmoo-astro-0.1.0.tgz \
+  --lock /absolute/ui-astro/tests/fixtures/astro-starter/package-lock.json \
+  --output /absolute/empty-preview
+```
+
+Preparation keeps the portable manifest unchanged and binds the archive only
+in `<output>/site`. Its optional external lock seed preserves verified transitive
+versions when an offline cache contains tarballs without package metadata.
+From the prepared site, install using `npm ci --offline --strict-peer-deps
+--ignore-scripts --cache /absolute/primed-cache`, then run its check/build/dev
+commands. Edit the starter's original source and reprepare a fresh copy to refresh
+this unpublished preview; normal development after publication runs in the site.
+
+`src/config.js` sets the main language, which has no URL prefix. Both finite
+main-language route trees are supplied. Taxonomy descriptors set archive paths;
+when changing a host-owned category namespace, rename its corresponding native
+route directories as well. Root archives use the shared root catchall, with
+collisions rejected by the SDK. Test-only namespace variations stay in SDK
+fixtures, outside the delivered starter.
+
+Page/Post adapters prepare translated links and metadata on the server. MDX
+receives ready-to-render `props.links`; its local Action passes a data label into
+the public Button. Assigned taxonomy terms appear as links in content, and each
+taxonomy has its own sidebar submenu. Canonical entry URLs remain independent
+of those assignments.
+
+From the SDK repository, certify an independent starter copy with:
+
+```bash
+npm run verify:starter -- \
+  --starter /absolute/astro-moo-starter \
+  --sdk /absolute/wpmoo-astro-0.1.0.tgz \
   --cache /absolute/primed-cache \
   --output /absolute/empty-proof \
   --image "sha256:<existing-image-id>"
 ```
 
-Supply an absolute primed cache, an empty output outside the checkout and the
-ID of an existing immutable Node image. Archives stay versioned under ignored
-`artifacts/theme-starter/`; authored site files remain unchanged during updates.
-This proof certifies the archives selected by the pilot's manifest and lock.
-Source changes do not replace its installed archives. Publication remains a
-separate release decision.
+The sealed proof checks six locale/URL profiles, installed SDK/Core bytes,
+compiled links/content and actual non-listening MDX development transforms.
+Its independent reader runs with `python3 tests/test_astro_starter.py
+/absolute/proof -v`. The controller removes its stopped temporary container
+while keeping inspection records and proof files. Browser/static-host acceptance
+remains separate from this offline evidence.
 
-## Upgrade a theme or plugin
+The former reference theme and its update/rollback receipts remain historical.
+New sites use the direct starter; updating its SDK dependency preserves copied
+site content and settings. Existing sites adopt starter-file changes deliberately.
+
+## Upgrade the SDK or a plugin
 
 Keep the application's tested package, Astro, optional integrations and lockfile
 explicit. Read [COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) before updating them. Check

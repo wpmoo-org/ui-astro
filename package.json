@@ -25,7 +25,7 @@
     "layout-contract:sync": "node scripts/sync_layout_contract.mjs --write --html-root ../html",
     "layout-contract:check": "node scripts/sync_layout_contract.mjs --check --html-root ../html",
     "pack:astro": "npm pack --workspace @wpmoo/astro",
-    "verify:theme-pilot": "node scripts/verify_theme_pilot.mjs"
+    "verify:starter": "node scripts/verify_astro_starter.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
