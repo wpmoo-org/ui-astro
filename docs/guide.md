@@ -21,7 +21,7 @@ Detailed package usage, configuration and verification. Start with the
 
 `@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
-`@wpmoo/astro` is licensed under the [MIT license](../LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
+`@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
 ## Install and compose a page
 
@@ -1033,9 +1033,11 @@ are outside SDK runtime dependencies. Other sealed profiles keep their locks.
 
 The npm archive contains the public adapter source, its private transitive
 helpers and injected routes, declarations, the CSS/runtime facades, the
-closed export/file ledger, immutable release provenance, this README,
-`COMPATIBILITY.md`, `LICENSE`
-and `THIRD_PARTY_NOTICES.md`. Demo pages, example Markdown, host content
+closed export/file ledger, immutable release provenance, the package README,
+`COMPATIBILITY.md` and the package's MIT `LICENSE`. `THIRD_PARTY_NOTICES.md`
+stays in the repository; package READMEs link to dependency licenses, and
+embedded icon notices remain beside their geometry in the source. Demo pages,
+example Markdown, host content
 configuration, tests, development scripts, caches and built demo output are
 not shipped. Packed private helpers remain inaccessible as package subpaths.
 

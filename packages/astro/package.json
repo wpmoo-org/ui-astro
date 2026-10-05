@@ -17,7 +17,6 @@
     "COMPATIBILITY.md",
     "LICENSE",
     "README.md",
-    "THIRD_PARTY_NOTICES.md",
     "contracts/astro-public-surface.json",
     "contracts/ui-1.0.0-package.json",
     "src/components/Accordion.astro",

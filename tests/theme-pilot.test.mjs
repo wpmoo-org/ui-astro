@@ -264,13 +264,7 @@ test("theme_pack_has_only_owned_source", async () => {
   ];
   assert.deepEqual(
     files,
-    [
-      ...source,
-      "package.json",
-      "LICENSE",
-      "THIRD_PARTY_NOTICES.md",
-      "README.md",
-    ].sort(),
+    [...source, "package.json", "LICENSE", "README.md"].sort(),
   );
   assert.deepEqual(
     Object.keys(manifest.exports).sort(),

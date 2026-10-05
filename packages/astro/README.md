@@ -85,7 +85,6 @@ document with HTTP 404 and configure locale error selection separately.
   component/runtime APIs, theme preferences, content plugins, taxonomies,
   MD/MDX, multilingual routes, SEO and verification.
 - [Compatibility](COMPATIBILITY.md): certified versions and release limits.
-- [Third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Develop locally
 
@@ -101,4 +100,10 @@ npm run build
 ## License
 
 [MIT](LICENSE). Original themes and extensions can have their own licenses;
-third-party dependencies retain theirs.
+third-party dependencies retain theirs. See the licenses for
+[@wpmoo/ui 1.0.0](https://github.com/wpmoo-org/ui/blob/v1.0.0/LICENSE),
+[Bootstrap 5.3.8](https://github.com/twbs/bootstrap/blob/v5.3.8/LICENSE) and
+[Astro 7.3.3](https://github.com/withastro/astro/blob/astro%407.3.3/LICENSE).
+Embedded icon geometry retains its
+[Lucide/Feather notices](https://github.com/lucide-icons/lucide/blob/main/LICENSE)
+in the icon source. The aggregate third-party notice file stays outside npm.

@@ -4,6 +4,9 @@ The package's original source is MIT-licensed under `LICENSE`. Dependencies
 retain their own licenses. Astro and Bootstrap are MIT-licensed; the pinned
 `@wpmoo/ui` package carries its own source and bundled dependency notices.
 This adapter does not distribute the HTML catalog, its demo images, or fonts.
+This repository reference stays outside the npm archive. The package README
+links to upstream licenses; copied icon notices are retained in
+`src/components/internal/Icon.astro` beside the embedded geometry.
 
 ## Lucide and Feather icons
 

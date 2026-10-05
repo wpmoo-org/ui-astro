@@ -11,8 +11,7 @@
   "files": [
     "src",
     "LICENSE",
-    "README.md",
-    "THIRD_PARTY_NOTICES.md"
+    "README.md"
   ],
   "exports": {
     "./preferences": {

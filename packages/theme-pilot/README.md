@@ -11,3 +11,10 @@ data, including from MDX. The package owns no collections, routes or runtime.
 
 See the [accepted design](../../../docs/architectures/2026-10-04-astro-theme-consumer-pilot-design.md)
 for ownership and update/rollback evidence requirements. No publication is implied.
+
+## License
+
+[MIT](LICENSE). Dependencies retain their own licenses:
+[Moo UI Astro](https://github.com/wpmoo-org/ui-astro/blob/main/packages/astro/LICENSE)
+and [Astro 7.3.3](https://github.com/withastro/astro/blob/astro%407.3.3/LICENSE).
+The aggregate third-party notice file stays outside npm.
