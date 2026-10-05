@@ -1,11 +1,12 @@
 # Moo UI Astro guide
 
-Detailed package usage, configuration and verification. Start with the
-[README](../README.md) for installation and a first page.
+Installation, composition and development details for Moo UI Astro.
+For a short overview, see the [README](../README.md).
 
 ## Contents
 
 - [Installation and Layout](#install-and-compose-a-page)
+- [Native 404](#native-404)
 - [Public components and runtime](#public-files-and-behavior)
 - [Theme preferences](#theme-preferences)
 - [MDX and native Astro sections](#explicit-mdx-and-native-astro-sections)
@@ -17,6 +18,7 @@ Detailed package usage, configuration and verification. Start with the
 - [SEO](#seo-from-ordinary-content)
 - [Languages](#theme-language-and-visible-copy)
 - [Development and verification](#develop-and-verify)
+- [Reference theme and pilot](#reference-theme-and-pilot)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
 `@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
@@ -24,6 +26,8 @@ Detailed package usage, configuration and verification. Start with the
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
 ## Install and compose a page
+
+Use Node.js `22.12.0` or newer and the certified Astro `7.3.3`.
 
 After the adapter is published, install it in an Astro application:
 
@@ -89,6 +93,20 @@ The running demo exposes `/preview/single` and `/preview/archive` through its
 shared Sidebar. Only explicitly Sidebarless examples opt out. Both routes
 compose public includes and generic views; the preview pages are excluded
 from the package archive.
+
+## Native 404
+
+Register `moo()` to receive the default native 404, including configured locale
+errors. It also works with `moo({ plugins: [] })` without content collections.
+Partial `notFound.messages` dictionaries replace individual English/German
+defaults; missing fields fall back to the main language, then English.
+
+For a theme override, select `notFound: { routeOwner: "host" }` and provide each
+required native `404.astro`. Use `getNotFoundOptions(Astro.currentLocale)` from
+`@wpmoo/astro/not-found`, the public `views/NotFound.astro` and Layout with
+`metadata={null}`. The view exposes `page-header` and `actions` slots and inherits
+shared Page single preferences. A static host must serve the generated error
+document with HTTP 404 and configure locale error selection separately.
 
 ## Public files and behavior
 
@@ -856,7 +874,7 @@ The host can obtain content alternatives from `getLanguageLinks()` and term
 alternatives from `getTaxonomyPaths()`. Project those records in its build
 before the optional Sitemap integration runs; verify every advertised URL
 against actual output. The package does not install or configure Sitemap.
-The ten independent consumers cover the implemented foundation. SEO and native
+The independent consumer matrix covers the implemented foundation. SEO and native
 locale checks additionally exercise their own compiled fixtures; broader
 version support and final release acceptance remain separate gates.
 
@@ -1012,18 +1030,39 @@ independent template lock and installs a real archive outside the checkout.
 
 ```text
 ui-astro/
-├── packages/astro/
-│   ├── src/              # Public source and required private transitives
-│   ├── contracts/        # Closed surface and release provenance
-│   └── package.json      # SDK dependencies, peers, exports and file selection
+├── packages/
+│   ├── astro/
+│   │   ├── src/          # Public source and required private transitives
+│   │   ├── contracts/    # Closed surface and release provenance
+│   │   └── package.json  # SDK dependencies, peers, exports and file selection
+│   └── theme-pilot/      # Private reference presentation theme
 ├── apps/
 │   ├── demo/             # Development workspace, authored content and config
-│   └── consumer/         # Independent tarball template, outside workspaces
+│   ├── consumer/         # Independent tarball template, outside workspaces
+│   └── theme-pilot/      # Independent multilingual theme site
 ├── scripts/              # Shared nonpacked verification tools
 ├── tests/                # Nonpacked unit/native tests and other profiles
 ├── .editorconfig         # Portable shared formatting policy
 ├── tsconfig.json         # Shared strict module and source checking
 └── package-lock.json     # Single development workspace lock
+```
+
+Use Node.js `>=22.12.0`. From the Astro repository root:
+
+```bash
+npm ci
+npm run dev
+```
+
+The demo opens on `http://localhost:4322`. Root commands forward additional
+arguments to the demo. Shared EditorConfig and TypeScript settings live here.
+The root and demo are private npm workspaces; `apps/consumer` and
+`apps/theme-pilot` remain outside workspace membership with their own locks.
+
+To create a local SDK archive from the same repository root:
+
+```bash
+npm run pack:astro
 ```
 
 The demo's Astro config uses `srcDir: "./"` from `apps/demo`. Existing root
@@ -1105,7 +1144,7 @@ node scripts/verify_packed_consumer.mjs \
 ```
 
 The controller packs one main archive and a separate external plugin archive.
-It prepares ten authored consumers, then creates an inspected container with
+It prepares authored consumers for the selected profiles, then creates an inspected container with
 networking disabled, a read-only image filesystem, no published ports and only
 the prepared proof root plus a read-only cache mount. No source checkout,
 sibling HTML repository or installed dependency tree is mounted. It never
@@ -1114,10 +1153,10 @@ pulls a runtime image implicitly.
 Each consumer runs strict `npm ci --offline --strict-peer-deps`, a real Astro
 type check and a build. The matrix covers default, theme, UI-only, Page-only,
 Post-only, optional MDX, external plugin, taxonomy, external taxonomy and
-CMS-free content editing. All resolve the 79 public exports and reject the
-recorded private subpaths; only the MDX consumer installs that integration.
-The current main archive has 121 files, including `COMPATIBILITY.md`. The
-separate external fixture has six exports and fourteen files.
+CMS-free content editing, built-in 404 and host-owned 404. Consumers check their
+public imports and reject recorded private subpaths; only the MDX profile
+installs that integration. The main archive includes `COMPATIBILITY.md` and its
+closed surface ledger; the external fixture carries its own export map.
 
 Schema-v2 proof retains the actual archives, locks, installed files, authored
 sources, logs, loaded source paths, compiled namespaces/content and container
@@ -1131,6 +1170,36 @@ the primary built page in Chromium without a server. See
 release gates.
 
 The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.0.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+
+## Reference theme and pilot
+
+The private MIT package in `packages/theme-pilot` composes the public SDK
+and uses exact SDK/Astro peers. The independent
+[pilot site](../apps/theme-pilot/README.md) owns content, routes and locale
+settings; it installs versioned archives with its own manifest and lock.
+
+Resolve the theme's `defaultPreferences` through the SDK's `defineSite` and
+`resolvePageOptions`, then pass prepared data into its `Layout` and Page,
+Post, Archive or NotFound views. `sections/Action.astro` accepts `label`,
+`href` and public Button choices as data, including from MDX. The theme owns
+no collections, routes or runtime.
+
+The sealed pilot proof checks six locale/URL profiles and rehearses a theme
+update and exact rollback. From the Astro repository root:
+
+```bash
+npm run verify:theme-pilot -- \
+  --cache /absolute/primed-cache \
+  --output /absolute/empty-proof \
+  --image "sha256:<existing-image-id>"
+```
+
+Supply an absolute primed cache, an empty output outside the checkout and the
+ID of an existing immutable Node image. Archives stay versioned under ignored
+`artifacts/theme-pilot/`; authored site files remain unchanged during updates.
+This proof certifies the archives selected by the pilot's manifest and lock.
+Source changes do not replace its installed archives. Publication remains a
+separate release decision.
 
 ## Upgrade a theme or plugin
 
