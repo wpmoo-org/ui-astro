@@ -1,0 +1,55 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+import DropdownMenu from "@wpmoo/astro/components/DropdownMenu.astro";
+import Typography from "@wpmoo/astro/components/Typography.astro";
+
+export function getStaticPaths() {
+  return ["light-ltr", "dark-ltr", "light-rtl", "dark-rtl"].map((state) => {
+    const [theme, dir] = state.split("-");
+    return { params: { state }, props: { theme, dir } };
+  });
+}
+interface Props {
+  theme: "light" | "dark";
+  dir: "ltr" | "rtl";
+}
+const { theme, dir } = Astro.props;
+const links = [
+  { locale: "en", href: "/base/project/about-us/" },
+  { locale: "de", href: "/base/de/projekt/%C3%BCber-uns/" },
+] as const;
+const cases = [
+  { id: "responsive", mode: "responsive", links, current: "de" },
+  { id: "visible", mode: "visible", links, current: "de" },
+  { id: "hidden", mode: "hidden", links, current: "de" },
+  { id: "empty", mode: "responsive", links: [], current: "de" },
+  { id: "single", mode: "responsive", links: [links[1]], current: "de" },
+  { id: "unknown-current", mode: "responsive", links, current: "fr" },
+] as const;
+---
+
+<Layout title="Language switcher proof" theme={theme} dir={dir} lang="en">
+  <Typography variant="page-title" content="Language switcher" />
+  {
+    cases.map(({ id, mode, links, current }) => (
+      <section id={id} class="mb-4">
+        <Typography variant="section-title" content={id} />
+        <LanguageSwitcher
+          links={links}
+          currentLocale={current}
+          label="Language"
+          menuLabel="Select language"
+          languageNames={{ en: "English", de: "<Deutsch>" }}
+          labelVisibility={mode}
+        />
+      </section>
+    ))
+  }
+  <section id="legacy">
+    <DropdownMenu
+      label="Legacy actions"
+      items={[{ label: "Legacy link", href: "#legacy" }]}
+    />
+  </section>
+</Layout>

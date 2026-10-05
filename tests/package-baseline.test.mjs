@@ -87,7 +87,11 @@ test("package retains all 45 public wrappers and the explicit integration, Page 
   assert.equal(lock.name, "@wpmoo/astro-workspace");
   assert.equal(lock.packages["packages/astro"].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 81);
+  assert.equal(Object.keys(declared.exports).length, 82);
+  assert.equal(
+    declared.exports["./blocks/LanguageSwitcher.astro"],
+    "./src/blocks/language-switcher/LanguageSwitcher.astro",
+  );
   assert.equal(declared.exports["./not-found"], "./src/not-found/index.js");
   assert.equal(
     declared.exports["./views/NotFound.astro"],

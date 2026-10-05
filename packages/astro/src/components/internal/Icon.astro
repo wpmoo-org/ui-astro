@@ -113,6 +113,11 @@ const { name, position = "inline-start" } = Astro.props;
     ) : null
   }
   {name === "check" ? <path d="m20 6-11 11-5-5" /> : null}
+  {
+    name === "languages" ? (
+      <path d="m5 8l6 6m-7 0l6-6l2-3M2 5h12M7 2h1m14 20l-5-10l-5 10m2-4h6" />
+    ) : null
+  }
   {name === "x" ? <path d="m6 6 12 12M18 6 6 18" /> : null}
   {
     name === "search" ? (

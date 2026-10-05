@@ -3,6 +3,7 @@ import type { ComponentProps } from "astro/types";
 import moo from "@wpmoo/astro";
 import Layout from "@wpmoo/astro/Layout.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
 import {
   defineSite,
   resolvePageOptions,
@@ -311,6 +312,21 @@ export const languageServerFunctions = {
 export const languageLinks: readonly LanguageLink[] = [
   { locale: "de", href: "/de/contact" },
 ];
+export const switcherProps: ComponentProps<typeof LanguageSwitcher> = {
+  links: languageLinks,
+  currentLocale: "de",
+  label: "Sprache",
+  menuLabel: "Sprache auswählen",
+  languageNames: { en: "English", de: "Deutsch" },
+  labelVisibility: "responsive",
+};
+export const switcherLabelModes: readonly ComponentProps<
+  typeof LanguageSwitcher
+>["labelVisibility"][] = ["responsive", "visible", "hidden"];
+// @ts-expect-error Label visibility accepts the documented three modes.
+export const invalidSwitcherMode: ComponentProps<
+  typeof LanguageSwitcher
+>["labelVisibility"] = "mobile";
 // @ts-expect-error Locale preferences are deeply immutable after definition.
 localizedSite.locales!.de.parts!.loop!.emptyText = "Changed";
 // @ts-expect-error Language links preserve the validated published projection.

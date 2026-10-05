@@ -1,0 +1,51 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+import ButtonGroup from "@wpmoo/astro/components/ButtonGroup.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
+import { getLanguageLinks } from "@wpmoo/astro/i18n";
+
+const { site } = getSiteContext();
+const locale = Astro.currentLocale ?? site.defaults.lang;
+const entry = (await getPublishedPages({ locale })).find(
+  (page) => page.data.translationKey === "setup-guide",
+);
+if (!entry)
+  throw new TypeError(
+    "Language switcher example requires the published setup guide",
+  );
+const links = await getLanguageLinks("page", entry);
+const names = { en: "English", de: "Deutsch" };
+---
+
+<Layout title="Language switcher" lang={locale}>
+  <PageHeader
+    title="Language switcher"
+    description="Ready compositions using the same published translation links."
+  />
+  <ButtonGroup toolbar ariaLabel="Language switcher examples" class="gap-3">
+    <LanguageSwitcher
+      links={links}
+      currentLocale={locale}
+      label="Language"
+      menuLabel="Select language"
+      languageNames={names}
+    />
+    <LanguageSwitcher
+      links={links}
+      currentLocale={locale}
+      label="Always visible"
+      languageNames={names}
+      labelVisibility="visible"
+    />
+    <LanguageSwitcher
+      links={links}
+      currentLocale={locale}
+      label="Icon only"
+      languageNames={names}
+      labelVisibility="hidden"
+    />
+  </ButtonGroup>
+</Layout>

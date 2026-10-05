@@ -83,7 +83,8 @@
     "./seo": "./src/seo/index.js",
     "./i18n": "./src/i18n/index.js",
     "./not-found": "./src/not-found/index.js",
-    "./views/NotFound.astro": "./src/views/NotFound.astro"
+    "./views/NotFound.astro": "./src/views/NotFound.astro",
+    "./blocks/LanguageSwitcher.astro": "./src/blocks/language-switcher/LanguageSwitcher.astro"
   },
   "files": [
     "COMPATIBILITY.md",
@@ -92,6 +93,8 @@
     "contracts/astro-public-surface.json",
     "contracts/ui-1.0.0-package.json",
     "package.json",
+    "src/blocks/language-switcher/LanguageSwitcher.astro",
+    "src/blocks/language-switcher/language-switcher.js",
     "src/components/Accordion.astro",
     "src/components/Alert.astro",
     "src/components/AlertDialog.astro",
@@ -219,6 +222,7 @@
     "src/views/Single.astro"
   ],
   "private_transitives": [
+    "src/blocks/language-switcher/language-switcher.js",
     "src/components/internal/Icon.astro",
     "src/content/dates.js",
     "src/content/integrity.js",

@@ -10,10 +10,13 @@ interface Item {
   shortcut?: string;
   target?: string;
   rel?: string;
+  lang?: string;
+  hreflang?: string;
 }
 interface Props {
   label: string;
-  items?: Item[];
+  items?: readonly Item[];
+  menuLabel?: string;
   variant?:
     | "default"
     | "secondary"
@@ -35,6 +38,7 @@ interface Props {
   autoClose?: "" | "true" | "false" | "inside" | "outside";
   offset?: string;
   ariaLabel?: string;
+  triggerClass?: string;
   class?: string;
   [key: string]: unknown;
 }
@@ -42,6 +46,7 @@ interface Props {
 const {
   label,
   items = [],
+  menuLabel = "",
   variant = "outline",
   size = "default",
   align = "",
@@ -49,6 +54,7 @@ const {
   autoClose = "",
   offset = "",
   ariaLabel = "",
+  triggerClass = "",
   class: className = "",
   ...rest
 } = Astro.props;
@@ -60,12 +66,28 @@ const {
     variant={variant}
     size={size}
     ariaLabel={ariaLabel}
+    class={triggerClass}
     dropdown
     dropdownCaret={caret}
     dropdownOffset={offset}
     dropdownAutoClose={autoClose}
-  />
+  >
+    <slot name="trigger-icon" slot="icon-start" />
+    <slot name="trigger-label">{label}</slot>
+  </Button>
   <ul class:list={["dropdown-menu", align ? `dropdown-menu-${align}` : ""]}>
+    {
+      menuLabel ? (
+        <>
+          <li>
+            <h6 class="dropdown-header">{menuLabel}</h6>
+          </li>
+          <li>
+            <hr class="dropdown-divider" />
+          </li>
+        </>
+      ) : null
+    }
     {
       items.map((item) => (
         <li>
@@ -79,6 +101,8 @@ const {
               href={item.disabled ? undefined : item.href}
               target={item.target}
               rel={item.rel}
+              lang={item.lang}
+              hreflang={item.hreflang}
               aria-disabled={item.disabled ? "true" : undefined}
               tabindex={item.disabled ? -1 : undefined}
               aria-current={item.active ? "true" : undefined}

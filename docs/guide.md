@@ -8,6 +8,7 @@ For a short overview, see the [README](../README.md).
 - [Installation and Layout](#install-and-compose-a-page)
 - [Native 404](#native-404)
 - [Public components and runtime](#public-files-and-behavior)
+- [Ready blocks](#ready-blocks)
 - [Theme preferences](#theme-preferences)
 - [MDX and native Astro sections](#explicit-mdx-and-native-astro-sections)
 - [Post content and routes](#post-content-and-routes)
@@ -24,6 +25,48 @@ For a short overview, see the [README](../README.md).
 `@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
+
+## Ready blocks
+
+`components` provides generic primitives; `blocks` provides ready compositions.
+Each block keeps its component and helper in a named source directory, such as
+`src/blocks/language-switcher/`.
+Import only the block you use. Locale and translation URL logic remains in
+`@wpmoo/astro/i18n`; blocks do not automatically appear in Layout.
+
+```astro
+---
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+---
+
+<LanguageSwitcher
+  links={languageLinks}
+  currentLocale={routeLocale}
+  label="Language"
+  menuLabel="Select language"
+  languageNames={{ en: "English", de: "Deutsch" }}
+/>
+```
+
+Pass canonical links from `getLanguageLinks()` for published content or your
+archive/taxonomy alternate projection. The supplied hrefs are preserved, so
+translated slugs, a configured main language, base paths and slash policy stay
+owned by the existing route producers. No missing translation is invented.
+Empty and single-language lists render no selector; invalid data still fails
+validation. Language labels use their native names unless overridden.
+
+The default trigger combines the Languages icon and the translated `label`.
+Below Bootstrap's 768px `md` breakpoint only the icon is visible, while the
+accessible name remains. Set `labelVisibility="visible"` to keep text or
+`"hidden"` for an icon at every width. The default Button variant is `outline`,
+size `sm` and menu alignment `end`; these props and utility `class` are
+customizable. The optional `menuLabel` adds a heading and divider.
+
+This server-rendered block uses the normal Moo Layout/Bootstrap runtime with
+no new hydration or CSS. Bootstrap handles click, Arrow keys and Escape.
+Language choices are links with `lang`, `hreflang` and current-state semantics;
+the URL determines the selected language. The repository-only
+`/preview/blocks/language-switcher` example shows all three label modes.
 
 ## Install and compose a page
 

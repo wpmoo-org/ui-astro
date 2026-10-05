@@ -1,0 +1,56 @@
+---
+import type { ComponentProps } from "astro/types";
+import type { LanguageLink } from "../../i18n/index.js";
+import DropdownMenu from "../../components/DropdownMenu.astro";
+import Icon from "../../components/internal/Icon.astro";
+import { resolveLanguageSwitcher } from "./language-switcher.js";
+
+type DropdownProps = ComponentProps<typeof DropdownMenu>;
+interface Props {
+  links: readonly LanguageLink[];
+  currentLocale: string;
+  label: string;
+  menuLabel?: string;
+  languageNames?: Readonly<Record<string, string>>;
+  labelVisibility?: "responsive" | "visible" | "hidden";
+  variant?: DropdownProps["variant"];
+  size?: DropdownProps["size"];
+  align?: DropdownProps["align"];
+  class?: string;
+}
+const {
+  variant = "outline",
+  size = "sm",
+  align = "end",
+  class: className = "",
+  ...input
+} = Astro.props;
+const data = resolveLanguageSwitcher(input);
+---
+
+{
+  data.visible ? (
+    <DropdownMenu
+      label={data.label}
+      ariaLabel={data.label}
+      triggerClass="px-2"
+      menuLabel={data.menuLabel}
+      items={data.items}
+      variant={variant}
+      size={size}
+      align={align}
+      class={className}
+    >
+      <Icon slot="trigger-icon" name="languages" />
+      <span
+        slot="trigger-label"
+        class:list={[
+          data.labelVisibility === "responsive" ? "d-none d-md-inline" : "",
+          data.labelVisibility === "hidden" ? "d-none" : "",
+        ]}
+      >
+        {data.label}
+      </span>
+    </DropdownMenu>
+  ) : null
+}

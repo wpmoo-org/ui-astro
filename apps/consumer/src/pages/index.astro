@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import MooIntegration from "@wpmoo/astro";
 import Layout from "@wpmoo/astro/Layout.astro";
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
 import Accordion from "@wpmoo/astro/components/Accordion.astro";
 import Alert from "@wpmoo/astro/components/Alert.astro";
 import AlertDialog from "@wpmoo/astro/components/AlertDialog.astro";
@@ -234,6 +235,7 @@ if (
   throw new Error("Optional i18n changed the single-language consumer");
 void [
   MooIntegration,
+  LanguageSwitcher,
   getPagePaths,
   getPublishedPages,
   configuredPage,
