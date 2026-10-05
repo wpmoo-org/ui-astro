@@ -1,8 +1,8 @@
 {
-  "name": "@wpmoo/astro-theme-pilot",
+  "name": "@wpmoo/astro-theme-starter",
   "version": "0.1.1",
   "private": true,
-  "description": "Reference presentation theme for independent Moo Astro sites.",
+  "description": "Starter presentation theme for independent Moo Astro sites.",
   "license": "MIT",
   "type": "module",
   "engines": {

@@ -13,8 +13,8 @@
     "dev": "astro dev --host 127.0.0.1 --port 4327"
   },
   "dependencies": {
-    "@wpmoo/astro": "file:../../artifacts/theme-pilot/wpmoo-astro-0.1.0.tgz",
-    "@wpmoo/astro-theme-pilot": "file:../../artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.0.tgz",
+    "@wpmoo/astro": "file:../../artifacts/theme-starter/wpmoo-astro-0.1.0.tgz",
+    "@wpmoo/astro-theme-starter": "file:../../artifacts/theme-starter/wpmoo-astro-theme-starter-0.1.0.tgz",
     "astro": "7.3.3",
     "@astrojs/mdx": "8.0.2"
   },

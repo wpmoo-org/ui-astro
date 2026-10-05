@@ -22,7 +22,7 @@ import {
 } from "../packages/astro/src/config/index.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const theme = new URL("../packages/theme-pilot/", import.meta.url);
+const theme = new URL("../packages/theme-starter/", import.meta.url);
 const json = async (url) => JSON.parse(await readFile(url, "utf8"));
 const siteRoot = new URL("../apps/theme-pilot/", import.meta.url);
 
@@ -212,7 +212,7 @@ test("theme_defaults_replace_without_merging_arrays", async () => {
 
 test("theme_manifest_has_exact_peers", async () => {
   const manifest = await json(new URL("package.json", theme));
-  assert.equal(manifest.name, "@wpmoo/astro-theme-pilot");
+  assert.equal(manifest.name, "@wpmoo/astro-theme-starter");
   assert.equal(manifest.version, "0.1.1");
   assert.equal(manifest.private, true);
   assert.equal(manifest.license, "MIT");
@@ -228,6 +228,7 @@ test("theme_manifest_has_exact_peers", async () => {
 // Runs npm's real pack inventory, catching app/SDK/tooling leakage and absent exports.
 test("theme_pack_has_only_owned_source", async () => {
   const manifest = await json(new URL("package.json", theme));
+  assert.equal(manifest.name, "@wpmoo/astro-theme-starter");
   const cache = await realpath(
     await mkdtemp(join(tmpdir(), "pilot-pack-cache-")),
   );
@@ -298,7 +299,7 @@ test("sealed_pilot_rejects_workspace_resolution", async () => {
   const manifest = await json(new URL("package.json", siteRoot));
   const lock = await json(new URL("package-lock.json", siteRoot));
   const artifacts = Object.fromEntries(
-    ["@wpmoo/astro", "@wpmoo/astro-theme-pilot"].map((name) => [
+    ["@wpmoo/astro", "@wpmoo/astro-theme-starter"].map((name) => [
       name,
       {
         filename: manifest.dependencies[name].split("/").at(-1),

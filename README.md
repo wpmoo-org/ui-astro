@@ -9,7 +9,7 @@ The packages are currently unpublished candidates.
 ## Packages
 
 - [Moo UI Astro](packages/astro/README.md): components, layouts and site features.
-- [Reference theme](packages/theme-pilot/README.md): an example presentation theme.
+- [Reference theme](packages/theme-starter/README.md): an example presentation theme.
 
 ## Get started
 

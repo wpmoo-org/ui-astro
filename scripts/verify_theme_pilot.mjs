@@ -184,7 +184,7 @@ export async function verifyThemePilot(options) {
   const templateLock = await readJson(join(SITE, "package-lock.json"));
   const artifacts = {};
   await mkdir(outputPath, { recursive: true });
-  for (const name of ["@wpmoo/astro", "@wpmoo/astro-theme-pilot"]) {
+  for (const name of ["@wpmoo/astro", "@wpmoo/astro-theme-starter"]) {
     const original = resolve(SITE, manifest.dependencies[name].slice(5));
     const record = await archiveRecord(original);
     assert.equal(
@@ -195,7 +195,7 @@ export async function verifyThemePilot(options) {
     if (name === "@wpmoo/astro")
       assert.equal(
         record.sha256,
-        "03b3a082a90681a1ebf8c3d3a5ae03dee0bae8146a3430e07b21a3ead61b8141",
+        "b240f8a6b3d68646e86a4c30279e923588fef0cfab7c2367ddfb2c09f8f2b3fc",
         "foundation checkpoint changed",
       );
     artifacts[name] = record;
@@ -241,16 +241,16 @@ export async function verifyThemePilot(options) {
     }
   }
   const updateArtifact = await archiveRecord(
-    join(REPO, "artifacts/theme-pilot/wpmoo-astro-theme-pilot-0.1.1.tgz"),
+    join(REPO, "artifacts/theme-starter/wpmoo-astro-theme-starter-0.1.1.tgz"),
   );
   assert.equal(updateArtifact.manifest.version, "0.1.1");
   assert.notEqual(
     updateArtifact.filename,
-    artifacts["@wpmoo/astro-theme-pilot"].filename,
+    artifacts["@wpmoo/astro-theme-starter"].filename,
   );
   assert.deepEqual(
     Object.keys(updateArtifact.files).sort(),
-    Object.keys(artifacts["@wpmoo/astro-theme-pilot"].files).sort(),
+    Object.keys(artifacts["@wpmoo/astro-theme-starter"].files).sort(),
     "compatible theme archive inventory",
   );
   assert.deepEqual(
@@ -258,7 +258,7 @@ export async function verifyThemePilot(options) {
       .filter(
         (name) =>
           updateArtifact.files[name] !==
-          artifacts["@wpmoo/astro-theme-pilot"].files[name],
+          artifacts["@wpmoo/astro-theme-starter"].files[name],
       )
       .sort(),
     ["package.json", "src/preferences.js"],
@@ -267,7 +267,7 @@ export async function verifyThemePilot(options) {
   await writeFile(
     join(outputPath, updateArtifact.filename),
     await readFile(
-      join(REPO, "artifacts/theme-pilot", updateArtifact.filename),
+      join(REPO, "artifacts/theme-starter", updateArtifact.filename),
     ),
   );
   const rehearsals = [];

@@ -1,5 +1,5 @@
 import { defineSite, resolvePageOptions } from "@wpmoo/astro/config";
-import { defaultPreferences } from "@wpmoo/astro-theme-pilot/preferences";
+import { defaultPreferences } from "@wpmoo/astro-theme-starter/preferences";
 import { page } from "@wpmoo/astro/plugins/page";
 import { post } from "@wpmoo/astro/plugins/post";
 import { defineTaxonomy } from "@wpmoo/astro/taxonomies";

@@ -2,7 +2,7 @@
 
 This private site owns English/German content, navigation, term data and URL
 choices. It is excluded from root workspaces and installs versioned SDK/theme
-archives under `../../artifacts/theme-pilot/`, with its own strict config/lock.
+archives under `../../artifacts/theme-starter/`, with its own strict config/lock.
 
 After preparing those archives, run `npm ci --offline --strict-peer-deps`,
 `npm run check` and `npm run build` from this directory. `PILOT_MAIN_LANGUAGE`

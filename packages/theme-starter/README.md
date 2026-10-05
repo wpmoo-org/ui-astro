@@ -1,6 +1,6 @@
-# Reference theme
+# Moo UI Astro Starter
 
-A small reference theme for Moo UI Astro. Its independent pilot site
+A starter theme for Moo UI Astro. Its independent pilot site
 demonstrates multilingual content and theme updates.
 
 See the [guide](https://github.com/wpmoo-org/ui-astro/blob/main/docs/guide.md#reference-theme-and-pilot)

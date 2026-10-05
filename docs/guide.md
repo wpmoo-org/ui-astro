@@ -1173,7 +1173,7 @@ The exact public exports and packed files are recorded in `packages/astro/contra
 
 ## Reference theme and pilot
 
-The private MIT package in `packages/theme-pilot` composes the public SDK
+The private MIT package in `packages/theme-starter` composes the public SDK
 and uses exact SDK/Astro peers. The independent
 [pilot site](../apps/theme-pilot/README.md) owns content, routes and locale
 settings; it installs versioned archives with its own manifest and lock.
@@ -1196,7 +1196,7 @@ npm run verify:theme-pilot -- \
 
 Supply an absolute primed cache, an empty output outside the checkout and the
 ID of an existing immutable Node image. Archives stay versioned under ignored
-`artifacts/theme-pilot/`; authored site files remain unchanged during updates.
+`artifacts/theme-starter/`; authored site files remain unchanged during updates.
 This proof certifies the archives selected by the pilot's manifest and lock.
 Source changes do not replace its installed archives. Publication remains a
 separate release decision.

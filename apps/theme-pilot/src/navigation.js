@@ -4,7 +4,7 @@ import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
 import { getMessages } from "./messages.js";
 import { groupTaxonomyLinks } from "./taxonomy-links.js";
 
-/** @param {string} currentPath @param {string} locale @param {string} title @param {readonly import("@wpmoo/astro/i18n").LanguageLink[]} languageLinks @param {readonly import("./taxonomy-links.js").TaxonomyLinkGroup[]} [taxonomyGroups] @returns {Promise<import("@wpmoo/astro-theme-pilot/types").ThemeChrome>} */
+/** @param {string} currentPath @param {string} locale @param {string} title @param {readonly import("@wpmoo/astro/i18n").LanguageLink[]} languageLinks @param {readonly import("./taxonomy-links.js").TaxonomyLinkGroup[]} [taxonomyGroups] @returns {Promise<import("@wpmoo/astro-theme-starter/types").ThemeChrome>} */
 export async function getChrome(
   currentPath,
   locale,

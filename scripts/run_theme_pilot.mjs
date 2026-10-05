@@ -286,9 +286,9 @@ async function main() {
     for (const phase of ["baseline", "updated", "rolled-back"]) {
       const artifacts = { ...request.artifacts };
       if (phase === "updated") {
-        artifacts["@wpmoo/astro-theme-pilot"] = request.update_artifact;
+        artifacts["@wpmoo/astro-theme-starter"] = request.update_artifact;
         const manifest = JSON.parse(originalManifest);
-        manifest.dependencies["@wpmoo/astro-theme-pilot"] =
+        manifest.dependencies["@wpmoo/astro-theme-starter"] =
           `file:../${request.update_artifact.filename}`;
         await writeJson(join(directory, "package.json"), manifest);
       } else if (phase === "rolled-back") {

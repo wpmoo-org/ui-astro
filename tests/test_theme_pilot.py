@@ -15,7 +15,7 @@ import tempfile
 import unittest
 
 
-SDK_SHA = "03b3a082a90681a1ebf8c3d3a5ae03dee0bae8146a3430e07b21a3ead61b8141"
+SDK_SHA = "b240f8a6b3d68646e86a4c30279e923588fef0cfab7c2367ddfb2c09f8f2b3fc"
 PINS = {"astro": "7.3.3", "@wpmoo/ui": "1.0.0", "bootstrap": "5.3.8",
         "@astrojs/mdx": "8.0.2", "@astrojs/check": "0.9.10", "typescript": "6.0.3"}
 ARCHIVE_ITEMS = {
@@ -259,23 +259,23 @@ def verify_archives(root, artifacts):
             require(manifest == record["manifest"], "archive manifest differs")
         require(manifest["private"] and manifest["license"] == "MIT", "private MIT package required")
         if name == "@wpmoo/astro":
-            require(record["sha256"] == SDK_SHA and len(actual) == 132, "foundation archive checkpoint differs")
-        elif name == "@wpmoo/astro-theme-pilot":
-            require(len(actual) == 14 and manifest["peerDependencies"] == {"@wpmoo/astro": "0.1.0", "astro": "7.3.3"}, "theme archive ownership/peers differ")
+            require(record["sha256"] == SDK_SHA and len(actual) == 131, "foundation archive checkpoint differs")
+        elif name == "@wpmoo/astro-theme-starter":
+            require(len(actual) == 13 and manifest["peerDependencies"] == {"@wpmoo/astro": "0.1.0", "astro": "7.3.3"}, "theme archive ownership/peers differ")
 
 
 def phase_artifacts(proof, phase):
     result = dict(proof["artifacts"])
     if phase == "updated":
-        result["@wpmoo/astro-theme-pilot"] = proof["update_artifact"]
+        result["@wpmoo/astro-theme-starter"] = proof["update_artifact"]
     return result
 
 
 def verify_theme_update(root, proof):
-    baseline = proof["artifacts"]["@wpmoo/astro-theme-pilot"]
+    baseline = proof["artifacts"]["@wpmoo/astro-theme-starter"]
     updated = proof["update_artifact"]
     for record in (baseline, updated):
-        verify_archives(root, {"@wpmoo/astro-theme-pilot": record})
+        verify_archives(root, {"@wpmoo/astro-theme-starter": record})
     require(baseline["filename"] != updated["filename"] and baseline["integrity"] != updated["integrity"], "theme update must have a separate archive identity")
     require(baseline["manifest"]["version"] == "0.1.0" and updated["manifest"]["version"] == "0.1.1", "theme update version differs")
     require(set(baseline["files"]) == set(updated["files"]), "theme update inventory differs")
@@ -350,7 +350,7 @@ class PilotTests(unittest.TestCase):
 
     def test_unrelated_theme_change_is_rejected_after_archive_rebinding(self):
         proof = copy.deepcopy(self.proof)
-        baseline = proof["artifacts"]["@wpmoo/astro-theme-pilot"]
+        baseline = proof["artifacts"]["@wpmoo/astro-theme-starter"]
         updated = proof["update_artifact"]
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
@@ -367,7 +367,7 @@ class PilotTests(unittest.TestCase):
                         updated["files"][member.name[8:]] = hashlib.sha256(data).hexdigest()
             updated["sha256"] = sha(target)
             updated["integrity"] = "sha512-" + base64.b64encode(hashlib.sha512(target.read_bytes()).digest()).decode()
-            verify_archives(directory, {"@wpmoo/astro-theme-pilot": updated})
+            verify_archives(directory, {"@wpmoo/astro-theme-starter": updated})
             with self.assertRaisesRegex(AssertionError, "theme patch changed unrelated files"):
                 verify_theme_update(directory, proof)
 
@@ -397,7 +397,7 @@ class PilotTests(unittest.TestCase):
     def test_rollback_restores_manifest_lock_and_installed_version(self):
         updates = self.proof.get("updates", {})
         require(set(updates) == {"normal", "inherited"}, "actual update phases are absent")
-        verify_archives(ROOT, {"@wpmoo/astro-theme-pilot": self.proof["update_artifact"]})
+        verify_archives(ROOT, {"@wpmoo/astro-theme-starter": self.proof["update_artifact"]})
         for rehearsal in updates.values():
             baseline = rehearsal["phases"]["baseline"]
             rolled = rehearsal["phases"]["rolled-back"]
@@ -405,9 +405,9 @@ class PilotTests(unittest.TestCase):
                 require((owned(ROOT, baseline["directory"]) / filename).read_bytes() == (owned(ROOT, rolled["directory"]) / filename).read_bytes(), "rollback changed manifest/lock bytes")
             require(rolled["output"] == baseline["output"], "rollback output differs from baseline")
             for phase in rehearsal["phases"].values():
-                artifact = phase_artifacts(self.proof, phase["phase"])["@wpmoo/astro-theme-pilot"]
+                artifact = phase_artifacts(self.proof, phase["phase"])["@wpmoo/astro-theme-starter"]
                 version = "0.1.1" if phase["phase"] == "updated" else "0.1.0"
-                require(phase["installed"]["packages"]["@wpmoo/astro-theme-pilot"]["version"] == artifact["manifest"]["version"] == version, "installed theme version differs")
+                require(phase["installed"]["packages"]["@wpmoo/astro-theme-starter"]["version"] == artifact["manifest"]["version"] == version, "installed theme version differs")
 
     def test_sealed_runtime_and_retained_runner(self):
         proof = self.proof
