@@ -1,0 +1,42 @@
+---
+import Button from "../components/Button.astro";
+import type { ContentAside } from "../config/index.js";
+import type { contentFrameClasses } from "./content-frame.js";
+
+interface Props {
+  options: ContentAside;
+  classes: ReturnType<typeof contentFrameClasses>;
+  id: string;
+  label: string;
+  html: string;
+}
+
+const { options, classes, id, label, html } = Astro.props;
+---
+
+<aside class:list={classes.aside} aria-label={label}>
+  {
+    options.mobile === "collapse-before" ? (
+      <Button
+        class={classes.trigger}
+        variant="outline"
+        size="sm"
+        data-bs-toggle="collapse"
+        data-bs-target={`#${id}`}
+        ariaControls={id}
+        ariaExpanded={false}
+        label={label}
+      />
+    ) : null
+  }
+  <div
+    id={id}
+    class:list={[
+      options.mobile === "collapse-before" ? ["collapse", classes.visible] : [],
+      "pt-3",
+      "pt-lg-0",
+    ]}
+  >
+    <Fragment set:html={html} />
+  </div>
+</aside>

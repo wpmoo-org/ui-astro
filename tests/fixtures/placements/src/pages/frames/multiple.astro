@@ -1,0 +1,15 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import ContentFrame from "@wpmoo/astro/layouts/ContentFrame.astro";
+const aside = { mobile: "collapse-before" as const };
+---
+<Layout title="Multiple content frames">
+  <ContentFrame aside={aside} asideLabel="First information">
+    <h1>First content</h1>
+    <p slot="aside">First aside body</p>
+  </ContentFrame>
+  <ContentFrame aside={aside} asideLabel="Second information">
+    <h2>Second content</h2>
+    <p slot="aside">Second aside body</p>
+  </ContentFrame>
+</Layout>

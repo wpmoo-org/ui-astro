@@ -8,6 +8,7 @@ interface Props {
   backdrop?: boolean;
   scroll?: boolean;
   ariaLabel?: string;
+  closeLabel?: string;
   class?: string;
   [key: string]: unknown;
 }
@@ -19,6 +20,7 @@ const {
   backdrop = true,
   scroll = false,
   ariaLabel = "",
+  closeLabel = "Close",
   class: className = "",
   ...rest
 } = Astro.props;
@@ -45,7 +47,7 @@ const {
           </h2>
         )}
         {!Astro.slots.has("header") ? (
-          <CloseButton ariaLabel="Close" dismiss="offcanvas" />
+          <CloseButton ariaLabel={closeLabel} dismiss="offcanvas" />
         ) : null}
       </div>
     ) : null

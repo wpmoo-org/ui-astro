@@ -1,4 +1,8 @@
 ---
+import ContentFrame from "../layouts/ContentFrame.astro";
+import Placement from "../placements/Placement.astro";
+import type { PlacementPlan } from "../placements/index.js";
+import type { ContentAsideInput } from "../config/index.js";
 import PageHeader from "../includes/PageHeader.astro";
 import {
   getEntryClasses,
@@ -7,11 +11,18 @@ import {
 } from "../config/index.js";
 
 interface Props {
+  plan?: PlacementPlan<unknown>;
+  aside?: ContentAsideInput | null;
+  asideLabel?: string;
+  dir?: "ltr" | "rtl";
   title: string;
   description?: string;
   entryContext?: EntryClassContext;
   parts?: PartsInput;
   forwardedSlots?: {
+    aside?: boolean;
+    before?: boolean;
+    taxonomies?: boolean;
     pageHeader: boolean;
     metadata: boolean;
     actions: boolean;
@@ -19,7 +30,7 @@ interface Props {
   };
 }
 
-const { title, description, entryContext, parts, forwardedSlots } = Astro.props;
+const { title, description, entryContext, parts, forwardedSlots, plan, aside, asideLabel, dir } = Astro.props;
 if (!Astro.slots.has("default"))
   throw new TypeError("Single requires its content slot");
 const entryClasses = entryContext ? getEntryClasses(entryContext) : [];
@@ -29,14 +40,13 @@ const hasMetadata = forwardedSlots?.metadata ?? Astro.slots.has("metadata");
 const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
 const hasAfterContent =
   forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
+const hasAside = forwardedSlots?.aside ?? Astro.slots.has("aside");
+const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-content");
+const hasTaxonomies = forwardedSlots?.taxonomies ?? Astro.slots.has("taxonomies");
 ---
 
-<div class="row gx-0" data-layout="page-grid">
-  <article
-    class:list={[entryClasses, "col-12", "lh-lg"]}
-    data-page-col-md="9"
-    data-page-col-xl="8"
-  >
+<ContentFrame element="article" class={entryClasses.concat("lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" /> : null}</Fragment>
     {
       hasPageHeader ? (
         <slot name="page-header" />
@@ -47,9 +57,11 @@ const hasAfterContent =
         </PageHeader>
       )
     }
+    {hasBefore ? <slot name="before-content" /> : plan ? <Placement plan={plan} at="entry.before-content" /> : null}
     <div class="text-body-secondary">
       <slot />
     </div>
-    {hasAfterContent ? <slot name="after-content" /> : null}
-  </article>
-</div>
+    {hasTaxonomies ? <slot name="taxonomies" /> : plan ? <Placement plan={plan} at="entry.taxonomies" /> : null}
+    {hasAfterContent ? <slot name="after-content" /> : plan ? <Placement plan={plan} at="entry.after-content" /> : null}
+
+</ContentFrame>

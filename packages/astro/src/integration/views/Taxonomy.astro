@@ -1,4 +1,5 @@
 ---
+import { preparePlacements } from "../../placements/index.js";
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import Archive from "../../views/Archive.astro";
 import { resolvePageOptions } from "../../config/index.js";
@@ -37,10 +38,12 @@ const layoutProps = {
     : undefined,
   pageContext: { view: "taxonomy" as const, taxonomy, term: term.id },
 };
+const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lang, title: term.name, view: "taxonomy", taxonomy: { id: taxonomy, term: term.id } });
 ---
 
 <SiteLayout
   {...layoutProps}
+  plan={plan}
   options={options}
   href={href}
   locale={locale}
@@ -48,6 +51,9 @@ const layoutProps = {
   breadcrumbs={breadcrumbs}
 >
   <Archive
+    plan={plan}
+    aside={options.aside}
+    dir={options.dir}
     title={term.name}
     description={term.description}
     items={[...items]}

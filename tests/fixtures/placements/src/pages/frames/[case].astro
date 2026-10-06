@@ -1,0 +1,30 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import ContentFrame from "@wpmoo/astro/layouts/ContentFrame.astro";
+import Callout from "../../components/Callout.astro";
+
+export function getStaticPaths() {
+  return ["left", "right-rtl", "stack-after", "hidden", "long", "empty"].map((name) => ({ params: { case: name } }));
+}
+const name = Astro.params.case;
+const dir = name === "right-rtl" ? "rtl" : "ltr";
+const aside = {
+  side: name === "left" ? "left" as const : "right" as const,
+  columns: 3 as const,
+  breakpoint: "xl" as const,
+  sticky: name === "long",
+  mobile: name === "stack-after" ? "stack-after" as const : name === "hidden" ? "hidden" as const : "collapse-before" as const,
+};
+---
+
+<Layout title={`Content frame ${name}`} dir={dir}>
+  <ContentFrame element="article" aside={aside} dir={dir} asideLabel="Fixture information">
+    <h1>Content frame {name}</h1>
+    <p>One native content frame, one aside body.</p>
+    {name === "long" ? Array.from({ length: 50 }, (_, index) => <p>Content paragraph {index + 1}</p>) : null}
+    <Fragment slot="aside">
+      {name !== "empty" ? <Callout instanceId={`frame-${name}-callout`} message="Buffered native aside assets" /> : null}
+      {name === "long" ? <ul>{Array.from({ length: 40 }, (_, index) => <li>Aside item {index + 1}</li>)}</ul> : null}
+    </Fragment>
+  </ContentFrame>
+</Layout>

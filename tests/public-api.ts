@@ -391,3 +391,18 @@ export const siteLayoutOptions: ComponentProps<typeof SiteLayout> = {
   options: resolved,
   metadata: null,
 };
+
+import type { BlockDefinition, RenderContext } from "@wpmoo/astro/placements";
+export const blockDefinition: BlockDefinition = {
+  component: new URL("./Example.astro", import.meta.url),
+};
+export const unknownBlockCollection: BlockDefinition = {
+  // @ts-expect-error Native collection keys remain finite.
+  collection: "missing-block-collection",
+  translationKey: "cta",
+};
+export const nativePlacementContext: RenderContext = {
+  href: "/native",
+  view: "native",
+  headings: [],
+};

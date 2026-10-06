@@ -1,0 +1,18 @@
+---
+import Navigation from "../../components/Navigation.astro";
+import { filterHeadings } from "./headings.js";
+interface Props {
+  headings: readonly { depth: number; slug: string; text: string }[];
+  depths?: readonly number[];
+  label?: string;
+}
+const { headings, depths, label = "On this page" } = Astro.props;
+const items = filterHeadings(headings, depths ? [...depths] : undefined).map((heading) => ({ label: heading.text, href: `#${heading.slug}` }));
+---
+
+{items.length > 0 && (
+  <section data-table-of-contents class="d-flex flex-column gap-2">
+    <h2 class="small fw-medium mb-0 text-body-secondary">{label}</h2>
+    <Navigation ariaLabel={label} items={items} style="base" vertical class="small" />
+  </section>
+)}

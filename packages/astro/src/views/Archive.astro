@@ -1,4 +1,8 @@
 ---
+import ContentFrame from "../layouts/ContentFrame.astro";
+import Placement from "../placements/Placement.astro";
+import type { PlacementPlan } from "../placements/index.js";
+import type { ContentAsideInput } from "../config/index.js";
 import PageHeader from "../includes/PageHeader.astro";
 import Loop from "./Loop.astro";
 import type {
@@ -16,6 +20,10 @@ interface LoopItem {
   entryContext?: EntryClassContext;
 }
 interface Props {
+  plan?: PlacementPlan<unknown>;
+  aside?: ContentAsideInput | null;
+  asideLabel?: string;
+  dir?: "ltr" | "rtl";
   title: string;
   description?: string;
   items?: LoopItem[];
@@ -25,6 +33,9 @@ interface Props {
   lang?: string;
   dateFormatter?: DateFormatter;
   forwardedSlots?: {
+    aside?: boolean;
+    before?: boolean;
+    taxonomies?: boolean;
     pageHeader: boolean;
     actions: boolean;
     loop: boolean;
@@ -42,16 +53,19 @@ const {
   lang,
   dateFormatter,
   forwardedSlots,
+  plan, aside, asideLabel, dir,
 } = Astro.props;
 const hasPageHeader =
   forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
 const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
 const hasLoop = forwardedSlots?.loop ?? Astro.slots.has("loop");
 const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
+const hasAside = forwardedSlots?.aside ?? Astro.slots.has("aside");
+const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-list");
 ---
 
-<div class="row gx-0" data-layout="page-grid">
-  <section class="col-12" data-page-col-md="9" data-page-col-xl="8">
+<ContentFrame element="section" class={""} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" /> : null}</Fragment>
     {
       hasPageHeader ? (
         <slot name="page-header" />
@@ -61,6 +75,7 @@ const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
         </PageHeader>
       )
     }
+    {hasBefore ? <slot name="before-list" /> : plan ? <Placement plan={plan} at="archive.before-list" /> : null}
     {
       hasLoop ? (
         <slot name="loop" />
@@ -75,6 +90,6 @@ const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
         />
       )
     }
-    {hasAfterList ? <slot name="after-list" /> : null}
-  </section>
-</div>
+    {hasAfterList ? <slot name="after-list" /> : plan ? <Placement plan={plan} at="archive.after-list" /> : null}
+
+</ContentFrame>

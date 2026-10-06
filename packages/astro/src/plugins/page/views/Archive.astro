@@ -1,4 +1,6 @@
 ---
+import type { ContentAsideInput } from "../../../config/index.js";
+import type { PlacementPlan } from "../../../placements/index.js";
 import type { CollectionEntry } from "astro:content";
 import {
   defineSite,
@@ -10,6 +12,10 @@ import Archive from "../../../views/Archive.astro";
 import Loop from "./Loop.astro";
 
 interface Props {
+  plan?: PlacementPlan<unknown>;
+  aside?: ContentAsideInput | null;
+  asideLabel?: string;
+  dir?: "ltr" | "rtl";
   parts?: PartsInput;
   dateFormatter?: DateFormatter;
   entries: CollectionEntry<"page">[];
@@ -43,6 +49,10 @@ const {
 ---
 
 <Archive
+  plan={Astro.props.plan}
+  aside={Astro.props.aside}
+  asideLabel={Astro.props.asideLabel}
+  dir={Astro.props.dir}
   parts={parts}
   lang={dateLang}
   dateFormatter={dateFormatter}
@@ -51,6 +61,9 @@ const {
   emptyText={emptyText}
   titleVariant={titleVariant}
   forwardedSlots={{
+    aside: Astro.slots.has("aside"),
+    before: Astro.slots.has("before-list"),
+    taxonomies: Astro.slots.has("taxonomies"),
     pageHeader: Astro.slots.has("page-header"),
     actions: Astro.slots.has("actions"),
     loop: true,
@@ -88,4 +101,7 @@ const {
       <slot name="after-list" slot="after-list" />
     ) : null
   }
+  {Astro.slots.has("aside") ? <slot name="aside" slot="aside" /> : null}
+  {Astro.slots.has("before-list") ? <slot name="before-list" slot="before-list" /> : null}
+  {Astro.slots.has("taxonomies") ? <slot name="taxonomies" slot="taxonomies" /> : null}
 </Archive>

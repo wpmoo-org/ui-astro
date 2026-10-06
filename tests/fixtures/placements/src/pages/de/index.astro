@@ -1,0 +1,13 @@
+---
+import Layout from "@wpmoo/astro/Layout.astro";
+import Placement from "@wpmoo/astro/placements/Placement.astro";
+import { preparePlacements } from "@wpmoo/astro/placements";
+const plan = await preparePlacements({ href: Astro.url.pathname, view: "native", locale: Astro.currentLocale, headings: [{ depth: 2, slug: "intro", text: "<Introduction>" }] });
+---
+<Layout title="Native placements">
+  <Placement plan={plan} at="content.before" />
+  <h1>Native placements</h1>
+  <h2 id="intro">Introduction</h2>
+  <Placement plan={plan} at="aside.content" />
+  <Placement plan={plan} at="content.after" />
+</Layout>

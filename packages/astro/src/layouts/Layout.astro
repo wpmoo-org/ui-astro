@@ -213,6 +213,7 @@ const jsonLd = metadata
         {sidebar ? <script is:inline set:html={stateSource} /> : null}
         {sidebar ? <slot name="sidebar" /> : null}
         <div data-slot="page">
+          <slot name="before-header" />
           {
             hasHeader ? (
               <header class:list={parts.header.utilities}>
@@ -238,6 +239,7 @@ const jsonLd = metadata
               </header>
             ) : null
           }
+          <slot name="after-header" />
           <main
             id="main-content"
             tabindex="-1"
@@ -250,6 +252,7 @@ const jsonLd = metadata
               <slot />
             </div>
           </main>
+          <slot name="before-footer" />
           {
             Astro.slots.has("footer") ? (
               <footer class:list={parts.footer.utilities}>
@@ -259,8 +262,10 @@ const jsonLd = metadata
               </footer>
             ) : null
           }
+          <slot name="after-footer" />
         </div>
       </div>
+      <slot name="overlay" />
     </div>
     <script>
       import "../runtime/bootstrap.js";

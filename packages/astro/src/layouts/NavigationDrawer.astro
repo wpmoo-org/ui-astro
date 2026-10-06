@@ -1,0 +1,27 @@
+---
+import Sheet from "../components/Sheet.astro";
+import Navigation from "../components/Navigation.astro";
+import type { SiteChrome } from "../site/index.d.ts";
+interface Props { chrome: SiteChrome; side: "left" | "right" }
+const { chrome, side } = Astro.props;
+type Item = SiteChrome["navigation"][number]["items"][number];
+function links(items: readonly Item[]): { label: string; href: string; active?: boolean }[] {
+  return items.flatMap((item) => [
+    ...(item.href ? [{ label: item.title, href: item.href, active: item.active }] : []),
+    ...links(item.children ?? []),
+  ]);
+}
+---
+<Sheet id="moo-site-drawer" title={chrome.brand} placement={side === "left" ? "start" : "end"} closeLabel={chrome.presentation.labels.closeNavigation} data-site-drawer={side}>
+  {chrome.navigation.map((group) => (
+    <section class="mb-4">
+      {group.label ? <h3 class="small text-body-secondary mb-3">{group.label}</h3> : null}
+      {group.items.map((item) => item.children?.length ? (
+        <section class="mb-3">
+          <h4 class="small fw-medium mb-2">{item.title}</h4>
+          <Navigation ariaLabel={item.title} items={links(item.children)} style="base" vertical />
+        </section>
+      ) : <Navigation ariaLabel={item.title} items={links([item])} style="base" vertical />)}
+    </section>
+  ))}
+</Sheet>

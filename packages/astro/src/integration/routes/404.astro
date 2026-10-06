@@ -1,12 +1,11 @@
 ---
 import { getNotFoundOptions } from "../../not-found/index.js";
-import { getLocaleHref } from "../../i18n/index.js";
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import NotFound from "../../views/NotFound.astro";
 
 export const prerender = true;
 const data = getNotFoundOptions(Astro.currentLocale);
-const href = getLocaleHref("/404", data.locale);
+const href = data.href;
 ---
 
 <SiteLayout

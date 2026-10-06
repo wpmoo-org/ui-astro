@@ -322,12 +322,39 @@ export function formatDate(date, options = {}) {
         timeZone: "UTC",
       }).format(date);
 }
-const sidebarSchema = z.strictObject({
+const sidebarSchema = z
+  .strictObject({
+    mode: z.enum(["sidebar", "drawer"]).optional(),
+    side: z.enum(["left", "right"]).optional(),
+    variant: z.enum(["sidebar", "floating", "inset"]).optional(),
+    collapsible: z.enum(["icon", "offcanvas", "none"]).optional(),
+    rail: z.boolean().optional(),
+    defaultOpen: z.boolean().optional(),
+  })
+  .superRefine((value, context) => {
+    if (
+      value.mode === "drawer" &&
+      Object.keys(value).some((key) => !["mode", "side"].includes(key))
+    )
+      context.addIssue({
+        code: "custom",
+        message: "drawer accepts only mode and side",
+      });
+  });
+
+export const contentAsideSchema = z.strictObject({
   side: z.enum(["left", "right"]).optional(),
-  variant: z.enum(["sidebar", "floating", "inset"]).optional(),
-  collapsible: z.enum(["icon", "offcanvas", "none"]).optional(),
-  rail: z.boolean().optional(),
-  defaultOpen: z.boolean().optional(),
+  columns: z.number().int().min(2).max(6).optional(),
+  breakpoint: z.enum(["lg", "xl", "xxl"]).optional(),
+  sticky: z.boolean().optional(),
+  mobile: z.enum(["collapse-before", "stack-after", "hidden"]).optional(),
+});
+const asideDefaults = Object.freeze({
+  side: "right",
+  columns: 3,
+  breakpoint: "xl",
+  sticky: false,
+  mobile: "collapse-before",
 });
 
 export const layoutSchema = z.strictObject({
@@ -338,6 +365,7 @@ export const layoutSchema = z.strictObject({
   lang: z.string().trim().min(1).optional(),
   dir: z.enum(["ltr", "rtl"]).optional(),
   sidebar: sidebarSchema.nullable().optional(),
+  aside: contentAsideSchema.nullable().optional(),
   parts: partsSchema.optional(),
 });
 
@@ -413,6 +441,7 @@ const builtIn = Object.freeze({
   lang: "en",
   dir: "ltr",
   sidebar: null,
+  aside: null,
 });
 
 function plainRecord(value) {
@@ -443,19 +472,22 @@ function copyLayout(options) {
   return {
     ...options,
     ...(options.sidebar ? { sidebar: { ...options.sidebar } } : {}),
+    ...(options.aside ? { aside: { ...options.aside } } : {}),
     ...(options.parts ? { parts: structuredClone(options.parts) } : {}),
   };
 }
 
 function freezeLayout(options) {
   if (options.sidebar) Object.freeze(options.sidebar);
+  if (options.aside) Object.freeze(options.aside);
   if (options.parts) freezeTree(options.parts);
   return Object.freeze(options);
 }
 
 function mergeLayout(...layers) {
   const output = { ...builtIn };
-  const sidebar = { ...sidebarDefaults };
+  let sidebar = { ...sidebarDefaults };
+  let aside = { ...asideDefaults };
   const parts = structuredClone(partDefaults);
   for (const layer of layers) {
     if (!layer) continue;
@@ -464,10 +496,29 @@ function mergeLayout(...layers) {
       if (key === "sidebar") {
         if (value === null) output.sidebar = null;
         else {
+          const mode = value.mode ?? sidebar.mode ?? "sidebar";
+          if (value.mode && mode !== (sidebar.mode ?? "sidebar"))
+            sidebar =
+              mode === "drawer"
+                ? { mode, side: "left" }
+                : { ...sidebarDefaults, mode };
+          if (
+            mode === "drawer" &&
+            Object.keys(value).some((key) => !["mode", "side"].includes(key))
+          )
+            throw new TypeError("sidebar drawer accepts only mode and side");
           for (const [field, option] of Object.entries(value)) {
             if (option !== undefined) sidebar[field] = option;
           }
           output.sidebar = { ...sidebar };
+        }
+      } else if (key === "aside") {
+        if (value === null) {
+          output.aside = null;
+          aside = { ...asideDefaults };
+        } else {
+          aside = { ...aside, ...value };
+          output.aside = { ...aside };
         }
       } else if (key === "parts") mergeParts(parts, value);
       else if (key === "views") continue;

@@ -179,13 +179,46 @@ export interface Parts {
   readonly footer: Readonly<Required<FooterPartInput>>;
 }
 
-export interface SidebarOptionsInput {
+export interface AppSidebarOptionsInput {
+  mode?: "sidebar";
   side?: "left" | "right";
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "icon" | "offcanvas" | "none";
   rail?: boolean;
   defaultOpen?: boolean;
 }
+
+export type SidebarOptionsInput =
+  | AppSidebarOptionsInput
+  | {
+      mode: "drawer";
+      side?: "left" | "right";
+      variant?: never;
+      collapsible?: never;
+      rail?: never;
+      defaultOpen?: never;
+    };
+export type SidebarOptions =
+  | (Readonly<Required<Omit<AppSidebarOptionsInput, "mode">>> & {
+      readonly mode?: "sidebar";
+    })
+  | {
+      readonly mode: "drawer";
+      readonly side: "left" | "right";
+      variant?: never;
+      collapsible?: never;
+      rail?: never;
+      defaultOpen?: never;
+    };
+
+export interface ContentAsideInput {
+  side?: "left" | "right";
+  columns?: 2 | 3 | 4 | 5 | 6;
+  breakpoint?: "lg" | "xl" | "xxl";
+  sticky?: boolean;
+  mobile?: "collapse-before" | "stack-after" | "hidden";
+}
+export type ContentAside = Readonly<Required<ContentAsideInput>>;
 
 export interface PageOptionsInput {
   shellMode?: "viewport" | "contained";
@@ -195,6 +228,7 @@ export interface PageOptionsInput {
   lang?: string;
   dir?: "ltr" | "rtl";
   sidebar?: SidebarOptionsInput | null;
+  aside?: ContentAsideInput | null;
   parts?: PartsInput;
 }
 
@@ -205,7 +239,8 @@ export interface PageOptions {
   theme: "light" | "dark";
   lang: string;
   dir: "ltr" | "rtl";
-  sidebar: Readonly<Required<SidebarOptionsInput>> | null;
+  sidebar: SidebarOptions | null;
+  aside: ContentAside | null;
   parts: Parts;
 }
 
@@ -221,6 +256,9 @@ export interface SiteLabelsInput {
   selectLanguage?: string;
   lightMode?: string;
   darkMode?: string;
+  closeNavigation?: string;
+  onThisPage?: string;
+  aside?: string;
 }
 export interface SiteCopyInput {
   brandDescription?: string;
@@ -313,6 +351,7 @@ export type PageClassContext =
   | { view: "taxonomy"; taxonomy: string; term: string }
   | { view: "native"; key: string };
 
+export declare const contentAsideSchema: z.ZodType<ContentAsideInput>;
 export declare const layoutSchema: z.ZodType<PageOptionsInput>;
 export declare function resolveParts(input?: PartsInput): Parts;
 export declare function formatDate(

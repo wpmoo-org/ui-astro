@@ -10,6 +10,7 @@ For a short overview, see the [README](../README.md).
 - [Native 404](#native-404)
 - [Public components and runtime](#public-files-and-behavior)
 - [Ready blocks](#ready-blocks)
+- [Content placements, drawer and aside](#content-placements-drawer-and-aside)
 - [Theme preferences](#theme-preferences)
 - [MDX and native Astro sections](#explicit-mdx-and-native-astro-sections)
 - [Post content and routes](#post-content-and-routes)
@@ -153,6 +154,176 @@ preserves the existing `moo:theme` preference for a complete document owner;
 embedded owners persist only with an explicit `data-moo-theme-key`.
 Denied storage still allows an in-page change. The block adds no stylesheet
 and never places theme state on `html` or `body`.
+
+## Content placements, drawer and aside
+
+Declare a reusable block once in the integration, then select where it appears.
+The default site renders those positions without copied templates or page routes.
+Blocks, navigation and the content aside are independent options.
+
+```js
+const site = defineSite({
+  brand: "My studio",
+  defaults: {
+    lang: "en",
+    pageWidth: "xl",
+    headerWidth: "xl",
+    parts: { content: { utilities: ["mx-auto", "py-4", "px-3"] } },
+    sidebar: { mode: "drawer", side: "left" },
+    aside: { side: "right", columns: 3, breakpoint: "xl", sticky: true },
+  },
+});
+
+moo({
+  site,
+  blocks: {
+    notice: { collection: "block", translationKey: "site-notice" },
+    promotion: {
+      component: new URL("./src/components/Promotion.astro", import.meta.url),
+    },
+  },
+  placements: [
+    {
+      id: "toc",
+      block: "toc",
+      at: "aside.content",
+      include: { views: ["single"] },
+    },
+    {
+      id: "notice",
+      block: "notice",
+      at: "entry.after-content",
+      include: { types: ["post"], locales: ["en", "de"] },
+      exclude: { translationKeys: ["announcement"] },
+    },
+  ],
+});
+```
+
+The app Sidebar remains the default when `sidebar` has no `mode`.
+`mode: "drawer"` uses the existing Sheet/Offcanvas navigation, opened by the
+header toggle. Drawer input accepts only `mode` and physical `side`; app-only
+rail, collapsible and default-open settings do not carry across mode changes.
+`sidebar: null` removes either navigation presentation. Header controls and
+the content aside remain available.
+
+### Native reusable content
+
+Add a native collection to the host's `src/content.config.ts`. Import the schema
+through the Node-safe subpath, which does not load server-only placements:
+
+```ts
+import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
+import { contentBlockSchema } from "@wpmoo/astro/placements/content";
+
+const block = defineCollection({
+  loader: glob({
+    pattern: "**/*.{md,mdx}",
+    base: "./src/content/block",
+    retainBody: true,
+  }),
+  schema: contentBlockSchema,
+});
+export const collections = { block /* plus the site's existing collections */ };
+```
+
+For example, `src/content/block/en/site-notice.md` contains:
+
+```md
+---
+translationKey: site-notice
+locale: en
+status: publish
+---
+
+## A reusable notice
+
+This content appears at the configured position.
+```
+
+Native Markdown and optional host MDX rendering own the body and assets.
+Block entries have no site routes, metadata or layout options. `status` defaults
+to `draft`; only published content in the current locale appears. A missing
+published translation is omitted rather than replaced with another language.
+Unknown collections, missing translation keys and duplicate key/locale pairs
+are configuration errors. Markdown alone needs no MDX integration.
+
+Each rendered occurrence gets an `instanceId`. Native block heading IDs and
+their local heading links are namespaced automatically. Custom Astro/MDX
+widgets use `props.instanceId` for their own DOM IDs. They also receive readonly
+`props.context` and canonical `props.links`; these names cannot be overridden
+by placement `props`. Component URLs are imported through Astro/Vite, never
+by the Node configuration loader.
+
+### Positions and display rules
+
+| Region        | Positions                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| Shell         | `header.before`, `header.after`, `content.before`, `content.after`, `footer.before`, `footer.after` |
+| Single entry  | `entry.before-content`, `entry.after-content`, `entry.taxonomies`                                   |
+| Archive       | `archive.before-list`, `archive.after-list`                                                         |
+| Content aside | `aside.content`                                                                                     |
+
+Positions without matching content emit nothing. `order` defaults to `10`;
+equal values retain declaration order. `include` and `exclude` support `views`,
+`types`, `locales`, native `entries`, stable `translationKeys`, and assigned
+`terms: { category: ["guides"] }`. Values within a dimension are alternatives;
+different dimensions must all match. Exclusions win. Unknown references fail
+validation. Entry conditions inspect assigned terms; taxonomy archive
+conditions inspect the current taxonomy/term. Canonical paths come from the
+existing native route producers, including translated slugs and base paths.
+
+The built-in `entry-taxonomies` block supplies assigned term links. A custom
+placement can use `mode: "replace"` only at `entry.taxonomies`. Replacement
+takes effect after content selection: a draft or missing translation retains
+the default term links. Two resolved replacements for one page are an error.
+`toc` accepts `label` and `depths`; `entry-taxonomies` accepts `label`.
+
+### Content aside and table of contents
+
+`aside` accepts physical `side: "left" | "right"`, `columns: 2..6`,
+`breakpoint: "lg" | "xl" | "xxl"`, optional `sticky`, and `mobile`:
+
+- `collapse-before` (default): one accessible disclosure before content.
+- `stack-after`: the same aside body follows content below the breakpoint.
+- `hidden`: the aside is visible only from the selected breakpoint.
+
+An empty rendered aside reserves no column. `aside: null` disables the frame's
+aside for that page. RTL keeps the requested physical desktop side. TOC uses
+native headings from the current entry, in authored order; its default depths
+are h2/h3. It adds no heading scanner or active-section script. Entries without
+matching headings emit no TOC.
+
+For a custom theme, `layouts/ContentFrame.astro` supplies this frame around its
+default and `aside` slots; pure `blocks/TableOfContents.astro` accepts native
+`headings`, optional `depths` and a translated `label`.
+
+The accepted starter foundation has compiled regression checks for matching
+`container-xl` regions, separate drawer taxonomy groups, and the native TOC
+disclosure before the content. Run against a built, directly consuming starter:
+
+```sh
+python3 tests/test_placements_acceptance.py /absolute/starter/dist
+node scripts/verify_placements_starter.mjs /absolute/starter/dist
+```
+
+These checks preserve semantic markup and public utility contracts. Browser
+inspection remains necessary for geometry, focus and interactive state.
+
+### Custom themes and native pages
+
+Built-in routes prepare one explicit plan and pass it through SiteLayout and
+the view. A native route can call `preparePlacements({ href, locale, view:
+"native", title, headings })` from `@wpmoo/astro/placements` and pass the result
+as `plan` to SiteLayout. Low-level Layout remains collection-free; opt into a
+position with `placements/Placement.astro` and `{ plan, at }` when composing a
+custom shell. The preparation facade is server-only.
+
+Existing explicit view slots retain ownership of their region. `aside`,
+`taxonomies`, `before-content`, `after-content`, `before-list` and `after-list`
+can replace the corresponding central rendering for that view. The SDK does
+not clone the page body or the aside for mobile and desktop.
 
 ## Install and compose a page
 

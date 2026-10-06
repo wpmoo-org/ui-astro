@@ -1,4 +1,5 @@
 ---
+import { preparePlacements } from "../../../placements/index.js";
 import SiteLayout from "../../../layouts/SiteLayout.astro";
 import { resolvePageOptions } from "../../../config/index.js";
 import { resolveSeoMetadata } from "../../../seo/index.js";
@@ -56,16 +57,21 @@ const layoutProps = {
       })
     : undefined,
 };
+const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lang, title: label, view: "archive", type: "post" });
 ---
 
 <SiteLayout
   {...layoutProps}
+  plan={plan}
   options={options}
   href={href}
   locale={locale}
   languageLinks={languageLinks}
 >
   <Archive
+    plan={plan}
+    aside={options.aside}
+    dir={options.dir}
     parts={options.parts}
     entries={entries}
     title={label}

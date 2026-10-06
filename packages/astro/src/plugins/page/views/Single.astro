@@ -1,10 +1,16 @@
 ---
+import type { ContentAsideInput } from "../../../config/index.js";
+import type { PlacementPlan } from "../../../placements/index.js";
 import Single from "../../../views/Single.astro";
 import type { CollectionEntry } from "astro:content";
 import type { PartsInput } from "../../../config/index.js";
 import { entryClassContext } from "../../../taxonomies/paths.js";
 
 interface Props {
+  plan?: PlacementPlan<unknown>;
+  aside?: ContentAsideInput | null;
+  asideLabel?: string;
+  dir?: "ltr" | "rtl";
   entry: CollectionEntry<"page">;
   parts?: PartsInput;
 }
@@ -12,6 +18,10 @@ const { entry, parts } = Astro.props;
 ---
 
 <Single
+  plan={Astro.props.plan}
+  aside={Astro.props.aside}
+  asideLabel={Astro.props.asideLabel}
+  dir={Astro.props.dir}
   parts={parts}
   title={entry.data.title}
   description={entry.data.description}
@@ -20,6 +30,9 @@ const { entry, parts } = Astro.props;
     entry,
   )}
   forwardedSlots={{
+    aside: Astro.slots.has("aside"),
+    before: Astro.slots.has("before-content"),
+    taxonomies: Astro.slots.has("taxonomies"),
     pageHeader: Astro.slots.has("page-header"),
     metadata: Astro.slots.has("metadata"),
     actions: Astro.slots.has("actions"),
@@ -43,4 +56,7 @@ const { entry, parts } = Astro.props;
       <slot name="after-content" slot="after-content" />
     ) : null
   }
+  {Astro.slots.has("aside") ? <slot name="aside" slot="aside" /> : null}
+  {Astro.slots.has("before-content") ? <slot name="before-content" slot="before-content" /> : null}
+  {Astro.slots.has("taxonomies") ? <slot name="taxonomies" slot="taxonomies" /> : null}
 </Single>

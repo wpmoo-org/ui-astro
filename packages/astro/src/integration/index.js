@@ -1,5 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { normalizePlacements } from "../placements/options.js";
+import {
+  placementVitePlugin,
+  validatePlacementRegistry,
+} from "../placements/vite.js";
 
 import { defineSite } from "../config/index.js";
 import { siteHref } from "../content/paths.js";
@@ -61,11 +66,18 @@ export default function moo(input = {}) {
         "taxonomyBasePath",
         "taxonomyRoutes",
         "notFound",
+        "blocks",
+        "placements",
       ].includes(key)
     )
       throw new TypeError(`moo.${key} is unsupported`);
   }
   const site = defineSite(input.site);
+  const placementOptions = normalizePlacements({
+    blocks: input.blocks,
+    placements: input.placements,
+  });
+  let placementProfile = null;
   const notFound = normalizeNotFound(input.notFound);
   const plugins = input.plugins ?? [page(), post()];
   const baseRegistry = prepareRegistry(plugins, {
@@ -156,6 +168,7 @@ export default function moo(input = {}) {
           vite: {
             ssr: { noExternal: ["@wpmoo/astro"] },
             plugins: [
+              placementVitePlugin(() => placementProfile),
               {
                 name: "wpmoo-astro-context",
                 resolveId(source, importer, options) {
@@ -294,6 +307,33 @@ export default function moo(input = {}) {
           trailingSlash: config.trailingSlash,
         });
         const i18n = resolveI18n(config.i18n, site);
+        placementProfile = {
+          ...placementOptions,
+          site,
+          i18n,
+          active,
+          base: config.base,
+          trailingSlash: config.trailingSlash,
+          types: plugins.flatMap((plugin) =>
+            plugin.contentTypes.map((type) => type.id),
+          ),
+          typeCollections: Object.fromEntries(
+            plugins.flatMap((plugin) =>
+              plugin.contentTypes.map((type) => [type.id, type.collection]),
+            ),
+          ),
+          taxonomies: registry.taxonomies.map((taxonomy) => taxonomy.id),
+          hostContentConfig:
+            ["content.config.ts", "content.config.js", "content.config.mjs"]
+              .map((name) => new URL(name, config.srcDir))
+              .filter((url) => existsSync(url))
+              .map(fileURLToPath)[0] ?? null,
+        };
+        validatePlacementRegistry(placementProfile);
+        injectTypes({
+          filename: "placements-context.d.ts",
+          content: `declare module "virtual:wpmoo-astro/placements" { const profile: any; export default profile; export const factories: Record<string, import("astro/runtime/server/index.js").AstroComponentFactory>; export const collections: Record<string, unknown>; export function getAssignedTerms(entry: unknown, type: string | undefined, locale: string): Promise<import("@wpmoo/astro/placements").PlacementPlan["context"]["assignedTerms"]>; export function getKnownTerms(id: string): Promise<{ id: string }[]>; export function getChrome(input: unknown): Promise<import("@wpmoo/astro/placements").PlacementPlan["chrome"]>; }`,
+        });
         errorProfile = {
           site,
           base: config.base,

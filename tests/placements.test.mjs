@@ -270,3 +270,38 @@ test("TOC uses native heading identity and ordered configurable depths", () => {
     );
   assert.equal(source[1].text, "<Intro>");
 });
+
+test("ready block props reject invalid labels, unknown options and depths early", () => {
+  for (const props of [
+    { label: 42 },
+    { depths: [] },
+    { depths: [2, 7] },
+    { typo: true },
+  ])
+    assert.throws(
+      () =>
+        normalize({
+          placements: [{ id: "toc", block: "toc", at: "aside.content", props }],
+        }),
+      /props|depths/,
+    );
+});
+
+test("native prose heading IDs and local links get distinct placement namespaces", async () => {
+  const module =
+    await import("../packages/astro/src/placements/heading-ids.js").catch(
+      () => ({}),
+    );
+  assert.equal(typeof module.namespaceHeadingIds, "function");
+  const html =
+    '<h2 id="intro">Intro</h2><a href="#intro">Go</a><div id="widget">Widget</div><script>const id="intro";</script>';
+  const headings = [{ depth: 2, slug: "intro", text: "Intro" }];
+  assert.equal(
+    module.namespaceHeadingIds(html, headings, "block-one"),
+    '<h2 id="block-one-intro">Intro</h2><a href="#block-one-intro">Go</a><div id="widget">Widget</div><script>const id="intro";</script>',
+  );
+  assert.notEqual(
+    module.namespaceHeadingIds(html, headings, "block-one"),
+    module.namespaceHeadingIds(html, headings, "block-two"),
+  );
+});

@@ -1,16 +1,21 @@
 ---
 import Layout from "./Layout.astro";
+import NavigationDrawer from "./NavigationDrawer.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/internal/Icon.astro";
 import Header from "../includes/Header.astro";
 import Sidebar from "../includes/Sidebar.astro";
 import Footer from "../includes/Footer.astro";
 import ThemeToggle from "../blocks/theme-toggle/ThemeToggle.astro";
 import LanguageSwitcher from "../blocks/language-switcher/LanguageSwitcher.astro";
-import { getSiteChrome } from "../site/chrome.js";
+import { preparePlacements, type PlacementPlan } from "../placements/index.js";
+import Placement from "../placements/Placement.astro";
 import type { PageOptions, PageClassContext } from "../config/index.js";
 import type { SeoMetadata } from "../seo/index.js";
 import type { LanguageLink } from "../i18n/index.js";
 
 interface Props {
+  plan?: PlacementPlan<unknown>;
   title: string;
   description?: string;
   options: Readonly<PageOptions>;
@@ -32,15 +37,18 @@ const {
   breadcrumbs,
   pageContext,
 } = Astro.props;
-const chrome = await getSiteChrome({ href, locale, title, languageLinks });
+const plan = Astro.props.plan ?? await preparePlacements({ href, locale, title, view: pageContext?.view === "native" && pageContext.key === "not-found" ? "not-found" : "native" });
+const chrome = plan.chrome;
 const { presentation } = chrome;
 const { sidebar, ...layout } = options;
-const { defaultOpen, ...sidebarOptions } = sidebar ?? {};
+const appSidebar = sidebar && sidebar.mode !== "drawer" ? sidebar : null;
+const drawer = sidebar?.mode === "drawer" ? sidebar : null;
+const { defaultOpen, mode: _mode, ...sidebarOptions } = appSidebar ?? {};
 const layoutProps = { ...layout, title, description, metadata, pageContext };
 ---
 
 {
-  sidebar ? (
+  appSidebar ? (
     <Layout
       {...layoutProps}
       sidebar
@@ -58,6 +66,10 @@ const layoutProps = { ...layout, title, description, metadata, pageContext };
         groups={chrome.navigation}
         parts={options.parts}
       />
+      <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>
+      <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
+      <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
+      <Fragment slot="after-footer"><Placement plan={plan} at="footer.after" /></Fragment>
       <Header
         slot="header"
         breadcrumbs={[...(breadcrumbs ?? chrome.breadcrumbs)]}
@@ -90,7 +102,9 @@ const layoutProps = { ...layout, title, description, metadata, pageContext };
           </div>
         ) : null}
       </Header>
+      <Placement plan={plan} at="content.before" />
       <slot />
+      <Placement plan={plan} at="content.after" />
       <Footer
         slot="footer"
         brand={chrome.brand}
@@ -100,11 +114,21 @@ const layoutProps = { ...layout, title, description, metadata, pageContext };
     </Layout>
   ) : (
     <Layout {...layoutProps}>
+      {drawer ? <NavigationDrawer slot="overlay" chrome={chrome} side={drawer.side} /> : null}
+      <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>
+      <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
+      <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
+      <Fragment slot="after-footer"><Placement plan={plan} at="footer.after" /></Fragment>
       <Header
         slot="header"
         breadcrumbs={[...(breadcrumbs ?? chrome.breadcrumbs)]}
         parts={options.parts}
       >
+        {drawer ? (
+          <Button slot="trigger" variant={options.parts.header.trigger.variant} size={options.parts.header.trigger.size} data-bs-toggle="offcanvas" data-bs-target="#moo-site-drawer" ariaLabel={options.parts.header.toggleLabel} ariaControls="moo-site-drawer">
+            <Icon name={options.parts.header.trigger.icon} />
+          </Button>
+        ) : null}
         {presentation.themeToggle ||
         presentation.languageSwitcher ||
         Astro.slots.has("header-actions") ? (
@@ -132,7 +156,9 @@ const layoutProps = { ...layout, title, description, metadata, pageContext };
           </div>
         ) : null}
       </Header>
+      <Placement plan={plan} at="content.before" />
       <slot />
+      <Placement plan={plan} at="content.after" />
       <Footer
         slot="footer"
         brand={chrome.brand}

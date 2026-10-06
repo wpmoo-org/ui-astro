@@ -209,6 +209,26 @@ export function normalizePlacements(input = {}) {
       record(value.props ?? {}, `placement ${id}.props`),
       `placement ${id}.props`,
     );
+    if (builtInBlocks.includes(value.block)) {
+      record(
+        props,
+        `placement ${id}.props`,
+        value.block === "toc" ? ["label", "depths"] : ["label"],
+      );
+      if (props.label !== undefined)
+        text(props.label, `placement ${id}.props.label`);
+      if (value.block === "toc" && props.depths !== undefined) {
+        const depths = array(props.depths, `placement ${id}.props.depths`);
+        if (
+          depths.some(
+            (depth) => !Number.isInteger(depth) || depth < 1 || depth > 6,
+          )
+        )
+          throw new TypeError(
+            `placement ${id}.props.depths must contain integers from 1 to 6`,
+          );
+      }
+    }
     for (const key of ["context", "instanceId", "links"]) {
       if (Object.hasOwn(props, key))
         throw new TypeError(`Placement ${id}.props.${key} is reserved`);

@@ -109,6 +109,7 @@ export function resolveNotFoundOptions(
     ...messages,
     locale,
     brand: profile.site.brand,
+    href: siteHref(localePath("/404", locale, profile.i18n), profile),
     homeHref: languageLinks.find((link) => link.locale === locale).href,
     options: resolvePageOptions(
       profile.site,

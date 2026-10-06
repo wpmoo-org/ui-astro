@@ -1,0 +1,7 @@
+---
+import { namespaceHeadingIds } from "./heading-ids.js";
+interface Props { headings: readonly { slug: string }[]; instanceId: string }
+const { headings, instanceId } = Astro.props;
+const html = namespaceHeadingIds(await Astro.slots.render("default"), headings, instanceId);
+---
+<Fragment set:html={html} />

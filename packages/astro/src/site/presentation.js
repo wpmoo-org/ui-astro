@@ -24,6 +24,9 @@ const labelsSchema = z.strictObject({
   selectLanguage: text.optional(),
   lightMode: text.optional(),
   darkMode: text.optional(),
+  closeNavigation: text.optional(),
+  onThisPage: text.optional(),
+  aside: text.optional(),
 });
 const copySchema = z.strictObject({
   brandDescription: text.optional(),
@@ -69,6 +72,9 @@ const messages = {
     selectLanguage: "Select language",
     lightMode: "Switch to light mode",
     darkMode: "Switch to dark mode",
+    closeNavigation: "Close navigation",
+    onThisPage: "On this page",
+    aside: "Page information",
   },
   de: {
     site: "Website",
@@ -78,6 +84,9 @@ const messages = {
     selectLanguage: "Sprache auswählen",
     lightMode: "Hellen Modus aktivieren",
     darkMode: "Dunklen Modus aktivieren",
+    closeNavigation: "Navigation schließen",
+    onThisPage: "Auf dieser Seite",
+    aside: "Seiteninformationen",
   },
 };
 

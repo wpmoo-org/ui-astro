@@ -1,0 +1,45 @@
+---
+import ContentAside from "./ContentAside.astro";
+import {
+  defineSite,
+  resolvePageOptions,
+  type ContentAsideInput,
+} from "../config/index.js";
+import { contentFrameClasses } from "./content-frame.js";
+interface Props {
+  element?: "article" | "section" | "div";
+  aside?: ContentAsideInput | null;
+  asideLabel?: string;
+  dir?: "ltr" | "rtl";
+  id?: string;
+  class?: string;
+}
+const {
+  element: Element = "div",
+  aside,
+  asideLabel = "Page information",
+  dir = "ltr",
+  id = `moo-content-aside-${crypto.randomUUID()}`,
+  class: className = "",
+} = Astro.props;
+if (!["article", "section", "div"].includes(Element))
+  throw new TypeError("Invalid ContentFrame element");
+if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(id))
+  throw new TypeError("Invalid ContentFrame id");
+const selected = resolvePageOptions(defineSite(), "page", "single", { aside }).aside;
+const asideHtml = selected && Astro.slots.has("aside") ? await Astro.slots.render("aside") : "";
+const hasAside = Boolean(selected && asideHtml.replace(/<!--[\s\S]*?-->/g, "").trim());
+const classes = hasAside && selected ? contentFrameClasses(selected, dir) : null;
+const before = selected?.mobile === "collapse-before";
+---
+<div class:list={[hasAside ? "row g-4" : "row gx-0"]} data-layout="page-grid" data-content-aside={hasAside ? selected?.side : undefined}>
+  {hasAside && selected && classes && before ? (
+    <ContentAside options={selected} classes={classes} id={id} label={asideLabel} html={asideHtml} />
+  ) : null}
+  <Element class:list={[className, classes?.main ?? ["col-12"]]} data-page-col-md={!hasAside ? "9" : undefined} data-page-col-xl={!hasAside ? "8" : undefined}>
+    <slot />
+  </Element>
+  {hasAside && selected && classes && !before ? (
+    <ContentAside options={selected} classes={classes} id={id} label={asideLabel} html={asideHtml} />
+  ) : null}
+</div>

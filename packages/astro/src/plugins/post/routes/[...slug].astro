@@ -1,6 +1,6 @@
 ---
 import { render } from "astro:content";
-import EntryTaxonomies from "../../../site/EntryTaxonomies.astro";
+import { preparePlacements } from "../../../placements/index.js";
 import { resolveContentLinks } from "../../../site/presentation.js";
 import type { GetStaticPathsOptions } from "astro";
 import { getLanguageLinks, getRouteLocale } from "../../../i18n/index.js";
@@ -71,22 +71,23 @@ const contentLinks = resolveContentLinks(site, {
   ...routeContext,
   locale: locale ?? site.defaults.lang,
 });
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
+const plan = await preparePlacements({
+  href, locale: locale ?? site.defaults.lang, title: entry.data.title,
+  type: "post", view: "single",
+  entry: { ...layoutProps.pageContext.entry, data: entry.data, translationKey: entry.data.translationKey }, headings,
+});
 ---
 
 <SiteLayout
   {...layoutProps}
+  plan={plan}
   options={options}
   href={href}
   locale={locale}
   languageLinks={links}
 >
-  <Single parts={options.parts} lang={options.lang} entry={entry}>
+  <Single plan={plan} aside={options.aside} dir={options.dir} parts={options.parts} lang={options.lang} entry={entry}>
     <Content links={contentLinks} />
-    <EntryTaxonomies
-      slot="after-content"
-      entry={layoutProps.pageContext.entry}
-      locale={options.lang}
-    />
   </Single>
 </SiteLayout>

@@ -15,6 +15,7 @@ export interface NotFoundInput {
 export interface NotFoundOptions extends Readonly<NotFoundMessages> {
   readonly locale: string;
   readonly brand: string;
+  readonly href: string;
   readonly homeHref: string;
   readonly options: Readonly<PageOptions>;
   readonly languageLinks: readonly LanguageLink[];
