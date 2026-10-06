@@ -8,6 +8,28 @@ export const digest = (bytes, algorithm = "sha256", encoding = "hex") =>
 export const readJson = async (path) =>
   JSON.parse(await readFile(path, "utf8"));
 
+/** Certifies the shipped starter template's configuration/content boundary. */
+export function assertMinimalStarterSource(names) {
+  for (const name of names) {
+    assert.ok(
+      !/^(?:routes\/|src\/(?:layouts|views|components)\/|src\/(?:navigation\.js|routes\.js|taxonomy-links\.js|types\.ts)$)/u.test(
+        name,
+      ),
+      `copied host rendering forbidden in minimal starter: ${name}`,
+    );
+  }
+  for (const name of [
+    "astro.config.mjs",
+    "src/config.js",
+    "src/definitions.js",
+    "src/content.config.ts",
+  ])
+    assert.ok(
+      names.includes(name),
+      `minimal starter configuration missing: ${name}`,
+    );
+}
+
 export async function treeFiles(root) {
   const result = [];
   async function visit(directory, prefix = "") {
@@ -205,6 +227,7 @@ const archiveItems = {
 const entryTerms = {
   home: [],
   contact: [],
+  native: [],
   about: ["categoryCompany", "sector"],
   services: ["categoryCompany", "tag", "sectorDevelopment"],
   enhanced: ["category", "tag", "tagMdx", "sectorDevelopment"],
@@ -267,11 +290,9 @@ export function inspectStarterHtml(html, route, routes, inset) {
   );
   const taxonomyNavigation = {};
   const groupLabels =
-    route.key === "error"
-      ? []
-      : route.locale === "de"
-        ? ["Kategorien", "Schlagwörter", "Bereiche"]
-        : ["Categories", "Tags", "Sectors"];
+    route.locale === "de"
+      ? ["Kategorien", "Schlagwörter", "Bereiche"]
+      : ["Categories", "Tags", "Sectors"];
   const groupKeys = [
     ["category", "categoryCompany", "categoryNews"],
     ["tag", "tagMdx", "tagRelease"],
@@ -387,6 +408,38 @@ export function inspectStarterHtml(html, route, routes, inset) {
     assert.equal(controls.length, 1, "one literal Action label");
     assert.equal(controls[0].href, target, "locale Action target");
   }
+  const controls = tags("button");
+  const themeControls = controls.filter((tag) =>
+    Object.hasOwn(tag, "data-moo-theme-toggle"),
+  );
+  assert.equal(themeControls.length, 1, "one configured theme control");
+  assert.equal(
+    themeControls[0]["data-moo-theme-label-light"],
+    route.locale === "de" ? "Hellen Modus aktivieren" : "Switch to light mode",
+    "localized theme action",
+  );
+  assert.equal(
+    controls.filter(
+      (tag) =>
+        tag["aria-label"] === (route.locale === "de" ? "Sprache" : "Language"),
+    ).length,
+    1,
+    "one configured language control",
+  );
+  const languageTargets =
+    route.key === "error"
+      ? Object.values(routes).filter((value) => value.key === "home")
+      : pair;
+  for (const target of languageTargets)
+    assert.ok(
+      anchors.some(
+        (anchor) =>
+          anchor.lang === target.locale &&
+          anchor.hreflang === target.locale &&
+          anchor.href === target.href,
+      ),
+      "prepared translation control",
+    );
   const dates = tags("time").map((tag) => tag.datetime);
   const termLinks = [];
   if (Object.hasOwn(entryTerms, route.key)) {

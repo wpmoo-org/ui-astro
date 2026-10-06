@@ -88,7 +88,12 @@ const checkedItems = items.map((item, index) => {
             content={item.title}
             class={parts.loop.titleUtilities.join(" ")}
           >
-            <a href={item.href}>{item.title}</a>
+            <a
+              class="text-reset link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+              href={item.href}
+            >
+              {item.title}
+            </a>
           </Typography>
           {item.description ? (
             <p class:list={parts.loop.descriptionUtilities}>
@@ -96,7 +101,12 @@ const checkedItems = items.map((item, index) => {
             </p>
           ) : null}
           {item.date ? (
-            <time datetime={item.date.toISOString()}>{item.dateText}</time>
+            <time
+              class="small text-body-secondary"
+              datetime={item.date.toISOString()}
+            >
+              {item.dateText}
+            </time>
           ) : null}
         </li>
       ))}

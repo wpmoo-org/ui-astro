@@ -8,6 +8,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   assertStarterArchives,
+  assertMinimalStarterSource,
   collectStarterOutput,
   digest,
   fileHashes,
@@ -219,44 +220,11 @@ async function certify(
       profileEnv,
     );
   }
-  const { groupTaxonomyLinks, entryTaxonomyGroups } = await import(
-    pathToFileURL(join(directory, "src/taxonomy-links.js"))
-  );
-  const groups = groupTaxonomyLinks(
-    [
-      {
-        id: "audience",
-        label: "Audiences",
-        locales: { de: { label: "Zielgruppen" } },
-      },
-    ],
-    [
-      {
-        props: {
-          taxonomy: "audience",
-          term: { id: "students", name: "Lernende" },
-          href: "/de/lernende",
-        },
-      },
-    ],
-    "de",
-  );
-  assert.deepEqual(groups, [
-    {
-      id: "audience",
-      label: "Zielgruppen",
-      links: [{ id: "students", label: "Lernende", href: "/de/lernende" }],
-    },
-  ]);
-  assert.deepEqual(
-    entryTaxonomyGroups({ taxonomies: { audience: ["students"] } }, groups),
-    groups,
-  );
-  assert.deepEqual(entryTaxonomyGroups({ taxonomies: {} }, groups), []);
   const output = await collectStarterOutput(directory, profile, inset);
   const after = await fileHashes(directory, profile.authored_files);
   assert.deepEqual(after, before, "authored source changed during build");
-  for (const prefix of ["src", "routes"])
+  assertMinimalStarterSource(profile.authored_files);
+  for (const prefix of ["src"])
     assert.deepEqual(
       (await treeFiles(join(directory, prefix))).map(
         (name) => `${prefix}/${name}`,

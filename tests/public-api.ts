@@ -2,8 +2,10 @@ import type { AstroIntegration } from "astro";
 import type { ComponentProps } from "astro/types";
 import moo from "@wpmoo/astro";
 import Layout from "@wpmoo/astro/Layout.astro";
+import SiteLayout from "@wpmoo/astro/layouts/SiteLayout.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
 import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+import ThemeToggle from "@wpmoo/astro/blocks/ThemeToggle.astro";
 import {
   defineSite,
   resolvePageOptions,
@@ -320,6 +322,14 @@ export const switcherProps: ComponentProps<typeof LanguageSwitcher> = {
   languageNames: { en: "English", de: "Deutsch" },
   labelVisibility: "responsive",
 };
+export const themeToggleProps: ComponentProps<typeof ThemeToggle> = {
+  lightLabel: "Switch to light mode",
+  darkLabel: "Switch to dark mode",
+  theme: "dark",
+};
+// @ts-expect-error ThemeToggle renders one resolved owner theme.
+export const invalidToggleTheme: ComponentProps<typeof ThemeToggle>["theme"] =
+  "system";
 export const switcherLabelModes: readonly ComponentProps<
   typeof LanguageSwitcher
 >["labelVisibility"][] = ["responsive", "visible", "hidden"];
@@ -354,3 +364,30 @@ void errorOptions.homeHref;
 errorOptions.title = "Changed";
 // @ts-expect-error Locale recovery links are returned immutable.
 errorOptions.languageLinks.push({ locale: "fr", href: "/fr" });
+
+export const presentationSite = defineSite({
+  presentation: {
+    navigation: "grouped",
+    themeToggle: true,
+    languageSwitcher: {
+      size: "sm",
+      align: "end",
+      labelVisibility: "responsive",
+    },
+    locales: { de: { labels: { language: "Sprache" } } },
+  },
+  links: { home: "/", help: { en: "/help", de: "/hilfe" } },
+});
+// @ts-expect-error Only the declared common labels are configurable.
+defineSite({ presentation: { labels: { anything: "Unsupported" } } });
+// @ts-expect-error URL data comes from prepared translation links.
+defineSite({ presentation: { languageSwitcher: { links: [] } } });
+// @ts-expect-error Localized copy cannot alter structural flags.
+defineSite({ presentation: { locales: { de: { themeToggle: true } } } });
+
+export const siteLayoutOptions: ComponentProps<typeof SiteLayout> = {
+  title: "Default site",
+  href: "/",
+  options: resolved,
+  metadata: null,
+};

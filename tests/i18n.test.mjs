@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineSite, resolvePageOptions } from "../packages/astro/src/config/index.js";
+import {
+  defineSite,
+  resolvePageOptions,
+} from "../packages/astro/src/config/index.js";
 import { entrySchema } from "../packages/astro/src/content/index.js";
 import { page } from "../packages/astro/src/plugins/page/index.js";
 import { post } from "../packages/astro/src/plugins/post/index.js";
@@ -8,8 +11,12 @@ import { buildRegistry } from "../packages/astro/src/integration/registry.js";
 import { validateTerms } from "../packages/astro/src/taxonomies/paths.js";
 import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
-const profileApi = await import("../packages/astro/src/i18n/profile.js").catch(() => null);
-const graphApi = await import("../packages/astro/src/i18n/graph.js").catch(() => null);
+const profileApi = await import("../packages/astro/src/i18n/profile.js").catch(
+  () => null,
+);
+const graphApi = await import("../packages/astro/src/i18n/graph.js").catch(
+  () => null,
+);
 const native = {
   locales: ["en", "de"],
   defaultLocale: "en",
@@ -23,6 +30,39 @@ const entry = (id, locale, translationKey, status = "publish") => ({
   collection: "page",
   id,
   data: { title: id, locale, translationKey, status },
+});
+
+test("one_post_template_generates_every_configured_locale", () => {
+  const profile = profileApi.resolveI18n(
+    {
+      locales: ["en", "de", "tr"],
+      defaultLocale: "de",
+      routing: { prefixDefaultLocale: false },
+    },
+    defineSite({ defaults: { lang: "de" } }),
+  );
+  const registry = profileApi.localizeRegistry(
+    buildRegistry([
+      post({
+        basePath: "/blog",
+        locales: { de: { basePath: "/beitraege", label: "Beiträge" } },
+      }),
+    ]),
+    profile,
+  );
+  const singleRoutes = registry.routes.filter((route) =>
+    route.pattern.endsWith("/[...slug]"),
+  );
+  assert.deepEqual(singleRoutes.map((route) => route.pattern).sort(), [
+    "/beitraege/[...slug]",
+    "/en/blog/[...slug]",
+    "/tr/blog/[...slug]",
+  ]);
+  assert.equal(
+    new Set(singleRoutes.map((route) => route.entrypoint.href)).size,
+    1,
+  );
+  assert.equal(singleRoutes.length, 3);
 });
 
 test("native content locale and translation key preserve exact source identity", () => {

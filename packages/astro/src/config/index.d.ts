@@ -1,4 +1,6 @@
 import type { z } from "astro/zod";
+import type { ComponentProps } from "astro/types";
+import type LanguageSwitcher from "../blocks/language-switcher/LanguageSwitcher.astro";
 
 export type ViewKind = "single" | "archive";
 export type PageWidth = "base" | "sm" | "md" | "lg" | "xl" | "xxl" | "fluid";
@@ -88,27 +90,27 @@ export type DateStyle = "iso" | "short" | "medium" | "long" | "full";
 export type DateFormatter = (date: Date) => string;
 export interface TriggerInput {
   variant?:
-  | "default"
-  | "secondary"
-  | "outline"
-  | "ghost"
-  | "destructive"
-  | "link"
-  | "success"
-  | "warning"
-  | "info"
-  | "light"
-  | "dark"
-  | "outline-primary"
-  | "outline-success"
-  | "outline-danger";
+    | "default"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "destructive"
+    | "link"
+    | "success"
+    | "warning"
+    | "info"
+    | "light"
+    | "dark"
+    | "outline-primary"
+    | "outline-success"
+    | "outline-danger";
   size?: "icon" | "icon-xs" | "icon-sm" | "icon-lg";
   icon?:
-  | "panel-left"
-  | "chevrons-left"
-  | "chevrons-right"
-  | "ellipsis"
-  | "list-filter";
+    | "panel-left"
+    | "chevrons-left"
+    | "chevrons-right"
+    | "ellipsis"
+    | "list-filter";
 }
 interface ContentPartInput {
   utilities?: readonly UtilityToken[];
@@ -131,13 +133,13 @@ interface PageHeaderPartBase {
 type PageHeaderPartInput = PageHeaderPartBase &
   (
     | {
-      descriptionVariant?: "page-description";
-      descriptionUtilities?: readonly PageDescriptionUtilityToken[];
-    }
+        descriptionVariant?: "page-description";
+        descriptionUtilities?: readonly PageDescriptionUtilityToken[];
+      }
     | {
-      descriptionVariant: "muted";
-      descriptionUtilities?: readonly DescriptionUtilityToken[];
-    }
+        descriptionVariant: "muted";
+        descriptionUtilities?: readonly DescriptionUtilityToken[];
+      }
   );
 interface LoopPartInput {
   utilities?: readonly UtilityToken[];
@@ -211,8 +213,47 @@ export interface TypeOptionsInput extends PageOptionsInput {
   views?: Partial<Record<ViewKind, PageOptionsInput>>;
 }
 
+export interface SiteLabelsInput {
+  site?: string;
+  pages?: string;
+  taxonomies?: string;
+  language?: string;
+  selectLanguage?: string;
+  lightMode?: string;
+  darkMode?: string;
+}
+export interface SiteCopyInput {
+  brandDescription?: string;
+  labels?: SiteLabelsInput;
+}
+export type SiteLanguageSwitcherInput = Pick<
+  ComponentProps<typeof LanguageSwitcher>,
+  "labelVisibility" | "variant" | "size" | "align" | "languageNames"
+>;
+export interface SitePresentationInput extends SiteCopyInput {
+  navigation?: "flat" | "grouped";
+  assignedTaxonomies?: boolean;
+  themeToggle?: boolean;
+  languageSwitcher?: false | SiteLanguageSwitcherInput;
+  locales?: Readonly<Record<string, SiteCopyInput>>;
+}
+export type SitePresentation = DeepReadonly<
+  SiteCopyInput & {
+    navigation: "flat" | "grouped";
+    assignedTaxonomies: boolean;
+    themeToggle: boolean;
+    languageSwitcher: false | SiteLanguageSwitcherInput;
+    locales?: Readonly<Record<string, SiteCopyInput>>;
+  }
+>;
+export type NamedLinksInput = Readonly<
+  Record<string, string | Readonly<Record<string, string>>>
+>;
+
 export interface SiteInput {
   brand?: string;
+  presentation?: SitePresentationInput;
+  links?: NamedLinksInput;
   organization?: OrganizationInput;
   seo?: SeoInput;
   defaults?: PageOptionsInput;
@@ -222,6 +263,8 @@ export interface SiteInput {
 
 export interface SiteConfig {
   readonly brand: string;
+  readonly presentation: SitePresentation;
+  readonly links: NamedLinksInput;
   readonly organization?: DeepReadonly<OrganizationInput>;
   readonly seo?: DeepReadonly<SeoInput>;
   readonly defaults: Readonly<PageOptions>;

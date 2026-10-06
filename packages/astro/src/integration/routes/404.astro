@@ -1,98 +1,23 @@
 ---
 import { getNotFoundOptions } from "../../not-found/index.js";
-import Layout from "../../layouts/Layout.astro";
-import Header from "../../includes/Header.astro";
-import Footer from "../../includes/Footer.astro";
-import Sidebar from "../../includes/Sidebar.astro";
+import { getLocaleHref } from "../../i18n/index.js";
+import SiteLayout from "../../layouts/SiteLayout.astro";
 import NotFound from "../../views/NotFound.astro";
-import Button from "../../components/Button.astro";
 
 export const prerender = true;
 const data = getNotFoundOptions(Astro.currentLocale);
-const { options } = data;
-const layoutProps = {
-  title: data.title,
-  description: data.description,
-  metadata: null,
-  pageContext: { view: "native" as const, key: "not-found" },
-  shellMode: options.shellMode,
-  theme: options.theme,
-  lang: options.lang,
-  dir: options.dir,
-  pageWidth: options.pageWidth,
-  headerWidth: options.headerWidth,
-  parts: options.parts,
-};
-const breadcrumbs = [
-  { label: data.brand, href: data.homeHref },
-  { label: data.title },
-];
+const href = getLocaleHref("/404", data.locale);
 ---
 
-{
-  options.sidebar ? (
-    <Layout
-      {...layoutProps}
-      sidebar
-      sidebarId="moo-site-sidebar"
-      sidebarKey="moo-site"
-      defaultOpen={options.sidebar.defaultOpen}
-    >
-      <Sidebar
-        slot="sidebar"
-        id="moo-site-sidebar"
-        brand={data.brand}
-        brandHref={data.homeHref}
-        groups={[{ items: [{ title: data.homeLabel, href: data.homeHref }] }]}
-        side={options.sidebar.side}
-        variant={options.sidebar.variant}
-        collapsible={options.sidebar.collapsible}
-        rail={options.sidebar.rail}
-        parts={options.parts}
-      />
-      <Header slot="header" breadcrumbs={breadcrumbs} parts={options.parts}>
-        {data.languageLinks.length > 1
-          ? data.languageLinks.map((link) => (
-              <Button
-                slot="actions"
-                element="a"
-                href={link.href}
-                label={link.locale}
-                variant="ghost"
-              />
-            ))
-          : null}
-      </Header>
-      <NotFound {...data} parts={options.parts} />
-      <Footer
-        slot="footer"
-        homeHref={data.homeHref}
-        brand={data.brand}
-        parts={options.parts}
-      />
-    </Layout>
-  ) : (
-    <Layout {...layoutProps}>
-      <Header slot="header" breadcrumbs={breadcrumbs} parts={options.parts}>
-        {data.languageLinks.length > 1
-          ? data.languageLinks.map((link) => (
-              <Button
-                slot="actions"
-                element="a"
-                href={link.href}
-                label={link.locale}
-                variant="ghost"
-              />
-            ))
-          : null}
-      </Header>
-      <NotFound {...data} parts={options.parts} />
-      <Footer
-        slot="footer"
-        homeHref={data.homeHref}
-        brand={data.brand}
-        parts={options.parts}
-      />
-    </Layout>
-  )
-}
+<SiteLayout
+  title={data.title}
+  description={data.description}
+  options={data.options}
+  href={href}
+  locale={data.locale}
+  metadata={null}
+  languageLinks={data.languageLinks}
+  pageContext={{ view: "native", key: "not-found" }}
+>
+  <NotFound {...data} parts={data.options.parts} />
+</SiteLayout>

@@ -1,27 +1,61 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { defineSite, formatDate, layoutSchema, resolvePageOptions, resolveParts } from "../packages/astro/src/config/index.js";
+import {
+  defineSite,
+  formatDate,
+  layoutSchema,
+  resolvePageOptions,
+  resolveParts,
+} from "../packages/astro/src/config/index.js";
 
 test("date display follows the caller locale and style without changing its instant", () => {
   const date = new Date("2026-10-01T23:30:00Z");
   assert.equal(formatDate(date), "2026-10-01");
   for (const lang of ["en", "de"]) {
-    assert.equal(formatDate(date, { lang, style: "long" }),
-      new Intl.DateTimeFormat(lang, { dateStyle: "long", timeZone: "UTC" }).format(date));
+    assert.equal(
+      formatDate(date, { lang, style: "long" }),
+      new Intl.DateTimeFormat(lang, {
+        dateStyle: "long",
+        timeZone: "UTC",
+      }).format(date),
+    );
   }
   assert.equal(date.toISOString(), "2026-10-01T23:30:00.000Z");
   assert.throws(() => formatDate(new Date("invalid")), /date/i);
   assert.throws(() => formatDate(date, { style: "unknown" }), /style/);
-  assert.equal(formatDate(date, { formatter: (copy) => { copy.setFullYear(2000); return "Caller date"; } }), "Caller date");
+  assert.equal(
+    formatDate(date, {
+      formatter: (copy) => {
+        copy.setFullYear(2000);
+        return "Caller date";
+      },
+    }),
+    "Caller date",
+  );
   assert.equal(date.toISOString(), "2026-10-01T23:30:00.000Z");
-  assert.throws(() => formatDate(date, { formatter: () => null }), /return text/);
+  assert.throws(
+    () => formatDate(date, { formatter: () => null }),
+    /return text/,
+  );
 });
 
 test("shared part defaults have one owned immutable fallback", () => {
   const defaults = resolveParts();
-  assert.deepEqual(defaults.content.utilities, ["py-4"]);
-  assert.deepEqual(defaults.header.contentUtilities, ["d-flex", "align-items-center", "gap-2", "py-2"]);
+  assert.deepEqual(defaults.content.utilities, [
+    "mx-0",
+    "py-4",
+    "py-md-5",
+    "px-3",
+    "px-md-5",
+  ]);
+  assert.deepEqual(defaults.header.contentUtilities, [
+    "d-flex",
+    "flex-wrap",
+    "align-items-center",
+    "gap-2",
+    "py-3",
+  ]);
   assert.equal(defaults.header.trigger.variant, "ghost");
   assert.equal(defaults.loop.dateStyle, "iso");
   assert.ok(Object.isFrozen(defaults.content.utilities));
@@ -30,34 +64,63 @@ test("shared part defaults have one owned immutable fallback", () => {
 });
 
 test("accessible part labels require nonempty plain text without restricting empty-state copy", () => {
-  for (const field of ["toggleLabel", "navigationLabel", "breadcrumbLabel", "skipLabel"]) {
+  for (const field of [
+    "toggleLabel",
+    "navigationLabel",
+    "breadcrumbLabel",
+    "skipLabel",
+  ]) {
     for (const value of ["", "   ", "Menu\u0000"]) {
-      assert.throws(() => resolveParts({ header: { [field]: value } }),
-        (error) => error.message.includes(`header.${field}`));
+      assert.throws(
+        () => resolveParts({ header: { [field]: value } }),
+        (error) => error.message.includes(`header.${field}`),
+      );
     }
   }
-  assert.equal(resolveParts({ header: { toggleLabel: " Menu " }, loop: { emptyText: "" } }).header.toggleLabel, "Menu");
+  assert.equal(
+    resolveParts({ header: { toggleLabel: " Menu " }, loop: { emptyText: "" } })
+      .header.toggleLabel,
+    "Menu",
+  );
   assert.equal(resolveParts({ loop: { emptyText: "" } }).loop.emptyText, "");
 });
 
 test("part preferences inherit five layers and replace only explicit leaf arrays", () => {
   const input = {
-    defaults: { parts: { content: { utilities: ["py-3", "py-md-5"] }, header: { toggleLabel: "Menu" } } },
-    types: { post: { parts: { loop: { dateStyle: "medium" } }, views: {
-      single: { parts: { header: { trigger: { variant: "outline" } } } },
-    } } },
+    defaults: {
+      parts: {
+        content: { utilities: ["py-3", "py-md-5"] },
+        header: { toggleLabel: "Menu" },
+      },
+    },
+    types: {
+      post: {
+        parts: { loop: { dateStyle: "medium" } },
+        views: {
+          single: { parts: { header: { trigger: { variant: "outline" } } } },
+        },
+      },
+    },
   };
   const retained = structuredClone(input);
   const site = defineSite(input);
   const single = resolvePageOptions(site, "post", "single");
-  const page = resolvePageOptions(site, "post", "single", { parts: { content: { utilities: [] } } });
+  const page = resolvePageOptions(site, "post", "single", {
+    parts: { content: { utilities: [] } },
+  });
   assert.deepEqual(single.parts.content.utilities, ["py-3", "py-md-5"]);
   assert.deepEqual(page.parts.content.utilities, []);
   assert.equal(page.parts.header.toggleLabel, "Menu");
   assert.equal(page.parts.header.trigger.variant, "outline");
   assert.equal(page.parts.header.trigger.size, "icon-sm");
-  assert.equal(resolvePageOptions(site, "post", "archive").parts.header.trigger.variant, "ghost");
-  assert.equal(resolvePageOptions(site, "page", "single").parts.loop.dateStyle, "iso");
+  assert.equal(
+    resolvePageOptions(site, "post", "archive").parts.header.trigger.variant,
+    "ghost",
+  );
+  assert.equal(
+    resolvePageOptions(site, "page", "single").parts.loop.dateStyle,
+    "iso",
+  );
   assert.deepEqual(input, retained);
   input.defaults.parts.content.utilities.push("py-0");
   assert.deepEqual(single.parts.content.utilities, ["py-3", "py-md-5"]);
@@ -66,13 +129,21 @@ test("part preferences inherit five layers and replace only explicit leaf arrays
 });
 
 test("undefined part fields inherit while zero utilities and empty arrays remain explicit", () => {
-  const site = defineSite({ defaults: { parts: { content: { utilities: ["py-5"] } } } });
-  assert.deepEqual(resolvePageOptions(site, "page", "single", {
-    parts: { content: { utilities: undefined }, header: undefined },
-  }).parts.content.utilities, ["py-5"]);
-  assert.deepEqual(resolvePageOptions(site, "page", "single", {
-    parts: { content: { utilities: ["py-0"] }, footer: { utilities: [] } },
-  }).parts.content.utilities, ["py-0"]);
+  const site = defineSite({
+    defaults: { parts: { content: { utilities: ["py-5"] } } },
+  });
+  assert.deepEqual(
+    resolvePageOptions(site, "page", "single", {
+      parts: { content: { utilities: undefined }, header: undefined },
+    }).parts.content.utilities,
+    ["py-5"],
+  );
+  assert.deepEqual(
+    resolvePageOptions(site, "page", "single", {
+      parts: { content: { utilities: ["py-0"] }, footer: { utilities: [] } },
+    }).parts.content.utilities,
+    ["py-0"],
+  );
 });
 
 test("part schema diagnoses unknown regions, unregistered utilities and unsafe values", () => {
@@ -85,35 +156,91 @@ test("part schema diagnoses unknown regions, unregistered utilities and unsafe v
     [{ header: { trigger: { icon: "unknown-glyph" } } }, "header.trigger.icon"],
     [{ loop: { dateStyle: "custom-css" } }, "loop.dateStyle"],
     [{ header: { skipLabel: "" } }, "header.skipLabel"],
-  ]) assert.throws(() => resolveParts(parts), (error) => error.message.includes(field), field);
+  ])
+    assert.throws(
+      () => resolveParts(parts),
+      (error) => error.message.includes(field),
+      field,
+    );
 });
 
 test("Typography-owned defaults reject incompatible utility overrides by their public field", () => {
   for (const [pageHeader, field] of [
     [{ titleUtilities: ["fw-normal"] }, "pageHeader.titleUtilities"],
     [{ titleUtilities: ["fw-bold"] }, "pageHeader.titleUtilities"],
-    [{ descriptionUtilities: ["text-primary"] }, "pageHeader.descriptionUtilities"],
+    [
+      { descriptionUtilities: ["text-primary"] },
+      "pageHeader.descriptionUtilities",
+    ],
     [{ descriptionUtilities: ["mb-3"] }, "pageHeader.descriptionUtilities"],
     [{ descriptionUtilities: ["my-md-2"] }, "pageHeader.descriptionUtilities"],
-  ]) assert.throws(() => resolveParts({ pageHeader }), (error) => error.message.includes(field));
-  assert.deepEqual(resolveParts({ pageHeader: { titleUtilities: ["text-center", "mb-2"], descriptionUtilities: ["text-start", "mt-1"] } }).pageHeader.titleUtilities,
-    ["text-center", "mb-2"]);
-  assert.deepEqual(resolveParts({ pageHeader: { descriptionVariant: "muted", descriptionUtilities: ["mb-3"] } }).pageHeader.descriptionUtilities, ["mb-3"]);
-  assert.deepEqual(resolveParts({ pageHeader: { descriptionUtilities: ["text-body-secondary", "mb-0"] } }).pageHeader.descriptionUtilities,
-    ["text-body-secondary", "mb-0"]);
-  const site = defineSite({ defaults: { parts: { pageHeader: { descriptionVariant: "muted", descriptionUtilities: ["mb-3"] } } } });
-  assert.throws(() => resolvePageOptions(site, "page", "single", { parts: { pageHeader: { descriptionVariant: "page-description" } } }), /pageHeader.descriptionUtilities/);
+  ])
+    assert.throws(
+      () => resolveParts({ pageHeader }),
+      (error) => error.message.includes(field),
+    );
+  assert.deepEqual(
+    resolveParts({
+      pageHeader: {
+        titleUtilities: ["text-center", "mb-2"],
+        descriptionUtilities: ["text-start", "mt-1"],
+      },
+    }).pageHeader.titleUtilities,
+    ["text-center", "mb-2"],
+  );
+  assert.deepEqual(
+    resolveParts({
+      pageHeader: {
+        descriptionVariant: "muted",
+        descriptionUtilities: ["mb-3"],
+      },
+    }).pageHeader.descriptionUtilities,
+    ["mb-3"],
+  );
+  assert.deepEqual(
+    resolveParts({
+      pageHeader: { descriptionUtilities: ["text-body-secondary", "mb-0"] },
+    }).pageHeader.descriptionUtilities,
+    ["text-body-secondary", "mb-0"],
+  );
+  const site = defineSite({
+    defaults: {
+      parts: {
+        pageHeader: {
+          descriptionVariant: "muted",
+          descriptionUtilities: ["mb-3"],
+        },
+      },
+    },
+  });
+  assert.throws(
+    () =>
+      resolvePageOptions(site, "page", "single", {
+        parts: { pageHeader: { descriptionVariant: "page-description" } },
+      }),
+    /pageHeader.descriptionUtilities/,
+  );
 });
 
 test("registered part defaults exist in the actual published component stylesheet", async () => {
-  const css = await readFile(new URL("../node_modules/@wpmoo/ui/dist/assets/css/moo-ui.css", import.meta.url), "utf8");
+  const css = await readFile(
+    new URL(
+      "../node_modules/@wpmoo/ui/dist/assets/css/moo-ui.css",
+      import.meta.url,
+    ),
+    "utf8",
+  );
   const visit = (record) => {
     for (const [key, value] of Object.entries(record)) {
-      if (Array.isArray(value)) for (const token of value) assert.ok(css.includes(`.${token}`), token);
+      if (Array.isArray(value))
+        for (const token of value) assert.ok(css.includes(`.${token}`), token);
       else if (value && typeof value === "object") visit(value);
     }
   };
   visit(resolveParts());
-  const tokens = layoutSchema.shape.parts.unwrap().shape.content.unwrap().shape.utilities.unwrap().element.options;
+  const tokens = layoutSchema.shape.parts
+    .unwrap()
+    .shape.content.unwrap()
+    .shape.utilities.unwrap().element.options;
   for (const token of tokens) assert.ok(css.includes(`.${token}`), token);
 });

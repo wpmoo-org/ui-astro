@@ -1,0 +1,144 @@
+---
+import Layout from "./Layout.astro";
+import Header from "../includes/Header.astro";
+import Sidebar from "../includes/Sidebar.astro";
+import Footer from "../includes/Footer.astro";
+import ThemeToggle from "../blocks/theme-toggle/ThemeToggle.astro";
+import LanguageSwitcher from "../blocks/language-switcher/LanguageSwitcher.astro";
+import { getSiteChrome } from "../site/chrome.js";
+import type { PageOptions, PageClassContext } from "../config/index.js";
+import type { SeoMetadata } from "../seo/index.js";
+import type { LanguageLink } from "../i18n/index.js";
+
+interface Props {
+  title: string;
+  description?: string;
+  options: Readonly<PageOptions>;
+  href: string;
+  locale?: string;
+  metadata?: SeoMetadata | null;
+  languageLinks?: readonly LanguageLink[];
+  breadcrumbs?: readonly { label: string; href?: string }[];
+  pageContext?: PageClassContext;
+}
+const {
+  title,
+  description,
+  options,
+  href,
+  locale,
+  metadata,
+  languageLinks = [],
+  breadcrumbs,
+  pageContext,
+} = Astro.props;
+const chrome = await getSiteChrome({ href, locale, title, languageLinks });
+const { presentation } = chrome;
+const { sidebar, ...layout } = options;
+const { defaultOpen, ...sidebarOptions } = sidebar ?? {};
+const layoutProps = { ...layout, title, description, metadata, pageContext };
+---
+
+{
+  sidebar ? (
+    <Layout
+      {...layoutProps}
+      sidebar
+      defaultOpen={defaultOpen}
+      sidebarId="moo-site-sidebar"
+      sidebarKey="moo-site"
+    >
+      <Sidebar
+        slot="sidebar"
+        {...sidebarOptions}
+        id="moo-site-sidebar"
+        brand={chrome.brand}
+        brandSubtitle={presentation.brandDescription}
+        brandHref={chrome.homeHref}
+        groups={chrome.navigation}
+        parts={options.parts}
+      />
+      <Header
+        slot="header"
+        breadcrumbs={[...(breadcrumbs ?? chrome.breadcrumbs)]}
+        parts={options.parts}
+      >
+        {presentation.themeToggle ||
+        presentation.languageSwitcher ||
+        Astro.slots.has("header-actions") ? (
+          <div
+            slot="actions"
+            class="ms-auto d-flex align-items-center gap-2 flex-shrink-0"
+          >
+            {presentation.themeToggle ? (
+              <ThemeToggle
+                theme={options.theme}
+                lightLabel={presentation.labels.lightMode}
+                darkLabel={presentation.labels.darkMode}
+              />
+            ) : null}
+            {presentation.languageSwitcher ? (
+              <LanguageSwitcher
+                {...presentation.languageSwitcher}
+                links={languageLinks}
+                currentLocale={chrome.locale}
+                label={presentation.labels.language}
+                menuLabel={presentation.labels.selectLanguage}
+              />
+            ) : null}
+            <slot name="header-actions" />
+          </div>
+        ) : null}
+      </Header>
+      <slot />
+      <Footer
+        slot="footer"
+        brand={chrome.brand}
+        homeHref={chrome.homeHref}
+        parts={options.parts}
+      />
+    </Layout>
+  ) : (
+    <Layout {...layoutProps}>
+      <Header
+        slot="header"
+        breadcrumbs={[...(breadcrumbs ?? chrome.breadcrumbs)]}
+        parts={options.parts}
+      >
+        {presentation.themeToggle ||
+        presentation.languageSwitcher ||
+        Astro.slots.has("header-actions") ? (
+          <div
+            slot="actions"
+            class="ms-auto d-flex align-items-center gap-2 flex-shrink-0"
+          >
+            {presentation.themeToggle ? (
+              <ThemeToggle
+                theme={options.theme}
+                lightLabel={presentation.labels.lightMode}
+                darkLabel={presentation.labels.darkMode}
+              />
+            ) : null}
+            {presentation.languageSwitcher ? (
+              <LanguageSwitcher
+                {...presentation.languageSwitcher}
+                links={languageLinks}
+                currentLocale={chrome.locale}
+                label={presentation.labels.language}
+                menuLabel={presentation.labels.selectLanguage}
+              />
+            ) : null}
+            <slot name="header-actions" />
+          </div>
+        ) : null}
+      </Header>
+      <slot />
+      <Footer
+        slot="footer"
+        brand={chrome.brand}
+        homeHref={chrome.homeHref}
+        parts={options.parts}
+      />
+    </Layout>
+  )
+}

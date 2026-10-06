@@ -2,7 +2,9 @@
 import { getCollection } from "astro:content";
 import MooIntegration from "@wpmoo/astro";
 import Layout from "@wpmoo/astro/Layout.astro";
+import SiteLayout from "@wpmoo/astro/layouts/SiteLayout.astro";
 import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+import ThemeToggle from "@wpmoo/astro/blocks/ThemeToggle.astro";
 import Accordion from "@wpmoo/astro/components/Accordion.astro";
 import Alert from "@wpmoo/astro/components/Alert.astro";
 import AlertDialog from "@wpmoo/astro/components/AlertDialog.astro";
@@ -104,6 +106,7 @@ import NotFound from "@wpmoo/astro/views/NotFound.astro";
 import { getNotFoundOptions } from "@wpmoo/astro/not-found";
 import "@wpmoo/astro/styles.css";
 
+void SiteLayout;
 const publicWrappers = [
   Accordion,
   Alert,
@@ -236,6 +239,7 @@ if (
 void [
   MooIntegration,
   LanguageSwitcher,
+  ThemeToggle,
   getPagePaths,
   getPublishedPages,
   configuredPage,

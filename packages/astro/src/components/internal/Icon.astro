@@ -43,15 +43,18 @@
  * THE SOFTWARE.
  */
 
-interface Props {
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"svg"> {
   name: string;
   position?: "inline-start" | "inline-end";
 }
 
-const { name, position = "inline-start" } = Astro.props;
+const { name, position = "inline-start", ...attributes } = Astro.props;
 ---
 
 <svg
+  {...attributes}
   data-icon={position}
   data-lucide={name}
   viewBox={name === "github" ? "0 0 438.549 438.549" : "0 0 24 24"}
@@ -207,4 +210,12 @@ const { name, position = "inline-start" } = Astro.props;
     ) : null
   }
   {name === "plus" ? <path d="M12 5v14m-7-7h14" /> : null}
+  {
+    name === "blocks" ? (
+      <>
+        <path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2" />
+        <rect width="8" height="8" x="14" y="2" rx="1" />
+      </>
+    ) : null
+  }
 </svg>

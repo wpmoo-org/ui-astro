@@ -15,7 +15,7 @@ import tempfile
 import unittest
 
 
-SDK_SHA = "b240f8a6b3d68646e86a4c30279e923588fef0cfab7c2367ddfb2c09f8f2b3fc"
+SDK_SHA = "80d13d0497de6251e85f2955573dfcb429351ff1e287fdc0f52aab2152874df4"
 PINS = {"astro": "7.3.3", "@wpmoo/ui": "1.0.0", "bootstrap": "5.3.8",
         "@astrojs/mdx": "8.0.2", "@astrojs/check": "0.9.10", "typescript": "6.0.3"}
 ARCHIVE_ITEMS = {
@@ -30,7 +30,7 @@ ARCHIVE_ITEMS = {
     "sectorDevelopment": ("enhanced", "services", "update"),
 }
 ENTRY_TERMS = {
-    "home": (), "contact": (),
+    "home": (), "contact": (), "native": (),
     "about": ("categoryCompany", "sector"),
     "services": ("categoryCompany", "tag", "sectorDevelopment"),
     "enhanced": ("category", "tag", "tagMdx", "sectorDevelopment"),
@@ -182,7 +182,7 @@ def verify_rendered(directory, profile, inset="py-2"):
                 require(by_url[href]["locale"] == route["locale"], "sidebar link loses selected language")
             if "btn" in anchor.get("class", "").split():
                 require(not anchor["paragraph"], "Action contains paragraph")
-        labels = () if route["key"] == "error" else ("Kategorien", "Schlagwörter", "Bereiche") if route["locale"] == "de" else ("Categories", "Tags", "Sectors")
+        labels = ("Kategorien", "Schlagwörter", "Bereiche") if route["locale"] == "de" else ("Categories", "Tags", "Sectors")
         keys = (("category", "categoryCompany", "categoryNews"), ("tag", "tagMdx", "tagRelease"), ("sector", "sectorDevelopment"))
         taxonomy_navigation = {}
         for label, wanted_keys in zip(labels, keys):
@@ -211,7 +211,11 @@ def verify_rendered(directory, profile, inset="py-2"):
             require(canonical == ["https://starter.example.test" + route["href"]], "canonical identity differs")
             require(alternates == {locale: "https://starter.example.test" + href for locale, href in pair.items()}, "translation alternate differs")
         for locale, href in pair.items():
-            require(any(a["text"].strip() == locale.upper() and a.get("href") == href for a in doc.anchors), "translation control differs")
+            require(any(a.get("lang") == locale and a.get("hreflang") == locale and a.get("href") == href for a in doc.anchors), "translation control differs")
+        theme = [button for button in doc.find("button") if "data-moo-theme-toggle" in button]
+        require(len(theme) == 1, "one configured theme control required")
+        require(theme[0].get("data-moo-theme-label-light") == ("Hellen Modus aktivieren" if route["locale"] == "de" else "Switch to light mode"), "localized theme action differs")
+        require(len([button for button in doc.find("button") if button.get("aria-label") == ("Sprache" if route["locale"] == "de" else "Language")]) == 1, "one configured language control required")
         if route["key"] in ("enhanced", "native"):
             label = "Native Seite öffnen" if route["locale"] == "de" else "Explore the native page"
             controls = [a for a in doc.anchors if a["text"].strip() == label and "btn" in a.get("class", "").split()]
@@ -259,7 +263,7 @@ def verify_archives(root, artifacts):
             require(manifest == record["manifest"], "archive manifest differs")
         require(manifest["private"] and manifest["license"] == "MIT", "private MIT package required")
         if name == "@wpmoo/astro":
-            require(record["sha256"] == SDK_SHA and len(actual) == 131, "foundation archive checkpoint differs")
+            require(record["sha256"] == SDK_SHA and len(actual) == 141, "foundation archive checkpoint differs")
 
 
 
@@ -394,7 +398,7 @@ class StarterTests(unittest.TestCase):
 
 
     def test_wrong_entry_term_is_rejected_after_hash_rebinding(self):
-        self.mutate("enhanced/index.html", lambda html: re.sub(r'(<a\b[^>]*href=")/tag/mdx("[^>]*rel="tag")', r'\1/tag/release\2', html), "entry taxonomy links differ")
+        self.mutate("enhanced/index.html", lambda html: re.sub(r'(<a\b(?=[^>]*rel="tag")[^>]*href=")/tag/mdx(")', r'\1/tag/release\2', html), "entry taxonomy links differ")
 
 
     def test_sidebar_term_in_wrong_group_is_rejected_after_hash_rebinding(self):
@@ -405,11 +409,19 @@ class StarterTests(unittest.TestCase):
         require(self.proof["source_sha256"] == self.request["source_sha256"], "source receipt differs")
         for name, digest in self.request["source_sha256"].items():
             require(sha(owned(ROOT / "source", name)) == digest, "portable source bytes differ")
+        names = set(self.request["source_sha256"])
+        require(not any(re.match(r"^(routes/|src/(layouts|views|components)/|src/(navigation\.js|routes\.js|taxonomy-links\.js|types\.ts)$)", name) for name in names), "copied host rendering remains")
+        require({"astro.config.mjs", "src/config.js", "src/definitions.js", "src/content.config.ts"} <= names, "minimal configuration missing")
         manifest = read_json(ROOT / "source/package.json")
         require(manifest["name"] == "astro-moo-starter" and manifest["private"], "starter identity differs")
         require(manifest["dependencies"]["@wpmoo/astro"] == "0.1.0", "portable manifest contains local SDK path")
         require("@wpmoo/astro-theme-starter" not in manifest["dependencies"], "portable theme dependency present")
         require(not (ROOT / "source/package-lock.json").exists(), "portable unpublished template contains local lock")
+
+    def test_minimal_starter_builds_translated_routes_without_host_route_files(self):
+        require(not any(name.startswith("routes/") or name.startswith("src/views/") or name.startswith("src/layouts/") for name in self.request["source_sha256"]), "copied rendering remains")
+        for profile in self.proof["profiles"].values():
+            verify_profile(ROOT, profile, self.proof["artifacts"])
 
     def test_german_main_uses_localized_urls_and_english_alternates(self):
         for kind, category in (("category", "/kategorie/anleitungen"), ("short", "/k/anleitungen"), ("root", "/anleitungen")):
@@ -422,6 +434,8 @@ class StarterTests(unittest.TestCase):
                 {"locale": "de", "href": "https://starter.example.test/ueber-uns"},
                 {"locale": "en", "href": "https://starter.example.test/en/about"},
             ], "German main translated alternate identity differs")
+            require(observed["beitraege/projektupdate/index.html"]["href"] == "/beitraege/projektupdate", "German post namespace differs")
+            require(observed["en/blog/project-update/index.html"]["href"] == "/en/blog/project-update", "English post namespace differs")
             verify_rendered(owned(ROOT, profile["directory"]), profile)
 
     def test_taxonomy_archives_and_assigned_links_match_authored_membership(self):
@@ -470,7 +484,7 @@ class StarterTests(unittest.TestCase):
                 verify_archives(directory, {"@wpmoo/astro": changed})
 
     def test_dropped_assigned_term_link_is_rejected_after_hash_rebinding(self):
-        self.mutate("enhanced/index.html", lambda html: re.sub(r'<a\b[^>]*href="/tag/mdx"[^>]*rel="tag"[^>]*>[\s\S]*?</a>', "", html), "entry taxonomy links differ")
+        self.mutate("enhanced/index.html", lambda html: re.sub(r'<a\b(?=[^>]*href="/tag/mdx")(?=[^>]*rel="tag")[^>]*>[\s\S]*?</a>', "", html), "entry taxonomy links differ")
 
 if __name__ == "__main__":
     unittest.main()

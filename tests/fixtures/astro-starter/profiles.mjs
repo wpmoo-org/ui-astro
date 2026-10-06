@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile, rename, rm, mkdir, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export async function configureStarterProfile(
   sitePath,
@@ -37,31 +37,14 @@ export async function configureStarterProfile(
         `export const categoryPrefixes = ${JSON.stringify(prefixes[categoryProfile])};`,
       ),
   );
-  if (categoryProfile !== "category") {
-    for (const tree of ["en", "de"])
-      for (const locale of ["en", "de"]) {
-        const parent = join(
-          sitePath,
-          "routes",
-          tree,
-          "pages",
-          locale === tree ? "" : locale,
-        );
-        const old = join(
-          parent,
-          locale === "en" ? "category" : "kategorie",
-          "[slug].astro",
-        );
-        if (categoryProfile === "root") await rm(old);
-        else {
-          const next = join(
-            parent,
-            locale === "en" ? "c" : "k",
-            "[slug].astro",
-          );
-          await mkdir(dirname(next), { recursive: true });
-          await rename(old, next);
-        }
-      }
-  }
+  const preferences = join(sitePath, "src/preferences.js");
+  const copy = await readFile(preferences, "utf8");
+  assert.ok(copy.includes("  sidebar: {},"), "ordinary Sidebar input differs");
+  await writeFile(
+    preferences,
+    copy.replace(
+      "  sidebar: {},",
+      '  sidebar: {},\n  parts: { content: { utilities: ["py-2"] } },',
+    ),
+  );
 }

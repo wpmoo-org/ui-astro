@@ -1,17 +1,12 @@
 ---
 import { render } from "astro:content";
+import EntryTaxonomies from "../../site/EntryTaxonomies.astro";
+import { resolveContentLinks } from "../../site/presentation.js";
 import { getLanguageLinks, getLocaleHref } from "../../i18n/index.js";
-import Layout from "../../layouts/Layout.astro";
-import Header from "../../includes/Header.astro";
-import Footer from "../../includes/Footer.astro";
-import Sidebar from "../../includes/Sidebar.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
 import { resolvePageOptions } from "../../config/index.js";
 import { resolveSeoMetadata } from "../../seo/index.js";
-import {
-  getEntryHref,
-  getSiteContext,
-  getSiteNavigation,
-} from "../../context/index.js";
+import { getEntryHref, getSiteContext } from "../../context/index.js";
 import { entryClassContext } from "../../taxonomies/paths.js";
 import Single from "../../plugins/page/views/Single.astro";
 
@@ -30,17 +25,8 @@ const options = resolvePageOptions(
   locale,
 );
 const href = getEntryHref("page", entry);
-const navigation = await getSiteNavigation(href, locale);
 const localeHome = getLocaleHref("/", locale ?? site.defaults.lang);
-const homeHref =
-  navigation.find((item) => item.href === localeHome)?.href ??
-  navigation[0]?.href ??
-  href;
 const links = routeContext.i18n ? await getLanguageLinks("page", entry) : [];
-const breadcrumbs =
-  href === homeHref
-    ? [{ label: entry.data.title }]
-    : [{ label: site.brand, href: homeHref }, { label: entry.data.title }];
 const layoutProps = {
   title: entry.data.title,
   description: entry.data.description,
@@ -66,69 +52,27 @@ const layoutProps = {
     view: "single" as const,
     entry: entryClassContext({ id: "page", sourceKind: "markdown" }, entry),
   },
-  shellMode: options.shellMode,
-  pageWidth: options.pageWidth,
-  headerWidth: options.headerWidth,
-  theme: options.theme,
-  lang: options.lang,
-  dir: options.dir,
-  parts: options.parts,
 };
+const contentLinks = resolveContentLinks(site, {
+  ...routeContext,
+  locale: locale ?? site.defaults.lang,
+});
 const { Content } = await render(entry);
 ---
 
-{
-  options.sidebar ? (
-    <Layout
-      {...layoutProps}
-      sidebar
-      sidebarId="moo-site-sidebar"
-      sidebarKey="moo-site"
-      defaultOpen={options.sidebar.defaultOpen}
-    >
-      <Sidebar
-        slot="sidebar"
-        id="moo-site-sidebar"
-        brand={site.brand}
-        brandHref={homeHref}
-        groups={[
-          {
-            items: navigation.map((item) => ({
-              title: item.label,
-              href: item.href,
-              active: item.active,
-            })),
-          },
-        ]}
-        side={options.sidebar.side}
-        variant={options.sidebar.variant}
-        collapsible={options.sidebar.collapsible}
-        rail={options.sidebar.rail}
-        parts={options.parts}
-      />
-      <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
-      <Single parts={options.parts} entry={entry}>
-        <Content />
-      </Single>
-      <Footer
-        parts={options.parts}
-        slot="footer"
-        brand={site.brand}
-        homeHref={homeHref}
-      />
-    </Layout>
-  ) : (
-    <Layout {...layoutProps}>
-      <Header parts={options.parts} slot="header" breadcrumbs={breadcrumbs} />
-      <Single parts={options.parts} entry={entry}>
-        <Content />
-      </Single>
-      <Footer
-        parts={options.parts}
-        slot="footer"
-        brand={site.brand}
-        homeHref={homeHref}
-      />
-    </Layout>
-  )
-}
+<SiteLayout
+  {...layoutProps}
+  options={options}
+  href={href}
+  locale={locale}
+  languageLinks={links}
+>
+  <Single parts={options.parts} entry={entry}>
+    <Content links={contentLinks} />
+    <EntryTaxonomies
+      slot="after-content"
+      entry={layoutProps.pageContext.entry}
+      locale={options.lang}
+    />
+  </Single>
+</SiteLayout>

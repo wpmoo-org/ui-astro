@@ -1,3 +1,4 @@
+import { validatePresentationLocales } from "../site/presentation.js";
 import { resolveTaxonomyArchive } from "../taxonomies/urls.js";
 import { buildRegistry } from "../integration/registry.js";
 
@@ -23,6 +24,7 @@ export function resolveI18n(native, site) {
   if (!native) {
     if (Object.keys(site.locales ?? {}).length)
       throw new TypeError("site.locales requires native Astro i18n");
+    validatePresentationLocales(site, null);
     return null;
   }
   if (
@@ -63,6 +65,7 @@ export function resolveI18n(native, site) {
     prefixDefaultLocale: native.routing?.prefixDefaultLocale ?? false,
   });
   validateLocaleKeys(site.locales, profile, "site.locales");
+  validatePresentationLocales(site, profile);
   for (const [locale, options] of Object.entries(site.locales ?? {})) {
     if (options.lang !== undefined && options.lang !== locale)
       throw new TypeError(

@@ -17,6 +17,34 @@ import { createRequire } from "node:module";
 import test from "node:test";
 
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+test("minimal_starter_rejects_copied_host_routes_and_rendering", async () => {
+  const contracts = await import("../scripts/astro_starter_contracts.mjs");
+  assert.equal(typeof contracts.assertMinimalStarterSource, "function");
+  const minimal = [
+    "astro.config.mjs",
+    "src/config.js",
+    "src/definitions.js",
+    "src/content.config.ts",
+    "src/content/page/en/enhanced.mdx",
+    "src/content/page/de/enhanced.mdx",
+  ];
+  assert.doesNotThrow(() => contracts.assertMinimalStarterSource(minimal));
+  for (const name of [
+    "routes/de/pages/blog/index.astro",
+    "src/layouts/Layout.astro",
+    "src/views/Page.astro",
+    "src/components/Action.astro",
+    "src/navigation.js",
+    "src/routes.js",
+    "src/taxonomy-links.js",
+    "src/types.ts",
+  ])
+    assert.throws(
+      () => contracts.assertMinimalStarterSource([...minimal, name]),
+      /copied host rendering/,
+    );
+});
 async function fixture(t, name = "source", version = "0.1.0") {
   const root = await realpath(
     await mkdtemp(join(tmpdir(), "astro-starter-test-")),
@@ -255,7 +283,7 @@ test("direct_starter_rejects_extra_artifacts_or_links", async () => {
     filename: "wpmoo-astro-0.1.0.tgz",
     manifest: { version: "0.1.0" },
     integrity:
-      "sha512-Qfin4cuGooa87UrghOpqnm/TSDYBwQ7eZwz9q6HukxMCgioI9DbxtnA/qo126uZowHZf4ordBX9sc9i35fKP8Q==",
+      "sha512-QOZECiF+vRHLESvgkT1ec1oYMsn1pRAAcc+wMFTIrbtB+AAmwu6ngUk5eycdulHcRTX71b1VuqE/NkFLJpAYiw==",
   };
   const artifacts = { "@wpmoo/astro": sdk };
   validateStarterLock(manifest, lock, artifacts);

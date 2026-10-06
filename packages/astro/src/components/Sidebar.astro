@@ -31,6 +31,8 @@ interface Props {
   ariaLabelledBy?: string;
   brand?: string;
   brandHref?: string;
+  brandSubtitle?: string;
+  brandIcon?: "blocks" | "panel-left" | "layout-grid" | "file-text";
   items?: SidebarItem[];
   groups?: SidebarGroup[];
   footerText?: string;
@@ -52,6 +54,8 @@ const {
   ariaLabelledBy = "",
   brand = "",
   brandHref = "/",
+  brandSubtitle = "",
+  brandIcon = "blocks",
   items = [],
   groups = [],
   footerText = "",
@@ -66,6 +70,15 @@ const navigationGroups = groups.length
     ? [{ items }]
     : [];
 const resolvedBrandHref = navigationHref(brandHref, "Sidebar brandHref");
+if (
+  typeof brandSubtitle !== "string" ||
+  /[\x00-\x1f\x7f]/u.test(brandSubtitle)
+) {
+  throw new TypeError("Sidebar brandSubtitle must be plain text");
+}
+if (!["blocks", "panel-left", "layout-grid", "file-text"].includes(brandIcon)) {
+  throw new TypeError("Sidebar brandIcon is unsupported");
+}
 if (!["left", "right"].includes(side))
   throw new TypeError("Sidebar side is unsupported");
 if (!["sidebar", "floating", "inset"].includes(variant))
@@ -172,11 +185,16 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
             <>
               <span class="sidebar-menu-button__lead" aria-hidden="true">
                 <span class="sidebar-brand-mark sidebar-brand-mark--primary">
-                  <Icon name="panel-left" />
+                  <Icon name={brandIcon} />
                 </span>
               </span>
               <span class="sidebar-menu-button__text">
                 <span class="sidebar-menu-button__title">{brand}</span>
+                {brandSubtitle ? (
+                  <span class="sidebar-menu-button__subtitle">
+                    {brandSubtitle}
+                  </span>
+                ) : null}
               </span>
             </>
           </a>

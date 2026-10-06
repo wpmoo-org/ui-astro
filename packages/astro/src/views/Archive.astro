@@ -50,27 +50,31 @@ const hasLoop = forwardedSlots?.loop ?? Astro.slots.has("loop");
 const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
 ---
 
-{
-  hasPageHeader ? (
-    <slot name="page-header" />
-  ) : (
-    <PageHeader title={title} description={description} parts={parts}>
-      {hasActions ? <slot name="actions" slot="actions" /> : null}
-    </PageHeader>
-  )
-}
-{
-  hasLoop ? (
-    <slot name="loop" />
-  ) : (
-    <Loop
-      items={items}
-      emptyText={emptyText}
-      titleVariant={titleVariant}
-      parts={parts}
-      lang={lang}
-      dateFormatter={dateFormatter}
-    />
-  )
-}
-{hasAfterList ? <slot name="after-list" /> : null}
+<div class="row gx-0" data-layout="page-grid">
+  <section class="col-12" data-page-col-md="9" data-page-col-xl="8">
+    {
+      hasPageHeader ? (
+        <slot name="page-header" />
+      ) : (
+        <PageHeader title={title} description={description} parts={parts}>
+          {hasActions ? <slot name="actions" slot="actions" /> : null}
+        </PageHeader>
+      )
+    }
+    {
+      hasLoop ? (
+        <slot name="loop" />
+      ) : (
+        <Loop
+          items={items}
+          emptyText={emptyText}
+          titleVariant={titleVariant}
+          parts={parts}
+          lang={lang}
+          dateFormatter={dateFormatter}
+        />
+      )
+    }
+    {hasAfterList ? <slot name="after-list" /> : null}
+  </section>
+</div>

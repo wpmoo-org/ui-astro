@@ -1,4 +1,8 @@
 import { z } from "astro/zod";
+import {
+  normalizePresentation,
+  normalizeNamedLinks,
+} from "../site/presentation.js";
 
 const width = z.enum(["base", "sm", "md", "lg", "xl", "xxl", "fluid"]);
 const utilityNames = [
@@ -223,13 +227,19 @@ const partsSchema = z.strictObject({
 });
 const partDefaults = {
   content: {
-    utilities: ["py-4"],
+    utilities: ["mx-0", "py-4", "py-md-5", "px-3", "px-md-5"],
     scrollUtilities: ["scroll-fade-y", "no-scrollbar"],
   },
   header: {
     utilities: ["bg-body", "border-bottom"],
-    contentUtilities: ["d-flex", "align-items-center", "gap-2", "py-2"],
-    breadcrumbUtilities: ["mb-0"],
+    contentUtilities: [
+      "d-flex",
+      "flex-wrap",
+      "align-items-center",
+      "gap-2",
+      "py-3",
+    ],
+    breadcrumbUtilities: ["mb-0", "small"],
     trigger: { variant: "ghost", size: "icon-sm", icon: "panel-left" },
     toggleLabel: "Toggle sidebar",
     navigationLabel: "Site navigation",
@@ -237,14 +247,14 @@ const partDefaults = {
     skipLabel: "Skip to main content",
   },
   pageHeader: {
-    utilities: ["d-flex", "flex-column", "gap-2", "mb-4"],
+    utilities: ["d-flex", "flex-column", "gap-3", "mb-4"],
     titleUtilities: ["mb-0"],
     descriptionUtilities: [],
     descriptionVariant: "page-description",
   },
   loop: {
-    utilities: ["list-unstyled", "d-flex", "flex-column", "gap-4"],
-    itemUtilities: ["d-flex", "flex-column", "gap-2"],
+    utilities: ["list-unstyled", "mb-0"],
+    itemUtilities: ["d-flex", "flex-column", "gap-2", "py-4", "border-bottom"],
     titleUtilities: ["mb-0"],
     descriptionUtilities: ["text-body-secondary", "mb-0"],
     emptyUtilities: ["text-body-secondary"],
@@ -256,7 +266,10 @@ const partDefaults = {
     pageTitle: "Pages",
     postTitle: "Posts",
   },
-  footer: { utilities: [], linkUtilities: ["link-body-emphasis"] },
+  footer: {
+    utilities: ["border-top", "py-3", "small", "text-body-secondary"],
+    linkUtilities: ["text-body-secondary", "text-decoration-none"],
+  },
 };
 
 function freezeTree(value) {
@@ -305,9 +318,9 @@ export function formatDate(date, options = {}) {
   return style === "iso"
     ? date.toISOString().slice(0, 10)
     : new Intl.DateTimeFormat(lang, {
-      dateStyle: style,
-      timeZone: "UTC",
-    }).format(date);
+        dateStyle: style,
+        timeZone: "UTC",
+      }).format(date);
 }
 const sidebarSchema = z.strictObject({
   side: z.enum(["left", "right"]).optional(),
@@ -375,6 +388,8 @@ const seoSchema = z.strictObject({
 });
 const siteSchema = z.strictObject({
   brand: z.string().trim().min(1).optional(),
+  presentation: z.unknown().optional(),
+  links: z.unknown().optional(),
   organization: organizationSchema.optional(),
   seo: seoSchema.optional(),
   defaults: layoutSchema.optional(),
@@ -393,7 +408,7 @@ const sidebarDefaults = Object.freeze({
 const builtIn = Object.freeze({
   shellMode: "viewport",
   pageWidth: "xl",
-  headerWidth: null,
+  headerWidth: "fluid",
   theme: "light",
   lang: "en",
   dir: "ltr",
@@ -467,6 +482,8 @@ function mergeLayout(...layers) {
 export function defineSite(input = {}) {
   requireRecord(input, "site", [
     "brand",
+    "presentation",
+    "links",
     "organization",
     "seo",
     "defaults",
@@ -520,6 +537,8 @@ export function defineSite(input = {}) {
       : {}),
     ...(parsed.seo ? { seo: freezeTree(parsed.seo) } : {}),
     ...(parsed.locales ? { locales: freezeTree(parsed.locales) } : {}),
+    presentation: normalizePresentation(parsed.presentation),
+    links: normalizeNamedLinks(parsed.links),
     defaults: mergeLayout(parsed.defaults),
     types: Object.freeze(types),
   });
@@ -531,6 +550,8 @@ export function resolvePageOptions(site, type, view, page, locale) {
     throw new TypeError(`Invalid view: ${String(view)}`);
   requireRecord(site, "site", [
     "brand",
+    "presentation",
+    "links",
     "organization",
     "seo",
     "defaults",

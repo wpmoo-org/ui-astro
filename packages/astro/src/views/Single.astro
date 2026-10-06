@@ -31,17 +31,25 @@ const hasAfterContent =
   forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
 ---
 
-<article class:list={entryClasses}>
-  {
-    hasPageHeader ? (
-      <slot name="page-header" />
-    ) : (
-      <PageHeader title={title} description={description} parts={parts}>
-        {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
-        {hasActions ? <slot name="actions" slot="actions" /> : null}
-      </PageHeader>
-    )
-  }
-  <slot />
-  {hasAfterContent ? <slot name="after-content" /> : null}
-</article>
+<div class="row gx-0" data-layout="page-grid">
+  <article
+    class:list={[entryClasses, "col-12", "lh-lg"]}
+    data-page-col-md="9"
+    data-page-col-xl="8"
+  >
+    {
+      hasPageHeader ? (
+        <slot name="page-header" />
+      ) : (
+        <PageHeader title={title} description={description} parts={parts}>
+          {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
+          {hasActions ? <slot name="actions" slot="actions" /> : null}
+        </PageHeader>
+      )
+    }
+    <div class="text-body-secondary">
+      <slot />
+    </div>
+    {hasAfterContent ? <slot name="after-content" /> : null}
+  </article>
+</div>

@@ -62,7 +62,11 @@ const dateText =
     hasMetadata ? (
       <slot name="metadata" slot="metadata" />
     ) : date ? (
-      <time slot="metadata" datetime={date.toISOString()}>
+      <time
+        slot="metadata"
+        class="small text-body-secondary"
+        datetime={date.toISOString()}
+      >
         {dateText}
       </time>
     ) : null
