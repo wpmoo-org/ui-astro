@@ -231,7 +231,7 @@ const partDefaults = {
     scrollUtilities: ["scroll-fade-y", "no-scrollbar"],
   },
   header: {
-    utilities: ["bg-body", "border-bottom"],
+    utilities: ["bg-body-tertiary"],
     contentUtilities: [
       "d-flex",
       "flex-wrap",
