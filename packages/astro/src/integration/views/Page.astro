@@ -65,7 +65,7 @@ const plan = await preparePlacements({
 });
 ---
 
-<SiteLayout
+<SiteLayout compactToc
   {...layoutProps}
   plan={plan}
   options={options}
@@ -73,7 +73,7 @@ const plan = await preparePlacements({
   locale={locale}
   languageLinks={links}
 >
-  <Single plan={plan} aside={options.aside} dir={options.dir} parts={options.parts} entry={entry}>
+  <Single compactToc plan={plan} aside={options.aside} dir={options.dir} parts={options.parts} entry={entry}>
     <Content links={contentLinks} />
   </Single>
 </SiteLayout>

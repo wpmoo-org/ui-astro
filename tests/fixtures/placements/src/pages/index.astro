@@ -2,12 +2,15 @@
 import Layout from "@wpmoo/astro/Layout.astro";
 import Placement from "@wpmoo/astro/placements/Placement.astro";
 import { preparePlacements } from "@wpmoo/astro/placements";
-const plan = await preparePlacements({ href: Astro.url.pathname, view: "native", locale: Astro.currentLocale, headings: [{ depth: 2, slug: "intro", text: "<Introduction>" }] });
+const plan = await preparePlacements({ href: Astro.url.pathname, view: "native", locale: Astro.currentLocale, headings: [{ depth: 2, slug: "intro", text: "<Introduction>" }, { depth: 3, slug: "über/uns", text: "<Deutsch>" }] });
 ---
 <Layout title="Native placements">
   <Placement plan={plan} at="content.before" />
-  <h1>Native placements</h1>
-  <h2 id="intro">Introduction</h2>
-  <Placement plan={plan} at="aside.content" />
+  <article id={plan.contentId}>
+    <h1>Native placements</h1>
+    <h2 id="intro">Introduction</h2>
+    <h3 id="über/uns">Deutsch</h3>
+  </article>
+  <Placement plan={plan} at="aside.content" tocContentId={plan.contentId} tocScrollRootId="main-content" />
   <Placement plan={plan} at="content.after" />
 </Layout>

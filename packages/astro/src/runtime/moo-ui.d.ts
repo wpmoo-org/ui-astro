@@ -18,6 +18,7 @@ export declare const Datepicker: RuntimeConstructor;
 export declare const MooCalendar: RuntimeConstructor;
 export declare const MooDateRangePicker: RuntimeConstructor;
 export declare const Sidebar: RuntimeConstructor;
+export declare const TableOfContents: RuntimeConstructor;
 export declare const Slider: RuntimeConstructor;
 
 declare const MooUI: {
@@ -30,6 +31,7 @@ declare const MooUI: {
   readonly MooCalendar: typeof MooCalendar;
   readonly MooDateRangePicker: typeof MooDateRangePicker;
   readonly Sidebar: typeof Sidebar;
+  readonly TableOfContents: typeof TableOfContents;
   readonly Slider: typeof Slider;
 };
 export default MooUI;

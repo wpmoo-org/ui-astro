@@ -1,17 +1,25 @@
 ---
 import ContentBlock from "./ContentBlock.astro";
-import TableOfContents from "../blocks/table-of-contents/TableOfContents.astro";
+import TableOfContents from "../components/TableOfContents.astro";
 import EntryTaxonomies from "../blocks/entry-taxonomies/EntryTaxonomies.astro";
-import type { PlacementPlan, PlacementLocation } from "./index.js";
-interface Props { plan: PlacementPlan<unknown>; at: PlacementLocation }
-const { plan, at } = Astro.props;
-const placements = plan.groups[at] ?? [];
+import type { PlacementPlan, PlacementLocation, PreparedPlacement } from "./index.js";
+interface Props {
+  plan: PlacementPlan<unknown>;
+  at: PlacementLocation;
+  placements?: readonly PreparedPlacement[];
+  tocPresentation?: "list" | "compact";
+  tocClass?: string;
+  tocContentId?: string;
+  tocScrollRootId?: string;
+}
+const { plan, at, tocPresentation = "list", tocClass = "", tocContentId = "", tocScrollRootId = "" } = Astro.props;
+const placements = Astro.props.placements ?? plan.groups[at] ?? [];
 ---
 
 {placements.map((placement) => {
   const Component = placement.Component;
   return placement.kind === "toc" ? (
-    <TableOfContents headings={plan.context.headings ?? []} depths={placement.props?.depths as number[] | undefined} label={String(placement.props?.label ?? plan.labels.onThisPage ?? "On this page")} />
+    <TableOfContents id={`${placement.instanceId}-${tocPresentation}`} items={placement.tocItems ?? []} presentation={tocPresentation} class={tocClass} contentId={tocContentId} scrollRootId={tocScrollRootId} overviewLabel={plan.labels.overview} label={String(placement.props?.label ?? plan.labels.onThisPage ?? "On this page")} />
   ) : placement.kind === "entry-taxonomies" ? (
     <EntryTaxonomies groups={plan.context.assignedTerms} label={String(placement.props?.label ?? plan.labels.taxonomies)} />
   ) : Component && placement.kind === "content" ? (

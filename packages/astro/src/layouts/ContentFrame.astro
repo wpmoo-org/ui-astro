@@ -12,10 +12,14 @@ interface Props {
   asideLabel?: string;
   dir?: "ltr" | "rtl";
   id?: string;
+  contentId?: string;
+  asideMobileBody?: boolean;
   class?: string;
 }
 const {
   element: Element = "div",
+  contentId,
+  asideMobileBody = true,
   aside,
   asideLabel = "Page information",
   dir = "ltr",
@@ -34,12 +38,12 @@ const before = selected?.mobile === "collapse-before";
 ---
 <div class:list={[hasAside ? "row g-4" : "row gx-0"]} data-layout="page-grid" data-content-aside={hasAside ? selected?.side : undefined}>
   {hasAside && selected && classes && before ? (
-    <ContentAside options={selected} classes={classes} id={id} label={asideLabel} html={asideHtml} />
+    <ContentAside options={selected} classes={classes} mobileBody={asideMobileBody} id={id} label={asideLabel} html={asideHtml} />
   ) : null}
-  <Element class:list={[className, classes?.main ?? ["col-12"]]} data-page-col-md={!hasAside ? "9" : undefined} data-page-col-xl={!hasAside ? "8" : undefined}>
+  <Element id={contentId} class:list={[className, classes?.main ?? ["col-12"]]} data-page-col-md={!hasAside ? "9" : undefined} data-page-col-xl={!hasAside ? "8" : undefined}>
     <slot />
   </Element>
   {hasAside && selected && classes && !before ? (
-    <ContentAside options={selected} classes={classes} id={id} label={asideLabel} html={asideHtml} />
+    <ContentAside options={selected} classes={classes} mobileBody={asideMobileBody} id={id} label={asideLabel} html={asideHtml} />
   ) : null}
 </div>

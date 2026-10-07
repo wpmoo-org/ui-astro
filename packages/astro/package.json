@@ -19,6 +19,7 @@
     "README.md",
     "contracts/astro-public-surface.json",
     "contracts/ui-1.0.0-package.json",
+    "contracts/ui-1.1.0-dev.1-package.json",
     "src/blocks/entry-taxonomies/EntryTaxonomies.astro",
     "src/blocks/language-switcher/LanguageSwitcher.astro",
     "src/blocks/language-switcher/language-switcher.js",
@@ -65,6 +66,7 @@
     "src/components/Spinner.astro",
     "src/components/Switch.astro",
     "src/components/Table.astro",
+    "src/components/TableOfContents.astro",
     "src/components/Tabs.astro",
     "src/components/Textarea.astro",
     "src/components/Toast.astro",
@@ -72,6 +74,7 @@
     "src/components/Tooltip.astro",
     "src/components/Typography.astro",
     "src/components/internal/Icon.astro",
+    "src/components/table-of-contents.js",
     "src/config/index.d.ts",
     "src/config/index.js",
     "src/content/dates.js",
@@ -114,6 +117,7 @@
     "src/not-found/routes.js",
     "src/placements/ContentBlock.astro",
     "src/placements/Placement.astro",
+    "src/placements/aside.js",
     "src/placements/chrome.js",
     "src/placements/content.d.ts",
     "src/placements/content.js",
@@ -262,10 +266,11 @@
     "./placements/Placement.astro": "./src/placements/Placement.astro",
     "./blocks/TableOfContents.astro": "./src/blocks/table-of-contents/TableOfContents.astro",
     "./blocks/EntryTaxonomies.astro": "./src/blocks/entry-taxonomies/EntryTaxonomies.astro",
-    "./layouts/ContentFrame.astro": "./src/layouts/ContentFrame.astro"
+    "./layouts/ContentFrame.astro": "./src/layouts/ContentFrame.astro",
+    "./components/TableOfContents.astro": "./src/components/TableOfContents.astro"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.0.0",
+    "@wpmoo/ui": "1.1.0-dev.1",
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {

@@ -258,6 +258,7 @@ export interface SiteLabelsInput {
   darkMode?: string;
   closeNavigation?: string;
   onThisPage?: string;
+  overview?: string;
   aside?: string;
 }
 export interface SiteCopyInput {

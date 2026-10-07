@@ -41,7 +41,7 @@ const layoutProps = {
 const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lang, title: term.name, view: "taxonomy", taxonomy: { id: taxonomy, term: term.id } });
 ---
 
-<SiteLayout
+<SiteLayout compactToc
   {...layoutProps}
   plan={plan}
   options={options}
@@ -50,7 +50,7 @@ const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lan
   languageLinks={alternates}
   breadcrumbs={breadcrumbs}
 >
-  <Archive
+  <Archive compactToc
     plan={plan}
     aside={options.aside}
     dir={options.dir}

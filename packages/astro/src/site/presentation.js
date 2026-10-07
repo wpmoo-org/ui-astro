@@ -26,6 +26,7 @@ const labelsSchema = z.strictObject({
   darkMode: text.optional(),
   closeNavigation: text.optional(),
   onThisPage: text.optional(),
+  overview: text.optional(),
   aside: text.optional(),
 });
 const copySchema = z.strictObject({
@@ -74,6 +75,7 @@ const messages = {
     darkMode: "Switch to dark mode",
     closeNavigation: "Close navigation",
     onThisPage: "On this page",
+    overview: "Overview",
     aside: "Page information",
   },
   de: {
@@ -86,6 +88,7 @@ const messages = {
     darkMode: "Dunklen Modus aktivieren",
     closeNavigation: "Navigation schließen",
     onThisPage: "Auf dieser Seite",
+    overview: "Überblick",
     aside: "Seiteninformationen",
   },
 };

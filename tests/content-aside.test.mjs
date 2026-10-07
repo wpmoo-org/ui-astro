@@ -14,7 +14,7 @@ test("content aside is optional and resolves its independent defaults", () => {
     columns: 3,
     breakpoint: "xl",
     sticky: false,
-    mobile: "collapse-before",
+    mobile: "stack-after",
   });
   assert.equal(Object.isFrozen(site.defaults.aside), true);
   const override = resolvePageOptions(site, "page", "single", {
@@ -55,11 +55,11 @@ test("native frame classes account for physical side, RTL and mobile policy", as
   assert.equal(ltr.aside.includes("col-xl-3"), true);
   assert.equal(ltr.aside.includes("order-xl-2"), true);
   assert.equal(rtl.aside.includes("order-xl-1"), true);
-  assert.equal(ltr.aside.includes("order-1"), true);
+  assert.equal(ltr.aside.includes("order-2"), true);
   assert.equal(
     module
-      .contentFrameClasses({ ...aside, mobile: "stack-after" }, "ltr")
-      .aside.includes("order-2"),
+      .contentFrameClasses({ ...aside, mobile: "collapse-before" }, "ltr")
+      .aside.includes("order-1"),
     true,
   );
 });

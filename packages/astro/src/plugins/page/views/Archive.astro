@@ -13,6 +13,7 @@ import Loop from "./Loop.astro";
 
 interface Props {
   plan?: PlacementPlan<unknown>;
+  compactToc?: boolean;
   aside?: ContentAsideInput | null;
   asideLabel?: string;
   dir?: "ltr" | "rtl";
@@ -50,6 +51,7 @@ const {
 
 <Archive
   plan={Astro.props.plan}
+  compactToc={Astro.props.compactToc}
   aside={Astro.props.aside}
   asideLabel={Astro.props.asideLabel}
   dir={Astro.props.dir}

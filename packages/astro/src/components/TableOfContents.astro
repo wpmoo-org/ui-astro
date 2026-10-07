@@ -1,0 +1,31 @@
+---
+import Navigation from "./Navigation.astro";
+import DropdownMenu from "./DropdownMenu.astro";
+import { tocItems, fragmentHref } from "./table-of-contents.js";
+
+interface Props {
+  id: string;
+  items: readonly { targetId: string; label: string }[];
+  presentation?: "list" | "compact";
+  label?: string;
+  overviewLabel?: string;
+  contentId?: string;
+  scrollRootId?: string;
+  class?: string;
+}
+const { id, items, presentation = "list", label = "On this page", overviewLabel = "Overview", contentId = "", scrollRootId = "", class: className = "" } = Astro.props;
+for (const value of [id, contentId, scrollRootId])
+  if (typeof value !== "string" || /\s/u.test(value)) throw new TypeError("TOC IDs must be strings without whitespace");
+if (!id || !["list", "compact"].includes(presentation) || typeof label !== "string" || !label.trim() || typeof overviewLabel !== "string" || !overviewLabel.trim())
+  throw new TypeError("Invalid TOC presentation or labels");
+const links = tocItems(items).map((item) => ({ label: item.label, href: fragmentHref(item.targetId) }));
+const attributes = { id, "data-toc": true, "data-toc-content": contentId || undefined, "data-toc-scroll-root": scrollRootId || undefined };
+---
+
+{links.length > 0 && (presentation === "list" ? (
+  <Navigation {...attributes} ariaLabel={label} heading={label} items={links} style="base" vertical class="small" rootClass={className} />
+) : (
+  <DropdownMenu {...attributes} element="nav" aria-label={label} label={label} items={links} caret size="sm" triggerClass="flex-shrink-0" menuClass="w-100" itemClass="text-wrap text-break" class={`d-flex align-items-center gap-2 w-100 ${className}`}>
+    <span slot="after-trigger" data-toc-current class="small text-body-secondary text-truncate">{overviewLabel}</span>
+  </DropdownMenu>
+))}

@@ -354,7 +354,7 @@ const asideDefaults = Object.freeze({
   columns: 3,
   breakpoint: "xl",
   sticky: false,
-  mobile: "collapse-before",
+  mobile: "stack-after",
 });
 
 export const layoutSchema = z.strictObject({

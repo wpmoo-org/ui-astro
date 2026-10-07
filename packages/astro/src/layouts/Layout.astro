@@ -34,6 +34,7 @@ interface Props {
   id?: string;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
+  headerTocClass?: string;
   pageContext?: PageClassContext;
   parts?: PartsInput;
 }
@@ -71,6 +72,7 @@ const {
   id = "",
   pageWidth = defaults.pageWidth,
   headerWidth = defaults.headerWidth,
+  headerTocClass = "",
   pageContext,
 } = Astro.props;
 
@@ -236,6 +238,7 @@ const jsonLd = metadata
                     <slot name="header" />
                   </div>
                 </div>
+                {Astro.slots.has("header-toc") ? <div class:list={[headerClass, headerTocClass]}><slot name="header-toc" /></div> : null}
               </header>
             ) : null
           }
@@ -270,6 +273,19 @@ const jsonLd = metadata
     <script>
       import "../runtime/bootstrap.js";
       import MooUI from "../runtime/moo-ui.js";
+
+      const tocInstances = new Set<InstanceType<typeof MooUI.TableOfContents>>();
+      function initializeToc() {
+        document.querySelectorAll("[data-toc]").forEach((root) => {
+          tocInstances.add(MooUI.TableOfContents.getOrCreateInstance(root));
+        });
+      }
+      initializeToc();
+      document.addEventListener("astro:page-load", initializeToc);
+      document.addEventListener("astro:before-swap", () => {
+        tocInstances.forEach((instance) => instance.dispose());
+        tocInstances.clear();
+      });
 
       document
         .querySelectorAll('[data-slot="sidebar-wrapper"]')

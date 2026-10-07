@@ -98,19 +98,22 @@ export function assertReleasePin({ packageJson, packageLock }) {
   }
 }
 
-export async function assertCoreArtifact({ repoRoot = ASTRO_ROOT } = {}) {
+export async function assertCoreArtifact({
+  repoRoot = ASTRO_ROOT,
+  artifactRecord = RELEASE_RECORD,
+} = {}) {
   const coreRoot = corePackageRoot(repoRoot);
   const installed = await readJson(join(coreRoot, "package.json"));
   if (
-    installed.name !== RELEASE_RECORD.package ||
-    installed.version !== RELEASE_RECORD.version
+    installed.name !== artifactRecord.package ||
+    installed.version !== artifactRecord.version
   ) {
     throw new Error(
       "installed Moo UI package identity differs from Core release",
     );
   }
   const expectedExports = Object.fromEntries(
-    Object.entries(RELEASE_RECORD.exports).map(([name, entry]) => [
+    Object.entries(artifactRecord.exports).map(([name, entry]) => [
       name,
       entry.target,
     ]),
@@ -120,7 +123,7 @@ export async function assertCoreArtifact({ repoRoot = ASTRO_ROOT } = {}) {
       "installed Moo UI public export map differs from Core release",
     );
   }
-  for (const [name, entry] of Object.entries(RELEASE_RECORD.exports)) {
+  for (const [name, entry] of Object.entries(artifactRecord.exports)) {
     const target = join(coreRoot, entry.target);
     const bytes = await readFile(target).catch(() => {
       throw new Error(`installed Moo UI ${name} target is missing`);
@@ -132,6 +135,53 @@ export async function assertCoreArtifact({ repoRoot = ASTRO_ROOT } = {}) {
       );
     }
   }
+}
+
+export function assertDevelopmentPin({
+  packageJson,
+  packageLock,
+  artifactRecord,
+}) {
+  if (
+    artifactRecord.artifact_kind !== "local-development" ||
+    artifactRecord.package !== MOO_PACKAGE_NAME ||
+    !/^\d+\.\d+\.\d+-dev\.\d+$/.test(artifactRecord.version)
+  )
+    throw new Error("identified local development artifact required");
+  const locked = packageLock.packages?.[`node_modules/${MOO_PACKAGE_NAME}`];
+  if (
+    declaredPackageVersion(packageJson) !== artifactRecord.version ||
+    packageLock.packages?.["packages/astro"]?.dependencies?.[
+      MOO_PACKAGE_NAME
+    ] !== artifactRecord.version ||
+    locked?.version !== artifactRecord.version ||
+    locked?.integrity !== artifactRecord.integrity ||
+    !String(locked?.resolved).startsWith("file:") ||
+    !String(locked?.resolved).endsWith(`/${artifactRecord.artifact_filename}`)
+  )
+    throw new Error(
+      "development pin differs from the identified local artifact",
+    );
+}
+
+export async function checkDevelopment({
+  tarball,
+  artifactRecord,
+  repoRoot = ASTRO_ROOT,
+}) {
+  const bytes = await readFile(tarball);
+  if (
+    createHash("sha256").update(bytes).digest("hex") !==
+      artifactRecord.tarball_sha256 ||
+    `sha512-${createHash("sha512").update(bytes).digest("base64")}` !==
+      artifactRecord.integrity
+  )
+    throw new Error(
+      "development tarball bytes differ from the identified artifact",
+    );
+  const metadata = await projectMetadata(repoRoot);
+  assertDevelopmentPin({ ...metadata, artifactRecord });
+  await assertCoreArtifact({ repoRoot, artifactRecord });
 }
 
 async function readJson(path) {
@@ -211,6 +261,20 @@ function argumentValue(args, name) {
 
 async function main() {
   const args = process.argv.slice(2);
+  if (args.includes("--check-development")) {
+    const tarball = argumentValue(args, "--package-tarball");
+    const recordPath = argumentValue(args, "--artifact-record");
+    if (!tarball || !recordPath)
+      throw new Error(
+        "development check requires --package-tarball and --artifact-record",
+      );
+    await checkDevelopment({
+      tarball,
+      artifactRecord: await readJson(recordPath),
+    });
+    console.log("Moo UI Astro identified development artifact: OK");
+    return;
+  }
   if (args.includes("--check-release")) {
     await checkRelease();
     console.log("Moo UI Astro release package pin: OK");

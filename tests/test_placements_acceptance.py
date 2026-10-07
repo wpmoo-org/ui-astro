@@ -1,14 +1,15 @@
-"""Compiled placement foundations accepted by the maintainer on 2026-10-06.
+"""Compiled placement foundations accepted by the maintainer on 2026-10-07.
 
 Read the sealed starter build. Native browser evidence covers geometry and
 interaction; these positive contracts preserve document ownership, matching
-width utilities, navigation groups and the responsive TOC disclosure.
+width utilities, navigation groups and the shared responsive TOC projection.
 """
 
 from html.parser import HTMLParser
 from pathlib import Path
 import sys
 import unittest
+from urllib.parse import unquote
 
 
 DIST = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 else None
@@ -94,11 +95,13 @@ class AcceptedPlacements(unittest.TestCase):
                 for name in names[locale]:
                     self.assertEqual(group_names.count(name), 1)
 
-    def test_single_aside_has_a_native_disclosure_before_the_content(self):
+    def test_compact_toc_stays_in_header_and_normal_aside_follows_content(self):
         labels = {"en": ("Page information", "On this page"),
                   "de": ("Seiteninformationen", "Auf dieser Seite")}
         for locale, root in self.documents.items():
             with self.subTest(locale=locale):
+                header, = [node for node in root.find("header")
+                           if any("data-toc" in nav.attrs for nav in node.find("nav"))]
                 main, = root.find("main")
                 aside, = main.find("aside")
                 article, = main.find("article")
@@ -107,26 +110,31 @@ class AcceptedPlacements(unittest.TestCase):
                 self.assertIn("col-xl-9", article.classes())
                 row, = [node for node in main.find("div")
                         if aside in node.children and article in node.children]
-                self.assertLess(row.children.index(aside), row.children.index(article))
-                button, = aside.find("button")
+                self.assertLess(row.children.index(article), row.children.index(aside))
+                compact, = [node for node in header.find("nav")
+                            if "data-toc" in node.attrs]
+                desktop, = [node for node in aside.find("nav")
+                            if "data-toc" in node.attrs]
+                self.assertIn("d-xl-none", compact.classes())
+                self.assertTrue({"d-none", "d-xl-block"} <= desktop.classes())
+                button, = compact.find("button")
                 self.assertEqual(button.attrs["type"], "button")
-                self.assertEqual(button.text, labels[locale][0])
-                self.assertEqual(button.attrs["data-bs-toggle"], "collapse")
-                self.assertIn("d-xl-none", button.classes())
+                self.assertEqual(button.text.strip(), labels[locale][1])
+                self.assertEqual(button.attrs["data-bs-toggle"], "dropdown")
                 self.assertEqual(button.attrs["aria-expanded"], "false")
-                target = button.attrs["aria-controls"]
-                self.assertEqual(button.attrs["data-bs-target"], "#" + target)
-                panel, = [node for node in aside.find("div")
-                          if node.attrs.get("id") == target]
-                self.assertTrue({"collapse", "d-xl-block"} <= panel.classes())
-                toc, = panel.find("nav")
-                self.assertEqual(toc.attrs["aria-label"], labels[locale][1])
                 headings = [node for tag in ("h2", "h3") for node in article.find(tag)]
                 heading_ids = {node.attrs.get("id") for node in headings}
-                links = toc.find("a")
-                self.assertEqual(len(links), 4)
-                for link in links:
-                    self.assertIn(link.attrs["href"][1:], heading_ids)
+                for toc in (compact, desktop):
+                    self.assertEqual(toc.attrs["aria-label"], labels[locale][1])
+                    self.assertEqual(toc.attrs["data-toc-content"], article.attrs["id"])
+                    self.assertEqual(toc.attrs["data-toc-scroll-root"], main.attrs["id"])
+                    links = toc.find("a")
+                    self.assertEqual(len(links), 4)
+                    for link in links:
+                        self.assertIn(unquote(link.attrs["href"][1:]), heading_ids)
+                information = [node for node in aside.find("h2")
+                               if node.text == labels[locale][0]]
+                self.assertEqual(len(information), 1)
 
 
 if __name__ == "__main__":

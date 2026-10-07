@@ -68,10 +68,12 @@ export interface PreparedPlacement extends PlacementInput {
   readonly instanceId: string;
   readonly kind: "toc" | "entry-taxonomies" | "component" | "content";
   readonly Component?: AstroComponentFactory;
+  readonly tocItems?: readonly { targetId: string; label: string }[];
   readonly title?: string;
   readonly headings?: readonly { slug: string }[];
 }
 export interface PlacementPlan<TData = Readonly<Record<string, unknown>>> {
+  readonly contentId: string;
   readonly chrome: SiteChrome;
   readonly context: Readonly<RenderContext<TData>> & {
     readonly locale: string;

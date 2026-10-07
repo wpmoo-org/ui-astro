@@ -99,6 +99,7 @@ export async function preparePlacements(input) {
     );
   }
   await validateContentReferences(profile);
+  const contentId = `moo-content-${createHash("sha256").update(input.href).digest("hex").slice(0, 10)}`;
   const groups = Object.create(null);
   const prepared = [];
   for (const placement of selectPlacements(profile, preparedContext)) {
@@ -111,11 +112,16 @@ export async function preparePlacements(input) {
     const instanceId = `moo-block-${createHash("sha256").update(input.href).digest("hex").slice(0, 10)}-${placement.id}`;
     const base = { ...placement, instanceId };
     if (placement.block === "toc") {
-      if (
-        !filterHeadings(preparedContext.headings, placement.props.depths).length
-      )
-        continue;
-      prepared.push({ ...base, kind: "toc" });
+      const tocItems = filterHeadings(
+        preparedContext.headings,
+        placement.props.depths,
+      ).map(({ slug, text }) => Object.freeze({ targetId: slug, label: text }));
+      if (!tocItems.length) continue;
+      prepared.push({
+        ...base,
+        kind: "toc",
+        tocItems: Object.freeze(tocItems),
+      });
     } else if (placement.block === "entry-taxonomies") {
       if (assignedTerms.length)
         prepared.push({ ...base, kind: "entry-taxonomies" });
@@ -169,6 +175,7 @@ export async function preparePlacements(input) {
     (groups[placement.at] ??= []).push(Object.freeze(placement));
   for (const group of Object.values(groups)) Object.freeze(group);
   return Object.freeze({
+    contentId,
     chrome: freeze(
       await getChrome({
         href: input.href,

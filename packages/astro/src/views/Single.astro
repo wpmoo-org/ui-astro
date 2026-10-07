@@ -1,5 +1,6 @@
 ---
 import ContentFrame from "../layouts/ContentFrame.astro";
+import { selectAsidePlacements } from "../placements/aside.js";
 import Placement from "../placements/Placement.astro";
 import type { PlacementPlan } from "../placements/index.js";
 import type { ContentAsideInput } from "../config/index.js";
@@ -12,6 +13,7 @@ import {
 
 interface Props {
   plan?: PlacementPlan<unknown>;
+  compactToc?: boolean;
   aside?: ContentAsideInput | null;
   asideLabel?: string;
   dir?: "ltr" | "rtl";
@@ -41,12 +43,13 @@ const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
 const hasAfterContent =
   forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
 const hasAside = forwardedSlots?.aside ?? Astro.slots.has("aside");
+const selectedAside = selectAsidePlacements(plan, aside, hasAside, Astro.props.compactToc ?? false);
 const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-content");
 const hasTaxonomies = forwardedSlots?.taxonomies ?? Astro.slots.has("taxonomies");
 ---
 
-<ContentFrame element="article" class={entryClasses.concat("lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
-  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" /> : null}</Fragment>
+<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="article" class={entryClasses.concat("lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" placements={selectedAside.placements} tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={selectedAside.listClass} /> : null}</Fragment>
     {
       hasPageHeader ? (
         <slot name="page-header" />

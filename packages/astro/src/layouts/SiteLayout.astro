@@ -9,6 +9,7 @@ import Footer from "../includes/Footer.astro";
 import ThemeToggle from "../blocks/theme-toggle/ThemeToggle.astro";
 import LanguageSwitcher from "../blocks/language-switcher/LanguageSwitcher.astro";
 import { preparePlacements, type PlacementPlan } from "../placements/index.js";
+import { selectAsidePlacements } from "../placements/aside.js";
 import Placement from "../placements/Placement.astro";
 import type { PageOptions, PageClassContext } from "../config/index.js";
 import type { SeoMetadata } from "../seo/index.js";
@@ -16,6 +17,8 @@ import type { LanguageLink } from "../i18n/index.js";
 
 interface Props {
   plan?: PlacementPlan<unknown>;
+  compactToc?: boolean;
+  customAside?: boolean;
   title: string;
   description?: string;
   options: Readonly<PageOptions>;
@@ -38,13 +41,19 @@ const {
   pageContext,
 } = Astro.props;
 const plan = Astro.props.plan ?? await preparePlacements({ href, locale, title, view: pageContext?.view === "native" && pageContext.key === "not-found" ? "not-found" : "native" });
+const selectedAside = selectAsidePlacements(plan, options.aside, Astro.props.customAside ?? false, Astro.props.compactToc ?? false);
 const chrome = plan.chrome;
 const { presentation } = chrome;
 const { sidebar, ...layout } = options;
 const appSidebar = sidebar && sidebar.mode !== "drawer" ? sidebar : null;
 const drawer = sidebar?.mode === "drawer" ? sidebar : null;
 const { defaultOpen, mode: _mode, ...sidebarOptions } = appSidebar ?? {};
-const layoutProps = { ...layout, title, description, metadata, pageContext };
+const layoutProps = {
+  ...layout, title, description, metadata, pageContext,
+  headerTocClass: selectedAside.compact.length
+    ? `border-top ${selectedAside.compactClass}`
+    : "d-none",
+};
 ---
 
 {
@@ -66,6 +75,7 @@ const layoutProps = { ...layout, title, description, metadata, pageContext };
         groups={chrome.navigation}
         parts={options.parts}
       />
+      <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={`${selectedAside.compactClass} py-2`} /></Fragment>
       <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
@@ -115,6 +125,7 @@ const layoutProps = { ...layout, title, description, metadata, pageContext };
   ) : (
     <Layout {...layoutProps}>
       {drawer ? <NavigationDrawer slot="overlay" chrome={chrome} side={drawer.side} /> : null}
+      <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={`${selectedAside.compactClass} py-2`} /></Fragment>
       <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>

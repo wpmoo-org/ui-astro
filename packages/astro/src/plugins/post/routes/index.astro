@@ -60,7 +60,7 @@ const layoutProps = {
 const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lang, title: label, view: "archive", type: "post" });
 ---
 
-<SiteLayout
+<SiteLayout compactToc
   {...layoutProps}
   plan={plan}
   options={options}
@@ -68,7 +68,7 @@ const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lan
   locale={locale}
   languageLinks={languageLinks}
 >
-  <Archive
+  <Archive compactToc
     plan={plan}
     aside={options.aside}
     dir={options.dir}

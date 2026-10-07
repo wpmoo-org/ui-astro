@@ -7,16 +7,16 @@ evidence before it is advertised.
 
 ## Version contract
 
-| Dependency or contract   | Version   | Ownership                                                                     |
-| ------------------------ | --------- | ----------------------------------------------------------------------------- |
-| Astro                    | 7.3.3     | One exact host peer; also the local development dependency                    |
-| Moo UI                   | 1.0.0     | Published dependency; immutable registry URL, integrity and file hashes       |
-| Bootstrap                | 5.3.8     | Exact runtime dependency                                                      |
-| Plugin API               | 1         | Built-in and separately packaged descriptors                                  |
-| Node                     | >=22.12.0 | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
-| Astro checker            | 0.9.10    | Consumer verification tooling                                                 |
-| TypeScript               | 6.0.3     | Consumer verification tooling                                                 |
-| Official MDX integration | 8.0.2     | Explicit optional host integration, tested with Astro 7.3.3                   |
+| Dependency or contract   | Version     | Ownership                                                                     |
+| ------------------------ | ----------- | ----------------------------------------------------------------------------- |
+| Astro                    | 7.3.3       | One exact host peer; also the local development dependency                    |
+| Moo UI                   | 1.1.0-dev.1 | Identified private archive; exact integrity and exported target hashes        |
+| Bootstrap                | 5.3.8       | Exact runtime dependency                                                      |
+| Plugin API               | 1           | Built-in and separately packaged descriptors                                  |
+| Node                     | >=22.12.0   | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
+| Astro checker            | 0.9.10      | Consumer verification tooling                                                 |
+| TypeScript               | 6.0.3       | Consumer verification tooling                                                 |
+| Official MDX integration | 8.0.2       | Explicit optional host integration, tested with Astro 7.3.3                   |
 
 MD-only consumers do not install MDX. All certification profiles are independent
 of React, CMS, authentication and database dependencies. An editor adapter and
@@ -32,7 +32,7 @@ frontmatter, Layout options, storage or the Astro peer contract.
 ## Package boundary
 
 The explicit public export/file ledger is `contracts/astro-public-surface.json`.
-It includes the 45 component wrappers, Layout, shared includes/views, pure
+It includes the 46 component wrappers, Layout, shared includes/views, pure
 configuration/schema factories and server APIs. Private implementation and
 injected route files stay closed to deep imports. CSS and browser interaction
 come from the published Moo UI and Bootstrap contracts.
@@ -309,3 +309,41 @@ scoped source/handoff commits and the publication decision are distinct gates.
 This runbook publishes no package, rewrites no authored content and installs no
 CMS. A later release records its final artifact and successful commands without
 claiming the unfinished broader host/editor matrix.
+
+## Shared Table of Contents development intake
+
+This private candidate consumes the identified `@wpmoo/ui@1.1.0-dev.1`
+local tarball. `contracts/ui-1.1.0-dev.1-package.json` records its archive
+checksum, integrity, Core commit and every exported target hash. The stable
+`ui-1.0.0-package.json` remains historical provenance; stable release validation
+rejects this development pin. This change has not been published.
+
+`components/TableOfContents.astro` accepts plain `items` with `targetId` and
+`label`, a unique `id`, `presentation` (`list` or `compact`), localized `label`
+and `overviewLabel`, and optional `contentId`/`scrollRootId`. Native fragments
+are encoded, labels escaped and duplicate or whitespace targets rejected.
+The heading-aware `blocks/TableOfContents.astro` keeps its existing
+`headings`, `depths` and `label` inputs and forwards optional presentation/scope
+inputs. The optional Core constructor is
+forwarded by the runtime facade; Astro does not ship a second section tracker.
+
+Default integration views coordinate `SiteLayout` and `Single`/`Archive` with
+`compactToc`. They project the same prepared TOC data into the header and wide
+aside for `mobile: "stack-after"`, now the default. Other aside bodies render
+once, after the article in narrow DOM order. TOC-only asides retain their wide
+column and disappear below the breakpoint. `collapse-before` and `hidden`
+retain their whole-aside behavior and produce no compact bar. Empty heading
+sets render neither a bar nor a TOC-only column.
+
+Custom compositions opt into `compactToc` on both layout and view. With a
+custom `aside` slot, keep this opt-in off or pass `customAside` to `SiteLayout`;
+the view detects its named slot and preserves the custom owner's content.
+Lower-level `Placement` accepts `tocContentId` and `tocScrollRootId` explicitly;
+it does not invent a content scope for a host that does not use ContentFrame.
+`Layout` exposes `header-toc` and initializes/disposes the shared Core instances
+through its native page lifecycle. The native App header is outside the
+scrolling main, so header and compact TOC remain visible without new CSS.
+
+The DropdownMenu adapter has additive `element` (`div` or `nav`), `menuClass`,
+`itemClass` and `after-trigger` slot support. Navigation has additive `heading`
+and `rootClass`. Omitted options preserve their original anatomy.

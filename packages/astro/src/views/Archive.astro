@@ -1,5 +1,6 @@
 ---
 import ContentFrame from "../layouts/ContentFrame.astro";
+import { selectAsidePlacements } from "../placements/aside.js";
 import Placement from "../placements/Placement.astro";
 import type { PlacementPlan } from "../placements/index.js";
 import type { ContentAsideInput } from "../config/index.js";
@@ -21,6 +22,7 @@ interface LoopItem {
 }
 interface Props {
   plan?: PlacementPlan<unknown>;
+  compactToc?: boolean;
   aside?: ContentAsideInput | null;
   asideLabel?: string;
   dir?: "ltr" | "rtl";
@@ -61,11 +63,12 @@ const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
 const hasLoop = forwardedSlots?.loop ?? Astro.slots.has("loop");
 const hasAfterList = forwardedSlots?.afterList ?? Astro.slots.has("after-list");
 const hasAside = forwardedSlots?.aside ?? Astro.slots.has("aside");
+const selectedAside = selectAsidePlacements(plan, aside, hasAside, Astro.props.compactToc ?? false);
 const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-list");
 ---
 
-<ContentFrame element="section" class={""} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
-  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" /> : null}</Fragment>
+<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="section" class={""} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" placements={selectedAside.placements} tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={selectedAside.listClass} /> : null}</Fragment>
     {
       hasPageHeader ? (
         <slot name="page-header" />

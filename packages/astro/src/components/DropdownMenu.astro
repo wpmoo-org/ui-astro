@@ -14,6 +14,9 @@ interface Item {
   hreflang?: string;
 }
 interface Props {
+  element?: "div" | "nav";
+  menuClass?: string;
+  itemClass?: string;
   label: string;
   items?: readonly Item[];
   menuLabel?: string;
@@ -44,6 +47,9 @@ interface Props {
 }
 
 const {
+  element: Element = "div",
+  menuClass = "",
+  itemClass = "",
   label,
   items = [],
   menuLabel = "",
@@ -58,9 +64,10 @@ const {
   class: className = "",
   ...rest
 } = Astro.props;
+if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu element");
 ---
 
-<div {...rest} class:list={["dropdown", className]}>
+<Element {...rest} class:list={["dropdown", className]}>
   <Button
     label={label}
     variant={variant}
@@ -75,7 +82,8 @@ const {
     <slot name="trigger-icon" slot="icon-start" />
     <slot name="trigger-label">{label}</slot>
   </Button>
-  <ul class:list={["dropdown-menu", align ? `dropdown-menu-${align}` : ""]}>
+  <slot name="after-trigger" />
+  <ul class:list={["dropdown-menu", align ? `dropdown-menu-${align}` : "", menuClass]}>
     {
       menuLabel ? (
         <>
@@ -95,6 +103,7 @@ const {
             <a
               class:list={[
                 "dropdown-item",
+                itemClass,
                 item.active ? "active" : "",
                 item.disabled ? "disabled" : "",
               ]}
@@ -117,7 +126,7 @@ const {
             </a>
           ) : (
             <button
-              class:list={["dropdown-item", item.active ? "active" : ""]}
+              class:list={["dropdown-item", itemClass, item.active ? "active" : ""]}
               type="button"
               disabled={item.disabled}
               data-variant={item.destructive ? "destructive" : undefined}
@@ -135,4 +144,4 @@ const {
     }
     <slot />
   </ul>
-</div>
+</Element>

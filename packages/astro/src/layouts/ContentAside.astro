@@ -9,12 +9,13 @@ interface Props {
   id: string;
   label: string;
   html: string;
+  mobileBody?: boolean;
 }
 
-const { options, classes, id, label, html } = Astro.props;
+const { options, classes, id, label, html, mobileBody = true } = Astro.props;
 ---
 
-<aside class:list={classes.aside} aria-label={label}>
+<aside class:list={[classes.aside, !mobileBody && options.mobile === "stack-after" ? ["d-none", classes.visible] : []]} aria-label={label}>
   {
     options.mobile === "collapse-before" ? (
       <Button

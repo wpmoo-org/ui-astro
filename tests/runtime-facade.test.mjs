@@ -3,9 +3,22 @@ import test from "node:test";
 import * as published from "@wpmoo/ui/moo-ui.js";
 import * as facade from "../packages/astro/src/runtime/moo-ui.js";
 
-test("the facade forwards the published RC10 exports without a synchronous Chart", () => {
-  const names = ["Combobox", "ContextMenu", "DataTable", "Datepicker", "MooCalendar", "MooDateRangePicker", "Sidebar", "Slider"];
-  assert.deepEqual(Object.keys(facade).sort(), [...names, "initSheets", "loadChart", "default"].sort());
+test("the facade forwards the identified Core exports without a synchronous Chart", () => {
+  const names = [
+    "Combobox",
+    "ContextMenu",
+    "DataTable",
+    "Datepicker",
+    "MooCalendar",
+    "MooDateRangePicker",
+    "Sidebar",
+    "Slider",
+    "TableOfContents",
+  ];
+  assert.deepEqual(
+    Object.keys(facade).sort(),
+    [...names, "initSheets", "loadChart", "default"].sort(),
+  );
   assert.equal(facade.default, published.default);
   for (const name of names) {
     assert.equal(facade[name], published[name]);
@@ -25,7 +38,9 @@ test("the lazy loader shares the direct Chart constructor and its lifecycle", as
   const promise = facade.loadChart();
   assert.equal(typeof promise.then, "function");
   const [Chart, again, direct] = await Promise.all([
-    promise, facade.default.loadChart(), import("@wpmoo/ui/chart.js"),
+    promise,
+    facade.default.loadChart(),
+    import("@wpmoo/ui/chart.js"),
   ]);
   assert.equal(Chart, again);
   assert.equal(Chart, direct.default);
