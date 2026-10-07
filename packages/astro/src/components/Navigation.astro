@@ -40,7 +40,7 @@ const navClass =
 ---
 
 <nav {...rest} aria-label={ariaLabel} dir={dir || undefined} class={rootClass || undefined}>
-  {heading ? <Typography content={heading} variant="section-label" class="text-body-secondary mb-2" /> : null}
+  {heading ? <Typography content={heading} variant="section-label" class="mb-2" /> : null}
   <ul class:list={[navClass, vertical ? "flex-column gap-1" : "", className]}>
     {
       items.map((item) => (

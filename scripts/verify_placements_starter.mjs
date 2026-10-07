@@ -13,7 +13,7 @@ const page = withoutScripts(
 assert.match(page, /data-site-drawer="left"/);
 assert.doesNotMatch(page, /data-slot="sidebar-wrapper"/);
 assert.match(page, /data-content-aside="right"/);
-assert.match(page, /data-table-of-contents/);
+assert.match(page, /data-toc="true"/);
 assert.match(page, /href="#intro"/);
 assert.match(page, /Reusable callout/);
 for (const element of ["html", "head", "body", "main"])

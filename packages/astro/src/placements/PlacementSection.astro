@@ -1,0 +1,13 @@
+---
+interface Props {
+  enabled: boolean;
+  class?: string;
+}
+const { enabled, class: className = "" } = Astro.props;
+const html = enabled ? await Astro.slots.render("default") : "";
+const hasContent = Boolean(html.replace(/<!--[\s\S]*?-->/g, "").trim());
+---
+
+{enabled ? (
+  hasContent ? <section class:list={["aside-section", className]}><Fragment set:html={html} /></section> : null
+) : <slot />}

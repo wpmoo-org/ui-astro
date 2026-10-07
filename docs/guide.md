@@ -283,17 +283,30 @@ the default term links. Two resolved replacements for one page are an error.
 ### Content aside and table of contents
 
 `aside` accepts physical `side: "left" | "right"`, `columns: 2..6`,
-`breakpoint: "lg" | "xl" | "xxl"`, optional `sticky`, and `mobile`:
+`breakpoint: "lg" | "xl" | "xxl"`, optional `sticky`, `gap: 0..5` (default `5`),
+and `mobile`:
 
-- `collapse-before` (default): one accessible disclosure before content.
-- `stack-after`: the same aside body follows content below the breakpoint.
+- `collapse-before`: one accessible disclosure before content.
+- `stack-after` (default): the same aside body follows content below the breakpoint.
 - `hidden`: the aside is visible only from the selected breakpoint.
 
 An empty rendered aside reserves no column. `aside: null` disables the frame's
 aside for that page. RTL keeps the requested physical desktop side. TOC uses
 native headings from the current entry, in authored order; its default depths
-are h2/h3. It adds no heading scanner or active-section script. Entries without
-matching headings emit no TOC.
+are h2/h3. Layout initializes the shared Core tracker; there is no extra heading
+scanner. Entries without matching headings emit no TOC.
+
+Each default aside placement is rendered in its own `section.aside-section`.
+An inner Bootstrap flex column spaces these sections with `gap-5`; set
+`defaults.aside.gap: 2` for `gap-2`, or override `aside.gap` for a content type,
+view or entry. Empty blocks emit no section. The desktop TOC's entire section
+is hidden on narrow screens, so it leaves no gap before the remaining blocks.
+An explicit custom `aside` slot retains ownership of its section markup.
+
+The default main scroll container includes Core's `scroll-smooth` utility.
+TOC clicks keep native fragments and browser history, with immediate scrolling
+when the visitor prefers reduced motion. To disable animation for a project,
+set `parts.content.scrollUtilities` to `['scroll-fade-y', 'no-scrollbar']`.
 
 For a custom theme, `layouts/ContentFrame.astro` supplies this frame around its
 default and `aside` slots; pure `blocks/TableOfContents.astro` accepts native
@@ -489,7 +502,7 @@ Layout applies `parts.content.utilities` exactly once, on the existing `data-pag
 
 | Part             | Options and fallback                                                                                                                                                                                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content`        | `utilities: ['mx-0', 'py-4', 'py-md-5', 'px-3', 'px-md-5']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar']` on the existing main owner                                                                                                         |
+| `content`        | `utilities: ['mx-0', 'py-4', 'py-md-5', 'px-3', 'px-md-5']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar', 'scroll-smooth']` on the existing main owner                                                                                                         |
 | `header`         | Region `utilities: ['bg-body', 'border-bottom']`; `contentUtilities: ['d-flex', 'flex-wrap', 'align-items-center', 'gap-2', 'py-3']`; `breadcrumbUtilities: ['mb-0', 'small']`                                                                       |
 | `header.trigger` | Published Button `variant: 'ghost'`, `size: 'icon-sm'`, `icon: 'panel-left'`                                                                                                                                                                         |
 | `header` copy    | `toggleLabel`, `navigationLabel`, `breadcrumbLabel`, `skipLabel`; English fallback, explicit host translations                                                                                                                                       |

@@ -106,8 +106,12 @@ class AcceptedPlacements(unittest.TestCase):
                 aside, = main.find("aside")
                 article, = main.find("article")
                 self.assertEqual(aside.attrs["aria-label"], labels[locale][0])
-                self.assertIn("col-xl-3", aside.classes())
-                self.assertIn("col-xl-9", article.classes())
+                breakpoint = "lg"
+                self.assertIn("col-lg-3", aside.classes())
+                self.assertIn(f"col-{breakpoint}-9", article.classes())
+                stacks = [node for node in aside.find("div")
+                          if {"d-flex", "flex-column", "gap-5"} <= node.classes()]
+                self.assertEqual(len(stacks), 1)
                 row, = [node for node in main.find("div")
                         if aside in node.children and article in node.children]
                 self.assertLess(row.children.index(article), row.children.index(aside))
@@ -115,8 +119,11 @@ class AcceptedPlacements(unittest.TestCase):
                             if "data-toc" in node.attrs]
                 desktop, = [node for node in aside.find("nav")
                             if "data-toc" in node.attrs]
-                self.assertIn("d-xl-none", compact.classes())
-                self.assertTrue({"d-none", "d-xl-block"} <= desktop.classes())
+                self.assertIn(f"d-{breakpoint}-none", compact.classes())
+                desktop_section, = [node for node in aside.find("section")
+                                    if desktop in node.children]
+                self.assertTrue({"d-none", f"d-{breakpoint}-block"}
+                                <= desktop_section.classes())
                 button, = compact.find("button")
                 self.assertEqual(button.attrs["type"], "button")
                 self.assertEqual(button.text.strip(), labels[locale][1])
@@ -132,7 +139,7 @@ class AcceptedPlacements(unittest.TestCase):
                     self.assertEqual(len(links), 4)
                     for link in links:
                         self.assertIn(unquote(link.attrs["href"][1:]), heading_ids)
-                information = [node for node in aside.find("h2")
+                information = [node for node in aside.find("h5")
                                if node.text == labels[locale][0]]
                 self.assertEqual(len(information), 1)
 

@@ -54,7 +54,7 @@ test("shared part defaults have one owned immutable fallback", () => {
     "flex-wrap",
     "align-items-center",
     "gap-2",
-    "py-3",
+    "py-2",
   ]);
   assert.equal(defaults.header.trigger.variant, "ghost");
   assert.equal(defaults.loop.dateStyle, "iso");
@@ -243,4 +243,15 @@ test("registered part defaults exist in the actual published component styleshee
     .shape.content.unwrap()
     .shape.utilities.unwrap().element.options;
   for (const token of tokens) assert.ok(css.includes(`.${token}`), token);
+});
+
+test("native scroll animation is a configurable Core utility", () => {
+  assert.deepEqual(resolveParts().content.scrollUtilities, [
+    "scroll-fade-y", "no-scrollbar", "scroll-smooth",
+  ]);
+  assert.deepEqual(
+    resolveParts({ content: { scrollUtilities: ["scroll-fade-y", "no-scrollbar"] } }).content.scrollUtilities,
+    ["scroll-fade-y", "no-scrollbar"],
+  );
+  assert.deepEqual(resolveParts({ content: { scrollUtilities: [] } }).content.scrollUtilities, []);
 });

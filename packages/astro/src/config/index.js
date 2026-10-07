@@ -132,7 +132,7 @@ const partsSchema = z.strictObject({
     .strictObject({
       utilities: utilities.optional(),
       scrollUtilities: z
-        .array(z.enum(["scroll-fade-y", "no-scrollbar"]))
+        .array(z.enum(["scroll-fade-y", "no-scrollbar", "scroll-smooth"]))
         .optional(),
     })
     .optional(),
@@ -228,7 +228,7 @@ const partsSchema = z.strictObject({
 const partDefaults = {
   content: {
     utilities: ["mx-0", "py-4", "py-md-5", "px-3", "px-md-5"],
-    scrollUtilities: ["scroll-fade-y", "no-scrollbar"],
+    scrollUtilities: ["scroll-fade-y", "no-scrollbar", "scroll-smooth"],
   },
   header: {
     utilities: ["bg-body-tertiary"],
@@ -237,7 +237,7 @@ const partDefaults = {
       "flex-wrap",
       "align-items-center",
       "gap-2",
-      "py-3",
+      "py-2",
     ],
     breadcrumbUtilities: ["mb-0", "small"],
     trigger: { variant: "ghost", size: "icon-sm", icon: "panel-left" },
@@ -348,6 +348,7 @@ export const contentAsideSchema = z.strictObject({
   breakpoint: z.enum(["lg", "xl", "xxl"]).optional(),
   sticky: z.boolean().optional(),
   mobile: z.enum(["collapse-before", "stack-after", "hidden"]).optional(),
+  gap: z.number().int().min(0).max(5).optional(),
 });
 const asideDefaults = Object.freeze({
   side: "right",
@@ -355,6 +356,7 @@ const asideDefaults = Object.freeze({
   breakpoint: "xl",
   sticky: false,
   mobile: "stack-after",
+  gap: 5,
 });
 
 export const layoutSchema = z.strictObject({
@@ -517,7 +519,9 @@ function mergeLayout(...layers) {
           output.aside = null;
           aside = { ...asideDefaults };
         } else {
-          aside = { ...aside, ...value };
+          for (const [field, option] of Object.entries(value)) {
+            if (option !== undefined) aside[field] = option;
+          }
           output.aside = { ...aside };
         }
       } else if (key === "parts") mergeParts(parts, value);

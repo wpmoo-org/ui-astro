@@ -15,6 +15,7 @@ test("content aside is optional and resolves its independent defaults", () => {
     breakpoint: "xl",
     sticky: false,
     mobile: "stack-after",
+    gap: 5,
   });
   assert.equal(Object.isFrozen(site.defaults.aside), true);
   const override = resolvePageOptions(site, "page", "single", {
@@ -39,8 +40,25 @@ test("aside contract rejects unsupported sizes and modes", () => {
     { mobile: "drawer" },
     { sticky: "yes" },
     { width: "300px" },
+    { gap: -1 },
+    { gap: 6 },
+    { gap: 2.5 },
+    { gap: "gap-2" },
   ])
     assert.throws(() => defineSite({ defaults: { aside } }), /aside/);
+});
+test("aside gap follows type, view and entry overrides, including zero", () => {
+  const site = defineSite({
+    defaults: { aside: { gap: 2 } },
+    types: {
+      post: { aside: { gap: 4 }, views: { single: { aside: { gap: 1 } } } },
+    },
+  });
+  assert.equal(resolvePageOptions(site, "page", "single").aside.gap, 2);
+  assert.equal(resolvePageOptions(site, "post", "archive").aside.gap, 4);
+  assert.equal(resolvePageOptions(site, "post", "single").aside.gap, 1);
+  assert.equal(resolvePageOptions(site, "post", "single", { aside: { gap: 0 } }).aside.gap, 0);
+  assert.equal(resolvePageOptions(site, "post", "single", { aside: { gap: undefined } }).aside.gap, 1);
 });
 test("native frame classes account for physical side, RTL and mobile policy", async () => {
   const module =

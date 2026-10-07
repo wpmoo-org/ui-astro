@@ -117,6 +117,7 @@
     "src/not-found/routes.js",
     "src/placements/ContentBlock.astro",
     "src/placements/Placement.astro",
+    "src/placements/PlacementSection.astro",
     "src/placements/aside.js",
     "src/placements/chrome.js",
     "src/placements/content.d.ts",

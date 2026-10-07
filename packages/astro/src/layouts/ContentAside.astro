@@ -38,6 +38,8 @@ const { options, classes, id, label, html, mobileBody = true } = Astro.props;
       "pt-lg-0",
     ]}
   >
-    <Fragment set:html={html} />
+    <div class:list={["d-flex", "flex-column", `gap-${options.gap}`]}>
+      <Fragment set:html={html} />
+    </div>
   </div>
 </aside>

@@ -23,7 +23,7 @@ const attributes = { id, "data-toc": true, "data-toc-content": contentId || unde
 ---
 
 {links.length > 0 && (presentation === "list" ? (
-  <Navigation {...attributes} ariaLabel={label} heading={label} items={links} style="base" vertical class="small" rootClass={className} />
+  <Navigation {...attributes} ariaLabel={label} heading={label} items={links} style="base" class="flex-column flex-nowrap gap-0 small p-0" rootClass={className} />
 ) : (
   <DropdownMenu {...attributes} element="nav" aria-label={label} label={label} items={links} caret size="sm" triggerClass="flex-shrink-0" menuClass="w-100" itemClass="text-wrap text-break" class={`d-flex align-items-center gap-2 w-100 ${className}`}>
     <span slot="after-trigger" data-toc-current class="small text-body-secondary text-truncate">{overviewLabel}</span>

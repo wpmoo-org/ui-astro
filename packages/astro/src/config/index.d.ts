@@ -114,7 +114,7 @@ export interface TriggerInput {
 }
 interface ContentPartInput {
   utilities?: readonly UtilityToken[];
-  scrollUtilities?: readonly ("scroll-fade-y" | "no-scrollbar")[];
+  scrollUtilities?: readonly ("scroll-fade-y" | "no-scrollbar" | "scroll-smooth")[];
 }
 interface HeaderPartInput {
   utilities?: readonly UtilityToken[];
@@ -217,6 +217,7 @@ export interface ContentAsideInput {
   breakpoint?: "lg" | "xl" | "xxl";
   sticky?: boolean;
   mobile?: "collapse-before" | "stack-after" | "hidden";
+  gap?: 0 | 1 | 2 | 3 | 4 | 5;
 }
 export type ContentAside = Readonly<Required<ContentAsideInput>>;
 
