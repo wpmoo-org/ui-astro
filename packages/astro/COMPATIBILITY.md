@@ -1,16 +1,17 @@
 # Compatibility and local certification
 
 `@wpmoo/astro` 0.1.0 is an unpublished MIT package. Its public integration,
-component, content and theme contracts are validated against exact dependency
-versions. A broader Astro peer range requires new certification and migration
-evidence before it is advertised.
+component, content and theme contracts use exact dependency pins; dated proof
+records identify which archive/version pairs were validated. A broader Astro
+peer range requires new certification and migration evidence before it is
+advertised.
 
 ## Version contract
 
 | Dependency or contract   | Version     | Ownership                                                                     |
 | ------------------------ | ----------- | ----------------------------------------------------------------------------- |
 | Astro                    | 7.3.3       | One exact host peer; also the local development dependency                    |
-| Moo UI                   | 1.1.0-dev.1 | Identified private archive; exact integrity and exported target hashes        |
+| Moo UI                   | 1.1.0       | Published registry archive; exact integrity and exported target hashes       |
 | Bootstrap                | 5.3.8       | Exact runtime dependency                                                      |
 | Plugin API               | 1           | Built-in and separately packaged descriptors                                  |
 | Node                     | >=22.12.0   | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
@@ -189,21 +190,22 @@ no replacement loader, private store mutation or request retry is introduced.
 
 ## Release intake and upgrade procedure
 
-The maintainer approved moving to the exact published Core `1.0.0` when
-available. The 2026-10-04 stable intake replaces the Core pin only; Astro,
-Bootstrap, checker, TypeScript and optional MDX resolutions remain unchanged.
-The verified registry archive and 25 public export hashes are recorded in
-`contracts/ui-1.0.0-package.json`. Its public export names and targets match
-RC10. Registry metadata has no `gitHead`, so that field remains null.
-Historical RC9/RC10 records and dated proofs remain immutable in the source
-repository and retained evidence. The active npm archive includes only the
-stable Core record.
+The maintainer approved the exact published Core `1.1.0` intake on 2026-10-10.
+It replaces the private `1.1.0-dev.1` package in the SDK and updates the active
+consumer lock templates. Astro, Bootstrap, checker, TypeScript and optional
+MDX resolutions remain unchanged. The verified registry archive and all 27
+public export hashes are recorded in `contracts/ui-1.1.0-package.json`,
+including the preferred `toc.js` entrypoint and its `table-of-contents.js`
+compatibility entrypoint. Registry metadata has no `gitHead`, so that field
+remains null. The active SDK archive carries this record and the historical
+`1.0.0` record; RC9/RC10 and private development records remain immutable in
+the source repository and retained evidence.
 
-Fresh stable SDK/consumer evidence is retained in the dated parent handoff,
-outside npm. Each result identifies its exact archive bytes and execution
-runtime. Earlier RC10 browser and layout acceptance is historical; this intake
-does not claim fresh rendered acceptance after browser access was blocked.
-Foundation publication remains a separate decision.
+The 2026-10-04 stable SDK/consumer evidence is retained in the dated parent
+handoff, outside npm. Each result identifies its exact archive bytes and
+execution runtime. That evidence and earlier RC10 browser/layout acceptance
+are historical and do not certify the current 1.1.0 intake. Foundation
+publication remains a separate decision.
 
 RC10 replaces the synchronous aggregate `Chart` export with
 `await MooUI.loadChart()` or `await loadChart()`. The dedicated Core Chart
@@ -310,13 +312,14 @@ This runbook publishes no package, rewrites no authored content and installs no
 CMS. A later release records its final artifact and successful commands without
 claiming the unfinished broader host/editor matrix.
 
-## Shared Table of Contents development intake
+## Shared Table of Contents
 
-This private candidate consumes the identified `@wpmoo/ui@1.1.0-dev.1`
-local tarball. `contracts/ui-1.1.0-dev.1-package.json` records its archive
-checksum, integrity, Core commit and every exported target hash. The stable
-`ui-1.0.0-package.json` remains historical provenance; stable release validation
-rejects this development pin. This change has not been published.
+The SDK consumes published `@wpmoo/ui@1.1.0` with exact registry integrity and
+exported target hashes. Stable release validation rejects local development
+pins, file dependencies and changed Core bytes. The earlier private intake is
+retained in `contracts/ui-1.1.0-dev.1-package.json` as historical provenance.
+The Astro SDK itself remains private and unpublished; this dependency intake
+does not establish a new full consumer or rendered certification.
 
 `components/TableOfContents.astro` accepts plain `items` with `targetId` and
 `label`, a unique `id`, `presentation` (`list` or `compact`), localized `label`

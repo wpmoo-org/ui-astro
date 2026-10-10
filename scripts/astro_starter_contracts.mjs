@@ -119,7 +119,7 @@ export function validateStarterLock(manifest, lock, artifacts) {
   }
   for (const [name, version] of Object.entries({
     astro: "7.3.3",
-    "@wpmoo/ui": "1.0.0",
+    "@wpmoo/ui": "1.1.0",
     bootstrap: "5.3.8",
     "@astrojs/mdx": "8.0.2",
     "@astrojs/check": "0.9.10",

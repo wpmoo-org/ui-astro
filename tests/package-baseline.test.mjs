@@ -7,7 +7,6 @@ import test from "node:test";
 
 import {
   assertCoreArtifact,
-  assertDevelopmentPin,
   assertPackageCompatibility,
   assertReleasePin,
   developmentInstallCommand,
@@ -21,7 +20,7 @@ import {
   corePackageRoot,
 } from "../scripts/project-paths.mjs";
 
-test("workspace uses an identified private Core candidate while stable release validation stays strict", async () => {
+test("workspace uses the exact published Core 1.1.0 baseline", async () => {
   const packageJson = JSON.parse(
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
@@ -30,16 +29,25 @@ test("workspace uses an identified private Core candidate while stable release v
   );
   const artifactRecord = JSON.parse(
     await readFile(
-      join(SDK_ROOT, "contracts/ui-1.1.0-dev.1-package.json"),
+      join(SDK_ROOT, "contracts/ui-1.1.0-package.json"),
       "utf8",
     ),
   );
-  assert.doesNotThrow(() =>
-    assertDevelopmentPin({ packageJson, packageLock, artifactRecord }),
-  );
+  assert.equal(artifactRecord.version, "1.1.0");
+  assert.doesNotThrow(() => assertReleasePin({ packageJson, packageLock }));
   assert.throws(
-    () => assertReleasePin({ packageJson, packageLock }),
-    /declared.*must be 1.0.0/,
+    () =>
+      assertReleasePin({
+        packageJson: {
+          ...packageJson,
+          dependencies: {
+            ...packageJson.dependencies,
+            "@wpmoo/ui": "1.1.0-dev.1",
+          },
+        },
+        packageLock,
+      }),
+    /declared.*must be 1.1.0/,
   );
   await assertCoreArtifact({ artifactRecord });
 });
@@ -176,7 +184,7 @@ test("package retains all existing public wrappers plus the shared TOC and the e
 
 const packageJson = {
   dependencies: {
-    "@wpmoo/ui": "1.0.0",
+    "@wpmoo/ui": "1.1.0",
   },
 };
 
@@ -186,10 +194,10 @@ const packageLock = {
     "": { name: "@wpmoo/astro-workspace" },
     "packages/astro": packageJson,
     "node_modules/@wpmoo/ui": {
-      version: "1.0.0",
-      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.0.0.tgz",
+      version: "1.1.0",
+      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.1.0.tgz",
       integrity:
-        "sha512-9eY15tN90zqR6Laz/AjL2b5iLBZ+AmkN5dXjSoNLkCxaJqzvec7kOTqyQKq9K5ELUUDFcGLkz1sj8dy8irM0zw==",
+        "sha512-bdGLIxzM53hI05rgqLcoLyfJINU1iweGq5tNq9PFl1VpNJYHbHEVGr0D/7rVEkzgMOJY1iaw2SRdc/JxqBgUgg==",
     },
   },
 };
@@ -340,7 +348,7 @@ test("package compatibility rejects a different package name or version", () => 
   assert.doesNotThrow(() =>
     assertPackageCompatibility({
       packageName: "@wpmoo/ui",
-      packageVersion: "1.0.0",
+      packageVersion: "1.1.0",
       packageJson,
     }),
   );
@@ -348,7 +356,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@other/ui",
-        packageVersion: "1.0.0",
+        packageVersion: "1.1.0",
         packageJson,
       }),
     /package name/,
@@ -368,6 +376,10 @@ test("release checking rejects development bytes without running npm or a layout
   const root = await mkdtemp(join(tmpdir(), "moo-astro-release-"));
   try {
     await writeReleaseFixture(root);
+    const manifestPath = join(root, "node_modules/@wpmoo/ui/package.json");
+    const installed = JSON.parse(await readFile(manifestPath, "utf8"));
+    installed.version = "1.1.0-dev.1";
+    await writeFile(manifestPath, `${JSON.stringify(installed)}\n`);
     let invoked = false;
     await assert.rejects(
       () =>
@@ -398,7 +410,7 @@ test("release checking rejects changed manifest and browser artifacts after lock
       await writeFile(path, `${await readFile(path, "utf8")}\n `);
       const artifactRecord = JSON.parse(
         await readFile(
-          join(SDK_ROOT, "contracts/ui-1.1.0-dev.1-package.json"),
+          join(SDK_ROOT, "contracts/ui-1.1.0-package.json"),
           "utf8",
         ),
       );
@@ -429,7 +441,7 @@ test("Core resolved by the SDK cannot be shadowed by a different local artifact"
           repoRoot: root,
           artifactRecord: JSON.parse(
             readFileSync(
-              join(SDK_ROOT, "contracts/ui-1.1.0-dev.1-package.json"),
+              join(SDK_ROOT, "contracts/ui-1.1.0-package.json"),
               "utf8",
             ),
           ),

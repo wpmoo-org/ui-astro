@@ -38,7 +38,7 @@ const fixtureLock = JSON.parse(
 const core = JSON.parse(
   await readFile(
     new URL(
-      "../packages/astro/contracts/ui-1.0.0-package.json",
+      "../packages/astro/contracts/ui-1.1.0-package.json",
       import.meta.url,
     ),
     "utf8",
@@ -82,7 +82,7 @@ test("packed native errors retain locale recovery and real error content", () =>
 });
 
 test("the independent fixture resolves every published Astro source entrypoint", () => {
-  assert.equal(validateConsumerFixture({ source: fixture, manifest }), 89);
+  assert.equal(validateConsumerFixture({ source: fixture, manifest }), 90);
   assert.throws(
     () =>
       validateConsumerFixture({
@@ -109,7 +109,7 @@ test("public fixture imports distinguish executed declarations from comments and
     );
     assert.equal(
       validateConsumerFixture({ source: withExample, manifest }),
-      89,
+      90,
     );
     const withoutDeclaration = fixture.replace(
       'import "@wpmoo/astro/styles.css";',
@@ -124,7 +124,7 @@ test("public fixture imports distinguish executed declarations from comments and
     '<!-- <script>import "@wpmoo/astro/styles.css";</script> -->';
   assert.equal(
     validateConsumerFixture({ source: `${fixture}\n${htmlExample}`, manifest }),
-    89,
+    90,
   );
   assert.throws(
     () =>
@@ -211,7 +211,7 @@ test("incompatible peer evidence must be npm ERESOLVE for the exact certified As
 
 test("packed consumer HTML must show public wrappers, Layout, Page grid, and escaped text", () => {
   const html =
-    '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="45" data-public-part-count="8" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/contact" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
+    '<div data-moo-document-owner="true" data-bs-theme="dark"><div data-layout="app" data-slot="sidebar-wrapper"><aside data-slot="sidebar" id="packed-sidebar"></aside><div data-slot="page"><main id="main-content"><div data-page-container><p data-public-wrapper-count="46" data-public-part-count="8" data-public-page-view-count="3" data-context-plugin="page" data-context-link="/contact" data-navigation-count="2" data-config-sidebar="none" data-config-slug="iletisim" data-plugin-id="page"></p><button class="btn btn-icon-sm" aria-label="Open actions">+</button><div>&lt;img src=x onerror=alert(1)&gt;</div><div data-toast-show-on-load="true"><button aria-label="Dismiss saved toast"></button>&lt;svg onload=alert(2)&gt;</div><strong>Approved</strong><section data-layout="page-grid"></section></div></main></div></div></div>';
   const controls =
     '<input id="consumer-checkbox" type="checkbox"><button aria-label="Remove Pages"></button><button aria-label="Remove Posts"></button>';
   const compiled = html + controls;
@@ -224,11 +224,11 @@ test("packed consumer HTML must show public wrappers, Layout, Page grid, and esc
     () =>
       assertConsumerOutput(
         compiled.replace(
-          'data-public-wrapper-count="45"',
+          'data-public-wrapper-count="46"',
           'data-public-wrapper-count="44"',
         ),
       ),
-    /45 public wrapper imports/,
+    /46 public wrapper imports/,
   );
   assert.throws(
     () =>

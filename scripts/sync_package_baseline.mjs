@@ -15,7 +15,7 @@ import {
 export const ASTRO_ROOT = REPO_ROOT;
 export const MOO_PACKAGE_NAME = "@wpmoo/ui";
 const RELEASE_RECORD = JSON.parse(
-  readFileSync(join(SDK_ROOT, "contracts/ui-1.0.0-package.json"), "utf8"),
+  readFileSync(join(SDK_ROOT, "contracts/ui-1.1.0-package.json"), "utf8"),
 );
 
 function declaredPackageVersion(packageJson) {

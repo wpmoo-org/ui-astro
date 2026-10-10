@@ -106,7 +106,7 @@ export async function assertSourceClosure({
   const packed = new Set(files);
   const exports =
     coreExports ??
-    (await readJson(join(ASTRO_ROOT, "contracts/ui-1.0.0-package.json")))
+    (await readJson(join(ASTRO_ROOT, "contracts/ui-1.1.0-package.json")))
       .exports;
   for (const file of files.filter((path) =>
     /^src\/.+\.(?:astro|js|css)$/.test(path),

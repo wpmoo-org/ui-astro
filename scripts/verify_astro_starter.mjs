@@ -169,7 +169,7 @@ export async function verifyAstroStarter(options) {
     }).trim(),
     source_sha256: prepared.sourceHashes,
     core: await readJson(
-      join(REPO, "packages/astro/contracts/ui-1.0.0-package.json"),
+      join(REPO, "packages/astro/contracts/ui-1.1.0-package.json"),
     ),
     scripts_sha256: await fileHashes(outputPath, scripts),
   };

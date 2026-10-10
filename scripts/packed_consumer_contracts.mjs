@@ -235,7 +235,7 @@ export function assertConsumerOutput(html) {
     ['id="main-content"', "focusable main"],
     ["data-page-container", "Page rail"],
     ['data-layout="page-grid"', "Page grid"],
-    ['data-public-wrapper-count="45"', "45 public wrapper imports"],
+    ['data-public-wrapper-count="46"', "46 public wrapper imports"],
     ['data-public-part-count="8"', "eight public include and view imports"],
     ['data-public-page-view-count="3"', "three public Page view imports"],
     ['data-context-plugin="page"', "public Page route context"],

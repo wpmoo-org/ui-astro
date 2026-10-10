@@ -320,7 +320,7 @@ export async function verifyPackedConsumer({
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
   const core = JSON.parse(
-    await readFile(join(SDK_ROOT, "contracts/ui-1.0.0-package.json"), "utf8"),
+    await readFile(join(SDK_ROOT, "contracts/ui-1.1.0-package.json"), "utf8"),
   );
   const surface = JSON.parse(
     await readFile(

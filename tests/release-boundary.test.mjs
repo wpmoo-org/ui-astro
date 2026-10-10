@@ -29,13 +29,13 @@ function boundary(args = ["--mode", "release"]) {
   });
 }
 
-test("private Core development intake is rejected by the stable release boundary", () => {
+test("published Core intake passes the stable release boundary", () => {
   const result = boundary();
-  assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
-  assert.match(result.stderr, /declared.*must be 1.0.0/);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /Astro release boundary: OK/);
 });
 
-test("private candidate release rejection does not depend on a cache override", () => {
+test("published Core release validation does not depend on a cache override", () => {
   const env = { ...process.env };
   delete env.npm_config_cache;
   delete env.NPM_CONFIG_CACHE;
@@ -44,8 +44,8 @@ test("private candidate release rejection does not depend on a cache override", 
     encoding: "utf8",
     env,
   });
-  assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
-  assert.match(result.stderr, /declared.*must be 1.0.0/);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /Astro release boundary: OK/);
 });
 
 test("the npm archive excludes aggregate notices and retains copied icon attribution", async () => {

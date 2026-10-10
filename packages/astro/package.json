@@ -19,7 +19,7 @@
     "README.md",
     "contracts/astro-public-surface.json",
     "contracts/ui-1.0.0-package.json",
-    "contracts/ui-1.1.0-dev.1-package.json",
+    "contracts/ui-1.1.0-package.json",
     "src/blocks/entry-taxonomies/EntryTaxonomies.astro",
     "src/blocks/language-switcher/LanguageSwitcher.astro",
     "src/blocks/language-switcher/language-switcher.js",
@@ -271,7 +271,7 @@
     "./components/TableOfContents.astro": "./src/components/TableOfContents.astro"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.1.0-dev.1",
+    "@wpmoo/ui": "1.1.0",
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {
