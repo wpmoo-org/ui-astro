@@ -80,13 +80,13 @@ export function getDemoEntryContext(type, entry) {
     source: "markdown",
     ...(entry.data.taxonomies
       ? {
-          taxonomies: Object.fromEntries(
-            Object.entries(entry.data.taxonomies).map(([id, refs]) => [
-              id,
-              refs.map((ref) => ref.id),
-            ]),
-          ),
-        }
+        taxonomies: Object.fromEntries(
+          Object.entries(entry.data.taxonomies).map(([id, refs]) => [
+            id,
+            refs.map((ref) => ref.id),
+          ]),
+        ),
+      }
       : {}),
   };
 }

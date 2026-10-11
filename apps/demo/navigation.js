@@ -37,22 +37,22 @@ export async function getDemoNavigation(currentPath, locale) {
     : (navigation.find((link) => link.href === homeHref)?.label ?? site.brand);
   const viewItems = fixtures
     ? [
-        item(
-          copy.single,
-          getLocaleHref("/preview/single", locale),
-          "file-text",
-        ),
-        item(
-          copy.archive,
-          getLocaleHref("/preview/archive", locale),
-          "layout-grid",
-        ),
-        item(
-          copy.emptyStateTitle,
-          getLocaleHref("/preview/i18n-empty", locale),
-          "layout-grid",
-        ),
-      ]
+      item(
+        copy.single,
+        getLocaleHref("/preview/single", locale),
+        "file-text",
+      ),
+      item(
+        copy.archive,
+        getLocaleHref("/preview/archive", locale),
+        "layout-grid",
+      ),
+      item(
+        copy.emptyStateTitle,
+        getLocaleHref("/preview/i18n-empty", locale),
+        "layout-grid",
+      ),
+    ]
     : [];
   const postItems = [];
   if (post) {
@@ -100,18 +100,18 @@ export async function getDemoNavigation(currentPath, locale) {
     );
   const layoutItems = fixtures
     ? Object.entries(copy.layoutProfiles).map(([id, title]) =>
-        item(
-          title,
-          getLocaleHref(`/preview/layouts/${id}`, locale),
-          "panel-left",
-        ),
-      )
+      item(
+        title,
+        getLocaleHref(`/preview/layouts/${id}`, locale),
+        "panel-left",
+      ),
+    )
     : [];
   const overviewItems = fixtures
     ? [
-        item(copy.overview, homeHref, "panel-left"),
-        item(copy.components, `${homeHref}#components`, "layout-grid"),
-      ]
+      item(copy.overview, homeHref, "panel-left"),
+      item(copy.components, `${homeHref}#components`, "layout-grid"),
+    ]
     : [];
   return {
     homeHref,

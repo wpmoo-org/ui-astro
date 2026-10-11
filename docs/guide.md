@@ -283,7 +283,7 @@ the default term links. Two resolved replacements for one page are an error.
 ### Content aside and table of contents
 
 `aside` accepts physical `side: "left" | "right"`, `columns: 2..6`,
-`breakpoint: "lg" | "xl" | "xxl"`, optional `sticky`, `gap: 0..5` (default `5`),
+`breakpoint: "md" | "lg" | "xl" | "xxl"` (default `"xl"`), optional `sticky`, `gap: 0..5` (default `5`),
 and `mobile`:
 
 - `collapse-before`: one accessible disclosure before content.

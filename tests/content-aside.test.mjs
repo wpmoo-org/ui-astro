@@ -35,7 +35,7 @@ test("aside contract rejects unsupported sizes and modes", () => {
     { columns: 1 },
     { columns: 7 },
     { columns: 2.5 },
-    { breakpoint: "md" },
+    { breakpoint: "sm" },
     { side: "start" },
     { mobile: "drawer" },
     { sticky: "yes" },
@@ -80,4 +80,13 @@ test("native frame classes account for physical side, RTL and mobile policy", as
       .aside.includes("order-1"),
     true,
   );
+  const medium = defineSite({
+    defaults: { aside: { breakpoint: "md", sticky: true } },
+  }).defaults.aside;
+  const frame = module.contentFrameClasses(medium);
+  assert.equal(frame.main.includes("col-md-9"), true);
+  assert.equal(frame.aside.includes("col-md-3"), true);
+  assert.equal(frame.aside.includes("sticky-md-top"), true);
+  assert.equal(frame.trigger, "d-md-none");
+  assert.equal(frame.visible, "d-md-block");
 });

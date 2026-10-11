@@ -68,7 +68,7 @@ test("explicit whole-aside policies preserve list ownership and no compact proje
     assert.deepEqual(selected.placements, [toc, note]);
     assert.equal(selected.listClass, "");
   }
-  for (const breakpoint of ["lg", "xl", "xxl"])
+  for (const breakpoint of ["md", "lg", "xl", "xxl"])
     assert.equal(
       selectAsidePlacements(plan, { ...aside, breakpoint }).compactClass,
       `d-${breakpoint}-none`,

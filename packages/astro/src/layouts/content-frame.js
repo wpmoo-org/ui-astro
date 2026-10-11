@@ -1,4 +1,11 @@
 const columns = {
+  md: {
+    2: ["col-md-10", "col-md-2"],
+    3: ["col-md-9", "col-md-3"],
+    4: ["col-md-8", "col-md-4"],
+    5: ["col-md-7", "col-md-5"],
+    6: ["col-md-6", "col-md-6"],
+  },
   lg: {
     2: ["col-lg-10", "col-lg-2"],
     3: ["col-lg-9", "col-lg-3"],
@@ -22,6 +29,13 @@ const columns = {
   },
 };
 const responsive = {
+  md: {
+    first: "order-md-1",
+    last: "order-md-2",
+    trigger: "d-md-none",
+    visible: "d-md-block",
+    sticky: "sticky-md-top",
+  },
   lg: {
     first: "order-lg-1",
     last: "order-lg-2",

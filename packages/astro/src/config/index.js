@@ -318,9 +318,9 @@ export function formatDate(date, options = {}) {
   return style === "iso"
     ? date.toISOString().slice(0, 10)
     : new Intl.DateTimeFormat(lang, {
-        dateStyle: style,
-        timeZone: "UTC",
-      }).format(date);
+      dateStyle: style,
+      timeZone: "UTC",
+    }).format(date);
 }
 const sidebarSchema = z
   .strictObject({
@@ -345,7 +345,7 @@ const sidebarSchema = z
 export const contentAsideSchema = z.strictObject({
   side: z.enum(["left", "right"]).optional(),
   columns: z.number().int().min(2).max(6).optional(),
-  breakpoint: z.enum(["lg", "xl", "xxl"]).optional(),
+  breakpoint: z.enum(["md", "lg", "xl", "xxl"]).optional(),
   sticky: z.boolean().optional(),
   mobile: z.enum(["collapse-before", "stack-after", "hidden"]).optional(),
   gap: z.number().int().min(0).max(5).optional(),

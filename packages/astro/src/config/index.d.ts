@@ -214,7 +214,7 @@ export type SidebarOptions =
 export interface ContentAsideInput {
   side?: "left" | "right";
   columns?: 2 | 3 | 4 | 5 | 6;
-  breakpoint?: "lg" | "xl" | "xxl";
+  breakpoint?: "md" | "lg" | "xl" | "xxl";
   sticky?: boolean;
   mobile?: "collapse-before" | "stack-after" | "hidden";
   gap?: 0 | 1 | 2 | 3 | 4 | 5;
