@@ -1,4 +1,5 @@
 ---
+import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import Layout from "../../../layouts/Layout.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
 import Empty from "@wpmoo/astro/components/Empty.astro";
@@ -6,6 +7,8 @@ import Alert from "@wpmoo/astro/components/Alert.astro";
 import Tabs from "@wpmoo/astro/components/Tabs.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
 import DataTable from "@wpmoo/astro/components/DataTable.astro";
+import Field from "@wpmoo/astro/components/Field.astro";
+import Input from "@wpmoo/astro/components/Input.astro";
 
 const columns = [
   { key: "item", label: "Item", cardRole: "title" as const },
@@ -52,15 +55,26 @@ const emptyExamples = [
     action: "יצירת פריט",
   },
 ];
-const items = [
-  { id: "short", title: "Short", content: "A short panel." },
-  {
-    id: "long",
-    title: "Long",
-    content:
-      '<div class="d-flex flex-column gap-3"><p>Switch back to the short panel to compare the height.</p><p>Stable height reserves room for the tallest panel.</p><p>Content height follows the selected panel.</p><label>Draft<input class="form-control" aria-label="Draft" value="Keep this draft" /></label></div>',
-  },
-];
+const container = await AstroContainer.create();
+async function createTabItems(id: string) {
+  const input = await container.renderToString(Input, {
+    props: { label: "Draft", id: `${id}-draft`, value: "Keep this draft" },
+  });
+  const field = await container.renderToString(Field, {
+    slots: { default: input },
+  });
+  return [
+    { id: "short", title: "Short", content: "A short panel." },
+    {
+      id: "long",
+      title: "Long",
+      content:
+        '<div class="d-flex flex-column gap-3"><p>Switch back to the short panel to compare the height.</p><p>Stable height reserves room for the tallest panel.</p><p>Content height follows the selected panel.</p>' + field + "</div>",
+    },
+  ];
+}
+const stableItems = await createTabItems("stable-tabs");
+const contentItems = await createTabItems("content-tabs");
 ---
 
 <Layout title="Core 1.2.1 components">
@@ -136,11 +150,11 @@ const items = [
       <div class="row g-4">
         <div class="col-12 col-lg-6">
           <h3 class="h5 mb-3">Stable height (default)</h3>
-          <Tabs id="stable-tabs" items={items} trustedHtml />
+          <Tabs id="stable-tabs" items={stableItems} trustedHtml />
         </div>
         <div class="col-12 col-lg-6">
           <h3 class="h5 mb-3">Content height</h3>
-          <Tabs id="content-tabs" items={items} height="content" trustedHtml />
+          <Tabs id="content-tabs" items={contentItems} height="content" trustedHtml />
         </div>
       </div>
     </section>
