@@ -24,7 +24,7 @@ For a short overview, see the [README](../README.md).
 - [Direct Moo Astro Starter](#direct-moo-astro-starter)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0` CSS, state script, and ESM components. Its package has 45 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.2.1` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -358,7 +358,7 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.3
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `1.0.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `1.2.1` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.2` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
 
@@ -423,7 +423,47 @@ document with HTTP 404 and configure locale error selection separately.
 
 ## Public files and behavior
 
-Each wrapper has a direct public entrypoint such as `@wpmoo/astro/components/Button.astro`. Import only published subpaths from another application. The following entrypoints let a custom theme use the same shared presentation and behavior outside Layout:
+Each wrapper has a direct public entrypoint such as `@wpmoo/astro/components/Button.astro`. Import only published subpaths from another application.
+
+`Empty.astro` uses Core's dashed empty-state surface, typography and spacing.
+Supply a nonblank `title`, `description`, or both. Its optional `icon` and
+`action` slots accept host-owned Astro content; `class` accepts extra utilities.
+Plain title and description values are escaped.
+Decorative SVG icons in the `icon` slot use `data-icon="inline-start"` and
+`aria-hidden="true"`, matching the public Core icon sizing contract.
+
+```astro
+---
+import Empty from "@wpmoo/astro/components/Empty.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+---
+<Empty title="No items yet" description="Create your first item to get started.">
+  <Button slot="action" label="Create item" />
+</Empty>
+```
+
+`Tabs.astro` defaults to `height="stable"`, reserving space for its tallest
+panel. Set `height="content"` to follow the selected panel's height. Switching
+keeps the inactive panel's DOM and form values. Other height values are rejected.
+`Alert.astro` accepts a title, a description, or both; omitting a title produces
+no empty heading. An alert with only blank text is rejected.
+
+`DataTable.astro` composes `Empty.astro` for its empty-result surface. DataTable
+owns the live region, filtered/zero-row message, visibility and clear-filters
+action. Published Core 1.2.1 supports the shared `.empty-state-*` selectors
+and the earlier DataTable-specific selectors. An initially empty table hides
+its filter description and action container; filtered results offer Clear
+filters. The SDK and independent Starter use the exact published archive.
+Earlier Core package records retain their original bytes and dated evidence.
+Responsive Bootstrap display utilities belong to the outer layout wrapper;
+Core's `hidden` state belongs to the inner `.datatable-frame`.
+
+The local demo at `/preview/components/core-1-2` shows Empty in light/dark and
+Arabic/Hebrew RTL contexts, filtered and initially empty DataTables, both tab
+heights and an alert without a title.
+
+The following entrypoints let a custom theme use the same shared presentation
+and behavior outside Layout:
 
 ```astro
 ---

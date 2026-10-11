@@ -60,6 +60,8 @@ interface Props {
 }
 
 import Icon from "./internal/Icon.astro";
+import Empty from "./Empty.astro";
+import Button from "./Button.astro";
 
 const {
   id,
@@ -394,178 +396,179 @@ const cellValue = (row: Row, key: string) => row.cells[key] ?? "";
 
   <div
     class:list={[
-      "datatable-frame",
       responsiveMode === "cards"
         ? `d-none d-${responsiveBreakpoint}-block`
         : "",
     ]}
   >
-    <div class="table-responsive scroll-fade-x">
-      <table class="table align-middle datatable-table" id={`${id}-table`}>
-        <thead
-          ><tr>
-            {
-              selectable ? (
-                <th scope="col" class="datatable-col-select">
-                  <div class="form-check">
-                    <input
-                      class="form-check-input datatable-select-all"
-                      type="checkbox"
-                      id={`${id}-table-select-visible`}
-                      aria-label={`Select visible ${selectionNoun}`}
-                      aria-controls={`${id}-table`}
-                      data-datatable-select-all
-                    />
-                  </div>
-                </th>
-              ) : null
-            }
-            {
-              columns.map((column) => {
-                const state = sortState(column);
-                return (
-                  <th
-                    scope="col"
-                    class:list={[
-                      "datatable-col",
-                      column.align ? `text-${column.align}` : "",
-                    ]}
-                    style={column.width ? `width: ${column.width};` : undefined}
-                    data-datatable-column={column.key}
-                    data-datatable-column-fixed={
-                      column.hideable === false ? "true" : undefined
-                    }
-                    data-datatable-sort-state={
-                      column.sortable !== false ? state : undefined
-                    }
-                    data-datatable-initial-sort={
-                      column.sortable !== false && state !== "none"
-                        ? state
-                        : undefined
-                    }
-                    data-datatable-sort-direction={
-                      column.sortable !== false && state !== "none"
-                        ? state
-                        : undefined
-                    }
-                    aria-sort={
-                      column.sortable !== false
-                        ? state === "asc"
-                          ? "ascending"
-                          : state === "desc"
-                            ? "descending"
-                            : "none"
-                        : undefined
-                    }
-                  >
-                    {column.sortable !== false ? (
-                      <div class="dropdown datatable-sort">
-                        <button
-                          class="btn btn-ghost btn-sm datatable-sort-trigger"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                          aria-label={`Sort by ${column.label}`}
-                          data-datatable-sort-key={column.key}
-                        >
-                          {column.label}
-                        </button>
-                        <ul class="dropdown-menu">
-                          <li>
-                            <button
-                              class="dropdown-item"
-                              type="button"
-                              data-datatable-sort-action="asc"
-                            >
-                              Asc
-                            </button>
-                          </li>
-                          <li>
-                            <button
-                              class="dropdown-item"
-                              type="button"
-                              data-datatable-sort-action="desc"
-                            >
-                              Desc
-                            </button>
-                          </li>
-                          {column.hideable !== false ? (
+    <div class="datatable-frame">
+      <div class="table-responsive scroll-fade-x">
+        <table class="table align-middle datatable-table" id={`${id}-table`}>
+          <thead
+            ><tr>
+              {
+                selectable ? (
+                  <th scope="col" class="datatable-col-select">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input datatable-select-all"
+                        type="checkbox"
+                        id={`${id}-table-select-visible`}
+                        aria-label={`Select visible ${selectionNoun}`}
+                        aria-controls={`${id}-table`}
+                        data-datatable-select-all
+                      />
+                    </div>
+                  </th>
+                ) : null
+              }
+              {
+                columns.map((column) => {
+                  const state = sortState(column);
+                  return (
+                    <th
+                      scope="col"
+                      class:list={[
+                        "datatable-col",
+                        column.align ? `text-${column.align}` : "",
+                      ]}
+                      style={column.width ? `width: ${column.width};` : undefined}
+                      data-datatable-column={column.key}
+                      data-datatable-column-fixed={
+                        column.hideable === false ? "true" : undefined
+                      }
+                      data-datatable-sort-state={
+                        column.sortable !== false ? state : undefined
+                      }
+                      data-datatable-initial-sort={
+                        column.sortable !== false && state !== "none"
+                          ? state
+                          : undefined
+                      }
+                      data-datatable-sort-direction={
+                        column.sortable !== false && state !== "none"
+                          ? state
+                          : undefined
+                      }
+                      aria-sort={
+                        column.sortable !== false
+                          ? state === "asc"
+                            ? "ascending"
+                            : state === "desc"
+                              ? "descending"
+                              : "none"
+                          : undefined
+                      }
+                    >
+                      {column.sortable !== false ? (
+                        <div class="dropdown datatable-sort">
+                          <button
+                            class="btn btn-ghost btn-sm datatable-sort-trigger"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            aria-label={`Sort by ${column.label}`}
+                            data-datatable-sort-key={column.key}
+                          >
+                            {column.label}
+                          </button>
+                          <ul class="dropdown-menu">
                             <li>
                               <button
                                 class="dropdown-item"
                                 type="button"
-                                data-datatable-sort-action="hide"
+                                data-datatable-sort-action="asc"
                               >
-                                Hide
+                                Asc
                               </button>
                             </li>
-                          ) : null}
-                        </ul>
+                            <li>
+                              <button
+                                class="dropdown-item"
+                                type="button"
+                                data-datatable-sort-action="desc"
+                              >
+                                Desc
+                              </button>
+                            </li>
+                            {column.hideable !== false ? (
+                              <li>
+                                <button
+                                  class="dropdown-item"
+                                  type="button"
+                                  data-datatable-sort-action="hide"
+                                >
+                                  Hide
+                                </button>
+                              </li>
+                            ) : null}
+                          </ul>
+                        </div>
+                      ) : (
+                        column.label || (
+                          <span class="visually-hidden">{column.srLabel}</span>
+                        )
+                      )}
+                    </th>
+                  );
+                })
+              }
+            </tr></thead
+          >
+          <tbody
+            >{
+              rows.map((row, rowIndex) => (
+                <tr
+                  id={row.id}
+                  hidden={rowIndex >= pageSize}
+                  data-datatable-row
+                  data-datatable-search={row.search}
+                  {...Object.fromEntries(
+                    Object.entries(row.facets || {}).map(([key, value]) => [
+                      `data-datatable-facet-${key}`,
+                      value,
+                    ]),
+                  )}
+                >
+                  {selectable ? (
+                    <td class="datatable-col-select">
+                      <div class="form-check">
+                        <input
+                          class="form-check-input datatable-checkbox-target"
+                          type="checkbox"
+                          id={`${id}-${row.id}-table-select`}
+                          aria-label={`Select ${row.label || row.id}`}
+                          data-datatable-select-row
+                        />
                       </div>
-                    ) : (
-                      column.label || (
-                        <span class="visually-hidden">{column.srLabel}</span>
-                      )
-                    )}
-                  </th>
-                );
-              })
-            }
-          </tr></thead
-        >
-        <tbody
-          >{
-            rows.map((row, rowIndex) => (
-              <tr
-                id={row.id}
-                hidden={rowIndex >= pageSize}
-                data-datatable-row
-                data-datatable-search={row.search}
-                {...Object.fromEntries(
-                  Object.entries(row.facets || {}).map(([key, value]) => [
-                    `data-datatable-facet-${key}`,
-                    value,
-                  ]),
-                )}
-              >
-                {selectable ? (
-                  <td class="datatable-col-select">
-                    <div class="form-check">
-                      <input
-                        class="form-check-input datatable-checkbox-target"
-                        type="checkbox"
-                        id={`${id}-${row.id}-table-select`}
-                        aria-label={`Select ${row.label || row.id}`}
-                        data-datatable-select-row
-                      />
-                    </div>
-                  </td>
-                ) : null}
-                {columns.map((column) => (
-                  <td
-                    class:list={[
-                      "datatable-col",
-                      column.align ? `text-${column.align}` : "",
-                    ]}
-                    data-datatable-column={column.key}
-                    data-datatable-sort-value={
-                      row.sort?.[column.key] !== undefined
-                        ? String(row.sort[column.key])
-                        : undefined
-                    }
-                  >
-                    {trustedHtml ? (
-                      <Fragment set:html={cellValue(row, column.key)} />
-                    ) : (
-                      cellValue(row, column.key)
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))
-          }</tbody
-        >
-      </table>
+                    </td>
+                  ) : null}
+                  {columns.map((column) => (
+                    <td
+                      class:list={[
+                        "datatable-col",
+                        column.align ? `text-${column.align}` : "",
+                      ]}
+                      data-datatable-column={column.key}
+                      data-datatable-sort-value={
+                        row.sort?.[column.key] !== undefined
+                          ? String(row.sort[column.key])
+                          : undefined
+                      }
+                    >
+                      {trustedHtml ? (
+                        <Fragment set:html={cellValue(row, column.key)} />
+                      ) : (
+                        cellValue(row, column.key)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            }</tbody
+          >
+        </table>
+      </div>
     </div>
   </div>
 
@@ -661,21 +664,26 @@ const cellValue = (row: Row, key: string) => row.cells[key] ?? "";
   }
 
   <div
-    class="datatable-empty"
+    class="datatable-empty p-0 border-0"
     data-datatable-empty
     hidden
     role="status"
     aria-live="polite"
   >
-    <p class="datatable-empty-title mb-1">No matching results</p><p
-      class="datatable-empty-copy text-body-secondary mb-3"
+    <Empty
+      title="No matching results"
+      description="Try a different search or clear the active filters."
     >
-      Try a different search or clear the active filters.
-    </p><button
-      type="button"
-      class="btn btn-outline-secondary btn-sm"
-      data-datatable-empty-reset>Clear filters</button
-    >
+      <Button
+        slot="action"
+        label="Clear filters"
+        variant="outline"
+        size="sm"
+        data-datatable-empty-reset
+      >
+        <Icon slot="icon-end" name="x" position="inline-end" />
+      </Button>
+    </Empty>
   </div>
 
   <div class="datatable-pagination mt-3" data-datatable-pagination>

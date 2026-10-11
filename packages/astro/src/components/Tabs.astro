@@ -10,6 +10,7 @@ interface Props {
   id: string;
   items: Item[];
   orientation?: "horizontal" | "vertical";
+  height?: "stable" | "content";
   trustedHtml?: boolean;
   class?: string;
   [key: string]: unknown;
@@ -19,10 +20,14 @@ const {
   id,
   items,
   orientation = "horizontal",
+  height = "stable",
   trustedHtml = false,
   class: className = "",
   ...rest
 } = Astro.props;
+if (height !== "stable" && height !== "content") {
+  throw new TypeError(`Unknown tabs height: ${height}`);
+}
 const hasActive = items.some((item) => item.active);
 ---
 
@@ -31,6 +36,7 @@ const hasActive = items.some((item) => item.active);
   class:list={[
     "tabs",
     orientation === "vertical" ? "tabs--vertical" : "",
+    height === "content" ? "tabs--content-height" : "",
     className,
   ]}
 >

@@ -20,6 +20,8 @@
     "contracts/astro-public-surface.json",
     "contracts/ui-1.0.0-package.json",
     "contracts/ui-1.1.0-package.json",
+    "contracts/ui-1.2.0-package.json",
+    "contracts/ui-1.2.1-package.json",
     "src/blocks/entry-taxonomies/EntryTaxonomies.astro",
     "src/blocks/language-switcher/LanguageSwitcher.astro",
     "src/blocks/language-switcher/language-switcher.js",
@@ -46,6 +48,7 @@
     "src/components/DatePicker.astro",
     "src/components/Dialog.astro",
     "src/components/DropdownMenu.astro",
+    "src/components/Empty.astro",
     "src/components/Field.astro",
     "src/components/Form.astro",
     "src/components/Input.astro",
@@ -198,6 +201,7 @@
     "./components/DatePicker.astro": "./src/components/DatePicker.astro",
     "./components/Dialog.astro": "./src/components/Dialog.astro",
     "./components/DropdownMenu.astro": "./src/components/DropdownMenu.astro",
+    "./components/Empty.astro": "./src/components/Empty.astro",
     "./components/Field.astro": "./src/components/Field.astro",
     "./components/Form.astro": "./src/components/Form.astro",
     "./components/Input.astro": "./src/components/Input.astro",
@@ -271,7 +275,7 @@
     "./components/TableOfContents.astro": "./src/components/TableOfContents.astro"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.1.0",
+    "@wpmoo/ui": "1.2.1",
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {

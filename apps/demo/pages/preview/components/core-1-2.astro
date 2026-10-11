@@ -1,0 +1,167 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import Empty from "@wpmoo/astro/components/Empty.astro";
+import Alert from "@wpmoo/astro/components/Alert.astro";
+import Tabs from "@wpmoo/astro/components/Tabs.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import DataTable from "@wpmoo/astro/components/DataTable.astro";
+
+const columns = [
+  { key: "item", label: "Item", cardRole: "title" as const },
+  { key: "status", label: "Status" },
+];
+const rows = [
+  { id: "draft", cells: { item: "Draft proposal", status: "Draft" } },
+  { id: "review", cells: { item: "Review notes", status: "Review" } },
+];
+
+const emptyExamples = [
+  {
+    id: "empty-light",
+    theme: "light",
+    dir: "ltr",
+    title: "No items yet",
+    description: "Create your first item to get started.",
+    action: "Create item",
+  },
+  {
+    id: "empty-dark",
+    theme: "dark",
+    dir: "ltr",
+    title: "No items yet",
+    description: "Create your first item to get started.",
+    action: "Create item",
+  },
+  {
+    id: "empty-arabic",
+    theme: "light",
+    dir: "rtl",
+    lang: "ar",
+    title: "لا توجد عناصر بعد",
+    description: "أنشئ العنصر الأول للبدء.",
+    action: "إنشاء عنصر",
+  },
+  {
+    id: "empty-hebrew",
+    theme: "dark",
+    dir: "rtl",
+    lang: "he",
+    title: "אין פריטים עדיין",
+    description: "צרו את הפריט הראשון כדי להתחיל.",
+    action: "יצירת פריט",
+  },
+];
+const items = [
+  { id: "short", title: "Short", content: "A short panel." },
+  {
+    id: "long",
+    title: "Long",
+    content:
+      '<div class="d-flex flex-column gap-3"><p>Switch back to the short panel to compare the height.</p><p>Stable height reserves room for the tallest panel.</p><p>Content height follows the selected panel.</p><label>Draft<input class="form-control" aria-label="Draft" value="Keep this draft" /></label></div>',
+  },
+];
+---
+
+<Layout title="Core 1.2.1 components">
+  <PageHeader
+    title="Core 1.2.1 components"
+    description="Shared empty states, tab height modes and alerts without a title."
+  />
+  <div class="d-flex flex-column gap-5">
+    <section aria-labelledby="empty-heading">
+      <h2 id="empty-heading" class="mb-4">Empty</h2>
+      <div class="row g-4">
+        {
+          emptyExamples.map((example) => (
+            <div class="col-12 col-lg-6">
+              <div
+                class="moo-ui bg-transparent"
+                data-bs-theme={example.theme}
+                dir={example.dir}
+                lang={example.lang}
+              >
+                <Empty
+                  id={example.id}
+                  title={example.title}
+                  description={example.description}
+                  class="bg-body text-body"
+                >
+                  <svg
+                    slot="icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    data-icon="inline-start"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m22 12-4 0-3 3H9l-3-3H2" />
+                    <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" />
+                  </svg>
+                  <Button slot="action" label={example.action} />
+                </Empty>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+    <section aria-labelledby="datatable-empty-heading">
+      <h2 id="datatable-empty-heading" class="mb-3">Data Table empty state</h2>
+      <p class="text-body-secondary mb-4">
+        Search for an unmatched item, then clear the filters. The initially
+        empty table below uses the same component without a filter action.
+      </p>
+      <DataTable
+        id="shared-empty-items"
+        columns={columns}
+        rows={rows}
+        responsiveMode="cards"
+        responsiveBreakpoint="md"
+        selectable={false}
+      />
+      <h3 class="h5 mt-4 mb-3">Initially empty</h3>
+      <DataTable id="initially-empty-items" columns={columns} rows={[]} selectable={false} />
+    </section>
+    <section aria-labelledby="alert-heading">
+      <h2 id="alert-heading" class="mb-4">Alert without a title</h2>
+      <Alert description="Your changes have been saved." variant="success" />
+    </section>
+    <section aria-labelledby="tabs-heading">
+      <h2 id="tabs-heading" class="mb-4">Tabs</h2>
+      <div class="row g-4">
+        <div class="col-12 col-lg-6">
+          <h3 class="h5 mb-3">Stable height (default)</h3>
+          <Tabs id="stable-tabs" items={items} trustedHtml />
+        </div>
+        <div class="col-12 col-lg-6">
+          <h3 class="h5 mb-3">Content height</h3>
+          <Tabs id="content-tabs" items={items} height="content" trustedHtml />
+        </div>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  import "@wpmoo/astro/runtime/bootstrap.js";
+  import { DataTable } from "@wpmoo/astro/runtime/moo-ui.js";
+
+  const tableSelector = "#shared-empty-items, #initially-empty-items";
+  function initializeTables() {
+    document.querySelectorAll<HTMLElement>(tableSelector).forEach((element) => {
+      DataTable.getOrCreateInstance(element);
+    });
+  }
+  initializeTables();
+  document.addEventListener("astro:page-load", initializeTables);
+  document.addEventListener("astro:before-swap", () => {
+    document.querySelectorAll<HTMLElement>(tableSelector).forEach((element) => {
+      DataTable.getInstance(element)?.dispose();
+    });
+  });
+</script>

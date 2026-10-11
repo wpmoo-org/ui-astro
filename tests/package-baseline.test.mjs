@@ -20,7 +20,7 @@ import {
   corePackageRoot,
 } from "../scripts/project-paths.mjs";
 
-test("workspace uses the exact published Core 1.1.0 baseline", async () => {
+test("workspace uses the exact published Core 1.2.1 baseline", async () => {
   const packageJson = JSON.parse(
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
@@ -29,11 +29,11 @@ test("workspace uses the exact published Core 1.1.0 baseline", async () => {
   );
   const artifactRecord = JSON.parse(
     await readFile(
-      join(SDK_ROOT, "contracts/ui-1.1.0-package.json"),
+      join(SDK_ROOT, "contracts/ui-1.2.1-package.json"),
       "utf8",
     ),
   );
-  assert.equal(artifactRecord.version, "1.1.0");
+  assert.equal(artifactRecord.version, "1.2.1");
   assert.doesNotThrow(() => assertReleasePin({ packageJson, packageLock }));
   assert.throws(
     () =>
@@ -47,7 +47,7 @@ test("workspace uses the exact published Core 1.1.0 baseline", async () => {
         },
         packageLock,
       }),
-    /declared.*must be 1.1.0/,
+    /declared.*must be 1.2.1/,
   );
   await assertCoreArtifact({ artifactRecord });
 });
@@ -101,7 +101,7 @@ test("package retains all existing public wrappers plus the shared TOC and the e
   assert.equal(lock.name, "@wpmoo/astro-workspace");
   assert.equal(lock.packages["packages/astro"].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 91);
+  assert.equal(Object.keys(declared.exports).length, 92);
   assert.equal(
     declared.exports["./blocks/LanguageSwitcher.astro"],
     "./src/blocks/language-switcher/LanguageSwitcher.astro",
@@ -115,7 +115,7 @@ test("package retains all existing public wrappers plus the shared TOC and the e
     Object.keys(declared.exports).filter((path) =>
       path.startsWith("./components/"),
     ).length,
-    46,
+    47,
   );
   assert.equal(declared.exports["./config"], "./src/config/index.js");
   assert.equal(declared.exports["./seo"], "./src/seo/index.js");
@@ -184,7 +184,7 @@ test("package retains all existing public wrappers plus the shared TOC and the e
 
 const packageJson = {
   dependencies: {
-    "@wpmoo/ui": "1.1.0",
+    "@wpmoo/ui": "1.2.1",
   },
 };
 
@@ -194,10 +194,10 @@ const packageLock = {
     "": { name: "@wpmoo/astro-workspace" },
     "packages/astro": packageJson,
     "node_modules/@wpmoo/ui": {
-      version: "1.1.0",
-      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.1.0.tgz",
+      version: "1.2.1",
+      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.2.1.tgz",
       integrity:
-        "sha512-bdGLIxzM53hI05rgqLcoLyfJINU1iweGq5tNq9PFl1VpNJYHbHEVGr0D/7rVEkzgMOJY1iaw2SRdc/JxqBgUgg==",
+        "sha512-QKEKN37SEN9dEvsl2PGnhxhKqRUvpkonhIvKd5vLuzAN3Rp/r66m9k4EnGUrRjWAfmH3otpypYej3an6r/yUOw==",
     },
   },
 };
@@ -348,7 +348,7 @@ test("package compatibility rejects a different package name or version", () => 
   assert.doesNotThrow(() =>
     assertPackageCompatibility({
       packageName: "@wpmoo/ui",
-      packageVersion: "1.1.0",
+      packageVersion: "1.2.1",
       packageJson,
     }),
   );
@@ -356,7 +356,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@other/ui",
-        packageVersion: "1.1.0",
+        packageVersion: "1.2.1",
         packageJson,
       }),
     /package name/,
@@ -410,7 +410,7 @@ test("release checking rejects changed manifest and browser artifacts after lock
       await writeFile(path, `${await readFile(path, "utf8")}\n `);
       const artifactRecord = JSON.parse(
         await readFile(
-          join(SDK_ROOT, "contracts/ui-1.1.0-package.json"),
+          join(SDK_ROOT, "contracts/ui-1.2.1-package.json"),
           "utf8",
         ),
       );
@@ -441,7 +441,7 @@ test("Core resolved by the SDK cannot be shadowed by a different local artifact"
           repoRoot: root,
           artifactRecord: JSON.parse(
             readFileSync(
-              join(SDK_ROOT, "contracts/ui-1.1.0-package.json"),
+              join(SDK_ROOT, "contracts/ui-1.2.1-package.json"),
               "utf8",
             ),
           ),
