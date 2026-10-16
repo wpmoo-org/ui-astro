@@ -348,6 +348,30 @@ test("heading namespaces preserve raw source and exact attribute boundaries", as
   assert.equal(namespaceHeadingIds(prose, [], "block"), prose);
 });
 
+test("unquoted attribute quotes do not consume following heading tags", async () => {
+  const { namespaceHeadingIds } =
+    await import("../packages/astro/src/placements/heading-ids.js");
+  for (const quote of ['"', "'"]) {
+    const prefix = `<div data-x=foo${quote}bar>`;
+    const prose = `<h2 id=intro data-y=foo${quote}>Intro</h2><a href="#intro">Go</a>`;
+    const expected = `<h2 id=block-intro data-y=foo${quote}>Intro</h2><a href="#block-intro">Go</a>`;
+    assert.equal(
+      namespaceHeadingIds(prefix + prose, [{ slug: "intro" }], "block"),
+      prefix + expected,
+    );
+    const raw = `<script data-x=foo${quote}bar>const sample = '<h2 id="intro">';</script>`;
+    assert.equal(
+      namespaceHeadingIds(raw + prose, [{ slug: "intro" }], "block"),
+      raw + expected,
+    );
+  }
+  const nameQuote = '<div data-"flag><h2 id="intro">Intro</h2>';
+  assert.equal(
+    namespaceHeadingIds(nameQuote, [{ slug: "intro" }], "block"),
+    '<div data-"flag><h2 id="block-intro">Intro</h2>',
+  );
+});
+
 test("self-closing SVG elements do not consume later native headings", async () => {
   const { namespaceHeadingIds } =
     await import("../packages/astro/src/placements/heading-ids.js");

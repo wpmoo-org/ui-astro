@@ -9,12 +9,21 @@ const space = (character) => /[\t\n\f\r ]/.test(character ?? "");
 // Advance once through a tag, including quoted attribute values.
 function tagEnd(html, start) {
   let quote;
+  let unquotedValue = false;
+  let valueStart = false;
   for (let index = start; index < html.length; index++) {
     const character = html[index];
     if (quote) {
       if (character === quote) quote = undefined;
-    } else if (character === '"' || character === "'") quote = character;
-    else if (character === ">") return index + 1;
+    } else if (unquotedValue) {
+      if (space(character)) unquotedValue = false;
+      else if (character === ">") return index + 1;
+    } else if (character === ">") return index + 1;
+    else if (valueStart && !space(character)) {
+      if (character === '"' || character === "'") quote = character;
+      else unquotedValue = true;
+      valueStart = false;
+    } else if (character === "=") valueStart = true;
   }
   return -1;
 }
