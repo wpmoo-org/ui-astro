@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en
+tone_instructions: >-
+  Be direct and evidence-based. Preserve native Astro ownership, exact published
+  dependency contracts, explicit browser lifecycles and the SDK/host boundary.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  allow_author_approval: false
+  high_level_summary: false
+  review_status: false
+  review_progress: true
+  commit_status: true
+  fail_commit_status: true
+  in_progress_fortune: false
+  poem: false
+  changed_files_summary: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  assess_linked_issues: false
+  related_issues: false
+  related_prs: false
+  suggested_labels: false
+  suggested_reviewers: false
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/.astro/**"
+    - "!artifacts/**"
+
+  path_instructions:
+    - path: "packages/astro/src/**"
+      instructions: |
+        Follow native Astro APIs and host-owned content collections. Keep
+        server data out of browser bundles and browser setup paired with
+        disposal across page transitions. Compose published Moo UI/Bootstrap
+        contracts without copying sibling Core source or adding private deep
+        imports. Check base paths, locale ownership and root route conflicts.
+    - path: "packages/astro/contracts/**"
+      instructions: |
+        Public export and archive inventories are explicit contracts. Verify
+        current hashes against the exact published Core artifact. Historical
+        receipts retain their dated identity and do not certify new bytes.
+    - path: "tests/**"
+      instructions: |
+        Node tests use node:test and node:assert/strict. Retain semantic
+        runtime, route and package-boundary assertions. Do not weaken a test
+        to match a regression or reuse historical evidence for changed bytes.
+    - path: ".github/workflows/**"
+      instructions: |
+        CI intentionally supports PRs into main, pushes to dev/main and manual
+        workflow_dispatch runs. Keep astro-verify runnable for those events,
+        including every PR update, with read-only permissions and pinned
+        action commits. Do not introduce package publication, deployment or
+        privileged execution of PR code.
+    - path: "docs/**"
+      instructions: |
+        Keep native host configuration recipes aligned with actual exports.
+        Distinguish local tests, hosted CI and sealed consumer certification.
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 0
+    base_branches:
+      - main
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+  tools:
+    github-checks:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    shellcheck:
+      enabled: true
+
+chat:
+  auto_reply: false

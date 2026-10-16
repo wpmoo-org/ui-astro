@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 async function feature(path) {
@@ -304,4 +305,170 @@ test("native prose heading IDs and local links get distinct placement namespaces
     module.namespaceHeadingIds(html, headings, "block-one"),
     module.namespaceHeadingIds(html, headings, "block-two"),
   );
+});
+
+test("heading namespaces preserve raw source and exact attribute boundaries", async () => {
+  const { namespaceHeadingIds } =
+    await import("../packages/astro/src/placements/heading-ids.js");
+  const headings = [{ slug: "intro" }];
+  const prose =
+    '<h2 title=">" data-id="intro" ID = \'intro\'>Intro</h2><a data-href="#intro" href = "#intro">Go</a>';
+  const expected =
+    '<h2 title=">" data-id="intro" ID = \'block-intro\'>Intro</h2><a data-href="#intro" href = "#block-intro">Go</a>';
+  const rawSources = [
+    '<SCRIPT title=">">const sample = \'<h2 id="intro">\';</SCRIPT >',
+    '<style>/* </script><h2 id="intro"> */</style\n>',
+    "<script>const sample = '</style><a href=\"#intro\">';</script>",
+    '<!-- <h2 id="intro"><a href="#intro"> -->',
+  ];
+  for (const raw of rawSources) {
+    assert.equal(
+      namespaceHeadingIds(raw + prose, headings, "block"),
+      raw + expected,
+    );
+    assert.equal(
+      namespaceHeadingIds(prose + raw, headings, "block"),
+      expected + raw,
+    );
+  }
+  const unchanged =
+    '<h2x id="intro">Other</h2x><h2.foo id="intro">Other</h2.foo><a_widget href="#intro">Widget</a_widget><div id="intro"></div><a href="/other#intro">External</a><a href="#unknown">Unknown</a>';
+  assert.equal(namespaceHeadingIds(unchanged, headings, "block"), unchanged);
+  for (const tail of [
+    '<!-- <h2 id="intro">',
+    '<script>"<h2 id=\"intro\">"',
+    '<style>/* <a href="#intro"> */',
+    "<h2 title=\"unfinished <h2 id='intro'>",
+  ]) {
+    assert.equal(
+      namespaceHeadingIds(prose + tail, headings, "block"),
+      expected + tail,
+    );
+  }
+  assert.equal(namespaceHeadingIds(prose, [], "block"), prose);
+});
+
+test("unquoted attribute quotes do not consume following heading tags", async () => {
+  const { namespaceHeadingIds } =
+    await import("../packages/astro/src/placements/heading-ids.js");
+  for (const quote of ['"', "'"]) {
+    const prefix = `<div data-x=foo${quote}bar>`;
+    const prose = `<h2 id=intro data-y=foo${quote}>Intro</h2><a href="#intro">Go</a>`;
+    const expected = `<h2 id=block-intro data-y=foo${quote}>Intro</h2><a href="#block-intro">Go</a>`;
+    assert.equal(
+      namespaceHeadingIds(prefix + prose, [{ slug: "intro" }], "block"),
+      prefix + expected,
+    );
+    const raw = `<script data-x=foo${quote}bar>const sample = '<h2 id="intro">';</script>`;
+    assert.equal(
+      namespaceHeadingIds(raw + prose, [{ slug: "intro" }], "block"),
+      raw + expected,
+    );
+  }
+  const nameQuote = '<div data-"flag><h2 id="intro">Intro</h2>';
+  assert.equal(
+    namespaceHeadingIds(nameQuote, [{ slug: "intro" }], "block"),
+    '<div data-"flag><h2 id="block-intro">Intro</h2>',
+  );
+});
+
+test("HTML raw-text and RCDATA bodies preserve their literal heading examples", async () => {
+  const { namespaceHeadingIds } =
+    await import("../packages/astro/src/placements/heading-ids.js");
+  const prose = '<h2 id="intro">Intro</h2><a href="#intro">Go</a>';
+  const expected =
+    '<h2 id="block-intro">Intro</h2><a href="#block-intro">Go</a>';
+  for (const name of [
+    "textarea",
+    "title",
+    "xmp",
+    "iframe",
+    "noembed",
+    "noframes",
+  ]) {
+    const raw = `<${name} title=">">${prose}</${name}>`;
+    for (const [prefix, suffix] of [
+      ["", ""],
+      ["<svg><foreignObject>", "</foreignObject></svg>"],
+    ]) {
+      assert.equal(
+        namespaceHeadingIds(
+          prefix + raw + suffix + prose,
+          [{ slug: "intro" }],
+          "block",
+        ),
+        prefix + raw + suffix + expected,
+      );
+    }
+    assert.equal(
+      namespaceHeadingIds(
+        `<svg><${name} /></svg>` + prose,
+        [{ slug: "intro" }],
+        "block",
+      ),
+      `<svg><${name} /></svg>` + expected,
+    );
+    const unterminated = `<${name}>${prose}`;
+    assert.equal(
+      namespaceHeadingIds(unterminated, [{ slug: "intro" }], "block"),
+      unterminated,
+    );
+  }
+  const plaintext = `<plaintext>${prose}</plaintext>${prose}`;
+  assert.equal(
+    namespaceHeadingIds(plaintext, [{ slug: "intro" }], "block"),
+    plaintext,
+  );
+});
+
+test("self-closing SVG elements do not consume later native headings", async () => {
+  const { namespaceHeadingIds } =
+    await import("../packages/astro/src/placements/heading-ids.js");
+  const prose = '<h2 id="intro">Intro</h2><a href="#intro">Go</a>';
+  const expected =
+    '<h2 id="block-intro">Intro</h2><a href="#block-intro">Go</a>';
+  for (const element of ["title", "script", "style"]) {
+    const svg = `<svg><${element} /></svg>`;
+    assert.equal(
+      namespaceHeadingIds(svg + prose, [{ slug: "intro" }], "block"),
+      svg + expected,
+    );
+  }
+  for (const prefix of ["", "<svg><foreignObject>"]) {
+    const raw = "<script/>const sample = '<h2 id=\"intro\">';</script>";
+    const suffix = prefix ? "</foreignObject></svg>" : "";
+    assert.equal(
+      namespaceHeadingIds(
+        prefix + raw + suffix + prose,
+        [{ slug: "intro" }],
+        "block",
+      ),
+      prefix + raw + suffix + expected,
+    );
+  }
+});
+
+test("unterminated heading source completes within a bounded process timeout", () => {
+  const moduleUrl = new URL(
+    "../packages/astro/src/placements/heading-ids.js",
+    import.meta.url,
+  ).href;
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      `
+    import assert from "node:assert/strict";
+    import { namespaceHeadingIds } from ${JSON.stringify(moduleUrl)};
+    for (const opener of ["<!--", "<script>", "<style>", "<textarea>", "<h2", "<a"]) {
+      const source = opener.repeat(100000);
+      assert.equal(namespaceHeadingIds(source, [{ slug: "intro" }], "block"), source);
+    }
+  `,
+    ],
+    { encoding: "utf8", timeout: 5000 },
+  );
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
 });
