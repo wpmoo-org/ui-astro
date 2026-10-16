@@ -148,6 +148,7 @@ export function starterRoutes(profile) {
       services: "services",
       contact: "contact",
       enhanced: "enhanced",
+      guide: "placement-guide",
       announcement: "blog/announcement",
       update: "blog/project-update",
       archive: "blog",
@@ -168,6 +169,7 @@ export function starterRoutes(profile) {
       services: "leistungen",
       contact: "kontakt",
       enhanced: "erweitert",
+      guide: "platzierungen",
       announcement: "beitraege/ankuendigung",
       update: "beitraege/projektupdate",
       archive: "beitraege",
@@ -215,14 +217,14 @@ function attrs(source) {
 // Hand-checked pilot membership, independent of the SDK's filtering queries.
 const archiveItems = {
   archive: ["announcement", "update"],
-  category: ["enhanced", "update"],
+  category: ["enhanced", "guide", "update"],
   categoryCompany: ["about", "services"],
   categoryNews: ["announcement", "update"],
-  tag: ["enhanced", "services", "update"],
+  tag: ["enhanced", "guide", "services", "update"],
   tagMdx: ["enhanced"],
   tagRelease: ["announcement", "update"],
   sector: ["about", "announcement", "update"],
-  sectorDevelopment: ["enhanced", "services", "update"],
+  sectorDevelopment: ["enhanced", "guide", "services", "update"],
 };
 const entryTerms = {
   home: [],
@@ -231,6 +233,7 @@ const entryTerms = {
   about: ["categoryCompany", "sector"],
   services: ["categoryCompany", "tag", "sectorDevelopment"],
   enhanced: ["category", "tag", "tagMdx", "sectorDevelopment"],
+  guide: ["category", "tag", "sectorDevelopment"],
   announcement: ["categoryNews", "tagRelease", "sector"],
   update: [
     "category",
@@ -396,7 +399,13 @@ export function inspectStarterHtml(html, route, routes, inset) {
   }
   if (["enhanced", "native"].includes(route.key)) {
     const label =
-      route.locale === "de" ? "Native Seite öffnen" : "Explore the native page";
+      route.key === "native"
+        ? route.locale === "de"
+          ? "Zur Startseite"
+          : "Back to home"
+        : route.locale === "de"
+          ? "Native Seite öffnen"
+          : "Explore the native page";
     const target = Object.values(routes).find(
       (value) =>
         value.key === (route.key === "enhanced" ? "native" : "home") &&
