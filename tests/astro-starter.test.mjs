@@ -59,7 +59,7 @@ async function fixture(t, name = "source", version = "0.1.0") {
         name: "astro-moo-starter",
         private: true,
         type: "module",
-        dependencies: { "@wpmoo/astro": "0.1.0", astro: "7.3.3" },
+        dependencies: { "@wpmoo/astro": "0.1.0", astro: "7.3.8" },
       },
       null,
       2,
@@ -131,7 +131,7 @@ test("portable_source_stays_unchanged", async (t) => {
   );
   assert.deepEqual(prepared.dependencies, {
     "@wpmoo/astro": "file:../wpmoo-astro-0.1.0.tgz",
-    astro: "7.3.3",
+    astro: "7.3.8",
   });
   assert.equal(result.sdk.files["src/[...slug].astro"], hash("<slot />\n"));
   assert.equal(
@@ -220,8 +220,8 @@ test("preparation_reuses_locked_transitives_without_changing_source", async (t) 
     .update(await readFile(input.sdkArchive))
     .digest("base64")}`;
   const host = {
-    version: "7.3.3",
-    resolved: "https://registry.npmjs.org/astro/-/astro-7.3.3.tgz",
+    version: "7.3.8",
+    resolved: "https://registry.npmjs.org/astro/-/astro-7.3.8.tgz",
     integrity: "retained-host-integrity",
   };
   const seed = {
@@ -231,7 +231,7 @@ test("preparation_reuses_locked_transitives_without_changing_source", async (t) 
     packages: {
       "": {
         name: "old-site",
-        dependencies: { "@wpmoo/astro": "0.1.0", astro: "7.3.3" },
+        dependencies: { "@wpmoo/astro": "0.1.0", astro: "7.3.8" },
       },
       "node_modules/@wpmoo/astro": {
         version: "0.1.0",
@@ -283,7 +283,7 @@ test("direct_starter_rejects_extra_artifacts_or_links", async () => {
     filename: "wpmoo-astro-0.1.0.tgz",
     manifest: { version: "0.1.0" },
     integrity:
-      "sha512-QQXgHABNceqvWA6eJ5KKQlrFhEt54l5biYiuOrY1P/FqhBLURde12GcNubVGTEs9F2S9zz9+aFLDXZAo9eipXQ==",
+      "sha512-2nHRkZBuEXT58jpIRE2Dus90z0a7v3dcoJOeIEi0TrA14/oiMTCOjBioM2jtSnmOe4zXmzNDWiUfDPEyLa6HXQ==",
   };
   const artifacts = { "@wpmoo/astro": sdk };
   validateStarterLock(manifest, lock, artifacts);

@@ -172,7 +172,7 @@ test("the MD-only consumer lock certifies one host peer and no MDX integration",
     /one certified host Astro peer/,
   );
   const mdx = structuredClone(fixtureLock);
-  mdx.packages["node_modules/@astrojs/mdx"] = { version: "8.0.2" };
+  mdx.packages["node_modules/@astrojs/mdx"] = { version: "8.0.3" };
   assert.throws(
     () =>
       validateConsumerLock({
@@ -191,9 +191,9 @@ test("incompatible peer evidence must be npm ERESOLVE for the exact certified As
       {
         status: 1,
         stderr:
-          'npm error ERESOLVE\nnpm error peer astro@"7.3.3" from @wpmoo/astro',
+          'npm error ERESOLVE\nnpm error peer astro@"7.3.8" from @wpmoo/astro',
       },
-      "7.3.3",
+      "7.3.8",
     ),
   );
   for (const result of [
@@ -203,7 +203,7 @@ test("incompatible peer evidence must be npm ERESOLVE for the exact certified As
     { status: 1, stderr: 'npm error ERESOLVE peer astro@"7.3.4"' },
   ]) {
     assert.throws(
-      () => assertPeerConflict(result, "7.3.3"),
+      () => assertPeerConflict(result, "7.3.8"),
       /incompatible host must fail/,
     );
   }

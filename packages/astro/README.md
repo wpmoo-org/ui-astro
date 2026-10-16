@@ -21,5 +21,5 @@ for installation, examples and development, and
 Dependency and icon licenses:
 [@wpmoo/ui](https://github.com/wpmoo-org/ui/blob/v1.3.0/LICENSE),
 [Bootstrap](https://github.com/twbs/bootstrap/blob/v5.3.8/LICENSE),
-[Astro](https://github.com/withastro/astro/blob/astro%407.3.3/LICENSE) and
+[Astro](https://github.com/withastro/astro/blob/astro%407.3.8/LICENSE) and
 [Lucide / Feather](https://github.com/lucide-icons/lucide/blob/main/LICENSE).

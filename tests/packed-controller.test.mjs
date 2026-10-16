@@ -155,7 +155,7 @@ test("prepared consumers allow only the retained tarballs and their exact peer c
     ],
     [
       (value) => {
-        value.lock.packages["node_modules/@astrojs/mdx"] = { version: "8.0.2" };
+        value.lock.packages["node_modules/@astrojs/mdx"] = { version: "8.0.3" };
       },
       /MD-only/,
     ],

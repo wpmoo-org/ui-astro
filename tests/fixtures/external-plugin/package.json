@@ -35,6 +35,6 @@
   },
   "peerDependencies": {
     "@wpmoo/astro": "0.1.0",
-    "astro": "7.3.3"
+    "astro": "7.3.8"
   }
 }

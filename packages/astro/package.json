@@ -280,7 +280,7 @@
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {
-    "astro": "7.3.3"
+    "astro": "7.3.8"
   },
   "devDependencies": {}
 }

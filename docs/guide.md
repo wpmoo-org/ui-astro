@@ -340,27 +340,27 @@ not clone the page body or the aside for mobile and desktop.
 
 ## Install and compose a page
 
-Use Node.js `22.12.0` or newer and the certified Astro `7.3.3`.
+Use Node.js `22.12.0` or newer and the certified Astro `7.3.8`.
 
 After the adapter is published, install it in an Astro application:
 
 ```bash
-npm install @wpmoo/astro astro@7.3.3
+npm install @wpmoo/astro astro@7.3.8
 ```
 
 The current `0.1.0` candidate is unpublished. To evaluate it now, install a
 reviewed local archive instead of assuming that npm serves this candidate:
 
 ```bash
-npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.3
+npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.8
 ```
 
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `1.3.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `1.3.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
-Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.2` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
+Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.3` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
 
 ```astro
 ---
@@ -613,7 +613,7 @@ the certified optional integration and declares the format on every selected
 Markdown source that may contain MDX:
 
 ```bash
-npm install @astrojs/mdx@8.0.2
+npm install @astrojs/mdx@8.0.3
 ```
 
 ```js
@@ -1215,7 +1215,9 @@ resolver can accept an actual absolute image URL and one Person author record
 references or add those fields to every built-in schema. SEO frontmatter is not added.
 
 The approved public-hook preflight certifies `@astrojs/sitemap@3.7.4` with Astro
-`7.3.3`. A host places its validated emitted/published URL projection hook before
+`7.3.3`. That historical result does not certify the current Astro `7.3.8`
+pairing; repeat the sitemap preflight before adopting it. A host places its
+validated emitted/published URL projection hook before
 the official writer, filters its candidates and supplies canonical `url`,
 translation `links` and authored `lastmod` via public async `serialize`. Do not use
 prefix matching as evidence of translated slugs or infer existing translations
