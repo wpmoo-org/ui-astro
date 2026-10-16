@@ -1,0 +1,79 @@
+---
+import { render } from "astro:content";
+import { preparePlacements } from "../../placements/index.js";
+import { resolveContentLinks } from "../../site/presentation.js";
+import { getLanguageLinks, getLocaleHref } from "../../i18n/index.js";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { resolvePageOptions } from "../../config/index.js";
+import { resolveSeoMetadata } from "../../seo/index.js";
+import { getEntryHref, getSiteContext } from "../../context/index.js";
+import { entryClassContext } from "../../taxonomies/paths.js";
+import Single from "../../plugins/page/views/Single.astro";
+
+interface Props {
+  entry: import("astro:content").CollectionEntry<"page">;
+}
+const { entry } = Astro.props;
+const routeContext = getSiteContext();
+const { site } = routeContext;
+const locale = routeContext.i18n ? entry.data.locale : undefined;
+const options = resolvePageOptions(
+  site,
+  "page",
+  "single",
+  entry.data.options,
+  locale,
+);
+const href = getEntryHref("page", entry);
+const localeHome = getLocaleHref("/", locale ?? site.defaults.lang);
+const links = routeContext.i18n ? await getLanguageLinks("page", entry) : [];
+const layoutProps = {
+  title: entry.data.title,
+  description: entry.data.description,
+  metadata: Astro.site
+    ? resolveSeoMetadata(site, {
+        title: entry.data.title,
+        description: entry.data.description,
+        status: entry.data.status,
+        type: "page",
+        view: href === localeHome ? "home" : "single",
+        lang: options.lang,
+        url: new URL(href, Astro.site).href,
+        alternates: links.map((link) => ({
+          locale: link.locale,
+          url: new URL(link.href, Astro.site).href,
+        })),
+        created_at: entry.data.created_at,
+        published_at: entry.data.published_at,
+        updated_at: entry.data.updated_at,
+      })
+    : undefined,
+  pageContext: {
+    view: "single" as const,
+    entry: entryClassContext({ id: "page", sourceKind: "markdown" }, entry),
+  },
+};
+const contentLinks = resolveContentLinks(site, {
+  ...routeContext,
+  locale: locale ?? site.defaults.lang,
+});
+const { Content, headings } = await render(entry);
+const plan = await preparePlacements({
+  href, locale: locale ?? site.defaults.lang, title: entry.data.title,
+  type: "page", view: href === localeHome ? "home" : "single",
+  entry: { ...layoutProps.pageContext.entry, data: entry.data, translationKey: entry.data.translationKey }, headings,
+});
+---
+
+<SiteLayout compactToc
+  {...layoutProps}
+  plan={plan}
+  options={options}
+  href={href}
+  locale={locale}
+  languageLinks={links}
+>
+  <Single compactToc plan={plan} aside={options.aside} dir={options.dir} parts={options.parts} entry={entry}>
+    <Content links={contentLinks} />
+  </Single>
+</SiteLayout>

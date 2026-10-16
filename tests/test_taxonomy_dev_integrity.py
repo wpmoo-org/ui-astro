@@ -33,7 +33,7 @@ class NativeTaxonomyDevIntegrity(unittest.TestCase):
                 (host / "astro.config.mjs").write_text('''import { defineConfig } from "astro/config";
 import moo from "@wpmoo/astro";
 import { defineTaxonomy } from "@wpmoo/astro/taxonomies";
-export default defineConfig({ integrations: [moo({ plugins: [], taxonomies: [defineTaxonomy({ id: "tag", label: "Tags", source: new URL("./src/data/tag.json", import.meta.url) })] })] });
+export default defineConfig({ integrations: [moo({ plugins: [], taxonomies: [defineTaxonomy({ id: "tag", label: "Tags", source: new URL("./src/data/tag.json", import.meta.url), archive: { basePath: "/" } })] })] });
 ''')
                 (host / "src/content.config.mjs").write_text('''import { defineCollection } from "astro:content";
 import { file } from "astro/loaders";
@@ -41,6 +41,7 @@ import { termSchema } from "@wpmoo/astro/taxonomies/content";
 export const collections = { tag: defineCollection({ loader: file("src/data/tag.json"), schema: termSchema }) };
 ''')
                 (host / "src/pages/index.astro").write_text('<p>Host-owned page.</p>')
+                (host / "src/pages/occupied.astro").write_text('<p>Native occupied URL.</p>')
                 (host / "src/pages/state.json.ts").write_text('import { getTaxonomyTerms } from "@wpmoo/astro/taxonomies/queries"; export const GET = async () => Response.json(await getTaxonomyTerms("tag"));')
                 source = host / "src/data/tag.json"
                 source.write_text(json.dumps([{"id": "astro", "name": "Original", "slug": "astro"}]))
@@ -79,6 +80,15 @@ export const collections = { tag: defineCollection({ loader: file("src/data/tag.
                         wait_for(lambda: request("/state.json")[0] == 200 and "Restored" in request("/state.json")[1])
                         self.assertEqual(request("/")[0], 200)
                         self.assertEqual(json.loads(request("/state.json")[1])[0]["name"], "Restored")
+                        time.sleep(.2)
+                        source.write_text(json.dumps([{"id": "astro", "name": "Collision", "slug": "occupied"}]))
+                        wait_for(lambda: request("/")[0] == 500)
+                        self.assertEqual(request("/state.json")[0], 500)
+                        self.assertIn("owner conflict", log_path.read_text())
+                        time.sleep(.2)
+                        source.write_text(json.dumps([{"id": "astro", "name": "Recovered", "slug": "updated"}]))
+                        wait_for(lambda: request("/state.json")[0] == 200 and "Recovered" in request("/state.json")[1])
+                        self.assertEqual(request("/")[0], 200)
                     finally:
                         process.terminate()
                         process.wait(timeout=10)

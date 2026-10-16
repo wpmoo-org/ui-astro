@@ -1,0 +1,147 @@
+---
+import Button from "./Button.astro";
+
+interface Item {
+  label: string;
+  href?: string;
+  active?: boolean;
+  disabled?: boolean;
+  destructive?: boolean;
+  shortcut?: string;
+  target?: string;
+  rel?: string;
+  lang?: string;
+  hreflang?: string;
+}
+interface Props {
+  element?: "div" | "nav";
+  menuClass?: string;
+  itemClass?: string;
+  label: string;
+  items?: readonly Item[];
+  menuLabel?: string;
+  variant?:
+    | "default"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "destructive"
+    | "link"
+    | "success"
+    | "warning"
+    | "info"
+    | "light"
+    | "dark"
+    | "outline-primary"
+    | "outline-success"
+    | "outline-danger";
+  size?: "default" | "xs" | "sm" | "lg";
+  align?: "" | "start" | "end";
+  caret?: boolean;
+  autoClose?: "" | "true" | "false" | "inside" | "outside";
+  offset?: string;
+  ariaLabel?: string;
+  triggerClass?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  element: Element = "div",
+  menuClass = "",
+  itemClass = "",
+  label,
+  items = [],
+  menuLabel = "",
+  variant = "outline",
+  size = "default",
+  align = "",
+  caret = false,
+  autoClose = "",
+  offset = "",
+  ariaLabel = "",
+  triggerClass = "",
+  class: className = "",
+  ...rest
+} = Astro.props;
+if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu element");
+---
+
+<Element {...rest} class:list={["dropdown", className]}>
+  <Button
+    label={label}
+    variant={variant}
+    size={size}
+    ariaLabel={ariaLabel}
+    class={triggerClass}
+    dropdown
+    dropdownCaret={caret}
+    dropdownOffset={offset}
+    dropdownAutoClose={autoClose}
+  >
+    <slot name="trigger-icon" slot="icon-start" />
+    <slot name="trigger-label">{label}</slot>
+  </Button>
+  <slot name="after-trigger" />
+  <ul class:list={["dropdown-menu", align ? `dropdown-menu-${align}` : "", menuClass]}>
+    {
+      menuLabel ? (
+        <>
+          <li>
+            <h6 class="dropdown-header">{menuLabel}</h6>
+          </li>
+          <li>
+            <hr class="dropdown-divider" />
+          </li>
+        </>
+      ) : null
+    }
+    {
+      items.map((item) => (
+        <li>
+          {item.href ? (
+            <a
+              class:list={[
+                "dropdown-item",
+                itemClass,
+                item.active ? "active" : "",
+                item.disabled ? "disabled" : "",
+              ]}
+              href={item.disabled ? undefined : item.href}
+              target={item.target}
+              rel={item.rel}
+              lang={item.lang}
+              hreflang={item.hreflang}
+              aria-disabled={item.disabled ? "true" : undefined}
+              tabindex={item.disabled ? -1 : undefined}
+              aria-current={item.active ? "true" : undefined}
+              data-variant={item.destructive ? "destructive" : undefined}
+            >
+              <span>{item.label}</span>
+              {item.shortcut ? (
+                <span class="ms-auto small text-body-secondary">
+                  {item.shortcut}
+                </span>
+              ) : null}
+            </a>
+          ) : (
+            <button
+              class:list={["dropdown-item", itemClass, item.active ? "active" : ""]}
+              type="button"
+              disabled={item.disabled}
+              data-variant={item.destructive ? "destructive" : undefined}
+            >
+              <span>{item.label}</span>
+              {item.shortcut ? (
+                <span class="ms-auto small text-body-secondary">
+                  {item.shortcut}
+                </span>
+              ) : null}
+            </button>
+          )}
+        </li>
+      ))
+    }
+    <slot />
+  </ul>
+</Element>

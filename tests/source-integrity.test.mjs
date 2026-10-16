@@ -13,8 +13,8 @@ import {
   validateJsonFileSource,
   validateMarkdownSource,
   validateSelectedCollections,
-} from "../src/content/integrity.js";
-import { pageSchema } from "../src/plugins/page/content.js";
+} from "../packages/astro/src/content/integrity.js";
+import { pageSchema } from "../packages/astro/src/plugins/page/content.js";
 
 const directory = await mkdtemp(join(tmpdir(), "moo-astro-native-md-"));
 const root = pathToFileURL(`${directory}/`);

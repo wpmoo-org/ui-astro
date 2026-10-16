@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineSite, resolvePageOptions } from "../src/config/index.js";
+import { defineSite, resolvePageOptions } from "../packages/astro/src/config/index.js";
 
 test("registered organization supplies an omitted brand without overriding an explicit brand", () => {
   let site;

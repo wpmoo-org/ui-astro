@@ -1,0 +1,25 @@
+[
+  {
+    "id": "foundation",
+    "name": "Public",
+    "slug": "public",
+    "locales": {
+      "de": {
+        "name": "Öffentlich",
+        "slug": "Öffentlich"
+      }
+    }
+  },
+  {
+    "id": "community",
+    "name": "Community",
+    "slug": "community",
+    "parent": "foundation",
+    "locales": {
+      "de": {
+        "name": "Gemeinschaft",
+        "slug": "Gemeinschaft"
+      }
+    }
+  }
+]

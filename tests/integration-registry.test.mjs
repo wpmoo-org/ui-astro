@@ -4,22 +4,25 @@ import test from "node:test";
 import {
   buildRegistry,
   validateResolvedRoutes,
-} from "../src/integration/registry.js";
-import { definePlugin } from "../src/plugins/index.js";
-import { page } from "../src/plugins/page/index.js";
-import moo from "../src/integration/index.js";
+  validateExpectedPagePaths,
+} from "../packages/astro/src/integration/registry.js";
+import { definePlugin } from "../packages/astro/src/plugins/index.js";
+import { page } from "../packages/astro/src/plugins/page/index.js";
+import { post } from "../packages/astro/src/plugins/post/index.js";
+import moo from "../packages/astro/src/integration/index.js";
+import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
 test("omitted plugin selection registers Page and Post, while an explicit list replaces it", () => {
   for (const [input, expected] of [
-    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]"]],
-    [{ plugins: [page()] }, ["/[...slug]"]],
-    [{ plugins: [] }, []],
+    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]", "/404"]],
+    [{ plugins: [page()] }, ["/[...slug]", "/404"]],
+    [{ plugins: [] }, ["/404"]],
   ]) {
     const routes = [];
     moo(input).hooks["astro:config:setup"]({
       command: "dev",
       config: {
-        root: new URL("./fixtures/consumer/", import.meta.url),
+        root: new URL("../apps/consumer/", import.meta.url),
         vite: {},
       },
       injectRoute(value) {
@@ -37,6 +40,103 @@ test("omitted plugin selection registers Page and Post, while an explicit list r
   }
 });
 
+function localizedSetup(plugins, taxonomy) {
+  const routes = [];
+  moo({
+    site: { defaults: { lang: "de" } },
+    plugins,
+    taxonomies: [taxonomy],
+  }).hooks["astro:config:setup"]({
+    command: "build",
+    config: {
+      root: new URL("../apps/consumer/", import.meta.url),
+      vite: {},
+      i18n: {
+        locales: ["en", "de"],
+        defaultLocale: "de",
+        routing: { prefixDefaultLocale: false },
+      },
+    },
+    injectRoute(value) {
+      routes.push(value.pattern);
+    },
+    updateConfig() {},
+    addMiddleware() {},
+  });
+  return routes.filter(
+    (pattern) => !pattern.startsWith("/__moo_content_integrity"),
+  );
+}
+
+test("moo checks plugin and taxonomy namespaces in the same active locale", () => {
+  const taxonomy = defineTaxonomy({
+    id: "category",
+    label: "Categories",
+    source: new URL(
+      "./fixtures/taxonomy/src/data/category.json",
+      import.meta.url,
+    ),
+    archive: { basePath: "/c" },
+    locales: { de: { basePath: "/posts" } },
+  });
+  const plugins = [post({ locales: { de: { basePath: "/beitraege" } } })];
+  assert.deepEqual(localizedSetup(plugins, taxonomy), [
+    "/en/posts",
+    "/en/posts/[...slug]",
+    "/en/c/[slug]",
+    "/beitraege",
+    "/beitraege/[...slug]",
+    "/posts/[slug]",
+    "/404",
+    "/en/404",
+  ]);
+  assert.equal(plugins[0].basePath, "/posts");
+  assert.equal(taxonomy.archive.basePath, "/c");
+});
+
+test("moo ignores authored namespaces overridden in every active locale", () => {
+  const taxonomy = defineTaxonomy({
+    id: "category",
+    label: "Categories",
+    source: new URL(
+      "./fixtures/taxonomy/src/data/category.json",
+      import.meta.url,
+    ),
+    archive: { basePath: "/posts" },
+  });
+  assert.deepEqual(
+    localizedSetup(
+      [
+        post({
+          locales: {
+            en: { basePath: "/articles" },
+            de: { basePath: "/beitraege" },
+          },
+        }),
+      ],
+      taxonomy,
+    ),
+    [
+      "/en/articles",
+      "/en/articles/[...slug]",
+      "/en/posts/[slug]",
+      "/beitraege",
+      "/beitraege/[...slug]",
+      "/posts/[slug]",
+      "/404",
+      "/en/404",
+    ],
+  );
+  assert.throws(
+    () =>
+      localizedSetup(
+        [post({ locales: { en: { basePath: "/articles" } } })],
+        taxonomy,
+      ),
+    /namespace \/posts.*taxonomy category.*post/,
+  );
+});
+
 function external(id, basePath, { collection = id, type = id } = {}) {
   return definePlugin({
     apiVersion: 1,
@@ -50,10 +150,7 @@ function external(id, basePath, { collection = id, type = id } = {}) {
         singleRoute: "single",
         source: {
           kind: "json-directory",
-          base: new URL(
-            "./fixtures/consumer/src/content/page/",
-            import.meta.url,
-          ),
+          base: new URL("../apps/consumer/src/content/page/", import.meta.url),
         },
       },
     ],
@@ -63,7 +160,7 @@ function external(id, basePath, { collection = id, type = id } = {}) {
         pattern: "/[...slug]",
         prerender: true,
         entrypoint: new URL(
-          "./fixtures/consumer/src/pages/index.astro",
+          "../apps/consumer/src/pages/index.astro",
           import.meta.url,
         ),
       },
@@ -166,7 +263,7 @@ test("the Page integration registers a private pre-middleware only for developme
     moo().hooks["astro:config:setup"]({
       command,
       config: {
-        root: new URL("./fixtures/consumer/", import.meta.url),
+        root: new URL("../apps/consumer/", import.meta.url),
         vite: {},
       },
       injectRoute() {},
@@ -187,7 +284,7 @@ test("the Page integration registers a private pre-middleware only for developme
 });
 
 test("build and sync use a separate cache from the running development server", () => {
-  const root = new URL("./fixtures/consumer/", import.meta.url);
+  const root = new URL("../apps/consumer/", import.meta.url);
   const devCache = new URL("node_modules/.vite/", root).pathname;
   for (const command of ["dev", "build", "sync", "preview"]) {
     const updates = [];
@@ -220,7 +317,7 @@ test("an explicit host Vite cache directory remains host-owned", () => {
   moo({ plugins: [] }).hooks["astro:config:setup"]({
     command: "build",
     config: {
-      root: new URL("./fixtures/consumer/", import.meta.url),
+      root: new URL("../apps/consumer/", import.meta.url),
       vite: { cacheDir: "/tmp/site-vite-cache" },
     },
     injectRoute() {},
@@ -246,7 +343,7 @@ test("explicit host save-stability and disabled watcher settings remain host-own
     moo().hooks["astro:config:setup"]({
       command: "dev",
       config: {
-        root: new URL("./fixtures/consumer/", import.meta.url),
+        root: new URL("../apps/consumer/", import.meta.url),
         vite: { server: { watch } },
       },
       injectRoute() {},
@@ -263,9 +360,10 @@ test("explicit host save-stability and disabled watcher settings remain host-own
 
 function finalConfig(integration, overrides = {}) {
   const root = new URL("./fixtures/page-base/", import.meta.url);
-  return {
+  const config = {
     root,
     srcDir: new URL("src/", root),
+    vite: {},
     base: "/docs",
     trailingSlash: "ignore",
     output: "static",
@@ -273,6 +371,14 @@ function finalConfig(integration, overrides = {}) {
     integrations: [integration],
     ...overrides,
   };
+  integration.hooks["astro:config:setup"]({
+    command: "sync",
+    config,
+    injectRoute() {},
+    updateConfig() {},
+    addMiddleware() {},
+  });
+  return config;
 }
 
 test("active content makes concrete prerender conflicts fatal", () => {
@@ -335,15 +441,111 @@ test("one host cannot register the Moo integration twice", () => {
   );
 });
 
-test("UI-only composition owns its output mode, base, and route policy", () => {
+test("UI-only composition keeps its output policy and uses a canonical recovery base", () => {
   const integration = moo({ plugins: [] });
   assert.doesNotThrow(() =>
     integration.hooks["astro:config:done"]({
       config: finalConfig(integration, {
         output: "server",
-        base: "/Docs",
+        base: "/docs",
         prerenderConflictBehavior: "warn",
       }),
+      injectTypes() {},
     }),
+  );
+  assert.throws(
+    () =>
+      integration.hooks["astro:config:done"]({
+        config: finalConfig(integration, { base: "/Docs" }),
+        injectTypes() {},
+      }),
+    /base.*canonical/,
+  );
+});
+
+test("root archive ownership rejects an undeclared dynamic companion but permits unclaimed native pages", () => {
+  const taxonomy = defineTaxonomy({
+    id: "tag",
+    label: "Tags",
+    source: new URL("./fixtures/tag.json", import.meta.url),
+    archive: { basePath: "/" },
+  });
+  const registry = buildRegistry([page()], { taxonomies: [taxonomy] });
+  const root = {
+    pattern: "/[...slug]",
+    origin: "external",
+    isPrerendered: true,
+    type: "page",
+  };
+  assert.doesNotThrow(() =>
+    validateResolvedRoutes(registry, [
+      root,
+      { ...root, pattern: "/native", origin: "project" },
+    ]),
+  );
+  assert.throws(
+    () =>
+      validateResolvedRoutes(registry, [
+        root,
+        {
+          ...root,
+          pattern: "/[slug]",
+          origin: "project",
+          entrypoint: "src/pages/[slug].astro",
+        },
+      ]),
+    /root.*conflict.*\[slug\]|\[slug\].*conflict.*root/,
+  );
+});
+
+test("emitted canonical inventory requires its declared owner and all outputs", () => {
+  const expected = [
+    {
+      id: "category/layouts",
+      locale: "en",
+      path: "/layouts",
+      pattern: "/[...slug]",
+    },
+  ];
+  const root = {
+    pattern: "/[...slug]",
+    type: "page",
+    origin: "external",
+    patternRegex: /^\/(.*?)\/?$/,
+    entrypoint: "root.astro",
+  };
+  assert.doesNotThrow(() =>
+    validateExpectedPagePaths([{ pathname: "layouts/" }], [root], expected),
+  );
+  assert.throws(
+    () => validateExpectedPagePaths([], [root], expected),
+    /category\/layouts.*no emitted route.*\/layouts/,
+  );
+  assert.throws(
+    () =>
+      validateExpectedPagePaths(
+        [{ pathname: "layouts/" }],
+        [
+          {
+            ...root,
+            pattern: "/layouts",
+            patternRegex: /^\/layouts\/?$/,
+            origin: "project",
+            entrypoint: "src/pages/layouts.astro",
+          },
+          root,
+        ],
+        expected,
+      ),
+    /category\/layouts.*en.*conflict.*layouts\.astro/,
+  );
+  assert.throws(
+    () =>
+      validateExpectedPagePaths(
+        [{ pathname: "layouts/" }, { pathname: "layouts" }],
+        [root],
+        expected,
+      ),
+    /multiple.*\/layouts/,
   );
 });

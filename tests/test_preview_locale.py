@@ -8,7 +8,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DIST = Path(os.environ.get("ASTRO_PREVIEW_DIST", ROOT / "dist"))
+DIST = Path(os.environ.get("ASTRO_PREVIEW_DIST", ROOT / "apps/demo/dist"))
 LOCALE = os.environ.get("ASTRO_PREVIEW_LOCALE", "en")
 EMPTY_TEXT = {
     "en": ("No items yet.", "No pages yet."),

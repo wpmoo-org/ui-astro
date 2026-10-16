@@ -5,7 +5,7 @@ import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
 import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
-import { getDemoMessages } from "../../../../../../demo/messages.js";
+import { getDemoMessages } from "../../../../../../apps/demo/messages.js";
 const { site } = getSiteContext();
 const lang = site.defaults.lang;
 const copy = getDemoMessages(lang);

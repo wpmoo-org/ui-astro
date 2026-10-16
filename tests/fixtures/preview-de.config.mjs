@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
-import { getDemoMessages } from "../../demo/messages.js";
+import { getDemoMessages } from "../../apps/demo/messages.js";
 
 const copy = getDemoMessages("de");
 

@@ -1,0 +1,38 @@
+---
+import ContentBlock from "./ContentBlock.astro";
+import PlacementSection from "./PlacementSection.astro";
+import TableOfContents from "../components/TableOfContents.astro";
+import EntryTaxonomies from "../blocks/entry-taxonomies/EntryTaxonomies.astro";
+import type { PlacementPlan, PlacementLocation, PreparedPlacement } from "./index.js";
+interface Props {
+  plan: PlacementPlan<unknown>;
+  at: PlacementLocation;
+  placements?: readonly PreparedPlacement[];
+  tocPresentation?: "list" | "compact";
+  tocClass?: string;
+  tocContentId?: string;
+  tocScrollRootId?: string;
+}
+const { plan, at, tocPresentation = "list", tocClass = "", tocContentId = "", tocScrollRootId = "" } = Astro.props;
+const placements = Astro.props.placements ?? plan.groups[at] ?? [];
+const section = at === "aside.content" && tocPresentation === "list";
+---
+
+{placements.map((placement) => {
+  const Component = placement.Component;
+  return (
+    <PlacementSection enabled={section} class={placement.kind === "toc" ? tocClass : ""}>
+      {placement.kind === "toc" ? (
+        <TableOfContents id={`${placement.instanceId}-${tocPresentation}`} items={placement.tocItems ?? []} presentation={tocPresentation} class={section ? "" : tocClass} contentId={tocContentId} scrollRootId={tocScrollRootId} overviewLabel={plan.labels.overview} label={String(placement.props?.label ?? plan.labels.onThisPage ?? "On this page")} />
+      ) : placement.kind === "entry-taxonomies" ? (
+        <EntryTaxonomies groups={plan.context.assignedTerms} label={String(placement.props?.label ?? plan.labels.taxonomies)} />
+      ) : Component && placement.kind === "content" ? (
+        <ContentBlock headings={placement.headings ?? []} instanceId={placement.instanceId}>
+          <Component {...placement.props} context={plan.context} instanceId={placement.instanceId} links={plan.links} />
+        </ContentBlock>
+      ) : Component ? (
+          <Component {...placement.props} context={plan.context} instanceId={placement.instanceId} links={plan.links} />
+      ) : null}
+    </PlacementSection>
+  );
+})}

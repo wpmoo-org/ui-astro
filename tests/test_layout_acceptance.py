@@ -53,6 +53,65 @@ class AcceptedLayouts(unittest.TestCase):
             return { y: box.y, width: box.width };
         })""")
 
+    def test_datatable_shared_empty_tracks_filters_and_initial_rows(self):
+        for width, theme, direction, frame in (
+            (1440, "light", "ltr", ".datatable-frame"),
+            (390, "dark", "rtl", ".datatable-card-frame"),
+        ):
+            with self.subTest(width=width, theme=theme, direction=direction):
+                self.page.set_viewport_size({"width": width, "height": 900})
+                self.context.add_init_script(
+                    f"localStorage.setItem('moo:theme', '{theme}');"
+                    f"localStorage.setItem('moo:direction', '{direction}');"
+                )
+                self.open_page("preview/components/core-1-2")
+                initial = self.page.locator("#initially-empty-items [data-datatable-empty]")
+                expect(initial).to_be_visible()
+                expect(initial.locator(".empty-state-title")).to_have_text("No rows to display")
+                expect(initial.locator(".empty-state-description")).to_be_hidden()
+                expect(initial.locator(".empty-state-actions")).to_be_hidden()
+
+                root = self.page.locator("#shared-empty-items")
+                search = root.locator("[data-datatable-search]")
+                search.fill("No item matches this search")
+                empty = root.locator("[data-datatable-empty]")
+                expect(empty).to_be_visible()
+                expect(empty.locator(".empty-state-title")).to_have_text("No matching results")
+                expect(empty.locator(".empty-state-description")).to_be_visible()
+                expect(root.locator(".datatable-frame")).to_be_hidden()
+                expect(root.locator(".datatable-card-frame")).to_be_hidden()
+                self.assertEqual(empty.locator(".empty-state").evaluate("e => getComputedStyle(e).borderTopStyle"), "dashed")
+                self.assertEqual(empty.evaluate("e => getComputedStyle(e).borderTopWidth"), "0px")
+                empty.get_by_role("button", name="Clear filters", exact=True).click()
+                expect(search).to_have_value("")
+                expect(empty).to_be_hidden()
+                expect(root.locator(frame)).to_be_visible()
+                expect(root.locator("[data-datatable-row]:visible, [data-datatable-card]:visible")).to_have_count(2)
+
+    def test_tabs_content_height_tracks_selection_without_losing_a_draft(self):
+        for width in (1440, 390):
+            with self.subTest(width=width):
+                self.page.set_viewport_size({"width": width, "height": 900})
+                self.open_page("preview/components/core-1-2")
+                stable = self.page.locator(".tabs").filter(has=self.page.locator("#stable-tabs-list"))
+                content = self.page.locator(".tabs").filter(has=self.page.locator("#content-tabs-list"))
+                stable_height = stable.bounding_box()["height"]
+                short_height = content.bounding_box()["height"]
+                stable.get_by_role("tab", name="Long", exact=True).click()
+                expect(self.page.locator("#stable-tabs-long-pane")).to_be_visible()
+                self.assertAlmostEqual(stable.bounding_box()["height"], stable_height, delta=1)
+                content.get_by_role("tab", name="Long", exact=True).click()
+                expect(self.page.locator("#content-tabs-long-pane")).to_be_visible()
+                self.assertGreater(content.bounding_box()["height"], short_height + 20)
+                draft = content.get_by_label("Draft", exact=True)
+                draft.fill("Draft survives switching")
+                content.get_by_role("tab", name="Long", exact=True).press("ArrowLeft")
+                expect(content.get_by_role("tab", name="Short", exact=True)).to_have_attribute("aria-selected", "true")
+                self.assertAlmostEqual(content.bounding_box()["height"], short_height, delta=1)
+                content.get_by_role("tab", name="Short", exact=True).press("ArrowRight")
+                expect(draft).to_be_visible()
+                expect(draft).to_have_value("Draft survives switching")
+
     def test_custom_archive_slots_preserve_the_supplied_header_loop_and_after_list(self):
         for width, theme, direction in [(1440, "light", "ltr"), (390, "dark", "rtl")]:
             with self.subTest(width=width, theme=theme, direction=direction):

@@ -92,6 +92,113 @@ class TaxonomyContracts(unittest.TestCase):
         self.assertIn("category-root", single)
         self.assertIn("tag-astro", single)
 
+    def test_explicit_nonroot_archives_use_actual_route_selectors_and_release_legacy_namespace(self):
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+        files["src/content/page/about.md"] = "---\ntitle: About\nstatus: publish\nslug: topics/about\n---\nAbout body.\n"
+        files["src/pages/paths.json.ts"] = '''import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
+export const GET = async () => Response.json(await getTaxonomyPaths({ routePattern: "/c/[slug]" }));
+'''
+        result, _ = self.taxonomy_build(files)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(set(result.generated_html), {"contact/index.html", "topics/about/index.html", "posts/index.html", "posts/announcement/index.html", "c/parent/index.html", "c/child/index.html", "c/astro/index.html", "c/empty/index.html"})
+        paths = json.loads(result.generated_data["paths.json"])
+        self.assertEqual({path["routePattern"] for path in paths}, {"/c/[slug]"})
+        self.assertEqual({path["props"]["href"] for path in paths}, {"/docs/c/parent/", "/docs/c/child/", "/docs/c/astro/", "/docs/c/empty/"})
+        self.assertTrue(all(set(path["params"]) == {"slug"} for path in paths))
+        self.assertIn('href="/docs/c/parent/"', result.generated_html["c/child/index.html"])
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants", basePath: "/c"', 'include: "descendants"')
+        legacy, _ = self.taxonomy_build(files)
+        self.assertNotEqual(legacy.returncode, 0)
+        self.assertIn("inside reserved namespace /topics", legacy.stdout + legacy.stderr)
+
+    def test_explicit_archive_locale_override_and_selector_mismatch(self):
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/kategorie"').replace('include: "descendants"', 'include: "descendants", basePath: "/c"')
+        result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration(base="/docs", slash="always"))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("c/child/index.html", result.generated_html)
+        self.assertIn("de/kategorie/aepfel/index.html", result.generated_html)
+        self.assertIn('href="https://example.test/docs/c/child/"', result.generated_html["de/kategorie/aepfel/index.html"])
+        files["src/pages/paths.json.ts"] = '''import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
+export const GET = async () => Response.json(await getTaxonomyPaths({ routePattern: "/de/kategorie/[slug]", locale: "en" }));
+'''
+        invalid, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration())
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn("routePattern /de/kategorie/[slug] locale de disagrees with locale en", invalid.stdout + invalid.stderr)
+
+    def test_root_archives_and_pages_have_one_producer(self):
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"').replace('archive: {}', 'archive: { basePath: "/" }')
+        terms = json.loads(files["src/data/category.json"])
+        terms[0]["slug"] = "layouts"
+        terms[1]["slug"] = "guides"
+        files["src/data/category.json"] = json.dumps(terms)
+        files["src/content/page/index.md"] = "---\ntitle: Home\nstatus: publish\n---\nHome body.\n"
+        files["src/content/page/guide/setup.md"] = "---\ntitle: Setup\nstatus: publish\n---\nSetup body.\n"
+        files["src/pages/root.json.ts"] = '''import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+export const GET = async () => { const paths: RootPath[] = await getRootPaths(); return Response.json(paths.map(path => ({ slug: path.params.slug ?? null, kind: path.props.kind }))); };
+'''
+        files["tsconfig.json"] = json.dumps({"extends": "astro/tsconfigs/strict", "include": [".astro/types.d.ts", "src/**/*"], "exclude": ["dist"]})
+        config = 'site: "https://example.test", base: "/docs", trailingSlash: "always", integrations: [moo({ plugins: [page({ taxonomies: bindings })], taxonomies })]'
+        for owner in ["plugin", "host"]:
+            with self.subTest(owner=owner):
+                selected = files.copy()
+                configuration = config
+                if owner == "host":
+                    configuration = config.replace('page({ taxonomies:', 'page({ routes: { single: "host" }, taxonomies:').replace('], taxonomies })', '], taxonomies, taxonomyRoutes: { archive: "host" } })')
+                    selected["src/pages/[...slug].astro"] = '''---
+import type { GetStaticPathsOptions } from "astro";
+import { render } from "astro:content";
+import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+import { getRouteLocale } from "@wpmoo/astro/i18n";
+import Layout from "@wpmoo/astro/Layout.astro";
+import Page from "@wpmoo/astro/plugins/page/views/Single.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) { return getRootPaths({ locale: getRouteLocale(routePattern) }); }
+type Props = RootPath["props"];
+const props = Astro.props;
+const Content = props.kind === "page" ? (await render(props.entry)).Content : null;
+---
+<Layout title={props.kind === "page" ? props.entry.data.title : props.term.name}>
+  {props.kind === "page" ? <Page entry={props.entry}>{Content && <Content />}</Page> : <Archive title={props.term.name} items={[...props.items]} />}
+</Layout>
+'''
+                result, _ = self.build(None, files=selected, config_imports=CONFIG_IMPORTS, configuration=configuration, check=True)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(set(result.generated_html), {"index.html", "contact/index.html", "guide/setup/index.html", "layouts/index.html", "guides/index.html", "astro/index.html", "empty/index.html"})
+                contract = json.loads(result.generated_data["root.json"])
+                self.assertEqual({(item["slug"], item["kind"]) for item in contract}, {(None, "page"), ("contact", "page"), ("guide/setup", "page"), ("layouts", "taxonomy"), ("guides", "taxonomy"), ("astro", "taxonomy"), ("empty", "taxonomy")})
+                self.assertIn("Setup body.", result.generated_html["guide/setup/index.html"])
+                self.assertIn("No items yet.", result.generated_html["empty/index.html"])
+                for html in result.generated_html.values():
+                    markup = native.Markup(); markup.feed(html)
+                    self.assertEqual(sum(tag == "main" for tag, _ in markup.elements), 1)
+                    self.assertEqual(sum(tag == "html" for tag, _ in markup.elements), 1)
+                    self.assertEqual(sum(attrs.get("data-moo-document-owner") == "true" for _, attrs in markup.elements), 1)
+
+    def test_root_taxonomy_only_empty_and_mixed_locale_producers(self):
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"').replace('archive: {}', 'archive: { basePath: "/" }')
+        config = 'integrations: [moo({ plugins: [], taxonomies })]'
+        result, _ = self.taxonomy_build(files, configuration=config)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(set(result.generated_html), {"parent/index.html", "child/index.html", "astro/index.html", "empty/index.html"})
+        files["src/data/category.json"] = files["src/data/tag.json"] = "[]"
+        empty, _ = self.taxonomy_build(files, configuration=config)
+        self.assertEqual(empty.returncode, 0, empty.stdout + empty.stderr)
+        self.assertEqual(empty.generated_html, {})
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/"').replace('include: "descendants"', 'include: "descendants", basePath: "/c"')
+        mixed, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration())
+        self.assertEqual(mixed.returncode, 0, mixed.stdout + mixed.stderr)
+        for path in ["contact/index.html", "c/child/index.html", "de/kontakt/index.html", "de/aepfel/index.html"]:
+            self.assertIn(path, mixed.generated_html)
+        self.assertFalse(any(path.startswith("de/c/") or "kategorie/" in path for path in mixed.generated_html))
+
     def test_data_only_terms_and_explicit_host_archive_paths_share_public_types(self):
         source = '''---
 import Layout from "@wpmoo/astro/Layout.astro";
@@ -266,6 +373,95 @@ const sample = definePlugin({ apiVersion: 1, id: "projects", label: "Projects", 
         result, _ = self.build(None, configuration='integrations: [moo({ plugins: [], taxonomies: [defineTaxonomy({ id: "tag", label: "Tags", source: new URL("./src/data/tag.json", import.meta.url), archive: {} })] })]', config_imports='import { defineTaxonomy } from "@wpmoo/astro/taxonomies";', files=files)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(result.generated_html, {})
+
+    def test_root_collision_names_both_sources(self):
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"').replace('slug: "kategorie"', 'basePath: "/"')
+        terms = json.loads(files["src/data/category.json"])
+        terms[0]["slug"] = "layouts"
+        files["src/data/category.json"] = json.dumps(terms)
+        files["src/content/page/en/layouts.md"] = "---\ntitle: Layouts\nstatus: publish\nlocale: en\n---\nLayouts body.\n"
+        result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration(base="/docs", slash="always"))
+        self.assertNotEqual(result.returncode, 0)
+        output = result.stdout + result.stderr
+        for evidence in ["URL collision", "locale en", "/docs/layouts/", "page/en/layouts.md", "category/root"]:
+            self.assertIn(evidence, output)
+
+    def test_archive_collisions_across_generic_taxonomies_and_locale_normalization(self):
+        for first, second in [("category", "tag"), ("category", "sector"), ("tag", "sector")]:
+            with self.subTest(first=first, second=second):
+                files = taxonomy_files()
+                files["src/definitions.mjs"] += '\nexport const sector = defineTaxonomy({ id: "sector", label: "Sectors", source: new URL("./data/sector.json", import.meta.url), archive: { basePath: "/c" } });\ntaxonomies.push(sector);\n'
+                files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+                for taxonomy in ["category", "tag", "sector"]:
+                    files[f"src/data/{taxonomy}.json"] = json.dumps([{"id": "collision", "name": taxonomy, "slug": "same" if taxonomy in [first, second] else "different"}])
+                result, _ = self.taxonomy_build(files, configuration='integrations: [moo({ plugins: [], taxonomies })]')
+                self.assertNotEqual(result.returncode, 0)
+                output = result.stdout + result.stderr
+                for evidence in ["locale en", "/c/same", f"{first}/collision", f"{second}/collision"]:
+                    self.assertIn(evidence, output)
+        from test_i18n_contract import localized_files, configuration
+        files = localized_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('slug: "kategorie"', 'basePath: "/"')
+        terms = json.loads(files["src/data/tag.json"])
+        terms[0]["locales"] = {"de": {"slug": "Aepfel"}}
+        files["src/data/tag.json"] = json.dumps(terms)
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('label: "Tags",', 'label: "Tags", locales: { de: { basePath: "/" } },')
+        result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS, configuration=configuration())
+        self.assertNotEqual(result.returncode, 0)
+        for evidence in ["locale de", "/de/aepfel", "category/child", "tag/astro"]:
+            self.assertIn(evidence, result.stdout + result.stderr)
+
+    def test_root_terms_reject_reserved_and_selected_plugin_namespaces(self):
+        for slug, diagnostic in [("404", "reserved"), ("posts", "namespace /posts")]:
+            with self.subTest(slug=slug):
+                files = taxonomy_files()
+                files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"')
+                terms = json.loads(files["src/data/category.json"])
+                terms[0]["slug"] = slug
+                files["src/data/category.json"] = json.dumps(terms)
+                result, _ = self.taxonomy_build(files)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("category/root", result.stdout + result.stderr)
+                self.assertIn(diagnostic, result.stdout + result.stderr)
+
+    def test_native_archive_companions_have_explicit_owner_diagnostics(self):
+        for filename, archive_base, diagnostic in [("parent.astro", "/", "category/root"), ("[slug].astro", "/", "root"), ("c/native.astro", "/c", "namespace /c")]:
+            with self.subTest(filename=filename):
+                files = taxonomy_files()
+                files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', f'include: "descendants", basePath: "{archive_base}"')
+                files[f"src/pages/{filename}"] = ('---\nexport function getStaticPaths() { return [{ params: { slug: "unrelated" } }]; }\n---\n' if "[" in filename else "") + "<h1>Native</h1>"
+                result, _ = self.taxonomy_build(files)
+                self.assertNotEqual(result.returncode, 0)
+                output = result.stdout + result.stderr
+                self.assertIn(diagnostic, output)
+                self.assertIn(filename, output)
+                self.assertRegex(output, r"[Cc]onflict")
+        files = taxonomy_files()
+        files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/"')
+        files["src/pages/native.astro"] = "<h1>Unclaimed native page</h1>"
+        valid, _ = self.taxonomy_build(files)
+        self.assertEqual(valid.returncode, 0, valid.stdout + valid.stderr)
+        self.assertIn("native/index.html", valid.generated_html)
+
+    def test_single_language_host_cannot_omit_taxonomy_or_page_output(self):
+        for missing in ["taxonomy", "page"]:
+            with self.subTest(missing=missing):
+                files = taxonomy_files()
+                if missing == "taxonomy":
+                    files["src/definitions.mjs"] = files["src/definitions.mjs"].replace('include: "descendants"', 'include: "descendants", basePath: "/c"').replace('archive: {}', 'archive: { basePath: "/c" }')
+                    files["src/pages/c/[slug].astro"] = "---\nexport function getStaticPaths() { return []; }\n---\n<h1>Missing archive</h1>"
+                    config = 'integrations: [moo({ plugins: [page({ taxonomies: bindings }), post({ taxonomies: bindings })], taxonomies, taxonomyRoutes: { archive: "host" } })]'
+                    evidence = ["category/child", "locale en", "no emitted route at /c/child"]
+                else:
+                    files["src/pages/[...slug].astro"] = "---\nexport function getStaticPaths() { return []; }\n---\n<h1>Missing Page</h1>"
+                    config = 'integrations: [moo({ plugins: [page({ routes: { single: "host" }, taxonomies: bindings }), post({ taxonomies: bindings })], taxonomies })]'
+                    evidence = ["page/contact.md", "locale en", "no emitted route at /contact"]
+                result, _ = self.taxonomy_build(files, configuration=config)
+                self.assertNotEqual(result.returncode, 0)
+                for value in evidence:
+                    self.assertIn(value, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

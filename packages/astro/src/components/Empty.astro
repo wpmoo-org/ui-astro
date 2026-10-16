@@ -1,0 +1,43 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  title = "",
+  description = "",
+  class: className = "",
+  ...rest
+} = Astro.props;
+if (!title.trim() && !description.trim()) {
+  throw new TypeError("Empty title or description is required");
+}
+---
+
+<div {...rest} class:list={["empty-state", className]}>
+  <div class="empty-state-header">
+    {
+      Astro.slots.has("icon") ? (
+        <div class="empty-state-icon">
+          <slot name="icon" />
+        </div>
+      ) : null
+    }
+    {title.trim() ? <h3 class="empty-state-title">{title}</h3> : null}
+    {
+      description.trim() ? (
+        <p class="empty-state-description">{description}</p>
+      ) : null
+    }
+  </div>
+  {
+    Astro.slots.has("action") ? (
+      <div class="empty-state-actions">
+        <slot name="action" />
+      </div>
+    ) : null
+  }
+</div>

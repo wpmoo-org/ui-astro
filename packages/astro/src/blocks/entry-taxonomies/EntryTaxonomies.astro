@@ -1,0 +1,19 @@
+---
+import Button from "../../components/Button.astro";
+import type { TaxonomyLinkGroup } from "../../site/index.d.ts";
+interface Props { groups: readonly TaxonomyLinkGroup[]; label?: string }
+const { groups, label = "Taxonomies" } = Astro.props;
+---
+
+{groups.length > 0 && (
+  <dl class="d-flex flex-column gap-2 mt-4 pt-4 border-top" data-entry-taxonomies aria-label={label}>
+    {groups.map((group) => (
+      <div class="d-flex flex-wrap align-items-baseline column-gap-3 row-gap-2">
+        <dt class="small fw-normal text-body-secondary">{group.label}</dt>
+        <dd class="d-flex flex-wrap gap-1 mb-0" data-taxonomy={group.id}>
+          {group.links.map((link) => <Button element="a" variant="outline" size="sm" href={link.href} label={link.label} rel="tag" />)}
+        </dd>
+      </div>
+    ))}
+  </dl>
+)}

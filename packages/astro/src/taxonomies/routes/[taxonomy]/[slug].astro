@@ -1,0 +1,13 @@
+---
+import type { GetStaticPathsOptions } from "astro";
+import { getTaxonomyPaths, type TaxonomyPath } from "../../queries.js";
+import Taxonomy from "../../../integration/views/Taxonomy.astro";
+
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getTaxonomyPaths({ routePattern });
+}
+type Props = TaxonomyPath["props"];
+---
+
+<Taxonomy {...Astro.props} />

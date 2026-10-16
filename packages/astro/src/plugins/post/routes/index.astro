@@ -1,0 +1,85 @@
+---
+import { preparePlacements } from "../../../placements/index.js";
+import SiteLayout from "../../../layouts/SiteLayout.astro";
+import { resolvePageOptions } from "../../../config/index.js";
+import { resolveSeoMetadata } from "../../../seo/index.js";
+import { getSiteContext } from "../../../context/index.js";
+import { getPublishedPosts } from "../queries.js";
+import { getLocaleHref, getRouteLocale } from "../../../i18n/index.js";
+import { localePath } from "../../../i18n/profile.js";
+import Archive from "../views/Archive.astro";
+
+export const prerender = true;
+const routeContext = getSiteContext();
+const { site, plugins, base, trailingSlash } = routeContext;
+const plugin = plugins.find((item) => item.id === "post");
+if (!plugin)
+  throw new TypeError("Post archive requires the active post plugin");
+const locale = routeContext.i18n
+  ? getRouteLocale(Astro.routePattern)
+  : undefined;
+const label = plugin.locales?.[locale ?? ""]?.label ?? plugin.label;
+const localBasePath =
+  plugin.locales?.[locale ?? ""]?.basePath ?? plugin.basePath;
+const href = getLocaleHref(localBasePath, locale ?? site.defaults.lang);
+const options = resolvePageOptions(site, "post", "archive", undefined, locale);
+const entries = await getPublishedPosts({ locale });
+const basePath = localePath(localBasePath, locale, routeContext.i18n);
+const languageLinks =
+  routeContext.i18n?.locales.map((value) => ({
+    locale: value,
+    href: getLocaleHref(
+      plugin.locales?.[value]?.basePath ?? plugin.basePath,
+      value,
+    ),
+  })) ?? [];
+const layoutProps = {
+  title: label,
+  pageContext: { view: "archive" as const, type: "post" },
+  metadata: Astro.site
+    ? resolveSeoMetadata(site, {
+        title: label,
+        status: "publish",
+        type: "post",
+        view: "archive",
+        lang: options.lang,
+        url: new URL(href, Astro.site).href,
+        alternates: routeContext.i18n?.locales.map((value) => ({
+          locale: value,
+          url: new URL(
+            getLocaleHref(
+              plugin.locales?.[value]?.basePath ?? plugin.basePath,
+              value,
+            ),
+            Astro.site,
+          ).href,
+        })),
+      })
+    : undefined,
+};
+const plan = await preparePlacements({ href, locale: locale ?? site.defaults.lang, title: label, view: "archive", type: "post" });
+---
+
+<SiteLayout compactToc
+  {...layoutProps}
+  plan={plan}
+  options={options}
+  href={href}
+  locale={locale}
+  languageLinks={languageLinks}
+>
+  <Archive compactToc
+    plan={plan}
+    aside={options.aside}
+    dir={options.dir}
+    parts={options.parts}
+    entries={entries}
+    title={label}
+    basePath={basePath}
+    base={base}
+    trailingSlash={trailingSlash}
+    lang={locale ?? site.defaults.lang}
+    locale={locale}
+    dateLang={options.lang}
+  />
+</SiteLayout>

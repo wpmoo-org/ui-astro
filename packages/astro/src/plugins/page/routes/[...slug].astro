@@ -1,0 +1,34 @@
+---
+import type { GetStaticPathsOptions } from "astro";
+import { taxonomyNamespaces } from "../../../taxonomies/urls.js";
+import { getRouteLocale } from "../../../i18n/index.js";
+import { getSiteContext } from "../../../context/index.js";
+import { getPagePaths } from "../queries.js";
+import Page from "../../../integration/views/Page.astro";
+
+export const prerender = true;
+export async function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  const { site, plugins, taxonomies, taxonomyBasePath, i18n } =
+    getSiteContext();
+  const locale = i18n ? getRouteLocale(routePattern) : undefined;
+  const reservedPrefixes = plugins
+    .filter((plugin) => plugin.id !== "page" && plugin.basePath !== "/")
+    .map(
+      (plugin) => plugin.locales?.[locale ?? ""]?.basePath ?? plugin.basePath,
+    );
+  reservedPrefixes.push(
+    ...taxonomyNamespaces(
+      { taxonomies, taxonomyBasePath },
+      locale ?? site.defaults.lang,
+    ),
+  );
+  if (i18n) reservedPrefixes.push(...i18n.locales.map((value) => `/${value}`));
+  return getPagePaths({
+    lang: locale ?? site.defaults.lang,
+    reservedPrefixes,
+    locale,
+  });
+}
+---
+
+<Page entry={Astro.props.entry} />

@@ -1,0 +1,31 @@
+---
+title: Enhanced Page
+description: MDX combines authored prose with a reusable host Astro section.
+status: publish
+locale: en
+navOrder: 4
+options:
+  headerWidth: null
+  parts:
+    content:
+      utilities: [py-3]
+---
+
+import Hero from "../../../components/Hero.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+
+This collection entry keeps the same Page schema, identity and Layout as Markdown.
+
+<Hero
+  id="mdx-example"
+  title="Reusable MDX Hero"
+  description="The host composes published Moo UI components and shares this section with a native Astro page."
+  parts={props.parts}
+/>
+
+<Button
+  element="a"
+  href="/landing"
+  variant="outline"
+  label="Open native Astro page"
+/>

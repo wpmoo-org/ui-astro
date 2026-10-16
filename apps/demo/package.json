@@ -1,0 +1,23 @@
+{
+  "name": "@wpmoo/astro-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@wpmoo/astro": "0.1.0",
+    "astro": "7.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/mdx": "8.0.2"
+  }
+}

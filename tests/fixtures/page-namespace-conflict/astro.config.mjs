@@ -1,7 +1,7 @@
 import { defineConfig } from "astro/config";
-import moo from "../../../src/integration/index.js";
-import { definePlugin } from "../../../src/plugins/index.js";
-import { page } from "../../../src/plugins/page/index.js";
+import moo from "../../../packages/astro/src/integration/index.js";
+import { definePlugin } from "../../../packages/astro/src/plugins/index.js";
+import { page } from "../../../packages/astro/src/plugins/page/index.js";
 
 const sample = definePlugin({
   apiVersion: 1,

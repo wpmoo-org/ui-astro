@@ -29,6 +29,15 @@ const required = [
   "local-node-image",
 ];
 
+test("the finite certification matrix includes default and host native errors", () => {
+  assert.equal(Object.keys(controller.PACKED_PROFILES).length, 12);
+  for (const name of ["not-found", "not-found-host"])
+    assert.equal(
+      controller.parsePackedArguments(["--fixture", name, ...required]).fixture,
+      name,
+    );
+});
+
 test("the controller rechecks immutable retained archives after execution", async () => {
   assert.equal(typeof controller.assertRetainedArtifacts, "function");
   const root = await mkdtemp(join(tmpdir(), "astro-retained-archive-"));
@@ -85,10 +94,10 @@ test("prepared consumers allow only the retained tarballs and their exact peer c
   );
   const read = async (path) =>
     JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
-  const packageManifest = await read("../package.json");
-  const manifest = await read("./fixtures/consumer/package.json");
-  const lock = await read("./fixtures/consumer/package-lock.json");
-  const core = await read("../contracts/rc10-package.json");
+  const packageManifest = await read("../packages/astro/package.json");
+  const manifest = await read("../apps/consumer/package.json");
+  const lock = await read("../apps/consumer/package-lock.json");
+  const core = await read("../packages/astro/contracts/ui-1.3.0-package.json");
   const artifacts = {
     "@wpmoo/astro": {
       filename: "wpmoo-astro-0.1.0.tgz",

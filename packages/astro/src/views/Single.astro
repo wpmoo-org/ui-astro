@@ -1,0 +1,70 @@
+---
+import ContentFrame from "../layouts/ContentFrame.astro";
+import { selectAsidePlacements } from "../placements/aside.js";
+import Placement from "../placements/Placement.astro";
+import type { PlacementPlan } from "../placements/index.js";
+import type { ContentAsideInput } from "../config/index.js";
+import PageHeader from "../includes/PageHeader.astro";
+import {
+  getEntryClasses,
+  type EntryClassContext,
+  type PartsInput,
+} from "../config/index.js";
+
+interface Props {
+  plan?: PlacementPlan<unknown>;
+  compactToc?: boolean;
+  aside?: ContentAsideInput | null;
+  asideLabel?: string;
+  dir?: "ltr" | "rtl";
+  title: string;
+  description?: string;
+  entryContext?: EntryClassContext;
+  parts?: PartsInput;
+  forwardedSlots?: {
+    aside?: boolean;
+    before?: boolean;
+    taxonomies?: boolean;
+    pageHeader: boolean;
+    metadata: boolean;
+    actions: boolean;
+    afterContent: boolean;
+  };
+}
+
+const { title, description, entryContext, parts, forwardedSlots, plan, aside, asideLabel, dir } = Astro.props;
+if (!Astro.slots.has("default"))
+  throw new TypeError("Single requires its content slot");
+const entryClasses = entryContext ? getEntryClasses(entryContext) : [];
+const hasPageHeader =
+  forwardedSlots?.pageHeader ?? Astro.slots.has("page-header");
+const hasMetadata = forwardedSlots?.metadata ?? Astro.slots.has("metadata");
+const hasActions = forwardedSlots?.actions ?? Astro.slots.has("actions");
+const hasAfterContent =
+  forwardedSlots?.afterContent ?? Astro.slots.has("after-content");
+const hasAside = forwardedSlots?.aside ?? Astro.slots.has("aside");
+const selectedAside = selectAsidePlacements(plan, aside, hasAside, Astro.props.compactToc ?? false);
+const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-content");
+const hasTaxonomies = forwardedSlots?.taxonomies ?? Astro.slots.has("taxonomies");
+---
+
+<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="article" class={entryClasses.concat("lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+  <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" placements={selectedAside.placements} tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={selectedAside.listClass} /> : null}</Fragment>
+    {
+      hasPageHeader ? (
+        <slot name="page-header" />
+      ) : (
+        <PageHeader title={title} description={description} parts={parts}>
+          {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
+          {hasActions ? <slot name="actions" slot="actions" /> : null}
+        </PageHeader>
+      )
+    }
+    {hasBefore ? <slot name="before-content" /> : plan ? <Placement plan={plan} at="entry.before-content" /> : null}
+    <div class="text-body-secondary">
+      <slot />
+    </div>
+    {hasTaxonomies ? <slot name="taxonomies" /> : plan ? <Placement plan={plan} at="entry.taxonomies" /> : null}
+    {hasAfterContent ? <slot name="after-content" /> : plan ? <Placement plan={plan} at="entry.after-content" /> : null}
+
+</ContentFrame>

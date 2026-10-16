@@ -1,12 +1,16 @@
 # Moo UI Astro guide
 
-Detailed package usage, configuration and verification. Start with the
-[README](../README.md) for installation and a first page.
+Installation, composition and development details for Moo UI Astro.
+For a short overview, see the [README](../README.md).
 
 ## Contents
 
 - [Installation and Layout](#install-and-compose-a-page)
+- [Default site and minimal starter](#default-site-and-minimal-starter)
+- [Native 404](#native-404)
 - [Public components and runtime](#public-files-and-behavior)
+- [Ready blocks](#ready-blocks)
+- [Content placements, drawer and aside](#content-placements-drawer-and-aside)
 - [Theme preferences](#theme-preferences)
 - [MDX and native Astro sections](#explicit-mdx-and-native-astro-sections)
 - [Post content and routes](#post-content-and-routes)
@@ -17,13 +21,326 @@ Detailed package usage, configuration and verification. Start with the
 - [SEO](#seo-from-ordinary-content)
 - [Languages](#theme-language-and-visible-copy)
 - [Development and verification](#develop-and-verify)
+- [Direct Moo Astro Starter](#direct-moo-astro-starter)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.0.0-rc.10` CSS, state script, and ESM components. Its package has 45 public component wrappers, one Layout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.3.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
-`@wpmoo/astro` is licensed under the [MIT license](../LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
+`@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
+
+## Default site and minimal starter
+
+The SDK renders ordinary Page, Post, taxonomy, archive and 404 routes. The
+independent `astro-moo-starter` owns configuration, content and assets;
+it requires no copied layouts, views or locale route trees. Omit `host`
+route ownership to use the native integration’s built-in entrypoints.
+
+`src/config.js` holds the active locales and main language. Pass the same
+values to Astro i18n and `site.defaults.lang`. Content stays in every
+language’s own directory. A plugin declared once is projected over every
+active locale, retaining its template entrypoint. Localized descriptor
+namespaces and authored slugs remain independent: German `/beitraege`
+is still configurable, including when German is the main language.
+
+Configure optional shared presentation with `defineSite`:
+
+```js
+const site = defineSite({
+  brand: "My studio",
+  defaults: { lang: mainLanguage, sidebar: {} },
+  presentation: {
+    brandDescription: "Built with Moo UI",
+    navigation: "grouped",
+    assignedTaxonomies: true,
+    themeToggle: true,
+    languageSwitcher: { labelVisibility: "responsive" },
+    locales: { de: { brandDescription: "Mit Moo UI erstellt" } },
+  },
+  links: { home: "/", nativeAction: "/native-action" },
+});
+```
+
+Omitted presentation keeps flat navigation, assigned term links enabled and
+both header controls disabled. Grouped navigation gives each taxonomy its
+own localized submenu and single entries show only assigned terms.
+ThemeToggle precedes LanguageSwitcher. Explicit `sidebar: null` still
+removes the sidebar for the relevant page. All rendering uses existing Moo
+parts and Bootstrap utilities, with no added theme stylesheet.
+
+Common labels are `site`, `pages`, `taxonomies`, `language`,
+`selectLanguage`, `lightMode` and `darkMode`. English/German defaults
+can be overridden through `presentation.labels` or locale-specific copy.
+Other active locales can supply their own text. Localized copy cannot change
+structural flags. Existing Header/Loop preferences still own their labels.
+
+Named `site.links` are canonical local paths or complete active-locale path
+maps. The SDK applies locale prefix, host base and slash policy once and
+passes plain `props.links` into MDX. Use public Button with its data
+`label` prop for inline action labels. Named paths are configured links;
+actual entry translations still use `translationKey` and their own slugs.
+
+Native pages may import `@wpmoo/astro/layouts/SiteLayout.astro` and supply
+`title`, resolved `options`, canonical `href`, optional `locale`,
+SEO `metadata`, prepared `languageLinks` and optional `breadcrumbs`. The default slot is content;
+`header-actions` follows enabled controls. Explicit `metadata={null}`
+opts out of SEO emission, as the built-in 404 does. Primitive Layout remains
+available for deliberate custom themes.
+
+## Ready blocks
+
+`components` provides generic primitives; `blocks` provides ready compositions.
+Each block keeps its component and helper in a named source directory, such as
+`src/blocks/language-switcher/` or `src/blocks/theme-toggle/`.
+Import only the block you use. Locale and translation URL logic remains in
+`@wpmoo/astro/i18n`; blocks do not automatically appear in primitive Layout. The default site
+opts into them through `site.presentation`.
+
+```astro
+---
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+---
+
+<LanguageSwitcher
+  links={languageLinks}
+  currentLocale={routeLocale}
+  label="Language"
+  menuLabel="Select language"
+  languageNames={{ en: "English", de: "Deutsch" }}
+/>
+```
+
+Pass canonical links from `getLanguageLinks()` for published content or your
+archive/taxonomy alternate projection. The supplied hrefs are preserved, so
+translated slugs, a configured main language, base paths and slash policy stay
+owned by the existing route producers. No missing translation is invented.
+Empty and single-language lists render no selector; invalid data still fails
+validation. Language labels use their native names unless overridden.
+
+The default trigger combines the Languages icon and the translated `label`.
+Below Bootstrap's 768px `md` breakpoint only the icon is visible, while the
+accessible name remains. Set `labelVisibility="visible"` to keep text or
+`"hidden"` for an icon at every width. The default Button variant is `outline`,
+size `sm` and menu alignment `end`; these props and utility `class` are
+customizable. The optional `menuLabel` adds a heading and divider.
+
+This server-rendered block uses the normal Moo Layout/Bootstrap runtime with
+no new hydration or CSS. Bootstrap handles click, Arrow keys and Escape.
+Language choices are links with `lang`, `hreflang` and current-state semantics;
+the URL determines the selected language. The repository-only
+`/preview/blocks/language-switcher` example shows all three label modes.
+
+### Theme toggle
+
+```astro
+---
+import ThemeToggle from "@wpmoo/astro/blocks/ThemeToggle.astro";
+---
+
+<ThemeToggle
+  theme="light"
+  lightLabel="Switch to light mode"
+  darkLabel="Switch to dark mode"
+/>
+```
+
+Use this optional block inside Moo Layout. Its default `ghost`/`icon` Button
+and Bootstrap `rounded-circle` utility show the current sun or moon icon.
+Pass the Layout's resolved `theme` for the initial server output and translate
+both action labels. `variant`, `size` and utility `class` remain customizable.
+The block synchronizes with the owner's restored theme when its script loads.
+
+Clicking changes the nearest Moo theme owner and updates its controls. It
+preserves the existing `moo:theme` preference for a complete document owner;
+embedded owners persist only with an explicit `data-moo-theme-key`.
+Denied storage still allows an in-page change. The block adds no stylesheet
+and never places theme state on `html` or `body`.
+
+## Content placements, drawer and aside
+
+Declare a reusable block once in the integration, then select where it appears.
+The default site renders those positions without copied templates or page routes.
+Blocks, navigation and the content aside are independent options.
+
+```js
+const site = defineSite({
+  brand: "My studio",
+  defaults: {
+    lang: "en",
+    pageWidth: "xl",
+    headerWidth: "xl",
+    parts: { content: { utilities: ["mx-auto", "py-4", "px-3"] } },
+    sidebar: { mode: "drawer", side: "left" },
+    aside: { side: "right", columns: 3, breakpoint: "xl", sticky: true },
+  },
+});
+
+moo({
+  site,
+  blocks: {
+    notice: { collection: "block", translationKey: "site-notice" },
+    promotion: {
+      component: new URL("./src/components/Promotion.astro", import.meta.url),
+    },
+  },
+  placements: [
+    {
+      id: "toc",
+      block: "toc",
+      at: "aside.content",
+      include: { views: ["single"] },
+    },
+    {
+      id: "notice",
+      block: "notice",
+      at: "entry.after-content",
+      include: { types: ["post"], locales: ["en", "de"] },
+      exclude: { translationKeys: ["announcement"] },
+    },
+  ],
+});
+```
+
+The app Sidebar remains the default when `sidebar` has no `mode`.
+`mode: "drawer"` uses the existing Sheet/Offcanvas navigation, opened by the
+header toggle. Drawer input accepts only `mode` and physical `side`; app-only
+rail, collapsible and default-open settings do not carry across mode changes.
+`sidebar: null` removes either navigation presentation. Header controls and
+the content aside remain available.
+
+### Native reusable content
+
+Add a native collection to the host's `src/content.config.ts`. Import the schema
+through the Node-safe subpath, which does not load server-only placements:
+
+```ts
+import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
+import { contentBlockSchema } from "@wpmoo/astro/placements/content";
+
+const block = defineCollection({
+  loader: glob({
+    pattern: "**/*.{md,mdx}",
+    base: "./src/content/block",
+    retainBody: true,
+  }),
+  schema: contentBlockSchema,
+});
+export const collections = { block /* plus the site's existing collections */ };
+```
+
+For example, `src/content/block/en/site-notice.md` contains:
+
+```md
+---
+translationKey: site-notice
+locale: en
+status: publish
+---
+
+## A reusable notice
+
+This content appears at the configured position.
+```
+
+Native Markdown and optional host MDX rendering own the body and assets.
+Block entries have no site routes, metadata or layout options. `status` defaults
+to `draft`; only published content in the current locale appears. A missing
+published translation is omitted rather than replaced with another language.
+Unknown collections, missing translation keys and duplicate key/locale pairs
+are configuration errors. Markdown alone needs no MDX integration.
+
+Each rendered occurrence gets an `instanceId`. Native block heading IDs and
+their local heading links are namespaced automatically. Custom Astro/MDX
+widgets use `props.instanceId` for their own DOM IDs. They also receive readonly
+`props.context` and canonical `props.links`; these names cannot be overridden
+by placement `props`. Component URLs are imported through Astro/Vite, never
+by the Node configuration loader.
+
+### Positions and display rules
+
+| Region        | Positions                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| Shell         | `header.before`, `header.after`, `content.before`, `content.after`, `footer.before`, `footer.after` |
+| Single entry  | `entry.before-content`, `entry.after-content`, `entry.taxonomies`                                   |
+| Archive       | `archive.before-list`, `archive.after-list`                                                         |
+| Content aside | `aside.content`                                                                                     |
+
+Positions without matching content emit nothing. `order` defaults to `10`;
+equal values retain declaration order. `include` and `exclude` support `views`,
+`types`, `locales`, native `entries`, stable `translationKeys`, and assigned
+`terms: { category: ["guides"] }`. Values within a dimension are alternatives;
+different dimensions must all match. Exclusions win. Unknown references fail
+validation. Entry conditions inspect assigned terms; taxonomy archive
+conditions inspect the current taxonomy/term. Canonical paths come from the
+existing native route producers, including translated slugs and base paths.
+
+The built-in `entry-taxonomies` block supplies assigned term links. A custom
+placement can use `mode: "replace"` only at `entry.taxonomies`. Replacement
+takes effect after content selection: a draft or missing translation retains
+the default term links. Two resolved replacements for one page are an error.
+`toc` accepts `label` and `depths`; `entry-taxonomies` accepts `label`.
+
+### Content aside and table of contents
+
+`aside` accepts physical `side: "left" | "right"`, `columns: 2..6`,
+`breakpoint: "md" | "lg" | "xl" | "xxl"` (default `"xl"`), optional `sticky`, `gap: 0..5` (default `5`),
+and `mobile`:
+
+- `collapse-before`: one accessible disclosure before content.
+- `stack-after` (default): the same aside body follows content below the breakpoint.
+- `hidden`: the aside is visible only from the selected breakpoint.
+
+An empty rendered aside reserves no column. `aside: null` disables the frame's
+aside for that page. RTL keeps the requested physical desktop side. TOC uses
+native headings from the current entry, in authored order; its default depths
+are h2/h3. Layout initializes the shared Core tracker; there is no extra heading
+scanner. Entries without matching headings emit no TOC.
+
+Each default aside placement is rendered in its own `section.aside-section`.
+An inner Bootstrap flex column spaces these sections with `gap-5`; set
+`defaults.aside.gap: 2` for `gap-2`, or override `aside.gap` for a content type,
+view or entry. Empty blocks emit no section. The desktop TOC's entire section
+is hidden on narrow screens, so it leaves no gap before the remaining blocks.
+An explicit custom `aside` slot retains ownership of its section markup.
+
+The default main scroll container includes Core's `scroll-smooth` utility.
+TOC clicks keep native fragments and browser history, with immediate scrolling
+when the visitor prefers reduced motion. To disable animation for a project,
+set `parts.content.scrollUtilities` to `['scroll-fade-y', 'no-scrollbar']`.
+
+For a custom theme, `layouts/ContentFrame.astro` supplies this frame around its
+default and `aside` slots; pure `blocks/TableOfContents.astro` accepts native
+`headings`, optional `depths` and a translated `label`.
+
+The accepted starter foundation has compiled regression checks for matching
+`container-xl` regions, separate drawer taxonomy groups, and the native TOC
+disclosure before the content. Run against a built, directly consuming starter:
+
+```sh
+python3 tests/test_placements_acceptance.py /absolute/starter/dist
+node scripts/verify_placements_starter.mjs /absolute/starter/dist
+```
+
+These checks preserve semantic markup and public utility contracts. Browser
+inspection remains necessary for geometry, focus and interactive state.
+
+### Custom themes and native pages
+
+Built-in routes prepare one explicit plan and pass it through SiteLayout and
+the view. A native route can call `preparePlacements({ href, locale, view:
+"native", title, headings })` from `@wpmoo/astro/placements` and pass the result
+as `plan` to SiteLayout. Low-level Layout remains collection-free; opt into a
+position with `placements/Placement.astro` and `{ plan, at }` when composing a
+custom shell. The preparation facade is server-only.
+
+Existing explicit view slots retain ownership of their region. `aside`,
+`taxonomies`, `before-content`, `after-content`, `before-list` and `after-list`
+can replace the corresponding central rendering for that view. The SDK does
+not clone the page body or the aside for mobile and desktop.
 
 ## Install and compose a page
+
+Use Node.js `22.12.0` or newer and the certified Astro `7.3.3`.
 
 After the adapter is published, install it in an Astro application:
 
@@ -41,7 +358,7 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.3
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `1.0.0-rc.10` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `1.3.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.2` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
 
@@ -83,16 +400,70 @@ Layout also supplies a Moo Button link to `#main-content`, hidden until keyboard
 
 RC9 forced the `contained` Sidebar into document flow below 992 px. That rejected long-navigation result remains historical evidence. The RC10 artifact removes the Core override; the adapter consumes its published CSS and Sidebar runtime directly, without a local CSS override or replacement controller. The current mobile behavior is verified separately from desktop containment.
 
-The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `demo/pages/index.astro` demonstrates this composition; it is not part of the package.
+The Page main rail exposes `data-page-container`. Bootstrap rows can opt into Moo's available-width grid with `data-layout="page-grid"`, a base `col-N` on each direct item, and registered `data-page-col-lg`, `data-page-show-from`, or `data-page-hide-from` attributes. The published CSS handles the expanded, collapsed, overlay, and absent Sidebar states. The local `apps/demo/pages/index.astro` demonstrates this composition; it is not part of the package.
 
 The running demo exposes `/preview/single` and `/preview/archive` through its
 shared Sidebar. Only explicitly Sidebarless examples opt out. Both routes
 compose public includes and generic views; the preview pages are excluded
 from the package archive.
 
+## Native 404
+
+Register `moo()` to receive the default native 404, including configured locale
+errors. It also works with `moo({ plugins: [] })` without content collections.
+Partial `notFound.messages` dictionaries replace individual English/German
+defaults; missing fields fall back to the main language, then English.
+
+For a theme override, select `notFound: { routeOwner: "host" }` and provide each
+required native `404.astro`. Use `getNotFoundOptions(Astro.currentLocale)` from
+`@wpmoo/astro/not-found`, the public `views/NotFound.astro` and Layout with
+`metadata={null}`. The view exposes `page-header` and `actions` slots and inherits
+shared Page single preferences. A static host must serve the generated error
+document with HTTP 404 and configure locale error selection separately.
+
 ## Public files and behavior
 
-Each wrapper has a direct public entrypoint such as `@wpmoo/astro/components/Button.astro`. Import only published subpaths from another application. The following entrypoints let a custom theme use the same shared presentation and behavior outside Layout:
+Each wrapper has a direct public entrypoint such as `@wpmoo/astro/components/Button.astro`. Import only published subpaths from another application.
+
+`Empty.astro` uses Core's dashed empty-state surface, typography and spacing.
+Supply a nonblank `title`, `description`, or both. Its optional `icon` and
+`action` slots accept host-owned Astro content; `class` accepts extra utilities.
+Plain title and description values are escaped.
+Decorative SVG icons in the `icon` slot use `data-icon="inline-start"` and
+`aria-hidden="true"`, matching the public Core icon sizing contract.
+
+```astro
+---
+import Empty from "@wpmoo/astro/components/Empty.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+---
+<Empty title="No items yet" description="Create your first item to get started.">
+  <Button slot="action" label="Create item" />
+</Empty>
+```
+
+`Tabs.astro` defaults to `height="stable"`, reserving space for its tallest
+panel. Set `height="content"` to follow the selected panel's height. Switching
+keeps the inactive panel's DOM and form values. Other height values are rejected.
+`Alert.astro` accepts a title, a description, or both; omitting a title produces
+no empty heading. An alert with only blank text is rejected.
+
+`DataTable.astro` composes `Empty.astro` for its empty-result surface. DataTable
+owns the live region, filtered/zero-row message, visibility and clear-filters
+action. Published Core 1.3.0 supports the shared `.empty-state-*` selectors
+and the earlier DataTable-specific selectors. An initially empty table hides
+its filter description and action container; filtered results offer Clear
+filters. The SDK and independent Starter use the exact published archive.
+Earlier Core package records retain their original bytes and dated evidence.
+Responsive Bootstrap display utilities belong to the outer layout wrapper;
+Core's `hidden` state belongs to the inner `.datatable-frame`.
+
+The local demo at `/preview/components/core-1-2` shows Empty in light/dark and
+Arabic/Hebrew RTL contexts, filtered and initially empty DataTables, both tab
+heights and an alert without a title.
+
+The following entrypoints let a custom theme use the same shared presentation
+and behavior outside Layout:
 
 ```astro
 ---
@@ -169,16 +540,16 @@ options:
 
 Layout applies `parts.content.utilities` exactly once, on the existing `data-page-container`. Single, Archive and Loop add no outer page padding. Built-in routes pass resolved parts to the Layout, includes and views. A host-authored route or collection-free composition explicitly passes the same `parts={options.parts}` to its Layout and child includes/views; there is no implicit view context. `resolveParts()` provides the same fallback for standalone components.
 
-| Part             | Options and fallback                                                                                                                                                                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content`        | `utilities: ['py-4']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar']` on the existing main owner                                                                                                                                                |
-| `header`         | Region `utilities: ['bg-body', 'border-bottom']`; `contentUtilities: ['d-flex', 'align-items-center', 'gap-2', 'py-2']`; `breadcrumbUtilities: ['mb-0']`                                                                                              |
-| `header.trigger` | Published Button `variant: 'ghost'`, `size: 'icon-sm'`, `icon: 'panel-left'`                                                                                                                                                                          |
-| `header` copy    | `toggleLabel`, `navigationLabel`, `breadcrumbLabel`, `skipLabel`; English fallback, explicit host translations                                                                                                                                        |
-| `pageHeader`     | `utilities: ['d-flex', 'flex-column', 'gap-2', 'mb-4']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: []`; `descriptionVariant: 'page-description'` or `'muted'`                                                                                |
-| `loop`           | `utilities: ['list-unstyled', 'd-flex', 'flex-column', 'gap-4']`; `itemUtilities: ['d-flex', 'flex-column', 'gap-2']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: ['text-body-secondary', 'mb-0']`; `emptyUtilities: ['text-body-secondary']` |
-| `loop` display   | `titleVariant: 'section-title'` or `'subsection-title'`; `dateStyle: 'iso'` (default), `'short'`, `'medium'`, `'long'`, `'full'`; `emptyText`, `pageEmptyText`, `postEmptyText`, `pageTitle`, `postTitle`                                             |
-| `footer`         | `utilities: []` on the existing region; `linkUtilities: ['link-body-emphasis']` on its fallback link                                                                                                                                                  |
+| Part             | Options and fallback                                                                                                                                                                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`        | `utilities: ['mx-0', 'py-4', 'py-md-5', 'px-3', 'px-md-5']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar', 'scroll-smooth']` on the existing main owner                                                                                                         |
+| `header`         | Region `utilities: ['bg-body', 'border-bottom']`; `contentUtilities: ['d-flex', 'flex-wrap', 'align-items-center', 'gap-2', 'py-3']`; `breadcrumbUtilities: ['mb-0', 'small']`                                                                       |
+| `header.trigger` | Published Button `variant: 'ghost'`, `size: 'icon-sm'`, `icon: 'panel-left'`                                                                                                                                                                         |
+| `header` copy    | `toggleLabel`, `navigationLabel`, `breadcrumbLabel`, `skipLabel`; English fallback, explicit host translations                                                                                                                                       |
+| `pageHeader`     | `utilities: ['d-flex', 'flex-column', 'gap-3', 'mb-4']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: []`; `descriptionVariant: 'page-description'` or `'muted'`                                                                               |
+| `loop`           | `utilities: ['list-unstyled', 'mb-0']`; `itemUtilities: ['d-flex', 'flex-column', 'gap-2', 'py-4', 'border-bottom']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: ['text-body-secondary', 'mb-0']`; `emptyUtilities: ['text-body-secondary']` |
+| `loop` display   | `titleVariant: 'section-title'` or `'subsection-title'`; `dateStyle: 'iso'` (default), `'short'`, `'medium'`, `'long'`, `'full'`; `emptyText`, `pageEmptyText`, `postEmptyText`, `pageTitle`, `postTitle`                                            |
+| `footer`         | `utilities: ['border-top', 'py-3', 'small', 'text-body-secondary']` on the existing region; `linkUtilities: ['text-body-secondary', 'text-decoration-none']` on its fallback link                                                                    |
 
 The public `UtilityToken` type enumerates registered spacing (0–5 and responsive breakpoints), display/flex/alignment, text/background/link color, weight, border and rounded helpers. Custom classes, CSS values, HTML and file paths are rejected. PageHeader has narrower typed bounds because published Moo Typography owns some styles: `page-title` fixes `fw-semibold`; both description variants fix `text-body-secondary`; `page-description` fixes `mb-0`. Incompatible title weight, description color and nonzero bottom-margin utilities fail with their `parts.pageHeader` field. Responsive `m`/`my` utilities that change that bottom margin also fail. Alignment, title margins and description top margins remain configurable. An explicit `descriptionVariant: 'muted'` permits other description margins; repeat that variant in a layer that supplies them. Switching back to `page-description` also validates inherited utilities. The current Typography contract has no public prop to replace the fixed weight/color mappings; this Core capability gap is retained instead of accepting an ineffective override.
 
@@ -186,7 +557,7 @@ Public Typography semantic roles remain unchanged. Full content-region replaceme
 
 `formatDate(date, { lang, style, formatter? })` returns display text. Named styles use `Intl.DateTimeFormat` with UTC; `iso` returns `YYYY-MM-DD`. Generic Archive/Loop and Post Single accept display `lang` and a trusted caller `dateFormatter` function. Specialized Page/Post Archive and Loop retain `lang` for canonical URL normalization and add `dateLang` for display (default: `lang`). Built-in Post Archive passes the site's canonical default language to link generation and the resolved Archive language to date display. A view/entry display preference does not change generated route identity. The function receives a Date copy and must return text; Astro escapes that text. The original ISO `datetime`, publication instant and status remain unchanged. Functions are caller code, never frontmatter. Explicit legacy `emptyText`, `titleVariant`, ARIA text or date formatter props take precedence over the corresponding part fallback.
 
-This unpublished candidate adds `parts` to normalized output and changes the default outer content spacing from zero to `py-4`. Existing authored fields retain their meaning. The maintainer accepted the configurable spacing foundation on 2026-10-01; positive browser contracts cover inherited Layout spacing, a Contact-only override and independent heading/item gaps. This acceptance does not certify a finished theme design or release compatibility.
+The unpublished SDK includes `parts` in normalized output. Existing authored fields retain their meaning. The maintainer accepted the configurable spacing foundation on 2026-10-01; positive browser contracts cover inherited Layout spacing, a Contact-only override and independent heading/item gaps. The 2026-10-05 catalog appearance trial adds the responsive insets and quieter header, list and footer defaults above using existing Moo UI and Bootstrap features. Single and Archive use Moo's registered available-width Page grid: full width on narrow rails, nine columns from the `md` content threshold and eight from `xl`. Layout retains all content insets. Single prose uses Bootstrap `lh-lg` and `text-body-secondary`; dates use muted small text; Loop links use the native Bootstrap underline helpers. The header uses the existing `headerWidth: 'fluid'` option. Sidebar and its include expose the published Core brand subtitle anatomy through `brandSubtitle`; `brandIcon` accepts `blocks` (default), `panel-left`, `layout-grid` or `file-text`. The direct starter supplies translated subtitles and selects dark mode for this comparison. The catalog's Geist font and 15px/1.75 prose require a separate CSS exception; neither is included in this candidate. The maintainer accepted the SDK-owned default site on 2026-10-06, including sidebar, responsive content spacing, term links and header controls; its default contracts now reflect that acceptance. Historical spacing acceptance does not certify this new appearance, a finished theme design or release compatibility.
 
 `@wpmoo/astro/plugins` exports `definePlugin`. Its versioned descriptor records a content type, declared local source, Single route ownership, and optional navigation as validated immutable data. Defining a plugin performs no file load, content query, route injection, or UI initialization. The root `moo()` integration activates the supplied descriptors. Omitting `plugins` selects `page()` plus `post()` and requires both native collections. An explicit list replaces the defaults: `[page()]` needs only Page, `[post()]` needs only Post, and `[]` adds no content routes or collection requirements. `page({ routes: { single: "host" } })` makes the host supply its own `src/pages/[...slug].astro` using the public query and view helpers.
 
@@ -301,9 +672,16 @@ import { resolveParts } from "@wpmoo/astro/config";
 const parts = resolveParts({ content: { utilities: ["py-3"] } });
 ---
 
-<Layout title="Landing" parts={parts} pageContext={{ view: "native", key: "landing" }}>
+<Layout
+  title="Landing"
+  parts={parts}
+  pageContext={{ view: "native", key: "landing" }}
+>
   <h1>Landing</h1>
-  <Hero title="Reusable host section" description="The same component used in MDX." />
+  <Hero
+    title="Reusable host section"
+    description="The same component used in MDX."
+  />
 </Layout>
 ```
 
@@ -382,10 +760,11 @@ prerendered route and return `getPagePaths()` from its `getStaticPaths()`.
 If `/about` also has an explicit native route, filter that entry out of the
 theme catch-all so that only `/about` produces its URL. Use the entry's stable
 source ID for the filter, not its display title. Missing/duplicate host route
-declarations fail validation. With native i18n enabled, a build also compares
-advertised published URLs with emitted routes. A single-language host must
-check its own concrete output for every intended Page; a matching catch-all
-alone does not prove that its `getStaticPaths()` emits those Pages.
+declarations fail validation. Every active content build compares advertised
+published URLs with emitted routes, including single-language hosts. A
+matching catch-all alone does not prove that its `getStaticPaths()` emits those
+Pages. This companion-route recipe applies when no root taxonomy shares the
+Page producer; a combined root group uses the dispatcher described below.
 Choosing host ownership retains
 active collection, source, schema, taxonomy, navigation and canonical metadata;
 it suppresses only package route injection.
@@ -401,13 +780,65 @@ namespaced by the plugin ID. A separately distributed plugin declares and
 tests its compatible `@wpmoo/astro` and Astro peers and commits its own lock.
 This foundation supplies no importer, plugin auto-discovery or template lookup.
 
+Define a site's Projects type in its own `definitions.js`, for example:
+
+```js
+import { definePlugin } from "@wpmoo/astro/plugins";
+
+export function projects() {
+  return definePlugin({
+    apiVersion: 1,
+    id: "projects",
+    label: "Projects",
+    basePath: "/project",
+    locales: { de: { label: "Projekte", basePath: "/projekt" } },
+    contentTypes: [
+      {
+        id: "project",
+        collection: "project",
+        singleRoute: "single",
+        source: {
+          kind: "markdown",
+          formats: ["md"],
+          base: new URL("./content/project/", import.meta.url),
+        },
+        taxonomies: ["category", "tag"],
+      },
+    ],
+    routes: [
+      { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" },
+    ],
+  });
+}
+```
+
+Select `projects()` in `moo({ plugins: [...] })`, select its bound taxonomies,
+and declare the native `project` collection using `entrySchema` extended with
+the matching references and `glob({ generateId: sourceEntryId, ... })`. For an
+English-default host, implement `pages/project/[...slug].astro` and
+`pages/de/projekt/[...slug].astro`. A German-default host instead uses
+`pages/projekt/[...slug].astro` and `pages/en/project/[...slug].astro`. Derive
+each published Single path with `getEntryHref("project", entry)` and select its
+route locale with `getRouteLocale(routePattern)`; render with the public generic
+Single and one host Layout. The complete compiled recipe is in
+`tests/fixtures/project-routes/`.
+
+`slug: test-project` produces `/project/test-project`; its German translation
+can use `slug: test-projekt` for `/de/projekt/test-projekt` in the
+English-default configuration. Stable source IDs and `translationKey` connect
+the translations. Adding several category/tag references leaves both Single
+addresses unchanged. The CPT definition owns its prefix; taxonomy archive
+prefixes describe separate lists. Changing either prefix requires site-owned
+redirects for previously published URLs.
+
 ### Optional shared taxonomies
 
 Select taxonomies explicitly in `moo({ plugins, taxonomies })`; the default is
 `[]`. `defineTaxonomy` from `@wpmoo/astro/taxonomies` creates a pure, owned
 descriptor. A definition has a stable lowercase kebab `id`, plain `label`,
 local `source: URL`, optional `sourceKind: "json" | "json-directory"`,
-`hierarchical`, and `archive: false | { include: "direct" | "descendants" }`.
+`hierarchical`, and
+`archive: false | { include?: "direct" | "descendants", basePath?: string }`.
 Archives are disabled by default; descendants requires hierarchy.
 
 ```js
@@ -429,7 +860,7 @@ and the public `termSchema` from `@wpmoo/astro/taxonomies/content`. Its source
 is a JSON array of `{ id, name, slug, description?, parent? }`. Directory mode
 uses native `glob({ base, pattern: "*.json", generateId: jsonEntryId })` and
 one record per exact `<id>.json` file. IDs remain stable when names or slugs
-change. See `demo/definitions.js` and `demo/content.config.ts` for both recipes.
+change. See `apps/demo/definitions.js` and `apps/demo/content.config.ts` for both recipes.
 
 Bind the definition with `page({ taxonomies: ["category"] })`, `post(...)`,
 or a custom plugin's content type. Extend the host's static schema with only
@@ -461,26 +892,118 @@ then blocks requests until native content is current. Invalid source remains
 fatal, and a cold build is the authoritative release check.
 
 Server-only `@wpmoo/astro/taxonomies/queries` exports `getTaxonomyTerms(id)`,
-`getTermEntries(id, termId, { include }?)`, and `getTaxonomyPaths({ taxonomies }?)`.
+`getTermEntries(id, termId, { include, locale }?)`, and
+`getTaxonomyPaths({ taxonomies, routePattern, locale }?)`.
 Items contain published Page/Post/custom-type summaries, canonical Single
 hrefs, owned direct membership context and optional copied publication dates.
 Ordering is type ID then exact entry ID; descendant matches deduplicate each
 entry. Source locations and full entries are not exposed.
 
-Enabled archives share one `/topics/[taxonomy]/[slug]` route, with an optional
-canonical `taxonomyBasePath`. By default the integration owns this route.
+Without an explicit prefix, enabled archives retain the shared
+`/topics/[taxonomy]/[slug]` route and optional root `taxonomyBasePath` setting.
+Each taxonomy can instead choose its complete prefix through
+`archive.basePath`. The rule is identical for category, tag and a later custom
+taxonomy:
+
+| `archive.basePath`  | Term slug `layouts`                     | Native producer             |
+| ------------------- | --------------------------------------- | --------------------------- |
+| omitted             | `/topics/category/layouts` for category | `/topics/[taxonomy]/[slug]` |
+| `"/category"`       | `/category/layouts`                     | `/category/[slug]`          |
+| `"/c"`              | `/c/layouts`                            | `/c/[slug]`                 |
+| `"/"`               | `/layouts`                              | `/[...slug]`                |
+| `"/library/topics"` | `/library/topics/layouts`               | `/library/topics/[slug]`    |
+
+Explicit prefixes are canonical literal paths, without query, fragment or
+dynamic segments. One terminal slash is normalized away except for `/`.
+They are independent of the host's `base`, native locale prefixes and
+trailing-slash policy. A localized
+`locales.<locale>.basePath` replaces the whole prefix:
+
+```js
+defineTaxonomy({
+  id: "category",
+  label: "Categories",
+  source: new URL("./data/category.json", import.meta.url),
+  hierarchical: true,
+  archive: { include: "descendants", basePath: "/category" },
+  locales: { de: { label: "Kategorien", basePath: "/kategorie" } },
+});
+```
+
+A stable term ID `guides` can have `slug: guides` and
+`locales: { de: { name: "Anleitungen", slug: "anleitungen" } }`. With German
+as the main language, this example produces `/kategorie/anleitungen` and
+`/en/category/guides`. The same fields support a flat German archive and an
+English `/c` archive. Existing `locales.<locale>.slug` remains the segment
+under the legacy `taxonomyBasePath`; it cannot be combined with an effective
+explicit `basePath`. Missing localized term fields inherit their base fields;
+term IDs, parents and content references remain stable.
+
+By default the integration owns one producer per distinct archive pattern.
 They compose the existing Layout/includes/Archive/Loop and resolve
 `site.types[taxonomyId].views.archive`. There is no taxonomy
 index, pagination or automatic navigation. Breadcrumb ancestors link to actual
 term routes; the current item includes the taxonomy label because Moo
 Breadcrumb has no plain intermediate-item contract. To compose archives in a
-theme Layout, select root `taxonomyRoutes: { archive: "host" }` and supply the
-matching native prerendered route using `getTaxonomyPaths()`. Retain each
+theme Layout, select root `taxonomyRoutes: { archive: "host" }` and supply each
+matching native prerendered route using
+`getTaxonomyPaths({ routePattern, locale: getRouteLocale(routePattern) })`.
+The selector names the actual native route, including its locale prefix; the
+returned `params.taxonomy` exists only for the legacy shared pattern.
+Retain each
 taxonomy's enabled `archive` metadata and membership policy. Ownership applies
 to the shared pattern and its native locale projections; missing, duplicate,
 nonproject or nonprerendered host routes fail validation. Omitting this option
 preserves plugin ownership. Term URLs follow the canonical site language,
 independent of display-language preferences.
+
+#### Flat archives and the shared Page route
+
+Several taxonomies may use `/` together. Built-in Pages and those flat terms
+then share exactly one `/[...slug]` producer per locale. All participants must
+select the same ownership: injected by the package, or host-owned. A host
+selects both `page({ routes: { single: "host" } })` and
+`taxonomyRoutes: { archive: "host" }`, then uses the public context helper:
+
+```astro
+---
+import type { GetStaticPathsOptions } from "astro";
+import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+import { getRouteLocale } from "@wpmoo/astro/i18n";
+import Page from "../views/Page.astro";
+import Taxonomy from "../views/Taxonomy.astro";
+
+export const prerender = true;
+export function getStaticPaths({ routePattern }: GetStaticPathsOptions) {
+  return getRootPaths({ locale: getRouteLocale(routePattern) });
+}
+type Props = RootPath["props"];
+const props = Astro.props;
+---
+
+{props.kind === "page" ? <Page entry={props.entry} /> : <Taxonomy {...props} />}
+```
+
+These `Page` and `Taxonomy` imports are the site's compositions, each using
+one Layout and the public Page/Archive views; private package compositions
+are not importable. For a locale that has no root group, retain its ordinary
+Page route and selected nonroot archive producers. A taxonomy-only root group
+also works without enabling Page.
+
+Canonical validation rejects Page/term collisions, collisions between
+taxonomies after locale normalization, occupied plugin prefixes, reserved
+paths and competing native owners. Root terms reserve their concrete URLs;
+nonroot archives reserve their active namespace. The unused `/topics`
+namespace is released when every archive chooses an explicit prefix. Builds
+check every advertised public output, including host-owned routes in a
+single-language site. One missing archive or Page output fails certification.
+
+When adopting root archives, replace the old Page producer with this shared
+dispatcher and remove competing native dynamic routes. Before changing
+prefixes or the main language, retain old and new canonical URL inventories,
+check collisions, and configure redirects in the site's deployment. The
+package does not silently rewrite memberships, source IDs or published URLs,
+and it creates no automatic redirects.
 
 ### Native JSON storage and integrity
 
@@ -704,7 +1227,7 @@ The host can obtain content alternatives from `getLanguageLinks()` and term
 alternatives from `getTaxonomyPaths()`. Project those records in its build
 before the optional Sitemap integration runs; verify every advertised URL
 against actual output. The package does not install or configure Sitemap.
-The ten independent consumers cover the implemented foundation. SEO and native
+The independent consumer matrix covers the implemented foundation. SEO and native
 locale checks additionally exercise their own compiled fixtures; broader
 version support and final release acceptance remain separate gates.
 
@@ -823,7 +1346,7 @@ Plugin-owned routes apply the selected locale automatically. This follows
 options, including `parts`, `dir` and theme preferences. Route language must
 agree with the entry locale; a contradictory `options.lang` fails. Display
 labels and segments use `plugin.locales.<locale>.{label,basePath}` and
-`taxonomy.locales.<locale>.{label,slug}`. Term records use partial
+`taxonomy.locales.<locale>.{label,slug,basePath}`. Term records use partial
 `locales.<locale>.{name,description,slug}` with base-field fallback; stable term
 IDs and content membership do not change.
 
@@ -848,39 +1371,65 @@ a second router or translation database. The existing ten-profile matrix
 includes theme and MDX hosts; CMS interoperability, broader host versions and
 the final release decision remain separate gates.
 
-Published Moo UI RC10 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
+Published Moo UI 1.0.0 still writes English labels from its DataTable runtime (for example the live result summary and generated page controls) and DatePicker calendar runtime (navigation ARIA labels and preset names), even when a page language or date locale is supplied. Astro does not replace those scripts. A published Moo label configuration contract is needed before these interactive components can be certified for multilingual themes.
 
 ## Develop and verify
 
-This repository maintains one npm package. `src/` contains its product source;
-the closed `package.json` file list also selects the README, licenses and
-contract records. `demo/` is a separate example host that imports the public
-`@wpmoo/astro` entrypoints. Demo routes, content, configuration and helpers are
-excluded from the npm archive.
+The private repository root shares package orchestration, EditorConfig,
+TypeScript settings, scripts and tests. `packages/astro` owns the SDK manifest
+and source. Its explicit file selection excludes apps and repository tooling.
+`apps/demo` imports only public SDK entrypoints. `apps/consumer` retains an
+independent template lock and installs a real archive outside the checkout.
 
 ```text
 ui-astro/
-├── src/                  # Published source and required private transitives
-├── demo/
-│   ├── content.config.ts # Native example collections
-│   ├── content/          # Authored Page and Post Markdown
-│   ├── layouts/          # Host composition using public includes and Layout
-│   ├── pages/            # Example routes and preview endpoints
-│   └── *.js              # Host navigation, copy and settings
-├── contracts/            # Closed exports/files and immutable release provenance
-├── scripts/              # Nonpacked verification tools
-└── tests/                # Nonpacked unit, native and consumer fixtures
+├── packages/
+│   └── astro/
+│   │   ├── src/          # Public source and required private transitives
+│   │   ├── contracts/    # Closed surface and release provenance
+│   │   └── package.json  # SDK dependencies, peers, exports and file selection
+├── apps/
+│   ├── demo/             # Development workspace, authored content and config
+│   └── consumer/         # Independent tarball template, outside workspaces
+├── scripts/              # Shared nonpacked verification tools
+├── tests/                # Nonpacked unit/native tests and other profiles
+├── .editorconfig         # Portable shared formatting policy
+├── tsconfig.json         # Shared strict module and source checking
+└── package-lock.json     # Single development workspace lock
 ```
 
-The root Astro config uses `srcDir: "./demo"`. Existing npm/Make commands run
-this host; package export paths remain under `src/`. Consumer fixtures keep
-their own source directories and install the packed package independently.
+Use Node.js `>=22.12.0`. From the Astro repository root:
+
+```bash
+npm ci
+npm run dev
+```
+
+The demo opens on `http://localhost:4322`. Root commands forward additional
+arguments to the demo. Shared EditorConfig and TypeScript settings live here.
+The root and demo are private npm workspaces. `apps/consumer` remains an
+independent proof template with its own lock. The separate
+[Moo Astro Starter](https://github.com/wpmoo-org/astro-moo-starter) repository
+is a copyable site project, outside SDK workspace membership.
+
+To create a local SDK archive from the same repository root:
+
+```bash
+npm run pack:astro
+```
+
+The demo's Astro config uses `srcDir: "./"` from `apps/demo`. Existing root
+npm/Make commands forward to that host; SDK export targets remain relative to
+its own `src/`. Root development tools and the demo's opt-in MDX integration
+are outside SDK runtime dependencies. Other sealed profiles keep their locks.
 
 The npm archive contains the public adapter source, its private transitive
 helpers and injected routes, declarations, the CSS/runtime facades, the
-closed export/file ledger, immutable release provenance, this README,
-`COMPATIBILITY.md`, `LICENSE`
-and `THIRD_PARTY_NOTICES.md`. Demo pages, example Markdown, host content
+closed export/file ledger, immutable release provenance, the package README,
+`COMPATIBILITY.md` and the package's MIT `LICENSE`. `THIRD_PARTY_NOTICES.md`
+stays in the repository; package READMEs link to dependency licenses, and
+embedded icon notices remain beside their geometry in the source. Demo pages,
+example Markdown, host content
 configuration, tests, development scripts, caches and built demo output are
 not shipped. Packed private helpers remain inaccessible as package subpaths.
 
@@ -913,19 +1462,19 @@ the last valid record; valid edits recover after the native collection syncs.
 This adds no replacement loader, private Astro import or parser dependency.
 
 From the workspace root, `make ui-astro` serves the local demonstration on port 4322. Development asset sync has separate provenance; it does not change the
-tracked release pin and never substitutes for the published RC10 release.
+tracked release pin and never substitutes for the published 1.0.0 release.
 
-For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_PACKAGE_TARBALL=/absolute/path/to/ui.tgz`. The native npm install keeps lockfile resolution enabled and uses `--no-save` so unrelated locked dependencies and tracked release inputs stay unchanged. A local correction candidate may intentionally differ from RC10's recorded CSS bytes; the release artifact guard must reject it. Restore the published package with `npm ci` for release checks.
+For an Astro-only development asset update, use `make ui-astro-sync MODE=dev UI_PACKAGE_TARBALL=/absolute/path/to/ui.tgz`. The native npm install keeps lockfile resolution enabled and uses `--no-save` so unrelated locked dependencies and tracked release inputs stay unchanged. A local correction candidate may intentionally differ from 1.0.0's recorded CSS bytes; the release artifact guard must reject it. Restore the published package with `npm ci` for release checks.
 
 The `moo()` integration separates the default build and sync Vite caches from the development cache, so these commands can run while the existing development server stays open. An explicit host `vite.cacheDir` remains unchanged; a host choosing its own cache must keep concurrent commands isolated. After a runtime upgrade, reload the browser to request the current modules. The live regression `python3 tests/test_dev_runtime_build.py` uses the existing 4322 server and checks that a build preserves public runtime responses and selected Page/Post routes.
 
-From this package directory:
+From the repository root:
 
 ```bash
 npm test
 npm run check
 npm run build
-npm pack --dry-run
+npm pack --workspace @wpmoo/astro --dry-run
 node scripts/sync_package_baseline.mjs --check-release
 node scripts/verify_astro_boundary.mjs --mode release
 python3 tests/test_page_collection.py -v
@@ -933,11 +1482,11 @@ python3 tests/test_visual_acceptance.py -v
 python3 tests/test_shared_parts_acceptance.py -v
 ```
 
-The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
+The visual test needs Python Playwright with Chromium and the existing server on port 4322; `ASTRO_BASE_URL` can point it at the same accepted surface in a packed consumer. Development layout provenance is checked separately with `node scripts/verify_astro_boundary.mjs --mode dev` against the reviewed `projects/ui/html` commit. `packages/astro/contracts/layout-surface.snapshot.json` is an integration snapshot, not a packed release file.
 
 For an independent install, prime an isolated npm cache from the reviewed
 consumer lockfiles and the current package archives. Select an existing local
-Node image, then run the controller from this package directory:
+Node image, then run the controller from the repository root:
 
 ```bash
 node scripts/verify_packed_consumer.mjs \
@@ -948,7 +1497,7 @@ node scripts/verify_packed_consumer.mjs \
 ```
 
 The controller packs one main archive and a separate external plugin archive.
-It prepares ten authored consumers, then creates an inspected container with
+It prepares authored consumers for the selected profiles, then creates an inspected container with
 networking disabled, a read-only image filesystem, no published ports and only
 the prepared proof root plus a read-only cache mount. No source checkout,
 sibling HTML repository or installed dependency tree is mounted. It never
@@ -957,10 +1506,10 @@ pulls a runtime image implicitly.
 Each consumer runs strict `npm ci --offline --strict-peer-deps`, a real Astro
 type check and a build. The matrix covers default, theme, UI-only, Page-only,
 Post-only, optional MDX, external plugin, taxonomy, external taxonomy and
-CMS-free content editing. All resolve the 79 public exports and reject the
-recorded private subpaths; only the MDX consumer installs that integration.
-The current main archive has 121 files, including `COMPATIBILITY.md`. The
-separate external fixture has six exports and fourteen files.
+CMS-free content editing, built-in 404 and host-owned 404. Consumers check their
+public imports and reject recorded private subpaths; only the MDX profile
+installs that integration. The main archive includes `COMPATIBILITY.md` and its
+closed surface ledger; the external fixture carries its own export map.
 
 Schema-v2 proof retains the actual archives, locks, installed files, authored
 sources, logs, loaded source paths, compiled namespaces/content and container
@@ -970,15 +1519,130 @@ runs are local checks, not release certification. Run
 `python3 tests/test_packed_matrix.py /absolute/proof -v` for the retained matrix
 and `python3 tests/test_packed_runtime.py /absolute/proof/consumer/dist -v` for
 the primary built page in Chromium without a server. See
-[COMPATIBILITY.md](../COMPATIBILITY.md) for verified runtime scope and remaining
+[COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) for verified runtime scope and remaining
 release gates.
 
-The exact public exports and packed files are recorded in `contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `contracts/rc10-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.3.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
 
-## Upgrade a theme or plugin
+## Direct Moo Astro Starter
+
+[astro-moo-starter](https://github.com/wpmoo-org/astro-moo-starter) is an ordinary
+Astro project that consumes `@wpmoo/astro` directly. The foundation supplies the
+Moo appearance, components, runtime, default site shell and content routes.
+The project owns configuration, authored content, taxonomy data and assets.
+It needs no copied Layout, views, navigation builder or per-language route tree.
+
+Once the selected SDK version is published, use normal `npm install`,
+`npm run check`, `npm run build` and `npm run dev` in the starter. The current
+unpublished phase uses an external prepared copy with the exact SDK archive:
+
+```bash
+node scripts/prepare_astro_starter.mjs \
+  --starter /absolute/astro-moo-starter \
+  --sdk /absolute/wpmoo-astro-0.1.0.tgz \
+  --lock /absolute/ui-astro/tests/fixtures/astro-starter/package-lock.json \
+  --output /absolute/empty-preview
+```
+
+Preparation keeps the portable manifest unchanged and binds the archive only
+in `<output>/site`. The copied archive uses the standard name
+`wpmoo-astro-0.1.0.tgz`, preserving its bytes even when the selected input path
+or basename contains spaces. Its optional external lock seed preserves verified transitive
+versions when an offline cache contains tarballs without package metadata.
+From the prepared site, install using `npm ci --offline --strict-peer-deps
+--ignore-scripts --cache /absolute/primed-cache`, then run its check/build/dev
+commands. Edit the starter's original source and reprepare a fresh copy to refresh
+this unpublished preview; normal development after publication runs in the site.
+
+`src/config.js` sets the active languages and main language, which has no URL
+prefix. The SDK projects each plugin-owned native route into those languages.
+Post and taxonomy descriptors set localized archive paths: `/blog` can become
+`/de/beitraege`, and category paths can use a long, short or root namespace.
+Changing those values needs no route-directory renaming. Root archives use the
+shared root catchall, with collisions rejected by the SDK. Test-only profile
+variations stay in external proof copies, outside the delivered starter.
+
+Page/Post adapters prepare translated links and metadata on the server. MDX
+receives ready-to-render `props.links`. The supplied MDX examples import the
+public Button directly and use prepared named links and data labels. Assigned taxonomy terms appear as links in content;
+configured grouped navigation gives each taxonomy its own sidebar submenu.
+Canonical entry URLs remain independent of those assignments.
+
+From the SDK repository, certify an independent starter copy with:
+
+```bash
+npm run verify:starter -- \
+  --starter /absolute/astro-moo-starter \
+  --sdk /absolute/wpmoo-astro-0.1.0.tgz \
+  --cache /absolute/primed-cache \
+  --output /absolute/empty-proof \
+  --image "sha256:<existing-image-id>"
+```
+
+The sealed proof checks six locale/URL profiles, installed SDK/Core bytes,
+compiled links/content and actual non-listening MDX development transforms.
+Its independent reader runs with `python3 tests/test_astro_starter.py
+/absolute/proof -v`. The controller removes its stopped temporary container
+while keeping inspection records and proof files. Browser/static-host acceptance
+remains separate from this offline evidence.
+
+The former reference theme and its update/rollback receipts remain historical.
+New sites use the direct starter; updating its SDK dependency preserves copied
+site content and settings. Existing sites adopt starter-file changes deliberately.
+
+## Upgrade the SDK or a plugin
 
 Keep the application's tested package, Astro, optional integrations and lockfile
-explicit. Read [COMPATIBILITY.md](../COMPATIBILITY.md) before updating them. Check
+explicit. Read [COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) before updating them. Check
 the application's old content/configuration first, then adopt new options
 deliberately and inspect its rendered result. A dependency update does not
 activate a new feature, migrate content, rename URLs or deploy the site.
+
+## Definition-owned custom content URLs
+
+The content type definition owns its permalink prefix. Taxonomy memberships
+never become part of a Page, Post or custom content permalink. A host factory
+can define Projects with translated prefixes using the existing plugin API:
+
+```js
+import { definePlugin } from "@wpmoo/astro/plugins";
+
+export function projects() {
+  return definePlugin({
+    apiVersion: 1,
+    id: "projects",
+    label: "Projects",
+    basePath: "/project",
+    locales: { de: { label: "Projekte", basePath: "/projekt" } },
+    contentTypes: [
+      {
+        id: "project",
+        collection: "project",
+        singleRoute: "single",
+        source: {
+          kind: "markdown",
+          formats: ["md"],
+          base: new URL("./content/project/", import.meta.url),
+        },
+        taxonomies: ["category", "tag"],
+      },
+    ],
+    routes: [
+      { id: "single", pattern: "/[...slug]", prerender: true, owner: "host" },
+    ],
+  });
+}
+```
+
+The native host routes `src/pages/project/[...slug].astro` and
+`src/pages/de/projekt/[...slug].astro` use the actual `routePattern` to select
+`getRouteLocale(routePattern)`. They obtain canonical links from
+`getEntryHref("project", entry)` and strip the locale-aware prefix produced by
+`getLocaleHref()` to obtain the rest parameter. The packed consumer recipe in
+`tests/fixtures/project-routes` includes the native loader, schema, shared
+single Layout, translated content, SEO alternates and both route files.
+
+An English entry slug `test-project` has `/project/test-project`; its German
+translation with the same `translationKey` and slug `test-projekt` has
+`/de/projekt/test-projekt`. Source IDs such as `en/test.md` remain unchanged.
+A host base and trailing-slash policy apply once to these canonical URLs.

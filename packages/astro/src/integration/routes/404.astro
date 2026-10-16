@@ -1,0 +1,22 @@
+---
+import { getNotFoundOptions } from "../../not-found/index.js";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import NotFound from "../../views/NotFound.astro";
+
+export const prerender = true;
+const data = getNotFoundOptions(Astro.currentLocale);
+const href = data.href;
+---
+
+<SiteLayout
+  title={data.title}
+  description={data.description}
+  options={data.options}
+  href={href}
+  locale={data.locale}
+  metadata={null}
+  languageLinks={data.languageLinks}
+  pageContext={{ view: "native", key: "not-found" }}
+>
+  <NotFound {...data} parts={data.options.parts} />
+</SiteLayout>

@@ -1,0 +1,62 @@
+---
+import type { ComponentProps } from "astro/types";
+import Button from "../../components/Button.astro";
+import Icon from "../../components/internal/Icon.astro";
+
+type ButtonProps = ComponentProps<typeof Button>;
+interface Props {
+  lightLabel: string;
+  darkLabel: string;
+  theme?: "light" | "dark";
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+  class?: string;
+}
+const {
+  lightLabel,
+  darkLabel,
+  theme = "light",
+  variant = "ghost",
+  size = "icon",
+  class: className = "",
+} = Astro.props;
+for (const label of [lightLabel, darkLabel]) {
+  if (
+    typeof label !== "string" ||
+    !label.trim() ||
+    /[\x00-\x1f\x7f]/u.test(label)
+  ) {
+    throw new TypeError("ThemeToggle labels must be nonempty plain text");
+  }
+}
+if (theme !== "light" && theme !== "dark") {
+  throw new TypeError("ThemeToggle theme must be light or dark");
+}
+---
+
+<Button
+  variant={variant}
+  size={size}
+  class={`rounded-circle ${className}`.trim()}
+  ariaLabel={theme === "dark" ? lightLabel : darkLabel}
+  data-moo-theme-toggle
+  data-moo-theme-label-light={lightLabel}
+  data-moo-theme-label-dark={darkLabel}
+>
+  <Icon
+    name="sun"
+    data-moo-theme-icon="light"
+    class={theme !== "light" ? "d-none" : undefined}
+  />
+  <Icon
+    name="moon-star"
+    data-moo-theme-icon="dark"
+    class={theme !== "dark" ? "d-none" : undefined}
+  />
+</Button>
+
+<script>
+  import { initThemeToggles } from "./theme-toggle.js";
+  initThemeToggles();
+  document.addEventListener("astro:page-load", () => initThemeToggles());
+</script>

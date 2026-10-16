@@ -10,8 +10,9 @@ import tempfile
 import unittest
 
 
-DIST = Path(__file__).resolve().parents[1] / "dist"
-ROOT = DIST.parent
+ROOT = Path(__file__).resolve().parents[1]
+SDK = ROOT / "packages/astro"
+DIST = ROOT / "apps/demo/dist"
 
 
 class Markup(HTMLParser):
@@ -80,12 +81,124 @@ class SharedPartStructure(unittest.TestCase):
 
 
 class PublicComponentRendering(unittest.TestCase):
+    def test_datatable_preserves_its_live_region_and_shared_empty_action(self):
+        source = '''---
+import DataTable from "@wpmoo/astro/components/DataTable.astro";
+const columns = [{ key: "item", label: "Item" }];
+---
+<section id="populated">
+  <DataTable id="items" columns={columns} rows={[{ id: "first", cells: { item: "First item" } }]} />
+</section>
+<section id="empty">
+  <DataTable id="empty-items" columns={columns} rows={[]} />
+</section>
+'''
+        result, html = self.build(source, check=True, files={
+            "tsconfig.json": '{"extends":"astro/tsconfigs/strict"}',
+        })
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        cases = SlotCases()
+        cases.feed(html)
+        for name in ("populated", "empty"):
+            with self.subTest(name=name):
+                elements = cases.cases[name]["elements"]
+                hosts = [attrs for _, attrs in elements if "data-datatable-empty" in attrs]
+                self.assertEqual(len(hosts), 1)
+                self.assertEqual(hosts[0].get("role"), "status")
+                self.assertEqual(hosts[0].get("aria-live"), "polite")
+                self.assertIn("hidden", hosts[0])
+                self.assertEqual(len(with_attribute(elements, "class", "empty-state")), 1)
+                self.assertEqual(len(with_attribute(elements, "class", "empty-state-title")), 1)
+                self.assertEqual(len(with_attribute(elements, "class", "empty-state-description")), 1)
+                reset = [attrs for tag, attrs in elements if tag == "button" and "data-datatable-empty-reset" in attrs]
+                self.assertEqual(len(reset), 1)
+                self.assertEqual(reset[0].get("type"), "button")
+
+    def test_description_only_alert_omits_an_empty_heading(self):
+        source = '''---
+import Alert from "@wpmoo/astro/components/Alert.astro";
+---
+<Alert description="Saved without a title." />
+'''
+        result, html = self.build(source, check=True, files={
+            "tsconfig.json": '{"extends":"astro/tsconfigs/strict"}',
+        })
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        markup = Markup()
+        markup.feed(html)
+        self.assertEqual(len(with_attribute(markup.elements, "role", "alert")), 1)
+        self.assertFalse(any("alert-heading" in attrs.get("class", "").split()
+                             for _, attrs in markup.elements))
+        self.assertIn("Saved without a title.", html)
+
+    def test_alert_rejects_blank_visible_content(self):
+        result, _ = self.build('''---
+import Alert from "@wpmoo/astro/components/Alert.astro";
+---
+<Alert title=" " description=" " />
+''')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Alert title or description is required", result.stdout + result.stderr)
+
+    def test_tabs_rejects_an_unknown_height_mode(self):
+        result, _ = self.build('''---
+import Tabs from "@wpmoo/astro/components/Tabs.astro";
+---
+<Tabs id="height" items={[]} height="unknown" />
+''')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Unknown tabs height", result.stdout + result.stderr)
+
+    def test_empty_preserves_slots_and_escapes_plain_text(self):
+        source = '''---
+import Empty from "@wpmoo/astro/components/Empty.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+const text = '<img src=x onerror=alert(1)>';
+---
+<section id="complete">
+  <Empty title={text} description="Create your first item." class="w-100">
+    <svg slot="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h16v16H4z" /></svg>
+    <Button slot="action" label="Create item" />
+  </Empty>
+</section>
+<section id="description">
+  <Empty description={text} />
+</section>
+'''
+        result, html = self.build(source, check=True, files={
+            "tsconfig.json": '{"extends":"astro/tsconfigs/strict"}',
+        })
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        cases = SlotCases()
+        cases.feed(html)
+        complete = cases.cases["complete"]
+        description = cases.cases["description"]
+        self.assertEqual(len(with_attribute(complete["elements"], "class", "empty-state-icon")), 1)
+        self.assertEqual(len(with_attribute(complete["elements"], "class", "empty-state-actions")), 1)
+        self.assertEqual(len([tag for tag, _ in complete["elements"] if tag == "button"]), 1)
+        self.assertEqual(len([tag for tag, _ in description["elements"] if tag == "h3"]), 0)
+        self.assertFalse(any("empty-state-icon" in attrs.get("class", "").split()
+                             or "empty-state-actions" in attrs.get("class", "").split()
+                             for _, attrs in description["elements"]))
+        for case in (complete, description):
+            self.assertIn('<img src=x onerror=alert(1)>', "".join(case["text"]))
+            self.assertFalse(any(tag == "img" for tag, _ in case["elements"]))
+
+    def test_empty_rejects_blank_visible_content(self):
+        result, _ = self.build('''---
+import Empty from "@wpmoo/astro/components/Empty.astro";
+---
+<Empty title=" " description=" " />
+''')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Empty title or description is required", result.stdout + result.stderr)
+
     @classmethod
     def setUpClass(cls):
         cls.package_directory = tempfile.TemporaryDirectory(prefix="astro-render-package-")
         archive_root = Path(cls.package_directory.name)
         packed = subprocess.run(["npm", "pack", "--json", "--pack-destination", str(archive_root)],
-                                cwd=ROOT, text=True, capture_output=True)
+                                cwd=SDK, text=True, capture_output=True)
         if packed.returncode != 0:
             cls.package_directory.cleanup()
             raise RuntimeError(packed.stdout + packed.stderr)
@@ -129,7 +242,7 @@ class PublicComponentRendering(unittest.TestCase):
                 target = modules / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(package_root, target)
-            manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+            manifest = json.loads((SDK / "package.json").read_text(encoding="utf-8"))
             (root / "package.json").write_text(json.dumps({
                 "name": "public-render-contract", "private": True, "type": "module",
                 "dependencies": {"astro": manifest["peerDependencies"]["astro"],
@@ -392,6 +505,21 @@ export const collections = { post: defineCollection({ loader: glob({ base: new U
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("about", result.stdout + result.stderr)
         self.assertRegex(result.stdout + result.stderr, r"[Cc]onflict|[Dd]uplicate")
+
+    def test_legacy_host_page_can_split_a_declared_catchall_without_root_archives(self):
+        files = self.integrated_files()
+        files["src/content/page/about.md"] = "---\ntitle: About\nstatus: publish\n---\nAbout content.\n"
+        files["src/pages/about.astro"] = '<h1>Native About</h1>'
+        files["src/pages/[...slug].astro"] = '''---
+import { getPagePaths } from "@wpmoo/astro/plugins/page/queries";
+import Layout from "@wpmoo/astro/Layout.astro";
+export async function getStaticPaths() { return (await getPagePaths()).filter(path => path.props.entry.id !== "about.md"); }
+const { entry } = Astro.props;
+---
+<Layout title={entry.data.title}><h1>{entry.data.title}</h1></Layout>'''
+        result, _ = self.build(None, configuration='integrations: [moo({ plugins: [page({ routes: { single: "host" } })] })]', files=files)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("about/index.html", result.generated_html)
 
     def test_ui_only_native_urls_are_host_owned(self):
         files = {"src/pages/About.astro": "<h1>Native page</h1>"}

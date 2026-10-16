@@ -1,0 +1,7 @@
+---
+interface Props { message?: string; instanceId: string }
+const { message = "Native content asset", instanceId } = Astro.props;
+---
+<section id={instanceId} class="alert alert-info" data-native-callout>{message}</section>
+<style>[data-native-callout] { --native-fixture-asset: 1; }</style>
+<script>document.documentElement.dataset.nativeFixtureAsset = "ready";</script>

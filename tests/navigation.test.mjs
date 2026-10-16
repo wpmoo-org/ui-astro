@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { navigationFromPages, navigationFromDescriptors } from "../src/integration/navigation.js";
+import { navigationFromPages, navigationFromDescriptors } from "../packages/astro/src/integration/navigation.js";
 
 const page = (id, status, data = {}) => ({ collection: "page", id, data: { title: id, status, ...data } });
 

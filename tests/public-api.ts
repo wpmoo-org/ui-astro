@@ -2,7 +2,10 @@ import type { AstroIntegration } from "astro";
 import type { ComponentProps } from "astro/types";
 import moo from "@wpmoo/astro";
 import Layout from "@wpmoo/astro/Layout.astro";
+import SiteLayout from "@wpmoo/astro/layouts/SiteLayout.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
+import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
+import ThemeToggle from "@wpmoo/astro/blocks/ThemeToggle.astro";
 import {
   defineSite,
   resolvePageOptions,
@@ -311,9 +314,95 @@ export const languageServerFunctions = {
 export const languageLinks: readonly LanguageLink[] = [
   { locale: "de", href: "/de/contact" },
 ];
+export const switcherProps: ComponentProps<typeof LanguageSwitcher> = {
+  links: languageLinks,
+  currentLocale: "de",
+  label: "Sprache",
+  menuLabel: "Sprache auswählen",
+  languageNames: { en: "English", de: "Deutsch" },
+  labelVisibility: "responsive",
+};
+export const themeToggleProps: ComponentProps<typeof ThemeToggle> = {
+  lightLabel: "Switch to light mode",
+  darkLabel: "Switch to dark mode",
+  theme: "dark",
+};
+// @ts-expect-error ThemeToggle renders one resolved owner theme.
+export const invalidToggleTheme: ComponentProps<typeof ThemeToggle>["theme"] =
+  "system";
+export const switcherLabelModes: readonly ComponentProps<
+  typeof LanguageSwitcher
+>["labelVisibility"][] = ["responsive", "visible", "hidden"];
+// @ts-expect-error Label visibility accepts the documented three modes.
+export const invalidSwitcherMode: ComponentProps<
+  typeof LanguageSwitcher
+>["labelVisibility"] = "mobile";
 // @ts-expect-error Locale preferences are deeply immutable after definition.
 localizedSite.locales!.de.parts!.loop!.emptyText = "Changed";
 // @ts-expect-error Language links preserve the validated published projection.
 languageLinks[0].href = "/missing";
 // @ts-expect-error Unknown Page query preferences are outside the public contract.
 getPublishedPages({ language: "de" });
+
+import { getRootPaths, type RootPath } from "@wpmoo/astro/context";
+const rootPaths: Promise<RootPath[]> = getRootPaths({ locale: "de" });
+void rootPaths;
+
+import {
+  getNotFoundOptions,
+  type NotFoundInput,
+  type NotFoundOptions,
+} from "@wpmoo/astro/not-found";
+const errorInput: NotFoundInput = {
+  routeOwner: "host",
+  messages: { de: { homeLabel: "Zurück", title: undefined } },
+};
+const errorOptions: NotFoundOptions = getNotFoundOptions("de");
+moo({ plugins: [], notFound: errorInput });
+void errorOptions.homeHref;
+// @ts-expect-error Error messages are returned immutable.
+errorOptions.title = "Changed";
+// @ts-expect-error Locale recovery links are returned immutable.
+errorOptions.languageLinks.push({ locale: "fr", href: "/fr" });
+
+export const presentationSite = defineSite({
+  presentation: {
+    navigation: "grouped",
+    themeToggle: true,
+    languageSwitcher: {
+      size: "sm",
+      align: "end",
+      labelVisibility: "responsive",
+    },
+    locales: { de: { labels: { language: "Sprache" } } },
+  },
+  links: { home: "/", help: { en: "/help", de: "/hilfe" } },
+});
+// @ts-expect-error Only the declared common labels are configurable.
+defineSite({ presentation: { labels: { anything: "Unsupported" } } });
+// @ts-expect-error URL data comes from prepared translation links.
+defineSite({ presentation: { languageSwitcher: { links: [] } } });
+// @ts-expect-error Localized copy cannot alter structural flags.
+defineSite({ presentation: { locales: { de: { themeToggle: true } } } });
+
+export const siteLayoutOptions: ComponentProps<typeof SiteLayout> = {
+  title: "Default site",
+  href: "/",
+  options: resolved,
+  metadata: null,
+};
+
+import type { BlockDefinition, RenderContext } from "@wpmoo/astro/placements";
+export const blockDefinition: BlockDefinition = {
+  component: new URL("./Example.astro", import.meta.url),
+};
+export const unknownBlockCollection: BlockDefinition = {
+  // @ts-expect-error Native collection keys remain finite.
+  collection: "missing-block-collection",
+  translationKey: "cta",
+};
+export const nativePlacementContext: RenderContext = {
+  href: "/native",
+  view: "native",
+  headings: [],
+};

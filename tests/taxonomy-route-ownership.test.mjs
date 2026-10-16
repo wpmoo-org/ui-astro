@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import moo from "../src/integration/index.js";
+import moo from "../packages/astro/src/integration/index.js";
 import {
   buildRegistry,
   validateResolvedRoutes,
-} from "../src/integration/registry.js";
-import { localizeRegistry, resolveI18n } from "../src/i18n/profile.js";
-import { defineSite } from "../src/config/index.js";
-import { defineTaxonomy } from "../src/taxonomies/index.js";
+} from "../packages/astro/src/integration/registry.js";
+import {
+  localizeRegistry,
+  resolveI18n,
+} from "../packages/astro/src/i18n/profile.js";
+import { defineSite } from "../packages/astro/src/config/index.js";
+import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
 const taxonomy = defineTaxonomy({
   id: "category",
@@ -122,7 +125,7 @@ test("the integration activates host taxonomy metadata without injecting its arc
   });
   assert.deepEqual(
     patterns.filter((value) => !value.startsWith("/__moo_content_integrity")),
-    [],
+    ["/404"],
   );
 });
 
@@ -139,4 +142,139 @@ test("taxonomy route selection rejects unsupported fields and owners with named 
   ]) {
     assert.throws(() => moo({ plugins: [], taxonomyRoutes }), diagnostic);
   }
+});
+
+test("explicit archive groups share one producer and project their actual locale patterns", () => {
+  const category = defineTaxonomy({
+    ...taxonomy,
+    source: new URL(taxonomy.source),
+    archive: { basePath: "/c" },
+    locales: { de: { basePath: "/kategorie" } },
+  });
+  const tag = defineTaxonomy({
+    ...category,
+    id: "tag",
+    source: new URL(taxonomy.source),
+  });
+  const registry = buildRegistry([], { taxonomies: [category, tag] });
+  assert.deepEqual(
+    registry.routes.map((route) => route.pattern),
+    ["/c/[slug]"],
+  );
+  assert.deepEqual(registry.taxonomyGroups, [
+    {
+      pattern: "/c/[slug]",
+      root: false,
+      taxonomies: ["category", "tag"],
+      routeOwner: "plugin",
+    },
+  ]);
+  const profile = resolveI18n(
+    { locales: ["en", "de"], defaultLocale: "en" },
+    defineSite(),
+  );
+  const localized = localizeRegistry(registry, profile);
+  assert.deepEqual(
+    localized.routes.map((route) => route.pattern),
+    ["/c/[slug]", "/de/kategorie/[slug]"],
+  );
+  assert.deepEqual(
+    localized.taxonomyGroups.map((group) => group.pattern),
+    ["/c/[slug]", "/de/kategorie/[slug]"],
+  );
+  assert.ok(Object.isFrozen(registry.taxonomyGroups[0].taxonomies));
+  const root = defineTaxonomy({
+    ...category,
+    source: new URL(taxonomy.source),
+    locales: { de: { basePath: "/" } },
+  });
+  const mixed = localizeRegistry(
+    buildRegistry([], { taxonomies: [root] }),
+    profile,
+  );
+  assert.deepEqual(
+    mixed.taxonomyGroups.map(({ pattern, root }) => ({ pattern, root })),
+    [
+      { pattern: "/c/[slug]", root: false },
+      { pattern: "/de/[...slug]", root: true },
+    ],
+  );
+  for (const basePath of ["/de/c", "/en"]) {
+    const invalid = defineTaxonomy({
+      ...category,
+      source: new URL(taxonomy.source),
+      locales: { de: { basePath } },
+    });
+    assert.throws(
+      () =>
+        localizeRegistry(buildRegistry([], { taxonomies: [invalid] }), profile),
+      /taxonomy.*basePath.*native locale prefix/,
+    );
+  }
+});
+
+test("root archives combine only the built-in Page producer with matching ownership", async () => {
+  const { page } = await import("../packages/astro/src/plugins/page/index.js");
+  const { definePlugin } =
+    await import("../packages/astro/src/plugins/index.js");
+  const root = defineTaxonomy({
+    ...taxonomy,
+    source: new URL(taxonomy.source),
+    archive: { basePath: "/" },
+  });
+  const combined = buildRegistry([page()], { taxonomies: [root] });
+  assert.deepEqual(combined.routeClaims, [
+    { owner: "root", pattern: "/[...slug]", routeOwner: "plugin" },
+  ]);
+  assert.equal(combined.routes.length, 1);
+  assert.match(
+    combined.routes[0].entrypoint.href,
+    /integration\/routes\/\[\.\.\.root\]\.astro$/,
+  );
+  const host = buildRegistry([page({ routes: { single: "host" } })], {
+    taxonomies: [root],
+    taxonomyRoutes: { archive: "host" },
+  });
+  assert.deepEqual(host.routes, []);
+  assert.deepEqual(host.routeClaims, [
+    { owner: "root", pattern: "/[...slug]", routeOwner: "host" },
+  ]);
+  assert.equal(buildRegistry([], { taxonomies: [root] }).routes.length, 1);
+  for (const [pageOwner, taxonomyOwner] of [
+    ["host", "plugin"],
+    ["plugin", "host"],
+  ])
+    assert.throws(
+      () =>
+        buildRegistry([page({ routes: { single: pageOwner } })], {
+          taxonomies: [root],
+          taxonomyRoutes: { archive: taxonomyOwner },
+        }),
+      /Page routes.single.*moo.taxonomyRoutes.archive.*same owner/,
+    );
+  const custom = definePlugin({
+    apiVersion: 1,
+    id: "page",
+    label: "Custom",
+    basePath: "/",
+    contentTypes: [
+      {
+        id: "article",
+        collection: "article",
+        singleRoute: "single",
+        source: { kind: "markdown", formats: ["md"] },
+      },
+    ],
+    routes: [
+      { id: "single", pattern: "/[...slug]", owner: "host", prerender: true },
+    ],
+  });
+  assert.throws(
+    () =>
+      buildRegistry([custom], {
+        taxonomies: [root],
+        taxonomyRoutes: { archive: "host" },
+      }),
+    /root.*page.*renderer.*host composition/,
+  );
 });

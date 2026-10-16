@@ -18,7 +18,6 @@ import {
   relative,
   resolve,
 } from "node:path";
-import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 import {
@@ -33,13 +32,15 @@ export {
   assertConsumerOutput,
   assertPackedPageOutput,
   assertThemeOutput,
+  assertNotFoundOutput,
   assertPrivateSubpathError,
   assertPeerConflict,
 } from "./packed_consumer_contracts.mjs";
 
-const ASTRO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const WORKSPACE_ROOT = resolve(ASTRO_ROOT, "../../..");
-const FIXTURE_ROOT = join(ASTRO_ROOT, "tests/fixtures/consumer");
+import { REPO_ROOT, SDK_ROOT, CONSUMER_ROOT } from "./project-paths.mjs";
+
+const WORKSPACE_ROOT = resolve(REPO_ROOT, "../../..");
+const FIXTURE_ROOT = CONSUMER_ROOT;
 
 export async function assertRetainedArtifacts(root, artifacts) {
   for (const [name, artifact] of Object.entries(artifacts)) {
@@ -62,6 +63,8 @@ export const PACKED_PROFILES = Object.freeze({
   taxonomy: "taxonomy",
   "external-taxonomy": "external-taxonomy",
   "content-editing": "content-editing",
+  "not-found": "not-found",
+  "not-found-host": "not-found-host",
 });
 
 const USAGE =
@@ -217,7 +220,9 @@ export function validateConsumerLock({
     installedCore.resolved !== core.registry_url ||
     installedCore.integrity !== core.integrity
   ) {
-    throw new Error("consumer Core release pin differs from published Core release");
+    throw new Error(
+      "consumer Core release pin differs from published Core release",
+    );
   }
 }
 
@@ -312,14 +317,14 @@ export async function verifyPackedConsumer({
   if (!/^sha256:[a-f0-9]{64}$/u.test(imageRecord?.Id ?? ""))
     throw new Error("An existing local image ID is required");
   const manifest = JSON.parse(
-    await readFile(join(ASTRO_ROOT, "package.json"), "utf8"),
+    await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
   const core = JSON.parse(
-    await readFile(join(ASTRO_ROOT, "contracts/rc10-package.json"), "utf8"),
+    await readFile(join(SDK_ROOT, "contracts/ui-1.3.0-package.json"), "utf8"),
   );
   const surface = JSON.parse(
     await readFile(
-      join(ASTRO_ROOT, "contracts/astro-public-surface.json"),
+      join(SDK_ROOT, "contracts/astro-public-surface.json"),
       "utf8",
     ),
   );
@@ -341,8 +346,8 @@ export async function verifyPackedConsumer({
     ["external-plugin", "external-taxonomy"].includes(name),
   );
   for (const root of [
-    ASTRO_ROOT,
-    ...(external ? [join(ASTRO_ROOT, "tests/fixtures/external-plugin")] : []),
+    SDK_ROOT,
+    ...(external ? [join(REPO_ROOT, "tests/fixtures/external-plugin")] : []),
   ]) {
     const packageManifest = JSON.parse(
       await readFile(join(root, "package.json"), "utf8"),
@@ -369,7 +374,7 @@ export async function verifyPackedConsumer({
     )[0];
     const names = packed.files.map((file) => file.path).sort();
     if (
-      root === ASTRO_ROOT &&
+      root === SDK_ROOT &&
       JSON.stringify(names) !== JSON.stringify([...surface.files].sort())
     ) {
       throw new Error(
@@ -402,16 +407,20 @@ export async function verifyPackedConsumer({
   await mkdir(join(outputPath, "template-locks"));
   const profiles = [];
   for (const name of selected) {
-    const sourceRoot = join(
-      ASTRO_ROOT,
-      "tests/fixtures",
-      PACKED_PROFILES[name],
-    );
+    const sourceRoot =
+      name === "default"
+        ? CONSUMER_ROOT
+        : join(REPO_ROOT, "tests/fixtures", PACKED_PROFILES[name]);
     const directory = name === "default" ? "consumer" : name;
     const target = join(outputPath, directory);
     const names = await copyFixture(sourceRoot, target);
     for (const probe of [
-      ...(name !== "ui-only" ? ["content-contract.json.ts"] : []),
+      ...(!["ui-only", "not-found", "not-found-host"].includes(name)
+        ? ["content-contract.json.ts"]
+        : []),
+      ...(!names.includes("src/pages/not-found-contract.json.ts")
+        ? ["not-found-contract.json.ts"]
+        : []),
       ...(name === "default" ? ["namespaces.json.ts"] : []),
     ]) {
       const path = `src/pages/${probe}`;
@@ -422,7 +431,7 @@ export async function verifyPackedConsumer({
       await mkdir(join(target, "src/pages"), { recursive: true });
       await writeFile(
         join(target, path),
-        await readFile(join(ASTRO_ROOT, "tests/fixtures/certification", probe)),
+        await readFile(join(REPO_ROOT, "tests/fixtures/certification", probe)),
       );
       names.push(path);
     }
@@ -474,12 +483,12 @@ export async function verifyPackedConsumer({
   ]) {
     await writeFile(
       join(outputPath, name),
-      await readFile(join(ASTRO_ROOT, "scripts", name)),
+      await readFile(join(REPO_ROOT, "scripts", name)),
     );
   }
   const incompatible = JSON.parse(
     await readFile(
-      join(ASTRO_ROOT, "tests/fixtures/incompatible-astro-peer.json"),
+      join(REPO_ROOT, "tests/fixtures/incompatible-astro-peer.json"),
       "utf8",
     ),
   );

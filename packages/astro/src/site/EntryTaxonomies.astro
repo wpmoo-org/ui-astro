@@ -1,0 +1,54 @@
+---
+import Button from "../components/Button.astro";
+import { getSiteContext } from "../context/index.js";
+import { getTaxonomyPaths } from "../taxonomies/queries.js";
+import { groupTaxonomyLinks, entryTaxonomyGroups } from "./chrome.js";
+import { resolveSitePresentation } from "./presentation.js";
+import type { EntryClassContext } from "../config/index.js";
+interface Props {
+  entry: EntryClassContext;
+  locale: string;
+}
+const { entry, locale } = Astro.props;
+const context = getSiteContext();
+const presentation = resolveSitePresentation(context.site, locale);
+const groups =
+  presentation.assignedTaxonomies && Object.keys(entry.taxonomies ?? {}).length
+    ? entryTaxonomyGroups(
+        entry,
+        groupTaxonomyLinks(
+          context.taxonomies,
+          await getTaxonomyPaths({ locale: context.i18n ? locale : undefined }),
+          locale,
+        ),
+      )
+    : [];
+---
+
+{
+  groups.length > 0 && (
+    <dl
+      class="d-flex flex-column gap-2 mt-4 pt-4 border-top"
+      data-entry-taxonomies
+      aria-label={presentation.labels.taxonomies}
+    >
+      {groups.map((group) => (
+        <div class="d-flex flex-wrap align-items-baseline column-gap-3 row-gap-2">
+          <dt class="small fw-normal text-body-secondary">{group.label}</dt>
+          <dd class="d-flex flex-wrap gap-1 mb-0" data-taxonomy={group.id}>
+            {group.links.map((link) => (
+              <Button
+                element="a"
+                variant="outline"
+                size="sm"
+                href={link.href}
+                label={link.label}
+                rel="tag"
+              />
+            ))}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
