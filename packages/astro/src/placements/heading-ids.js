@@ -145,7 +145,22 @@ export function namespaceHeadingIds(html, headings, namespace) {
           svgContexts.push({ name, svg: false });
         }
       }
-      if (["script", "style"].includes(name)) {
+      if (!inSvg && name === "plaintext") {
+        index = html.length;
+        continue;
+      }
+      const rawText =
+        ["script", "style"].includes(name) ||
+        (!inSvg &&
+          [
+            "textarea",
+            "title",
+            "xmp",
+            "iframe",
+            "noembed",
+            "noframes",
+          ].includes(name));
+      if (rawText) {
         index = inSvg && selfClosing ? end : rawEnd(html, end, name);
         continue;
       }
