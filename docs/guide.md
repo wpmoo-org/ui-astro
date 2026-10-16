@@ -24,7 +24,7 @@ For a short overview, see the [README](../README.md).
 - [Direct Moo Astro Starter](#direct-moo-astro-starter)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.2.1` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.3.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -358,7 +358,7 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.3
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `1.2.1` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `1.3.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.3` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.2` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
 
@@ -450,7 +450,7 @@ no empty heading. An alert with only blank text is rejected.
 
 `DataTable.astro` composes `Empty.astro` for its empty-result surface. DataTable
 owns the live region, filtered/zero-row message, visibility and clear-filters
-action. Published Core 1.2.1 supports the shared `.empty-state-*` selectors
+action. Published Core 1.3.0 supports the shared `.empty-state-*` selectors
 and the earlier DataTable-specific selectors. An initially empty table hides
 its filter description and action container; filtered results offer Clear
 filters. The SDK and independent Starter use the exact published archive.
@@ -1522,7 +1522,7 @@ the primary built page in Chromium without a server. See
 [COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) for verified runtime scope and remaining
 release gates.
 
-The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.0.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.3.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
 
 ## Direct Moo Astro Starter
 

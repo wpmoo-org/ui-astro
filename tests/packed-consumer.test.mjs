@@ -38,7 +38,7 @@ const fixtureLock = JSON.parse(
 const core = JSON.parse(
   await readFile(
     new URL(
-      "../packages/astro/contracts/ui-1.2.1-package.json",
+      "../packages/astro/contracts/ui-1.3.0-package.json",
       import.meta.url,
     ),
     "utf8",

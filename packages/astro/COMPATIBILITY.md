@@ -11,7 +11,7 @@ advertised.
 | Dependency or contract   | Version     | Ownership                                                                     |
 | ------------------------ | ----------- | ----------------------------------------------------------------------------- |
 | Astro                    | 7.3.3       | One exact host peer; also the local development dependency                    |
-| Moo UI                   | 1.2.1       | Published registry archive; exact integrity and exported target hashes       |
+| Moo UI                   | 1.3.0       | Published registry archive; exact integrity and exported target hashes       |
 | Bootstrap                | 5.3.8       | Exact runtime dependency                                                      |
 | Plugin API               | 1           | Built-in and separately packaged descriptors                                  |
 | Node                     | >=22.12.0   | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
@@ -190,10 +190,10 @@ no replacement loader, private store mutation or request retry is introduced.
 
 ## Release intake and upgrade procedure
 
-The current baseline is published Core `1.2.1`, adopted on 2026-10-11.
+The current baseline is published Core `1.3.0`, adopted on 2026-10-16.
 Its registry integrity and all public exported target hashes are recorded in
-`contracts/ui-1.2.1-package.json`. Active SDK and consumer locks use this exact
-archive. The earlier `1.2.0`, `1.1.0` and `1.0.0` records retain their original bytes
+`contracts/ui-1.3.0-package.json`. Active SDK and consumer locks use this exact
+archive. The earlier `1.2.1`, `1.2.0`, `1.1.0` and `1.0.0` records retain their original bytes
 and dated evidence; they are not certification of the current intake.
 
 
@@ -321,7 +321,7 @@ claiming the unfinished broader host/editor matrix.
 
 ## Shared Table of Contents
 
-The SDK consumes published `@wpmoo/ui@1.2.1` with exact registry integrity and
+The SDK consumes published `@wpmoo/ui@1.3.0` with exact registry integrity and
 exported target hashes. Stable release validation rejects local development
 pins, file dependencies and changed Core bytes. The earlier private intake is
 retained in `contracts/ui-1.1.0-dev.1-package.json` as historical provenance.

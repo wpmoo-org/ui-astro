@@ -283,7 +283,7 @@ test("direct_starter_rejects_extra_artifacts_or_links", async () => {
     filename: "wpmoo-astro-0.1.0.tgz",
     manifest: { version: "0.1.0" },
     integrity:
-      "sha512-QOZECiF+vRHLESvgkT1ec1oYMsn1pRAAcc+wMFTIrbtB+AAmwu6ngUk5eycdulHcRTX71b1VuqE/NkFLJpAYiw==",
+      "sha512-QQXgHABNceqvWA6eJ5KKQlrFhEt54l5biYiuOrY1P/FqhBLURde12GcNubVGTEs9F2S9zz9+aFLDXZAo9eipXQ==",
   };
   const artifacts = { "@wpmoo/astro": sdk };
   validateStarterLock(manifest, lock, artifacts);

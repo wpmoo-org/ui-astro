@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "package": "@wpmoo/ui",
+  "version": "1.3.0",
+  "registry_url": "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.3.0.tgz",
+  "integrity": "sha512-3oEdHhFc/B7xQ8w5xYa9k0/m1pb/WPCt2kPO8CAF1dC4v7NZZgdasalUvL4NSLHEPjzXxwFjQ6gXNhtZuP4IBQ==",
+  "tarball_sha256": "4598463781a3996b6740fba1553d66474272bd1ab101d8f65c281d5ccaab045a",
+  "git_head": null,
+  "exports": {
+    "./moo-ui.css": {
+      "target": "./dist/assets/css/moo-ui.css",
+      "sha256": "c61d8fa2213ca0e59fba7db06db1adbf1554d60eee25ffde608f81feea875080"
+    },
+    "./moo-ui.min.css": {
+      "target": "./dist/assets/css/moo-ui.min.css",
+      "sha256": "58772b0bc9e0ad5bb9963983b3e6892c326f43a3c0e7825896540691ffddb300"
+    },
+    "./moo.css": {
+      "target": "./dist/assets/css/moo.css",
+      "sha256": "113ff20c18bc88d30133082c3ab821f26abb1bb09d781e77ef8841372d671289"
+    },
+    "./moo.min.css": {
+      "target": "./dist/assets/css/moo.min.css",
+      "sha256": "af969e5702f5e3fd168fcea1c85899b47dc3d2b94ab0e93cc88ef21b397b6407"
+    },
+    "./moo-ui.js": {
+      "target": "./dist/js/moo-ui.js",
+      "sha256": "470f372d53debd3b13c5fbc7851f51dec48f2bf7610421f61a9890f8815b7ef3"
+    },
+    "./moo-ui.min.js": {
+      "target": "./dist/js/moo-ui.min.js",
+      "sha256": "40399c1f01d530e1839cc07b3a467a95f395a730dc2af23988e429a0e0df3eac"
+    },
+    "./combobox.js": {
+      "target": "./dist/js/combobox.js",
+      "sha256": "8721ad9ae6f1bdc44ec259c1481adef9e5a5b481db77dee35f209ba9357298b6"
+    },
+    "./sidebar.js": {
+      "target": "./dist/js/sidebar.js",
+      "sha256": "a028b2c49ea79a8376f489dba00eae8621144649aa2ec2d8509b86e79eb42241"
+    },
+    "./context-menu.js": {
+      "target": "./dist/js/context-menu.js",
+      "sha256": "9d79096d36a04bf4fb90b22e4398517b296c23d7eeb05dd2966ae4e4d9b264f5"
+    },
+    "./datatable.js": {
+      "target": "./dist/js/datatable.js",
+      "sha256": "dae0d038c1e52a1e1e8fc0767e03fdc18c6dcde1d90b341ee13204834f1cb5d0"
+    },
+    "./slider.js": {
+      "target": "./dist/js/slider.js",
+      "sha256": "1026abb4a23c08a0496fe780e0615a0948266ca1ba3cacd8833417d290198288"
+    },
+    "./toc.js": {
+      "target": "./dist/js/toc.js",
+      "sha256": "39f3d5e5a827dc90ed14d928f7287a94e920400252665d6c8a6f46a7ff0c6ec6"
+    },
+    "./table-of-contents.js": {
+      "target": "./dist/js/table-of-contents.js",
+      "sha256": "e0507c4f71a959b8e695234f58e22149093dea240d46c4cb1d9a1d1e0aca0677"
+    },
+    "./sheet.js": {
+      "target": "./dist/js/sheet.js",
+      "sha256": "b959b35d8657371f0cc3b5b7fba931187e52ae8850d8bec3a09704abf219a46d"
+    },
+    "./chart.js": {
+      "target": "./dist/js/chart.js",
+      "sha256": "897746c372ffd32b1994ae67dfb45dbe05d4d98b8cf127098cfc31eb0183da18"
+    },
+    "./chart.min.js": {
+      "target": "./dist/js/chart.min.js",
+      "sha256": "53f0f145689878a00cf06c30f3004124b6538fc570e3d87afa28fd03788e6259"
+    },
+    "./datepicker.js": {
+      "target": "./dist/js/datepicker.js",
+      "sha256": "1d5bfb934d459e79b0d1e509ece69e3f62329b86aab0ec659c58798e4dc2117e"
+    },
+    "./datepicker.min.js": {
+      "target": "./dist/js/datepicker.min.js",
+      "sha256": "c041d4fd8bba4bf788fa2961df34a33a78fd07d4ad8d8037631da7cda92e89e9"
+    },
+    "./state.js": {
+      "target": "./dist/js/state.js",
+      "sha256": "b23904775eccd1e501b097ce53ad5cd00ec4d4ca703cea784b60d3cf306804ac"
+    },
+    "./release-manifest.json": {
+      "target": "./dist/release-manifest.json",
+      "sha256": "ba7940dda39fca8061e1a2362d43e05f4d0a348a14da841403f2c3ded4dfa9e7"
+    },
+    "./scss/config": {
+      "target": "./scss/_config.scss",
+      "sha256": "f02861915073d2ef506c5729d6fb3a9e8a7323b65b3e58c4c48d99dc76c4695c"
+    },
+    "./scss/moo-ui": {
+      "target": "./scss/moo-ui.scss",
+      "sha256": "a5c3ae9d0b4fd97ebdc4a52613c91324b8af16f4c1ea0efc3e4f3c9fdf043176"
+    },
+    "./scss/moo-core": {
+      "target": "./scss/moo-core.scss",
+      "sha256": "4752be35c90402f95c7120531325fdfa86c1bde56b3953cd29f5464950d0e169"
+    },
+    "./scss/components": {
+      "target": "./scss/_components.scss",
+      "sha256": "b0910fd72b6bf2b1f87e403c6c00c3ce18a0e16fdeb5b4c762505e2a59c75800"
+    },
+    "./scss/settings": {
+      "target": "./scss/_settings.scss",
+      "sha256": "5428193651eb5dc39f56d203697ecade5e3761dfa7fdaf92e1c9ab4954086a21"
+    },
+    "./certification.json": {
+      "target": "./certification.json",
+      "sha256": "27638e54557babea31451509b15c5a1c7d1c1f1b22ff348856101b29cace8ca9"
+    },
+    "./package.json": {
+      "target": "./package.json",
+      "sha256": "15c124cdd26dd416ed2c9329a06b13989da8070798e6023aed67971610ca4c9b"
+    }
+  }
+}
