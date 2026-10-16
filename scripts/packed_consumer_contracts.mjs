@@ -192,11 +192,11 @@ export function validateProfileLock({
   if (profile === "mdx") {
     if (
       !isDeepStrictEqual(mdxPaths, ["node_modules/@astrojs/mdx"]) ||
-      direct["@astrojs/mdx"] !== "8.0.2" ||
-      lock.packages[mdxPaths[0]]?.version !== "8.0.2"
+      direct["@astrojs/mdx"] !== "8.0.3" ||
+      lock.packages[mdxPaths[0]]?.version !== "8.0.3"
     )
       throw new Error(
-        `${profile}: the certified MDX 8.0.2 integration is required`,
+        `${profile}: the certified MDX 8.0.3 integration is required`,
       );
   } else if (mdxPaths.length)
     throw new Error(`${profile}: MD-only consumers must not install MDX`);

@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { REPO_ROOT, SDK_ROOT, DEMO_ROOT } from "../scripts/project-paths.mjs";
+import {
+  REPO_ROOT,
+  SDK_ROOT,
+  DEMO_ROOT,
+  CONSUMER_ROOT,
+} from "../scripts/project-paths.mjs";
 import { join } from "node:path";
 
 const read = async (root, file) =>
@@ -10,30 +15,32 @@ const manifest = await read(SDK_ROOT, "package.json");
 const root = await read(REPO_ROOT, "package.json");
 const demo = await read(DEMO_ROOT, "package.json");
 const lock = await read(REPO_ROOT, "package-lock.json");
+const consumer = await read(CONSUMER_ROOT, "package.json");
+const consumerLock = await read(CONSUMER_ROOT, "package-lock.json");
 
 test("the host supplies the exact certified Astro peer and development uses that version", () => {
-  assert.equal(manifest.peerDependencies?.astro, "7.3.3");
+  assert.equal(manifest.peerDependencies?.astro, "7.3.8");
   assert.deepEqual(manifest.devDependencies, {});
   assert.equal(manifest.dependencies.astro, undefined);
   assert.equal(
     lock.packages["packages/astro"].peerDependencies?.astro,
-    "7.3.3",
+    "7.3.8",
   );
-  assert.equal(root.devDependencies.astro, "7.3.3");
-  assert.equal(demo.dependencies.astro, "7.3.3");
-  assert.equal(lock.packages["node_modules/astro"].version, "7.3.3");
+  assert.equal(root.devDependencies.astro, "7.3.8");
+  assert.equal(demo.dependencies.astro, "7.3.8");
+  assert.equal(lock.packages["node_modules/astro"].version, "7.3.8");
 });
 
 test("shared checker tools and host MDX never become SDK dependencies", () => {
   assert.deepEqual(root.devDependencies, {
     "@astrojs/check": "0.9.10",
-    astro: "7.3.3",
+    astro: "7.3.8",
     typescript: "6.0.3",
   });
-  assert.deepEqual(demo.devDependencies, { "@astrojs/mdx": "8.0.2" });
+  assert.deepEqual(demo.devDependencies, { "@astrojs/mdx": "8.0.3" });
   assert.deepEqual(demo.dependencies, {
     "@wpmoo/astro": "0.1.0",
-    astro: "7.3.3",
+    astro: "7.3.8",
   });
   assert.deepEqual(lock.packages[""].devDependencies, root.devDependencies);
   assert.deepEqual(lock.packages["apps/demo"].dependencies, demo.dependencies);
@@ -52,6 +59,19 @@ test("shared checker tools and host MDX never become SDK dependencies", () => {
     "@wpmoo/ui": "1.3.0",
     bootstrap: "5.3.8",
   });
+});
+
+test("the independent consumer shares the exact SDK host and checker pins", () => {
+  assert.equal(consumer.dependencies.astro, "7.3.8");
+  assert.deepEqual(consumer.devDependencies, {
+    "@astrojs/check": "0.9.10",
+    typescript: "6.0.3",
+  });
+  assert.equal(consumerLock.packages["node_modules/astro"].version, "7.3.8");
+  assert.deepEqual(
+    consumerLock.packages["node_modules/@wpmoo/astro"].peerDependencies,
+    manifest.peerDependencies,
+  );
 });
 
 test("only development apps use workspace linking; the consumer remains independent", () => {

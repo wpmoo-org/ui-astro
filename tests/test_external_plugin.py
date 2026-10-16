@@ -88,7 +88,7 @@ class ExternalPluginConsumer(unittest.TestCase):
                 target.write_bytes(archive.extractfile(member).read())
         manifest = json.loads((root / "package/package.json").read_text())
         self.assertEqual(set(manifest["exports"]), EXPORTS)
-        self.assertEqual(manifest["peerDependencies"], {"@wpmoo/astro": "0.1.0", "astro": "7.3.3"})
+        self.assertEqual(manifest["peerDependencies"], {"@wpmoo/astro": "0.1.0", "astro": "7.3.8"})
         self.assertTrue(manifest["private"])
         return root / "package"
 

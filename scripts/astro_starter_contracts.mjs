@@ -118,10 +118,10 @@ export function validateStarterLock(manifest, lock, artifacts) {
     assert.equal(record.integrity, artifact.integrity);
   }
   for (const [name, version] of Object.entries({
-    astro: "7.3.3",
+    astro: "7.3.8",
     "@wpmoo/ui": "1.3.0",
     bootstrap: "5.3.8",
-    "@astrojs/mdx": "8.0.2",
+    "@astrojs/mdx": "8.0.3",
     "@astrojs/check": "0.9.10",
     typescript: "6.0.3",
   })) {

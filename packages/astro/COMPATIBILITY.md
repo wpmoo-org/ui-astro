@@ -10,18 +10,25 @@ advertised.
 
 | Dependency or contract   | Version     | Ownership                                                                     |
 | ------------------------ | ----------- | ----------------------------------------------------------------------------- |
-| Astro                    | 7.3.3       | One exact host peer; also the local development dependency                    |
+| Astro                    | 7.3.8       | One exact host peer; also the local development dependency                    |
 | Moo UI                   | 1.3.0       | Published registry archive; exact integrity and exported target hashes       |
 | Bootstrap                | 5.3.8       | Exact runtime dependency                                                      |
 | Plugin API               | 1           | Built-in and separately packaged descriptors                                  |
-| Node                     | >=22.12.0   | Declared engine minimum; exact 22.12.0 and current-runtime consumers verified |
+| Node                     | >=22.12.0   | Declared minimum; historical 22.12.0 proof, current validation on 22.23.2     |
 | Astro checker            | 0.9.10      | Consumer verification tooling                                                 |
 | TypeScript               | 6.0.3       | Consumer verification tooling                                                 |
-| Official MDX integration | 8.0.2       | Explicit optional host integration, tested with Astro 7.3.3                   |
+| Official MDX integration | 8.0.3       | Explicit optional host integration, tested with Astro 7.3.8                   |
 
 MD-only consumers do not install MDX. All certification profiles are independent
 of React, CMS, authentication and database dependencies. An editor adapter and
 a site's publication workflow have their own compatibility contracts.
+
+The 2026-10-16 host update selects Astro 7.3.8 and MDX 8.0.3 while retaining
+TypeScript 6.0.3: checker 0.9.10 supports TypeScript 5/6, and verification
+uses the classic compiler API. Current validation covers the SDK/demo and
+independent packed MD/MDX consumers on Node 22.23.2. Earlier sealed matrices
+retain their original host versions and do not certify this update. The
+separate Starter checkout requires its own intake before using this SDK.
 
 The static profile uses native Astro collections, prerendered routes and local
 declared sources. Active multilingual routing is an explicit native Astro
@@ -217,8 +224,8 @@ publication remains a separate decision.
 RC10 replaces the synchronous aggregate `Chart` export with
 `await MooUI.loadChart()` or `await loadChart()`. The dedicated Core Chart
 subpath remains available; repeat loads share its constructor. `initSheets()`
-is explicit and returns a host-owned disposer. Bootstrap remains `5.3.8` and
-the certified Astro host remains `7.3.3`. A version change alone does not
+is explicit and returns a host-owned disposer. Bootstrap remains `5.3.8`.
+The current Astro host is `7.3.8`. A version change alone does not
 certify compatibility or authorize publication.
 
 For later package, theme or plugin upgrades, the maintainer owns the intake:
