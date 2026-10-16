@@ -1,0 +1,29 @@
+# Routine version updates are monthly and grouped, targeting the development
+# branch. GitHub-native grouped security updates remain enabled separately.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1
+    # Sealed consumer fixtures are regenerated through their verification tools.
+    exclude-paths:
+      - "tests/fixtures/**"
+      - "apps/consumer/**"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 1
+    groups:
+      github-actions:
+        patterns:
+          - "*"
