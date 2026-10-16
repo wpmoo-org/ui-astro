@@ -372,6 +372,55 @@ test("unquoted attribute quotes do not consume following heading tags", async ()
   );
 });
 
+test("HTML raw-text and RCDATA bodies preserve their literal heading examples", async () => {
+  const { namespaceHeadingIds } =
+    await import("../packages/astro/src/placements/heading-ids.js");
+  const prose = '<h2 id="intro">Intro</h2><a href="#intro">Go</a>';
+  const expected =
+    '<h2 id="block-intro">Intro</h2><a href="#block-intro">Go</a>';
+  for (const name of [
+    "textarea",
+    "title",
+    "xmp",
+    "iframe",
+    "noembed",
+    "noframes",
+  ]) {
+    const raw = `<${name} title=">">${prose}</${name}>`;
+    for (const [prefix, suffix] of [
+      ["", ""],
+      ["<svg><foreignObject>", "</foreignObject></svg>"],
+    ]) {
+      assert.equal(
+        namespaceHeadingIds(
+          prefix + raw + suffix + prose,
+          [{ slug: "intro" }],
+          "block",
+        ),
+        prefix + raw + suffix + expected,
+      );
+    }
+    assert.equal(
+      namespaceHeadingIds(
+        `<svg><${name} /></svg>` + prose,
+        [{ slug: "intro" }],
+        "block",
+      ),
+      `<svg><${name} /></svg>` + expected,
+    );
+    const unterminated = `<${name}>${prose}`;
+    assert.equal(
+      namespaceHeadingIds(unterminated, [{ slug: "intro" }], "block"),
+      unterminated,
+    );
+  }
+  const plaintext = `<plaintext>${prose}</plaintext>${prose}`;
+  assert.equal(
+    namespaceHeadingIds(plaintext, [{ slug: "intro" }], "block"),
+    plaintext,
+  );
+});
+
 test("self-closing SVG elements do not consume later native headings", async () => {
   const { namespaceHeadingIds } =
     await import("../packages/astro/src/placements/heading-ids.js");
@@ -412,7 +461,7 @@ test("unterminated heading source completes within a bounded process timeout", (
       `
     import assert from "node:assert/strict";
     import { namespaceHeadingIds } from ${JSON.stringify(moduleUrl)};
-    for (const opener of ["<!--", "<script>", "<style>", "<h2", "<a"]) {
+    for (const opener of ["<!--", "<script>", "<style>", "<textarea>", "<h2", "<a"]) {
       const source = opener.repeat(100000);
       assert.equal(namespaceHeadingIds(source, [{ slug: "intro" }], "block"), source);
     }

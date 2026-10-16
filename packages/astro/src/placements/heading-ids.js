@@ -1,12 +1,14 @@
+/** Escape a native heading slug for an HTML attribute value. */
 const attribute = (value) =>
   value
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+/** Match the ASCII whitespace recognized between HTML attributes. */
 const space = (character) => /[\t\n\f\r ]/.test(character ?? "");
 
-// Advance once through a tag, including quoted attribute values.
+/** Find a tag's exclusive end with attribute-value quote handling, or return -1. */
 function tagEnd(html, start) {
   let quote;
   let unquotedValue = false;
@@ -28,6 +30,7 @@ function tagEnd(html, start) {
   return -1;
 }
 
+/** Skip a matching raw-element closing tag, preserving an unterminated remainder. */
 function rawEnd(html, start, name) {
   let index = start;
   while ((index = html.indexOf("</", index)) !== -1) {
@@ -44,6 +47,7 @@ function rawEnd(html, start, name) {
   return html.length;
 }
 
+/** Rewrite only the selected attribute's known heading references in one tag. */
 function rewriteAttributes(tag, start, attributeName, ids) {
   const parts = [];
   let copied = 0;
@@ -94,6 +98,7 @@ function rewriteAttributes(tag, start, attributeName, ids) {
   return parts.join("");
 }
 
+/** Namespace native heading IDs and local anchors while preserving other source bytes. */
 export function namespaceHeadingIds(html, headings, namespace) {
   const ids = new Map(
     headings.map(({ slug }) => [
@@ -140,7 +145,22 @@ export function namespaceHeadingIds(html, headings, namespace) {
           svgContexts.push({ name, svg: false });
         }
       }
-      if (["script", "style"].includes(name)) {
+      if (!inSvg && name === "plaintext") {
+        index = html.length;
+        continue;
+      }
+      const rawText =
+        ["script", "style"].includes(name) ||
+        (!inSvg &&
+          [
+            "textarea",
+            "title",
+            "xmp",
+            "iframe",
+            "noembed",
+            "noframes",
+          ].includes(name));
+      if (rawText) {
         index = inSvg && selfClosing ? end : rawEnd(html, end, name);
         continue;
       }
