@@ -11,6 +11,22 @@ const text = z
   .min(1)
   .refine((value) => !/[\x00-\x1f\x7f]/u.test(value), "must be plain text");
 
+export const imageSchema = z.strictObject({
+  src: z.string().refine((value) => {
+    if (/[\x00-\x20\x7f\\]/u.test(value) || value.startsWith("//")) return false;
+    if (value.startsWith("/")) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }, "must be a root-relative image path or an HTTPS URL"),
+  alt: z.string().trim().min(1),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
 export const entrySchema = z
   .strictObject(
     {

@@ -694,6 +694,35 @@ Markdown editor input.
 
 ### Post content and routes
 
+Posts may optionally declare an authored `cover` image:
+
+```yaml
+cover:
+  src: /images/article.png
+  alt: A concise description of the cover image.
+  width: 1200
+  height: 675
+```
+
+`src` is a public-directory path beginning with `/`, or an absolute HTTPS URL
+without credentials. Local public paths receive Astro's host base when rendered.
+Alternative text must be nonempty; intrinsic dimensions must be positive integers.
+The specialized Post Single and Loop forward this optional image to the generic
+views. Images keep their authored aspect ratio and use Astro's native Image
+component. Remote optimization remains subject to the host's Astro image policy.
+An omitted cover renders no placeholder and reserves no image column.
+
+The editorial layout accepted on 2026-10-18 stacks archive media above its summary until the
+Moo Page rail reaches `lg`, then uses five image columns and seven text columns.
+The date precedes the linked title and summary. Single places the cover between
+its header and content. Explicit per-language cover assignments may share an
+asset while retaining translated alternative text; a missing cover does not
+fall back to another translation. Generic empty archives compose the public
+Empty component with the caller's localized message and `emptyUtilities`;
+an explicitly blank message suppresses the visible state. Positive browser
+contracts in `tests/test_editorial_acceptance.py` cover the accepted geometry
+and media behavior without pixel snapshots.
+
 `@wpmoo/astro/plugins/post` exports `post()`. Its `/content` and `/queries` subpaths export `postSchema`, `getPublishedPosts()` and `getPostPaths({ basePath?, lang? })`. The specialized `/views/Single.astro`, `/views/Archive.astro` and `/views/Loop.astro` accept supplied native Post entries and forward the generic named slots; they add no queries or document owner. The default mount is `/posts` with the label `Posts`. A different label leaves type, collection and source identity as `post`; a mount change changes public URLs and creates no automatic redirects.
 
 For example, add Post to a Page site and make its Single Sidebar optional:

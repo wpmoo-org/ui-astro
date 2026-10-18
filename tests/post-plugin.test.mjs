@@ -87,6 +87,28 @@ test("publication selection is explicit and stable by timestamp then exact sourc
   assert.throws(() => publishedPostsFromEntries([{ ...entry("a.md"), collection: "page" }]), /collection/i);
 });
 
+test("Post covers preserve authored image metadata without inventing missing covers", () => {
+  const cover = { src: "/images/landscape.png", alt: "Layered mountains", width: 1200, height: 675 };
+  const illustrated = entry("illustrated.md", { cover });
+  assert.deepEqual(illustrated.data.cover, cover);
+  assert.deepEqual(postLoopItems([illustrated])[0].cover, cover);
+  const plain = entry("plain.md");
+  assert.equal(Object.hasOwn(plain.data, "cover"), false);
+  assert.equal(Object.hasOwn(postLoopItems([plain])[0], "cover"), false);
+  assert.equal(entry("remote.md", { cover: { ...cover, src: "https://images.example.test/cover.png" } }).data.cover.src,
+    "https://images.example.test/cover.png");
+});
+
+test("Post cover validation rejects unsafe sources and incomplete image metadata", () => {
+  const cover = { src: "/images/landscape.png", alt: "Layered mountains", width: 1200, height: 675 };
+  for (const src of ["", "//example.test/x.png", "javascript:alert(1)", "data:image/png;base64,x", "http://example.test/x.png", "https://user:pass@example.test/x.png", "/images/with space.png", "/\\example.test/x.png"]) {
+    assert.throws(() => entry("invalid.md", { cover: { ...cover, src } }), /cover|src/i);
+  }
+  for (const patch of [{ alt: " " }, { width: 0 }, { height: -1 }, { width: 1.5 }, { height: undefined }, { unknown: true }]) {
+    assert.throws(() => entry("invalid.md", { cover: { ...cover, ...patch } }), /cover|unrecognized/i);
+  }
+});
+
 test("Post URLs share one filename or explicit-slug mapping across language and host policies", () => {
   const street = entry("Straße.md");
   const apple = entry("Äpfel.md");

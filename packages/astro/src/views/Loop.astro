@@ -1,5 +1,8 @@
 ---
 import Typography from "../components/Typography.astro";
+import Empty from "../components/Empty.astro";
+import { Image } from "astro:assets";
+import { imageSchema, type ContentImage } from "../content/index.js";
 import {
   defineSite,
   formatDate,
@@ -16,6 +19,7 @@ interface LoopItem {
   title: string;
   href: string;
   description?: string;
+  cover?: ContentImage;
   date?: Date;
   entryContext?: EntryClassContext;
 }
@@ -66,6 +70,7 @@ const checkedItems = items.map((item, index) => {
   }
   return {
     ...item,
+    cover: item.cover === undefined ? undefined : imageSchema.parse(item.cover),
     entryClasses: item.entryContext ? getEntryClasses(item.entryContext) : [],
     dateText: item.date
       ? formatDate(item.date, {
@@ -83,35 +88,54 @@ const checkedItems = items.map((item, index) => {
     <ul class:list={parts.loop.utilities}>
       {checkedItems.map((item) => (
         <li class:list={[item.entryClasses, parts.loop.itemUtilities]}>
-          <Typography
-            variant={titleVariant}
-            content={item.title}
-            class={parts.loop.titleUtilities.join(" ")}
-          >
-            <a
-              class="text-reset link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
-              href={item.href}
+          <div class="row g-4 align-items-center" data-layout="page-grid">
+            {item.cover ? (
+              <div class="col-12" data-page-col-lg="5">
+                <a href={item.href} tabindex="-1" aria-hidden="true">
+                  <Image
+                    {...item.cover}
+                    src={item.cover.src.startsWith("/")
+                      ? `${import.meta.env.BASE_URL.replace(/\/$/u, "")}${item.cover.src}`
+                      : item.cover.src}
+                    alt=""
+                    class="img-fluid rounded"
+                    loading="lazy"
+                  />
+                </a>
+              </div>
+            ) : null}
+            <div
+              class="col-12 d-flex flex-column gap-3"
+              data-page-col-lg={item.cover ? "7" : undefined}
             >
-              {item.title}
-            </a>
-          </Typography>
-          {item.description ? (
-            <p class:list={parts.loop.descriptionUtilities}>
-              {item.description}
-            </p>
-          ) : null}
-          {item.date ? (
-            <time
-              class="small text-body-secondary"
-              datetime={item.date.toISOString()}
-            >
-              {item.dateText}
-            </time>
-          ) : null}
+              {item.date ? (
+                <time class="small text-body-secondary" datetime={item.date.toISOString()}>
+                  {item.dateText}
+                </time>
+              ) : null}
+              <Typography
+                variant={titleVariant}
+                content={item.title}
+                class={parts.loop.titleUtilities.join(" ")}
+              >
+                <a
+                  class="text-reset link-underline link-underline-opacity-0 link-underline-opacity-100-hover"
+                  href={item.href}
+                >
+                  {item.title}
+                </a>
+              </Typography>
+              {item.description ? (
+                <p class:list={parts.loop.descriptionUtilities}>
+                  {item.description}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </li>
       ))}
     </ul>
-  ) : (
-    <p class:list={parts.loop.emptyUtilities}>{emptyText}</p>
-  )
+  ) : emptyText.trim() ? (
+    <Empty title={emptyText} class={parts.loop.emptyUtilities.join(" ")} />
+  ) : null
 }
