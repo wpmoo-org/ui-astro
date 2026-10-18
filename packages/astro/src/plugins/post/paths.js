@@ -142,6 +142,7 @@ export function postLoopItems(
       ? {}
       : { description: entry.data.description }),
     date: entry.data.published_at,
+    ...(entry.data.cover === undefined ? {} : { cover: entry.data.cover }),
     href: siteHref(postHrefFromEntry(entry, { basePath, lang, locale }), {
       base,
       trailingSlash,

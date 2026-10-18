@@ -2,6 +2,8 @@
 
 Accepted on 2026-10-02 at desktop light/LTR and narrow dark/RTL. These
 protect the shared host Hero, document ownership and working navigation.
+The 2026-10-18 follow-up accepts matching native/MDX content insets and
+content-width actions aligned to the logical start of their content rail.
 """
 
 import os
@@ -95,6 +97,44 @@ class AcceptedMixedPages(unittest.TestCase):
                 else:
                     expect(sidebar).to_be_visible()
                 self.assertEqual(errors, [])
+
+    def test_native_and_mdx_share_insets_and_content_width_actions(self):
+        for width in (390, 768, 1440):
+            for theme, direction in (("light", "ltr"), ("dark", "rtl")):
+                with self.subTest(width=width, theme=theme, direction=direction):
+                    page, errors = self.open_profile(width, theme, direction, "landing")
+                    insets = []
+                    for path, label in (("landing", "Open MDX Page"),
+                                        ("enhanced-page", "Open native Astro page")):
+                        if path != "landing":
+                            self.assertEqual(page.goto(urljoin(BASE_URL, path), wait_until="domcontentloaded").status, 200)
+                            self.assert_shell(page, width, theme, direction)
+                        action = page.get_by_role("button", name=label, exact=True)
+                        expect(action).to_be_visible()
+                        geometry = action.evaluate("""element => {
+                            const box = element.getBoundingClientRect();
+                            const range = document.createRange();
+                            range.selectNodeContents(element);
+                            const style = getComputedStyle(element);
+                            const rail = (element.closest('section') || element.closest('article')).getBoundingClientRect();
+                            return {
+                                width: box.width,
+                                intrinsic: range.getBoundingClientRect().width
+                                    + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+                                    + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth),
+                                start: getComputedStyle(element).direction === 'rtl'
+                                    ? rail.right - box.right : box.left - rail.left,
+                            };
+                        }""")
+                        self.assertAlmostEqual(geometry["width"], geometry["intrinsic"], delta=2)
+                        self.assertAlmostEqual(geometry["start"], 0, delta=1)
+                        insets.append(page.locator("main").evaluate("""main => ({
+                            padding: parseFloat(getComputedStyle(main.querySelector('[data-page-container]')).paddingTop),
+                            heading: main.querySelector('h1').getBoundingClientRect().top - main.getBoundingClientRect().top,
+                        })"""))
+                    self.assertAlmostEqual(insets[0]["padding"], insets[1]["padding"], delta=1)
+                    self.assertAlmostEqual(insets[0]["heading"], insets[1]["heading"], delta=1)
+                    self.assertEqual(errors, [])
 
     def test_native_hero_and_reciprocal_actions_keep_the_selected_shell_preferences(self):
         for width, theme, direction in PROFILES:

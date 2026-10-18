@@ -1,4 +1,4 @@
-"""Host-owned English empty states in the existing Moo Page shell on port 4322."""
+"""Shared Empty composition accepted on 2026-10-18, retaining host-owned copy."""
 
 import os
 import unittest
@@ -33,7 +33,8 @@ class AcceptedEmptyStates(unittest.TestCase):
                 self.assertEqual(page.locator("html").get_attribute("lang"), "en")
                 self.assertEqual(page.locator("main h1").all_text_contents(), ["Empty states"])
                 self.assertEqual(page.locator("main h2").all_text_contents(), ["Items", "Pages"])
-                self.assertEqual(page.locator("main p.text-body-secondary").all_text_contents(), ["No items yet.", "No pages yet."])
+                self.assertEqual(page.locator("main .empty-state").count(), 2)
+                self.assertEqual(page.locator("main .empty-state-title").all_text_contents(), ["No items yet.", "No pages yet."])
                 self.assertEqual(page.locator('header nav[aria-label="Breadcrumb"]').count(), 1)
                 self.assertEqual(page.locator('[data-moo-document-owner]').count(), 1)
                 self.assertEqual(page.locator('main#main-content > [data-page-container]').count(), 1)

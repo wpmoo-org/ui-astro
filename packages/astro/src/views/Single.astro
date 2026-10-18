@@ -1,5 +1,7 @@
 ---
 import ContentFrame from "../layouts/ContentFrame.astro";
+import { Image } from "astro:assets";
+import { imageSchema, type ContentImage } from "../content/index.js";
 import { selectAsidePlacements } from "../placements/aside.js";
 import Placement from "../placements/Placement.astro";
 import type { PlacementPlan } from "../placements/index.js";
@@ -19,6 +21,7 @@ interface Props {
   dir?: "ltr" | "rtl";
   title: string;
   description?: string;
+  cover?: ContentImage;
   entryContext?: EntryClassContext;
   parts?: PartsInput;
   forwardedSlots?: {
@@ -46,22 +49,26 @@ const hasAside = forwardedSlots?.aside ?? Astro.slots.has("aside");
 const selectedAside = selectAsidePlacements(plan, aside, hasAside, Astro.props.compactToc ?? false);
 const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-content");
 const hasTaxonomies = forwardedSlots?.taxonomies ?? Astro.slots.has("taxonomies");
+const cover = Astro.props.cover === undefined ? undefined : imageSchema.parse(Astro.props.cover);
 ---
 
-<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="article" class={entryClasses.concat("lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="article" class={entryClasses.concat("mx-auto", "lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
   <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" placements={selectedAside.placements} tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={selectedAside.listClass} /> : null}</Fragment>
     {
       hasPageHeader ? (
         <slot name="page-header" />
       ) : (
-        <PageHeader title={title} description={description} parts={parts}>
-          {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
-          {hasActions ? <slot name="actions" slot="actions" /> : null}
-        </PageHeader>
+        <div class="text-center">
+          <PageHeader title={title} description={description} parts={parts}>
+            {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
+            {hasActions ? <slot name="actions" slot="actions" /> : null}
+          </PageHeader>
+        </div>
       )
     }
+    {cover ? <Image {...cover} src={cover.src.startsWith("/") ? `${import.meta.env.BASE_URL.replace(/\/$/u, "")}${cover.src}` : cover.src} class="img-fluid rounded mb-5" loading="eager" /> : null}
     {hasBefore ? <slot name="before-content" /> : plan ? <Placement plan={plan} at="entry.before-content" /> : null}
-    <div class="text-body-secondary">
+    <div class="fs-5 lh-base">
       <slot />
     </div>
     {hasTaxonomies ? <slot name="taxonomies" /> : plan ? <Placement plan={plan} at="entry.taxonomies" /> : null}

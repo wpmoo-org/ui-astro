@@ -6,6 +6,7 @@ import type { PlacementPlan } from "../placements/index.js";
 import type { ContentAsideInput } from "../config/index.js";
 import PageHeader from "../includes/PageHeader.astro";
 import Loop from "./Loop.astro";
+import type { ContentImage } from "../content/index.js";
 import type {
   DateFormatter,
   EntryClassContext,
@@ -17,6 +18,7 @@ interface LoopItem {
   title: string;
   href: string;
   description?: string;
+  cover?: ContentImage;
   date?: Date;
   entryContext?: EntryClassContext;
 }

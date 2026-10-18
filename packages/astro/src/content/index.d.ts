@@ -3,6 +3,14 @@ import type { PageOptionsInput } from "../config/index.js";
 
 export type PublicationStatus = "publish" | "draft" | "pending" | "future";
 
+export declare const imageSchema: z.ZodObject<{
+  src: z.ZodString;
+  alt: z.ZodString;
+  width: z.ZodNumber;
+  height: z.ZodNumber;
+}>;
+export type ContentImage = z.infer<typeof imageSchema>;
+
 export declare const entrySchema: z.ZodObject<{
   title: z.ZodString;
   description: z.ZodOptional<z.ZodString>;

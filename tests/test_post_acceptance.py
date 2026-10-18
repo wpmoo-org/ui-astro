@@ -119,6 +119,21 @@ class AcceptedPostLayouts(unittest.TestCase):
                 self.assertTrue(trigger.evaluate("element => document.activeElement === element"))
                 self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
+    def test_sidebar_keeps_its_header_brand_and_the_page_keeps_its_footer(self):
+        self.open_page("posts/layout-options")
+        wrapper = self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-ready]')
+        wrapper.wait_for()
+        sidebar = self.page.locator('[data-slot="sidebar"]')
+        for state in ("expanded", "collapsed"):
+            with self.subTest(state=state):
+                self.assertEqual(wrapper.get_attribute("data-sidebar-state"), state)
+                self.assertEqual(sidebar.locator('[data-slot="sidebar-header"]').get_by_text("Moo UI Astro", exact=True).count(), 1)
+                self.assertEqual(sidebar.get_by_text("Moo UI Astro", exact=True).count(), 1)
+                self.assertEqual(self.page.locator('[data-slot="page"] > footer').get_by_role("link", name="Moo UI Astro", exact=True).count(), 1)
+                if state == "expanded":
+                    self.page.locator("[data-sidebar-trigger]").click()
+                    self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state="collapsed"]').wait_for()
+
 
 if __name__ == "__main__":
     unittest.main()

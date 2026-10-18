@@ -1,7 +1,8 @@
 """Positive contracts for accepted shared regions and Layout-owned spacing.
 
 The maintainer accepted the configurable spacing candidate on 2026-10-01.
-These measurements protect that foundation, not a finished theme design.
+The 2026-10-18 editorial acceptance preserves responsive Layout padding and
+the intentionally fluid sidebarless headers, and updates shared Loop spacing.
 """
 
 import os
@@ -42,10 +43,17 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-moo-document-owner]').count(), 1)
         self.assertEqual(self.page.locator("main#main-content > [data-page-container]").count(), 1)
 
-    def assert_region_rails_align(self):
+    def assert_region_rails_align(self, fluid_header=False):
         header = self.page.locator('[data-slot="page"] > header > div').bounding_box()
         main = self.page.locator('main#main-content > [data-page-container]').bounding_box()
-        self.assertAlmostEqual(header["width"], main["width"], delta=1)
+        if fluid_header:
+            page = self.page.locator('[data-slot="page"]').bounding_box()
+            self.assertAlmostEqual(header["width"], page["width"], delta=1)
+            self.assertGreaterEqual(header["width"], main["width"])
+            self.assertGreaterEqual(main["x"], header["x"] - 1)
+            self.assertLessEqual(main["x"] + main["width"], header["x"] + header["width"] + 1)
+        else:
+            self.assertAlmostEqual(header["width"], main["width"], delta=1)
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
     def test_single_uses_the_selected_sidebar_and_shared_page_rail(self):
@@ -84,9 +92,10 @@ class AcceptedSharedParts(unittest.TestCase):
                     f"localStorage.setItem('moo:theme', '{theme}'); "
                     f"localStorage.setItem('moo:direction', '{direction}')"
                 )
-                for path, inset_rem in [("preview/archive", 1.5), ("preview/single", 1.5),
-                                        ("guide/setup", 1.5), ("posts", 1.5),
-                                        ("posts/announcement", 1.5), ("contact", 0.5)]:
+                inherited_inset = 3 if width >= 768 else 1.5
+                for path, inset_rem in [("preview/archive", inherited_inset), ("preview/single", inherited_inset),
+                                        ("guide/setup", inherited_inset), ("posts", inherited_inset),
+                                        ("posts/announcement", inherited_inset), ("contact", 0.5)]:
                     with self.subTest(path=path):
                         self.open_preview(path)
                         rail = self.page.locator('main#main-content > [data-page-container]')
@@ -104,7 +113,7 @@ class AcceptedSharedParts(unittest.TestCase):
                         self.assertAlmostEqual(metrics["top"], inset, delta=1)
                         self.assertAlmostEqual(metrics["bottom"], inset, delta=1)
                         self.assertAlmostEqual(metrics["titleInset"], inset, delta=1)
-                        self.assert_region_rails_align()
+                        self.assert_region_rails_align(fluid_header=path in ("contact", "posts/announcement"))
 
     def test_archive_heading_and_items_keep_the_accepted_internal_spacing(self):
         for width in [1440, 390]:
@@ -127,8 +136,8 @@ class AcceptedSharedParts(unittest.TestCase):
                         itemDescriptionGap: itemDescription.getBoundingClientRect().top - itemHeading.getBoundingClientRect().bottom,
                     };
                 }""")
-                for key, gap_rem in [("headingGap", 0.5), ("listInset", 1.5),
-                                     ("itemGap", 1.5), ("itemDescriptionGap", 0.5)]:
+                for key, gap_rem in [("headingGap", 1), ("listInset", 1.5),
+                                      ("itemGap", 0), ("itemDescriptionGap", 1)]:
                     self.assertAlmostEqual(metrics[key], metrics["rem"] * gap_rem, delta=1)
 
     def test_mobile_sidebar_opens_with_aria_and_returns_keyboard_focus(self):

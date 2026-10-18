@@ -15,7 +15,6 @@ export const demoPageArchiveTranslationKeys = Object.freeze([
 export const demoControls = Object.freeze({
   sidebar: Object.freeze({ id: "demo-sidebar", key: "astro-demo" }),
   action: Object.freeze({ variant: "ghost", size: "sm", class: "ms-auto" }),
-  sidebarFooterUtilities: Object.freeze(["small", "text-body-secondary"]),
 });
 
 export function getDemoOptions(

@@ -10,6 +10,11 @@ taxonomies:
   tag: [astro]
   sector: [foundation]
 published_at: "2026-09-20T23:30:00-02:00"
+cover:
+  src: /images/reading-landscape.png
+  alt: Gestaffelte Bergsilhouetten unter einem sanft blauen Himmel.
+  width: 1200
+  height: 675
 options:
   sidebar: null
 ---
