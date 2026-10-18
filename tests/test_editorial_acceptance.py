@@ -152,6 +152,22 @@ class AcceptedEditorialViews(unittest.TestCase):
                         self.open_page(page, "posts/announcement", "en")
                         expect(page.locator("main article img")).to_have_count(0)
 
+    def test_authored_article_links_keep_the_host_base_and_reach_native_headings(self):
+        with self.profile(390, "light", "ltr") as page:
+            path = "posts/layout-options"
+            self.open_page(page, path, "en")
+            document_url = page.url.split("#", 1)[0]
+            self.assertEqual(urlsplit(document_url).path.rstrip("/"),
+                             urlsplit(urljoin(BASE_URL, path)).path.rstrip("/"))
+            for heading_id in ("keep-layout-choices-independent", "check-the-narrow-layout-first"):
+                link = page.locator(f'main article a[href="#{heading_id}"]')
+                target = page.locator(f'main article h2[id="{heading_id}"]')
+                expect(link).to_have_count(1)
+                expect(target).to_have_count(1)
+                link.click()
+                expect(page).to_have_url(document_url + "#" + heading_id)
+                expect(target).to_be_in_viewport()
+
     def test_localized_empty_surfaces_and_taxonomy_breadcrumbs(self):
         for locale, prefix, copy in (("en", "", "No items yet."), ("de", "de/", "Noch keine Einträge.")):
             for width in (390, 1440):

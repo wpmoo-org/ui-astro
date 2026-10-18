@@ -56,9 +56,9 @@ Lists make a sequence easier to scan, while a short quotation can pause the
 flow without becoming a second page header. These elements should still feel
 like parts of one continuous article.
 
-Links also belong to that reading flow. You can compare this article with
-[the announcement without a Sidebar](/posts/announcement), or return to
-[the Post archive](/posts) to see how the title and description work in a list.
+Links also belong to that reading flow. You can revisit
+[the layout choices](#keep-layout-choices-independent), or jump ahead to
+[the narrow-screen checks](#check-the-narrow-layout-first) without leaving the article.
 
 ## Check the narrow layout first
 
