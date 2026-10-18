@@ -98,11 +98,7 @@ const languageItems = languageLinks.map((link) => ({
         collapsible={selectedSidebar?.collapsible}
         rail={selectedSidebar?.rail}
         ariaLabel={copy.examples}
-      >
-        <span slot="footer" class:list={demoControls.sidebarFooterUtilities}>
-          {context.site.brand}
-        </span>
-      </Sidebar>
+      />
       <Header
         slot="header"
         parts={parts}
