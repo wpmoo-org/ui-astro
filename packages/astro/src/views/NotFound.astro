@@ -1,9 +1,10 @@
 ---
 import Typography from "../components/Typography.astro";
 import Button from "../components/Button.astro";
+import Icon from "../components/internal/Icon.astro";
 import PageHeader from "../includes/PageHeader.astro";
 import { navigationHref } from "../internal/href.js";
-import type { PartsInput } from "../config/index.js";
+import { resolveParts, type PartsInput } from "../config/index.js";
 
 interface Props {
   title: string;
@@ -14,20 +15,67 @@ interface Props {
 }
 const { title, description, homeLabel, homeHref, parts } = Astro.props;
 navigationHref(homeHref, "NotFound homeHref");
+const resolvedParts = resolveParts(parts);
+const centeredParts: PartsInput = {
+  ...resolvedParts,
+  pageHeader: {
+    ...resolvedParts.pageHeader,
+    utilities: [...resolvedParts.pageHeader.utilities, "align-items-center"],
+  },
+};
 ---
 
-<Typography variant="muted" content="404" />
-{
-  Astro.slots.has("page-header") ? (
-    <slot name="page-header" />
-  ) : (
-    <PageHeader title={title} description={description} parts={parts} />
-  )
-}
-{
-  Astro.slots.has("actions") ? (
-    <slot name="actions" />
-  ) : (
-    <Button element="a" href={homeHref} label={homeLabel} />
-  )
-}
+<section
+  class="d-flex flex-column flex-grow-1 justify-content-center align-items-center text-center py-5"
+  aria-label={title}
+  data-not-found
+>
+  <div class="row justify-content-center w-100 mx-0">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+      <Typography
+        variant="muted"
+        content="404"
+        class="d-block fw-semibold lh-1 opacity-50 mb-4"
+        data-not-found-code
+      />
+      {
+        Astro.slots.has("page-header") ? (
+          <slot name="page-header" />
+        ) : (
+          <PageHeader
+            title={title}
+            description={description}
+            parts={centeredParts}
+          />
+        )
+      }
+      {
+        Astro.slots.has("actions") ? (
+          <slot name="actions" />
+        ) : (
+          <Button
+            element="a"
+            href={homeHref}
+            label={homeLabel}
+            variant="ghost"
+            class="mt-2"
+          >
+            <Icon slot="icon-start" name="chevron-left" />
+          </Button>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  [data-not-found] :global([data-not-found-code]) {
+    font-size: 6rem;
+  }
+
+  @media (min-width: 576px) {
+    [data-not-found] :global([data-not-found-code]) {
+      font-size: 8rem;
+    }
+  }
+</style>

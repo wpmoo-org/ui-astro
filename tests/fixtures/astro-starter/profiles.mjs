@@ -39,12 +39,38 @@ export async function configureStarterProfile(
   );
   const preferences = join(sitePath, "src/preferences.js");
   const copy = await readFile(preferences, "utf8");
-  assert.ok(copy.includes("  sidebar: {},"), "ordinary Sidebar input differs");
+  assert.match(
+    copy,
+    /\bexport\s+const\s+projectDefaults\s*=/u,
+    "project preferences export required",
+  );
   await writeFile(
     preferences,
-    copy.replace(
-      "  sidebar: {},",
-      '  sidebar: {},\n  parts: { content: { utilities: ["py-2"] } },',
-    ),
+    `${copy.trimEnd()}\n\n` +
+      "projectDefaults.sidebar = {};\n" +
+      "projectDefaults.parts = { ...projectDefaults.parts, content: { ...projectDefaults.parts?.content, utilities: [\"py-2\"] } };\n",
   );
+  if (mainLanguage === "de") {
+    for (const [locale, originalHref, href] of [
+      ["en", "/contact", "/en/contact"],
+      ["de", "/de/kontakt", "/kontakt"],
+    ]) {
+      const block = join(
+        sitePath,
+        "src/content/block",
+        locale,
+        "page-information.md",
+      );
+      const source = await readFile(block, "utf8");
+      const originalLink = `](${originalHref})`;
+      assert.ok(
+        source.includes(originalLink),
+        `expected contact link ${originalHref} in ${locale} page-information.md`,
+      );
+      await writeFile(
+        block,
+        source.replaceAll(originalLink, `](${href})`),
+      );
+    }
+  }
 }
