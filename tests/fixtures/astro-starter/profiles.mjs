@@ -61,16 +61,15 @@ export async function configureStarterProfile(
         locale,
         "page-information.md",
       );
-      let source;
-      try {
-        source = await readFile(block, "utf8");
-      } catch (error) {
-        if (error.code === "ENOENT") continue;
-        throw error;
-      }
+      const source = await readFile(block, "utf8");
+      const originalLink = `](${originalHref})`;
+      assert.ok(
+        source.includes(originalLink),
+        `expected contact link ${originalHref} in ${locale} page-information.md`,
+      );
       await writeFile(
         block,
-        source.replaceAll(`](${originalHref})`, `](${href})`),
+        source.replaceAll(originalLink, `](${href})`),
       );
     }
   }

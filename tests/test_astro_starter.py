@@ -20,20 +20,21 @@ PINS = {"astro": "7.3.3", "@wpmoo/ui": "1.0.0", "bootstrap": "5.3.8",
         "@astrojs/mdx": "8.0.2", "@astrojs/check": "0.9.10", "typescript": "6.0.3"}
 ARCHIVE_ITEMS = {
     "archive": ("announcement", "update"),
-    "category": ("enhanced", "update"),
+    "category": ("enhanced", "guide", "update"),
     "categoryCompany": ("about", "services"),
     "categoryNews": ("announcement", "update"),
-    "tag": ("enhanced", "services", "update"),
+    "tag": ("enhanced", "guide", "services", "update"),
     "tagMdx": ("enhanced",),
     "tagRelease": ("announcement", "update"),
     "sector": ("about", "announcement", "update"),
-    "sectorDevelopment": ("enhanced", "services", "update"),
+    "sectorDevelopment": ("enhanced", "guide", "services", "update"),
 }
 ENTRY_TERMS = {
     "home": (), "contact": (), "native": (),
     "about": ("categoryCompany", "sector"),
     "services": ("categoryCompany", "tag", "sectorDevelopment"),
     "enhanced": ("category", "tag", "tagMdx", "sectorDevelopment"),
+    "guide": ("category", "tag", "sectorDevelopment"),
     "announcement": ("categoryNews", "tagRelease", "sector"),
     "update": ("category", "categoryNews", "tag", "tagRelease", "sector", "sectorDevelopment"),
 }
@@ -122,6 +123,7 @@ def routes(profile):
         "home": ("", ""), "about": ("about", "ueber-uns"),
         "services": ("services", "leistungen"), "contact": ("contact", "kontakt"),
         "enhanced": ("enhanced", "erweitert"),
+        "guide": ("placement-guide", "platzierungen"),
         "announcement": ("blog/announcement", "beitraege/ankuendigung"),
         "update": ("blog/project-update", "beitraege/projektupdate"),
         "archive": ("blog", "beitraege"),
@@ -217,7 +219,11 @@ def verify_rendered(directory, profile, inset="py-2"):
         require(theme[0].get("data-moo-theme-label-light") == ("Hellen Modus aktivieren" if route["locale"] == "de" else "Switch to light mode"), "localized theme action differs")
         require(len([button for button in doc.find("button") if button.get("aria-label") == ("Sprache" if route["locale"] == "de" else "Language")]) == 1, "one configured language control required")
         if route["key"] in ("enhanced", "native"):
-            label = "Native Seite öffnen" if route["locale"] == "de" else "Explore the native page"
+            label = (
+                ("Zur Startseite" if route["locale"] == "de" else "Back to home")
+                if route["key"] == "native"
+                else ("Native Seite öffnen" if route["locale"] == "de" else "Explore the native page")
+            )
             controls = [a for a in doc.anchors if a["text"].strip() == label and "btn" in a.get("class", "").split()]
             target_key = "native" if route["key"] == "enhanced" else "home"
             target = next(r["href"] for r in expected.values() if r["key"] == target_key and r["locale"] == route["locale"])
