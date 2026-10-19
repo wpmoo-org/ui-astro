@@ -18,7 +18,7 @@ class PackedMatrix(unittest.TestCase):
         self.assertTrue(namespace_path.is_file(), "Public JS namespaces need actual compiled SSR evidence")
         namespaces = json.loads(namespace_path.read_text())
         self.assertEqual(namespaces["root"], ["default"])
-        self.assertEqual(namespaces["config"], ["defineSite", "formatDate", "getEntryClasses", "getPageClasses", "layoutSchema", "normalizeSlug", "resolvePageOptions", "resolveParts"])
+        self.assertEqual(namespaces["config"], ["contentAsideSchema", "defineSite", "formatDate", "getEntryClasses", "getPageClasses", "layoutSchema", "normalizeSlug", "resolvePageOptions", "resolveParts"])
         self.assertEqual(namespaces["context"], ["getEntryHref", "getRootPaths", "getSiteContext", "getSiteNavigation", "validateSiteContent"])
         self.assertEqual(namespaces["i18n"], ["getLanguageLinks", "getLocaleHref", "getRouteLocale"])
         self.assertEqual(namespaces["seo"], ["resolveSeoMetadata"])
@@ -39,10 +39,15 @@ class PackedMatrix(unittest.TestCase):
         proof = json.loads((PROOF_ROOT / "proof.json").read_text())
         self.assertEqual(proof["schema_version"], 2, "The legacy single consumer is not the matrix")
         self.assertEqual(proof["selection"], "all")
-        expected_counts = {"default": 4, "theme": 9, "ui-only": 2, "page-only": 2,
+        expected_counts = {"default": 4, "theme": 9, "ui-only": 6, "page-only": 2,
                            "post-only": 3, "mdx": 7, "external-plugin": 4, "taxonomy": 22,
                            "external-taxonomy": 14, "content-editing": 4, "not-found": 4, "not-found-host": 4}
         self.assertEqual(set(proof["profiles"]), set(expected_counts))
+        self.assertEqual(set(proof["profiles"]["ui-only"]["html"]), {
+            "404.html", "index.html",
+            "language-switcher/light-ltr/index.html", "language-switcher/dark-ltr/index.html",
+            "language-switcher/light-rtl/index.html", "language-switcher/dark-rtl/index.html",
+        })
         archive = proof["artifacts"]["@wpmoo/astro"]
         archive_hash = hashlib.sha256((PROOF_ROOT / archive["filename"]).read_bytes()).hexdigest()
         self.assertEqual(archive["sha256"], archive_hash)
@@ -52,7 +57,7 @@ class PackedMatrix(unittest.TestCase):
                 self.assertEqual(profile["archive_sha256"], archive_hash)
                 self.assertEqual(len(profile["html"]), expected_count)
                 self.assertEqual(profile["authored_before"], profile["authored_after"])
-                self.assertEqual(profile["host_astro"], "7.3.3")
+                self.assertEqual(profile["host_astro"], "7.3.8")
                 self.assertEqual(profile["mdx_installed"], name == "mdx")
                 for path, digest in profile["html"].items():
                     self.assertEqual(hashlib.sha256((PROOF_ROOT / profile["directory"] / "dist" / path).read_bytes()).hexdigest(), digest)
