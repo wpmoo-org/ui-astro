@@ -279,6 +279,7 @@ async function main() {
   const proof = {
     schema_version: 2,
     kind: "astro-moo-starter",
+    preparation: request.preparation,
     artifacts: request.artifacts,
     source_commit: request.source_commit,
     starter_commit: request.starter_commit,

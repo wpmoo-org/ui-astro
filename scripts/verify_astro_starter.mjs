@@ -31,7 +31,7 @@ import {
   treeFiles,
   validateStarterLock,
 } from "./astro_starter_contracts.mjs";
-import { configureStarterProfile } from "../tests/fixtures/astro-starter/profiles.mjs";
+import { configureStarterProfile, migrateStarterBreadcrumbs } from "../tests/fixtures/astro-starter/profiles.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const inside = (parent, child) => {
@@ -94,6 +94,7 @@ export async function assertStarterLocations({ starterPath, cache, output }) {
   return { starterPath, cachePath, outputPath };
 }
 export async function verifyAstroStarter(options) {
+  assert.ok([undefined, "native", "content-owned"].includes(options.breadcrumbProfile), "unsupported breadcrumb proof profile");
   const { starterPath, cachePath, outputPath } =
     await assertStarterLocations(options);
   assert.match(
@@ -109,7 +110,7 @@ export async function verifyAstroStarter(options) {
     starterPath,
     sdkArchive: options.sdkArchive,
     outputPath,
-    lockPath: join(REPO, "tests/fixtures/astro-starter/package-lock.json"),
+    lockPath: options.lockPath ?? join(REPO, "tests/fixtures/astro-starter/package-lock.json"),
   });
   const artifacts = { "@wpmoo/astro": prepared.sdk };
   const profiles = [];
@@ -118,6 +119,8 @@ export async function verifyAstroStarter(options) {
       const name = `${mainLanguage}-${categoryProfile}`;
       const directory = join(outputPath, name);
       await cp(prepared.sitePath, directory, { recursive: true });
+      if (options.breadcrumbProfile === "content-owned")
+        await migrateStarterBreadcrumbs(directory);
       await configureStarterProfile(directory, {
         mainLanguage,
         categoryProfile,
@@ -161,6 +164,10 @@ export async function verifyAstroStarter(options) {
   const request = {
     schema_version: 2,
     kind: "astro-moo-starter",
+    preparation: {
+      breadcrumbProfile: options.breadcrumbProfile ?? "native",
+      lockSeedSha256: digest(await readFile(options.lockPath ?? join(REPO, "tests/fixtures/astro-starter/package-lock.json"))),
+    },
     artifacts,
     profiles,
     source_commit: run("git", ["rev-parse", "HEAD"], { cwd: REPO }).trim(),
@@ -267,6 +274,8 @@ if (
     "--cache": "cache",
     "--output": "output",
     "--image": "image",
+    "--lock": "lockPath",
+    "--breadcrumb-profile": "breadcrumbProfile",
   };
   const options = {};
   for (let i = 2; i < process.argv.length; i += 2) {
@@ -280,6 +289,7 @@ if (
     );
     options[names[process.argv[i]]] = process.argv[i + 1];
   }
-  assert.equal(Object.keys(options).length, 5, "all five options required");
+  for (const key of ["starterPath", "sdkArchive", "cache", "output", "image"])
+    assert.ok(options[key], "all five required options must be supplied");
   await verifyAstroStarter(options);
 }

@@ -1686,6 +1686,17 @@ Its independent reader runs with `python3 tests/test_astro_starter.py
 while keeping inspection records and proof files. Browser/static-host acceptance
 remains separate from this offline evidence.
 
+For an unpublished content-breadcrumb SDK trial, the controller additionally
+accepts `--lock /absolute/candidate-lock.json` and
+`--breadcrumb-profile content-owned`. The external lock must bind the exact
+selected SDK archive; the existing integrity and dependency checks remain in
+force. The opt-in profile moves the recognized legacy localized breadcrumb
+preference into `parts.pageHeader` only in the six generated proof copies.
+The original Starter is not edited. `request.json` and `proof.json` record the
+selected preparation profile and lock-seed hash. This certifies the declared
+adapted trial, not an unchanged portable Starter or permanent SDK adoption.
+Without these options, the existing native preparation remains unchanged.
+
 The former reference theme and its update/rollback receipts remain historical.
 New sites use the direct starter; updating its SDK dependency preserves copied
 site content and settings. Existing sites adopt starter-file changes deliberately.

@@ -3,8 +3,32 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { configureStarterProfile } from "./fixtures/astro-starter/profiles.mjs";
+import { configureStarterProfile, migrateStarterBreadcrumbs } from "./fixtures/astro-starter/profiles.mjs";
 import { starterRoutes } from "../scripts/astro_starter_contracts.mjs";
+
+test("content breadcrumb proof migration moves only the recognized localized preference", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "astro-starter-breadcrumb-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await mkdir(join(directory, "src"));
+  const path = join(directory, "src/definitions.js");
+  const original = `export const parts = {
+            header: {
+              toggleLabel: copy.toggle,
+              navigationLabel: copy.navigation,
+              breadcrumbLabel: copy.breadcrumb,
+              skipLabel: copy.skip,
+            },
+            loop: { emptyText: copy.empty },
+};\n`;
+  await writeFile(path, original);
+  await migrateStarterBreadcrumbs(directory);
+  assert.equal(await readFile(path, "utf8"), original
+    .replace("              breadcrumbLabel: copy.breadcrumb,\n", "")
+    .replace("            loop:", "            pageHeader: { breadcrumbLabel: copy.breadcrumb },\n            loop:"));
+  const migrated = await readFile(path, "utf8");
+  await assert.rejects(migrateStarterBreadcrumbs(directory), /one recognized legacy/);
+  assert.equal(await readFile(path, "utf8"), migrated);
+});
 
 for (const locale of ["en", "de"]) {
   for (const invalidBlock of ["missing", "missing-link"]) {

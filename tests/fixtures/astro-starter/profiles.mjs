@@ -2,6 +2,23 @@ import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+export async function migrateStarterBreadcrumbs(sitePath) {
+  const path = join(sitePath, "src/definitions.js");
+  const source = await readFile(path, "utf8");
+  const before = [
+    "            header: {",
+    "              toggleLabel: copy.toggle,",
+    "              navigationLabel: copy.navigation,",
+    "              breadcrumbLabel: copy.breadcrumb,",
+    "              skipLabel: copy.skip,",
+    "            },",
+  ].join("\n");
+  const after = before.replace("              breadcrumbLabel: copy.breadcrumb,\n", "") +
+    "\n            pageHeader: { breadcrumbLabel: copy.breadcrumb },";
+  assert.equal(source.split(before).length, 2, "one recognized legacy breadcrumb preference block required");
+  await writeFile(path, source.replace(before, after));
+}
+
 export async function configureStarterProfile(
   sitePath,
   { mainLanguage, categoryProfile },
