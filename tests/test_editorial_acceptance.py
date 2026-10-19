@@ -142,7 +142,8 @@ class AcceptedEditorialViews(unittest.TestCase):
                             image = self.loaded_cover(page, "main article img")
                             expect(image).to_have_attribute("alt", alt)
                             heading = page.locator("main h1")
-                            self.assertEqual(heading.evaluate("e => getComputedStyle(e).textAlign"), "center")
+                            self.assertIn(heading.evaluate("e => getComputedStyle(e).textAlign"),
+                                          ("start", "right" if direction == "rtl" else "left"))
                             article_box = page.locator("main article").bounding_box()
                             image_box = image.bounding_box()
                             self.assertAlmostEqual(image_box["x"] + image_box["width"] / 2,

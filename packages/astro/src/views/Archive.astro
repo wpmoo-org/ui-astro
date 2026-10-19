@@ -31,6 +31,7 @@ interface Props {
   title: string;
   description?: string;
   items?: LoopItem[];
+  breadcrumbs?: readonly { label: string; href?: string }[];
   emptyText?: string;
   titleVariant?: "section-title" | "subsection-title";
   parts?: PartsInput;
@@ -75,7 +76,7 @@ const hasBefore = forwardedSlots?.before ?? Astro.slots.has("before-list");
       hasPageHeader ? (
         <slot name="page-header" />
       ) : (
-        <PageHeader title={title} description={description} parts={parts}>
+        <PageHeader title={title} description={description} breadcrumbs={Astro.props.breadcrumbs ?? plan?.chrome.breadcrumbs} parts={parts}>
           {hasActions ? <slot name="actions" slot="actions" /> : null}
         </PageHeader>
       )

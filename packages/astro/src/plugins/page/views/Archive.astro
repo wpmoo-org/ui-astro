@@ -22,6 +22,7 @@ interface Props {
   entries: CollectionEntry<"page">[];
   title?: string;
   description?: string;
+  breadcrumbs?: readonly { label: string; href?: string }[];
   base?: string;
   trailingSlash?: "always" | "never" | "ignore";
   lang?: string;
@@ -60,6 +61,7 @@ const {
   dateFormatter={dateFormatter}
   title={title}
   description={description}
+  breadcrumbs={Astro.props.breadcrumbs}
   emptyText={emptyText}
   titleVariant={titleVariant}
   forwardedSlots={{

@@ -1,20 +1,13 @@
 ---
 import Header from "@wpmoo/astro/includes/Header.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
-import type { PartsInput } from "@wpmoo/astro/config";
 interface Props {
-  title: string;
-  brand: string;
   homeHref: string;
-  parts: PartsInput;
 }
-const { title, brand, homeHref, parts } = Astro.props;
+const { homeHref } = Astro.props;
 ---
 
-<Header
-  parts={parts}
-  breadcrumbs={[{ label: brand, href: homeHref }, { label: title }]}
->
+<Header>
   <Button slot="actions" element="a" href={homeHref} variant="outline" size="sm"
     >Theme home</Button
   >

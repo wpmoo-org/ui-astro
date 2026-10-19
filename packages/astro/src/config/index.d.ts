@@ -119,15 +119,16 @@ interface ContentPartInput {
 interface HeaderPartInput {
   utilities?: readonly UtilityToken[];
   contentUtilities?: readonly UtilityToken[];
-  breadcrumbUtilities?: readonly UtilityToken[];
   trigger?: TriggerInput;
   toggleLabel?: string;
   navigationLabel?: string;
-  breadcrumbLabel?: string;
   skipLabel?: string;
 }
 interface PageHeaderPartBase {
+  alignment?: "start" | "center" | "end";
   utilities?: readonly UtilityToken[];
+  breadcrumbUtilities?: readonly UtilityToken[];
+  breadcrumbLabel?: string;
   titleUtilities?: readonly PageTitleUtilityToken[];
 }
 type PageHeaderPartInput = PageHeaderPartBase &

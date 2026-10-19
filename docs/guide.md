@@ -71,7 +71,7 @@ Common labels are `site`, `pages`, `taxonomies`, `language`,
 `selectLanguage`, `lightMode` and `darkMode`. English/German defaults
 can be overridden through `presentation.labels` or locale-specific copy.
 Other active locales can supply their own text. Localized copy cannot change
-structural flags. Existing Header/Loop preferences still own their labels.
+structural flags. Existing Header/PageHeader/Loop preferences still own their labels.
 
 Named `site.links` are canonical local paths or complete active-locale path
 maps. The SDK applies locale prefix, host base and slash policy once and
@@ -81,10 +81,77 @@ actual entry translations still use `translationKey` and their own slugs.
 
 Native pages may import `@wpmoo/astro/layouts/SiteLayout.astro` and supply
 `title`, resolved `options`, canonical `href`, optional `locale`,
-SEO `metadata`, prepared `languageLinks` and optional `breadcrumbs`. The default slot is content;
+SEO `metadata` and prepared `languageLinks`. The default slot is content;
 `header-actions` follows enabled controls. Explicit `metadata={null}`
 opts out of SEO emission, as the built-in 404 does. Primitive Layout remains
 available for deliberate custom themes.
+
+Breadcrumbs belong to the content heading, not the application Header. Single
+and Archive use their prepared placement plan's breadcrumbs by default and
+accept an explicit `breadcrumbs` array. A host-authored PageHeader accepts the
+same array. The order is title, optional description, breadcrumb, metadata and
+actions. A home-only trail is omitted. Replacing the `page-header` slot gives
+the host ownership of that whole region, including its breadcrumb.
+
+### Central heading alignment
+
+`parts.pageHeader.alignment` controls the whole heading group: title,
+description, breadcrumb, metadata and actions. Values are `start`
+(the common default), `center` and `end`. Single and Archive
+have no separate hardcoded alignment. Reading-column width and prose alignment
+remain independent. The built-in 404 explicitly retains its centered recovery
+heading through this same preference.
+
+**Current RTL limitation:** the installed Bootstrap text utilities map `start`
+to physical left and `end` to physical right. Logical RTL text alignment is
+not yet certified: three RTL browser assertions currently fail. The maintainer
+declined adding PageHeader-specific logical-alignment CSS for now. Do not hide
+that gap by weakening those assertions or adding a JavaScript/inline-style
+workaround. The central preference and override precedence work independently
+of this pending rendering limitation.
+
+Use the existing preference layers; no separate Page/Post setting is needed:
+
+```js
+defineSite({
+  defaults: {
+    parts: { pageHeader: { alignment: "start" } },
+  },
+  types: {
+    page: {
+      parts: { pageHeader: { alignment: "start" } },
+    },
+    post: {
+      views: {
+        single: { parts: { pageHeader: { alignment: "center" } } },
+        archive: { parts: { pageHeader: { alignment: "start" } } },
+      },
+    },
+  },
+});
+```
+
+The order remains site defaults → locale → type → view → authored entry.
+An individual Markdown/MDX/JSON entry can select another alignment without
+affecting other entries or archives:
+
+```yaml
+options:
+  parts:
+    pageHeader:
+      alignment: end
+```
+
+Host-authored routes pass resolved `parts` into PageHeader/Single/Archive,
+as with the other preferences. A custom `page-header` slot owns its own
+composition; use PageHeader with those same resolved parts to inherit alignment.
+
+**Unpublished heading migration:** pass breadcrumbs to Single, Archive or
+PageHeader rather than Header/SiteLayout. Move `parts.header.breadcrumbLabel`
+and `parts.header.breadcrumbUtilities` to `parts.pageHeader`. Header now composes
+only its trigger, optional host content and actions; its default main row does
+not wrap. The compact table-of-contents row remains independent. The default
+404 keeps its accepted centered recovery content without an extra breadcrumb.
 
 ## Ready blocks
 
@@ -543,10 +610,12 @@ Layout applies `parts.content.utilities` exactly once, on the existing `data-pag
 | Part             | Options and fallback                                                                                                                                                                                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `content`        | `utilities: ['mx-0', 'py-4', 'py-md-5', 'px-3', 'px-md-5']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar', 'scroll-smooth']` on the existing main owner                                                                                                         |
-| `header`         | Region `utilities: ['bg-body', 'border-bottom']`; `contentUtilities: ['d-flex', 'flex-wrap', 'align-items-center', 'gap-2', 'py-3']`; `breadcrumbUtilities: ['mb-0', 'small']`                                                                       |
+| `header`         | Region `utilities: ['bg-body-tertiary']`; `contentUtilities: ['d-flex', 'align-items-center', 'gap-2', 'py-2']` |
 | `header.trigger` | Published Button `variant: 'ghost'`, `size: 'icon-sm'`, `icon: 'panel-left'`                                                                                                                                                                         |
-| `header` copy    | `toggleLabel`, `navigationLabel`, `breadcrumbLabel`, `skipLabel`; English fallback, explicit host translations                                                                                                                                       |
+| `header` copy    | `toggleLabel`, `navigationLabel`, `skipLabel`; English fallback, explicit host translations |
 | `pageHeader`     | `utilities: ['d-flex', 'flex-column', 'gap-3', 'mb-4']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: []`; `descriptionVariant: 'page-description'` or `'muted'`                                                                               |
+| `pageHeader` alignment | `alignment: 'start'` (default), `'center'` or `'end'`; inherited through all existing preference layers |
+| `pageHeader` breadcrumb | `breadcrumbUtilities: ['mb-0', 'small']`; accessible `breadcrumbLabel: 'Breadcrumb'`, with explicit host translations |
 | `loop`           | `utilities: ['list-unstyled', 'mb-0']`; `itemUtilities: ['d-flex', 'flex-column', 'gap-2', 'py-4', 'border-bottom']`; `titleUtilities: ['mb-0']`; `descriptionUtilities: ['text-body-secondary', 'mb-0']`; `emptyUtilities: ['text-body-secondary']` |
 | `loop` display   | `titleVariant: 'section-title'` or `'subsection-title'`; `dateStyle: 'iso'` (default), `'short'`, `'medium'`, `'long'`, `'full'`; `emptyText`, `pageEmptyText`, `postEmptyText`, `pageTitle`, `postTitle`                                            |
 | `footer`         | `utilities: ['border-top', 'py-3', 'small', 'text-body-secondary']` on the existing region; `linkUtilities: ['text-body-secondary', 'text-decoration-none']` on its fallback link                                                                    |

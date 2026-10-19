@@ -159,13 +159,10 @@ const items: ComponentProps<typeof Loop>["items"] = [
       },
     ]}
   />
-  <Header
-    slot="header"
-    parts={options.parts}
-    breadcrumbs={[{ label: site.brand }]}
-  />
+  <Header slot="header" />
   <Single title="UI-only consumer" parts={options.parts}>
     <PageHeader
+      breadcrumbs={[{ label: site.brand }]}
       slot="page-header"
       title="UI-only consumer"
       description="A collection-free host uses public components and supplied content."

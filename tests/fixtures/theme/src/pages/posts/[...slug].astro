@@ -6,6 +6,7 @@ import { resolvePageOptions, formatDate } from "@wpmoo/astro/config";
 import Single from "@wpmoo/astro/plugins/post/views/Single.astro";
 import Layout from "../../layouts/Layout.astro";
 import Hero from "../../components/Hero.astro";
+import { getThemeBreadcrumbs } from "../../navigation.js";
 export function getStaticPaths() {
   const { site } = getSiteContext();
   return getPostPaths({ basePath: "/posts", lang: site.defaults.lang });
@@ -35,6 +36,7 @@ const { Content } = await render(entry);
       id="post-hero"
       heading="page-title"
       title={entry.data.title}
+      breadcrumbs={await getThemeBreadcrumbs(entry.data.title, Astro.url.pathname)}
       description={entry.data.description ?? "Theme-composed Post header."}
       parts={options.parts}
     >

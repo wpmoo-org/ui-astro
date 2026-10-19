@@ -10,6 +10,7 @@ import { resolveSeoMetadata } from "@wpmoo/astro/seo";
 import { getDemoEntryContext } from "../settings.js";
 import TextSection from "../components/sections/Text.astro";
 import ActionSection from "../components/sections/Action.astro";
+import { getDemoBreadcrumbs } from "../navigation.js";
 
 interface Props {
   entry: CollectionEntry<"page">;
@@ -49,6 +50,7 @@ const metadata = Astro.site
     })
   : undefined;
 const { Content } = await render(entry);
+const breadcrumbs = await getDemoBreadcrumbs(entry.data.title, options.lang);
 ---
 
 <Layout
@@ -66,7 +68,7 @@ const { Content } = await render(entry);
   parts={options.parts}
   pageContext={{ view: "single", entry: getDemoEntryContext("page", entry) }}
 >
-  <Single parts={options.parts} entry={entry}>
+  <Single parts={options.parts} entry={entry} breadcrumbs={breadcrumbs}>
     <Content parts={options.parts} />
     {
       (entry.data.sections ?? []).map((section) =>

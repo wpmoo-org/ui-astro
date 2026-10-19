@@ -6,6 +6,7 @@ import { resolvePageOptions } from "@wpmoo/astro/config";
 import Single from "@wpmoo/astro/plugins/page/views/Single.astro";
 import Layout from "../layouts/Layout.astro";
 import Hero from "../components/Hero.astro";
+import { getThemeBreadcrumbs } from "../navigation.js";
 
 const entry = (await getPublishedPages()).find(
   (item) => item.id === "about.md",
@@ -33,6 +34,7 @@ const { Content } = await render(entry);
       id="about-hero"
       heading="page-title"
       title={entry.data.title}
+      breadcrumbs={await getThemeBreadcrumbs(entry.data.title, Astro.url.pathname)}
       description="An explicit route renders the real Page entry."
       action={{ label: "This Page", href }}
       parts={options.parts}

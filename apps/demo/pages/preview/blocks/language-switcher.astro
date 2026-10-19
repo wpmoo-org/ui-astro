@@ -6,6 +6,7 @@ import ButtonGroup from "@wpmoo/astro/components/ButtonGroup.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
 import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
 import { getLanguageLinks } from "@wpmoo/astro/i18n";
+import { getDemoBreadcrumbs } from "../../../navigation.js";
 
 const { site } = getSiteContext();
 const locale = Astro.currentLocale ?? site.defaults.lang;
@@ -22,6 +23,7 @@ const names = { en: "English", de: "Deutsch" };
 
 <Layout title="Language switcher" lang={locale}>
   <PageHeader
+    breadcrumbs={await getDemoBreadcrumbs("Language switcher", locale)}
     title="Language switcher"
     description="Ready compositions using the same published translation links."
   />

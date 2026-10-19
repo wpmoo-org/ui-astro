@@ -21,8 +21,10 @@ const localePreferences = Object.fromEntries(
           header: {
             toggleLabel: copy.toggleSidebar,
             navigationLabel: copy.siteNavigation,
-            breadcrumbLabel: copy.breadcrumb,
             skipLabel: copy.skipToContent,
+          },
+          pageHeader: {
+            breadcrumbLabel: copy.breadcrumb,
           },
           loop: {
             emptyText: copy.emptyItems,
@@ -46,7 +48,12 @@ export default defineConfig({
     moo({
       site: {
         brand: "Moo UI Astro",
-        defaults: { lang: i18n.defaultLocale, theme: "dark", sidebar: {} },
+        defaults: {
+          lang: i18n.defaultLocale,
+          theme: "dark",
+          sidebar: {},
+          parts: { pageHeader: { alignment: "start" } },
+        },
         locales: localePreferences,
       },
       plugins: [

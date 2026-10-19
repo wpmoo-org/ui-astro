@@ -7,6 +7,7 @@ import Typography from "@wpmoo/astro/components/Typography.astro";
 import Loop from "@wpmoo/astro/views/Loop.astro";
 import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
 import { getDemoMessages } from "../../messages.js";
+import { getDemoBreadcrumbs } from "../../navigation.js";
 
 const { site } = getSiteContext();
 const lang = Astro.currentLocale ?? site.defaults.lang;
@@ -21,7 +22,7 @@ const preferences = getDemoOptions("page", "archive");
   dir={site.defaults.dir}
   pageContext={{ view: "archive", type: "page" }}
 >
-  <PageHeader parts={preferences.parts} title={copy.emptyStateTitle} />
+  <PageHeader parts={preferences.parts} title={copy.emptyStateTitle} breadcrumbs={await getDemoBreadcrumbs(copy.emptyStateTitle, lang)} />
   <Typography variant="section-title" content={copy.items} />
   <Loop parts={preferences.parts} items={[]} emptyText={copy.emptyItems} />
   <Typography variant="section-title" content={copy.pages} />

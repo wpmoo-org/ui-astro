@@ -95,7 +95,7 @@ class AcceptedPostLayouts(unittest.TestCase):
         self.assertEqual(self.page.locator('main li.post.post-id--en_002f_layout-options_002e_md').count(), 1)
         self.assertEqual(self.page.locator('main li.post.post-id--en_002f_announcement_002e_md').count(), 1)
         self.assertEqual(self.page.locator('.moo-ui.archive.post').count(), 1)
-        self.assertEqual(self.page.locator('header nav[aria-label="Breadcrumb"]').count(), 1)
+        self.assertEqual(self.page.locator('main section header nav[aria-label="Breadcrumb"]').count(), 1)
         self.assertEqual(self.page.locator('footer a').get_attribute("href"), "/")
 
     def test_narrow_post_sidebar_opens_by_keyboard_and_escape_returns_focus(self):

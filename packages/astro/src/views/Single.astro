@@ -21,6 +21,7 @@ interface Props {
   dir?: "ltr" | "rtl";
   title: string;
   description?: string;
+  breadcrumbs?: readonly { label: string; href?: string }[];
   cover?: ContentImage;
   entryContext?: EntryClassContext;
   parts?: PartsInput;
@@ -58,12 +59,10 @@ const cover = Astro.props.cover === undefined ? undefined : imageSchema.parse(As
       hasPageHeader ? (
         <slot name="page-header" />
       ) : (
-        <div class="text-center">
-          <PageHeader title={title} description={description} parts={parts}>
-            {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
-            {hasActions ? <slot name="actions" slot="actions" /> : null}
-          </PageHeader>
-        </div>
+        <PageHeader title={title} description={description} breadcrumbs={Astro.props.breadcrumbs ?? plan?.chrome.breadcrumbs} parts={parts}>
+          {hasMetadata ? <slot name="metadata" slot="metadata" /> : null}
+          {hasActions ? <slot name="actions" slot="actions" /> : null}
+        </PageHeader>
       )
     }
     {cover ? <Image {...cover} src={cover.src.startsWith("/") ? `${import.meta.env.BASE_URL.replace(/\/$/u, "")}${cover.src}` : cover.src} class="img-fluid rounded mb-5" loading="eager" /> : null}

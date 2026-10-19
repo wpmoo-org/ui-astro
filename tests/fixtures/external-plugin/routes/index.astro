@@ -54,8 +54,9 @@ const layoutProps = {
         collapsible={sidebar.collapsible}
         rail={sidebar.rail}
       />
-      <Header slot="header" parts={options.parts} breadcrumbs={breadcrumbs} />
+      <Header slot="header" />
       <Archive
+        breadcrumbs={breadcrumbs}
         title="Samples"
         items={items}
         parts={options.parts}
@@ -84,8 +85,9 @@ const layoutProps = {
     </Layout>
   ) : (
     <Layout {...layoutProps}>
-      <Header slot="header" parts={options.parts} breadcrumbs={breadcrumbs} />
+      <Header slot="header" />
       <Archive
+        breadcrumbs={breadcrumbs}
         title="Samples"
         items={items}
         parts={options.parts}

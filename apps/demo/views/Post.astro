@@ -7,6 +7,7 @@ import { getEntryHref, getSiteContext } from "@wpmoo/astro/context";
 import { getLanguageLinks, getLocaleHref } from "@wpmoo/astro/i18n";
 import { resolveSeoMetadata } from "@wpmoo/astro/seo";
 import { getDemoEntryContext } from "../settings.js";
+import { getDemoBreadcrumbs } from "../navigation.js";
 
 interface Props {
   entry: CollectionEntry<"post">;
@@ -49,6 +50,10 @@ const metadata = Astro.site
     })
   : undefined;
 const { Content } = await render(entry);
+const breadcrumbs = await getDemoBreadcrumbs(entry.data.title, options.lang, [
+  { label, href: archiveHref },
+  { label: entry.data.title },
+]);
 ---
 
 <Layout
@@ -58,10 +63,9 @@ const { Content } = await render(entry);
   metadata={metadata}
   sidebarOptions={sidebar}
   languageLinks={languageLinks}
-  breadcrumbItems={[{ label, href: archiveHref }, { label: entry.data.title }]}
   pageContext={{ view: "single", entry: getDemoEntryContext("post", entry) }}
 >
-  <Single entry={entry} parts={options.parts} lang={options.lang}>
+  <Single entry={entry} parts={options.parts} lang={options.lang} breadcrumbs={breadcrumbs}>
     <Content />
   </Single>
 </Layout>

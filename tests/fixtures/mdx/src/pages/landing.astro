@@ -1,6 +1,7 @@
 ---
 import Layout from "@wpmoo/astro/Layout.astro";
 import Header from "@wpmoo/astro/includes/Header.astro";
+import Breadcrumb from "@wpmoo/astro/components/Breadcrumb.astro";
 import Footer from "@wpmoo/astro/includes/Footer.astro";
 import Single from "@wpmoo/astro/views/Single.astro";
 import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
@@ -27,14 +28,7 @@ const homeHref = getEntryHref("page", home);
   {...options}
   pageContext={{ view: "native", key: "mixed-landing" }}
 >
-  <Header
-    slot="header"
-    parts={options.parts}
-    breadcrumbs={[
-      { label: site.brand, href: homeHref },
-      { label: "Native landing" },
-    ]}
-  />
+  <Header slot="header" />
   <Single title="Native landing" parts={options.parts}>
     <Hero
       slot="page-header"
@@ -43,7 +37,13 @@ const homeHref = getEntryHref("page", home);
       title="Native landing"
       description="A native Astro page explicitly selects the same public Layout."
       parts={options.parts}
-    />
+    >
+      <Breadcrumb
+        items={[{ label: site.brand, href: homeHref }, { label: "Native landing" }]}
+        ariaLabel={options.parts.pageHeader.breadcrumbLabel}
+        class={options.parts.pageHeader.breadcrumbUtilities.join(" ")}
+      />
+    </Hero>
     <Hero
       id="native-section"
       title="Reusable Astro Hero"

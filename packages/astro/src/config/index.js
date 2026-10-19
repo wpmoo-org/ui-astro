@@ -140,7 +140,6 @@ const partsSchema = z.strictObject({
     .strictObject({
       utilities: utilities.optional(),
       contentUtilities: utilities.optional(),
-      breadcrumbUtilities: utilities.optional(),
       trigger: z
         .strictObject({
           variant: z
@@ -175,13 +174,15 @@ const partsSchema = z.strictObject({
         .optional(),
       toggleLabel: accessibleLabel.optional(),
       navigationLabel: accessibleLabel.optional(),
-      breadcrumbLabel: accessibleLabel.optional(),
       skipLabel: accessibleLabel.optional(),
     })
     .optional(),
   pageHeader: z
     .strictObject({
+      alignment: z.enum(["start", "center", "end"]).optional(),
       utilities: utilities.optional(),
+      breadcrumbUtilities: utilities.optional(),
+      breadcrumbLabel: accessibleLabel.optional(),
       titleUtilities: titleUtilities.optional(),
       descriptionUtilities: descriptionUtilities.optional(),
       descriptionVariant: z.enum(["page-description", "muted"]).optional(),
@@ -234,20 +235,20 @@ const partDefaults = {
     utilities: ["bg-body-tertiary"],
     contentUtilities: [
       "d-flex",
-      "flex-wrap",
       "align-items-center",
       "gap-2",
       "py-2",
     ],
-    breadcrumbUtilities: ["mb-0", "small"],
     trigger: { variant: "ghost", size: "icon-sm", icon: "panel-left" },
     toggleLabel: "Toggle sidebar",
     navigationLabel: "Site navigation",
-    breadcrumbLabel: "Breadcrumb",
     skipLabel: "Skip to main content",
   },
   pageHeader: {
+    alignment: "start",
     utilities: ["d-flex", "flex-column", "gap-3", "mb-4"],
+    breadcrumbUtilities: ["mb-0", "small"],
+    breadcrumbLabel: "Breadcrumb",
     titleUtilities: ["mb-0"],
     descriptionUtilities: [],
     descriptionVariant: "page-description",

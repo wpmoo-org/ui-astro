@@ -2,6 +2,7 @@
 import type { ComponentProps } from "astro/types";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import Button from "@wpmoo/astro/components/Button.astro";
+import Breadcrumb from "@wpmoo/astro/components/Breadcrumb.astro";
 import { resolveParts, type PartsInput } from "@wpmoo/astro/config";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   description: string;
   heading?: "page-title" | "section-title" | "subsection-title";
   parts?: PartsInput;
+  breadcrumbs?: readonly { label: string; href?: string }[];
   action?: {
     label: string;
     href: string;
@@ -44,6 +46,13 @@ const headingId = `${id}-heading`;
     class={parts.pageHeader.descriptionUtilities.join(" ")}
   />
   <slot />
+  {Astro.props.breadcrumbs ? (
+    <Breadcrumb
+      items={[...Astro.props.breadcrumbs]}
+      ariaLabel={parts.pageHeader.breadcrumbLabel}
+      class={parts.pageHeader.breadcrumbUtilities.join(" ")}
+    />
+  ) : null}
   {
     action ? (
       <Button

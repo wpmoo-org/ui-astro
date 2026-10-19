@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Single from "@wpmoo/astro/views/Single.astro";
 import Hero from "../components/Hero.astro";
 import { getDemoOptions } from "../settings.js";
+import { getDemoBreadcrumbs } from "../navigation.js";
 
 const { sidebar: _sidebar, ...options } = getDemoOptions("page", "single");
 ---
@@ -13,6 +14,7 @@ const { sidebar: _sidebar, ...options } = getDemoOptions("page", "single");
   pageContext={{ view: "native", key: "mdx-landing" }}
 >
   <Single
+    breadcrumbs={await getDemoBreadcrumbs("Native Astro page", options.lang)}
     title="Native Astro page"
     description="A host-owned route reuses the same public Layout and Astro section."
     parts={options.parts}

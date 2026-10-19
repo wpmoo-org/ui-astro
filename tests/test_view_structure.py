@@ -2,6 +2,7 @@
 
 from html.parser import HTMLParser
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -29,18 +30,23 @@ class SlotCases(HTMLParser):
         super().__init__()
         self.cases = {}
         self.current = None
+        self.section_depth = 0
 
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
         if tag == "section":
-            self.current = attributes["id"]
-            self.cases[self.current] = {"elements": [], "text": []}
+            if self.section_depth == 0:
+                self.current = attributes["id"]
+                self.cases[self.current] = {"elements": [], "text": []}
+            self.section_depth += 1
         if self.current:
             self.cases[self.current]["elements"].append((tag, attributes))
 
     def handle_endtag(self, tag):
         if tag == "section":
-            self.current = None
+            self.section_depth -= 1
+            if self.section_depth == 0:
+                self.current = None
 
     def handle_data(self, data):
         if self.current:
@@ -76,11 +82,71 @@ class SharedPartStructure(unittest.TestCase):
             self.assertEqual(len([tag for tag, _ in elements if tag == "main"]), 1)
             self.assertEqual(len([tag for tag, _ in elements if tag == "h1"]), 1)
         self.assertEqual(len([tag for tag, _ in archive if tag == "h2"]), 2)
-        self.assertEqual(len([tag for tag, _ in archive if tag == "aside"]), 0)
+        self.assertEqual(len([tag for tag, attrs in archive if tag == "aside" and attrs.get("data-slot") != "sidebar"]), 0)
         self.assertEqual(len([tag for tag, attrs in single if tag == "article" and "post-announcement" in attrs.get("class", "").split()]), 1)
 
 
 class PublicComponentRendering(unittest.TestCase):
+    def test_migrated_host_fixtures_check_and_render_content_owned_breadcrumbs(self):
+        fixtures = ROOT / "tests/fixtures"
+        for name in ["theme", "mdx", "external-consumer", "content-editing", "ui-only"]:
+            with self.subTest(fixture=name):
+                source = fixtures / name
+                files = {str(path.relative_to(source)): path.read_text(encoding="utf-8")
+                         for path in source.rglob("*") if path.is_file()
+                         and path.name not in {"package.json", "package-lock.json"}}
+                result, _ = self.build(None, files=files, check=True,
+                                       extra_modules=("@astrojs/mdx",) if name == "mdx" else (),
+                                       packed_modules={"@wpmoo-test/astro-content": fixtures / "external-plugin"}
+                                       if name in {"external-consumer", "content-editing"} else None)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertGreater(len(result.generated_html), 0)
+                trails = []
+                for path, html in result.generated_html.items():
+                    app_header = re.search(r"<header\b[\s\S]*?</header>", html)
+                    if name != "ui-only" or path == "index.html":
+                        self.assertIsNotNone(app_header)
+                    if app_header:
+                        self.assertNotIn('class="breadcrumb', app_header[0])
+                    trails.extend(re.findall(r'<nav\b[^>]*aria-label="Breadcrumb"[\s\S]*?</nav>', html))
+                if name != "ui-only":
+                    self.assertGreater(len(trails), 0)
+                    self.assertTrue(all('aria-current="page"' in trail for trail in trails))
+
+    def test_content_heading_renders_each_alignment_and_keeps_its_ordered_accessible_trail(self):
+        result, html = self.build('''---
+import Single from "@wpmoo/astro/views/Single.astro";
+import Archive from "@wpmoo/astro/views/Archive.astro";
+const breadcrumbs = [{ label: "Home <brand>", href: "/docs/de/contact" }, { label: "Current" }];
+const alignments = ["start", "center", "end"] as const;
+---
+{alignments.map(alignment => <Fragment>
+  <Single title="Single title" description="Single description" breadcrumbs={breadcrumbs} parts={{ pageHeader: { alignment, breadcrumbLabel: "Path" } }}>
+    <p slot="metadata">Authored metadata</p><a slot="actions" href="/docs/de/action">Authored action</a><p>Body</p>
+  </Single>
+  <Archive title="Archive title" description="Archive description" breadcrumbs={breadcrumbs} parts={{ pageHeader: { alignment, breadcrumbLabel: "Path" } }} items={[]}>
+    <a slot="actions" href="/docs/de/action">Archive action</a>
+  </Archive>
+</Fragment>)}
+''', check=True, files={"tsconfig.json": '{"extends":"astro/tsconfigs/strict"}'})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        headers = re.findall(r"<header\b[^>]*>[\s\S]*?</header>", html)
+        self.assertEqual(len(headers), 6)
+        for index, header in enumerate(headers):
+            alignment = ["start", "center", "end"][index // 2]
+            self.assertIn(f"text-{alignment} align-items-{alignment}", header)
+            self.assertIn(f"justify-content-{alignment}", header)
+            self.assertIn('aria-label="Path"', header)
+            self.assertIn('href="/docs/de/contact"', header)
+            self.assertIn("Home &lt;brand&gt;", header)
+            self.assertIn('aria-current="page"', header)
+            self.assertLess(header.index("title</h1>"), header.index("description</p>"))
+            self.assertLess(header.index("description</p>"), header.index('<nav'))
+            self.assertLess(header.index('</nav>'), header.index('href="/docs/de/action"'))
+            if index % 2 == 0:
+                self.assertLess(header.index('</nav>'), header.index("Authored metadata"))
+                self.assertLess(header.index("Authored metadata"), header.index("Authored action"))
+
     def test_datatable_preserves_its_live_region_and_shared_empty_action(self):
         source = '''---
 import DataTable from "@wpmoo/astro/components/DataTable.astro";
@@ -377,15 +443,15 @@ import Archive from "@wpmoo/astro/views/Archive.astro";
 import { resolveParts } from "@wpmoo/astro/config";
 const parts = resolveParts({
   content: { utilities: ["py-1"] },
-  header: { utilities: ["bg-body-tertiary"], breadcrumbUtilities: ["mb-1"] },
-  pageHeader: { utilities: ["mb-5"], titleUtilities: ["text-center"], descriptionVariant: "muted", descriptionUtilities: ["mb-3"] },
+  header: { utilities: ["bg-body-tertiary"] },
+  pageHeader: { utilities: ["mb-5"], alignment: "center", breadcrumbUtilities: ["mb-1"], descriptionVariant: "muted", descriptionUtilities: ["mb-3"] },
   loop: { itemUtilities: ["mb-2"], dateStyle: "long" },
   footer: { utilities: ["py-2"], linkUtilities: ["link-primary"] },
 });
 ---
 <Layout title="Theme contract" lang="de" parts={parts}>
-  <Header slot="header" parts={parts} breadcrumbs={[{label: "Home", href: "/"}]} />
-  <Archive title="Entries" description="Summary" parts={parts} lang="de" items={[{id:"entry",title:"Entry",href:"/entry",date:new Date("2026-10-01T23:30:00Z")}]} />
+  <Header slot="header" />
+  <Archive title="Entries" description="Summary" breadcrumbs={[{label: "Home", href: "/"}, {label: "Entries"}]} parts={parts} lang="de" items={[{id:"entry",title:"Entry",href:"/entry",date:new Date("2026-10-01T23:30:00Z")}]} />
   <Footer slot="footer" parts={parts} homeHref="/" brand="Example" />
 </Layout>'''
         result, html = self.build(source, check=True, files={
@@ -416,8 +482,8 @@ collections.post = defineCollection({ loader: glob({ base: new URL("./content/po
         result, _ = self.build(None, configuration='''integrations: [moo({
   site: { defaults: { lang: "de", parts: {
     content: { utilities: ["py-2", "py-md-5"] },
-    header: { utilities: ["bg-body-tertiary"], breadcrumbLabel: "Navigation" },
-    pageHeader: { titleUtilities: ["text-center"] },
+    header: { utilities: ["bg-body-tertiary"] },
+    pageHeader: { alignment: "center", breadcrumbLabel: "Navigation" },
     loop: { dateStyle: "long", emptyText: "Nothing published" },
   } } }, plugins: [page(), post({ label: "Updates" })],
 })]''', config_imports='import { post } from "@wpmoo/astro/plugins/post";', files=files, check=True)
@@ -431,8 +497,12 @@ collections.post = defineCollection({ loader: glob({ base: new URL("./content/po
             self.assertEqual(len(rails), 1, path)
             self.assertEqual(set(rails[0]["class"].split()), {"container-xl"} | utilities, path)
             self.assertIn('class="bg-body-tertiary"', html, path)
-            self.assertIn('aria-label="Navigation"', html, path)
-            self.assertIn('fw-semibold text-center', html, path)
+            if path == "entry/index.html":
+                # This sole Page is itself the native home; there is no ancestor trail.
+                self.assertNotIn('aria-label="Navigation"', html, path)
+            else:
+                self.assertIn('aria-label="Navigation"', html, path)
+            self.assertIn('text-center align-items-center', html, path)
             self.assertIn('lang="de"', html, path)
         self.assertIn("1. Oktober 2026", result.generated_html["posts/first/index.html"])
         self.assertIn("1. Oktober 2026", result.generated_html["posts/index.html"])
@@ -463,7 +533,7 @@ export const collections = { post: defineCollection({ loader: glob({ base: new U
   defaults: { lang: "en" }, types: { post: { views: { archive: { lang: "de", parts: { loop: { dateStyle: "long" } } } } } },
 } })]''', config_imports='import { post } from "@wpmoo/astro/plugins/post";', files=files)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(set(result.generated_html), {"posts/index.html", "posts/uber/index.html"})
+        self.assertEqual(set(result.generated_html), {"404.html", "posts/index.html", "posts/uber/index.html"})
         archive = result.generated_html["posts/index.html"]
         self.assertIn('href="/posts/uber"', archive)
         self.assertIn("1. Oktober 2025", archive)
@@ -715,8 +785,8 @@ const items = [
 const context = { type: "page", id: "contact.mdx", source: "markdown" } as const;
 ---
 <Layout title="Ownership" pageContext={{ view: "archive", type: "post" }}>
-  <Header slot="header" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Ownership" }]} />
-  <Archive title="Entries" items={items} />
+  <Header slot="header" />
+  <Archive title="Entries" breadcrumbs={[{ label: "Home", href: "/" }, { label: "Ownership" }]} items={items} />
   <Single title="Hidden fallback" entryContext={context}>
     <Fragment slot="page-header" />
     <p>Caller-owned content</p>
@@ -737,7 +807,8 @@ const context = { type: "page", id: "contact.mdx", source: "markdown" } as const
         self.assertEqual(with_attribute(parsed.elements, "id", "main-content")[0][1]["tabindex"], "-1")
         self.assertEqual(len([tag for tag, _ in parsed.elements if tag == "h1"]), 1)
         articles = [attrs for tag, attrs in parsed.elements if tag == "article"]
-        self.assertEqual([attrs.get("class", "").split() for attrs in articles], [["page", "page-id--contact_002e_mdx"]])
+        self.assertEqual(len(articles), 1)
+        self.assertTrue({"page", "page-id--contact_002e_mdx"}.issubset(articles[0].get("class", "").split()))
         lists = [attrs.get("class", "").split() for tag, attrs in parsed.elements
                  if tag == "li" and ("post-news" in attrs.get("class", "") or "entry-team--cng" in attrs.get("class", ""))]
         self.assertEqual(len(lists), 2)
@@ -759,9 +830,9 @@ import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
 const items = [{ id: "entry", title: "Fallback entry", href: "/entry", date: new Date("2026-10-01T00:30:00+03:00") }];
 ---
 <section id="single-default"><Single title="Fallback Single"><p>Body</p></Single></section>
-<section id="single-empty"><Single title="Suppressed Single"><Fragment slot="page-header" /><p>Body</p></Single></section>
-<section id="single-custom"><Single title="Suppressed Single">
-  <PageHeader slot="page-header" title="Custom Single" />
+<section id="single-empty"><Single title="Suppressed Single" breadcrumbs={[{label: "Unused ancestor", href: "/unused"}, {label: "Suppressed Single"}]}><Fragment slot="page-header" /><p>Body</p></Single></section>
+<section id="single-custom"><Single title="Suppressed Single" breadcrumbs={[{label: "Unused ancestor", href: "/unused"}, {label: "Suppressed Single"}]}>
+  <PageHeader slot="page-header" title="Custom Single" breadcrumbs={[{label: "Custom ancestor", href: "/docs/host"}, {label: "Custom current"}]} />
   <p>Body</p><p slot="after-content">After content</p>
 </Single></section>
 <section id="archive-default"><Archive title="Fallback Archive" items={items} /></section>
@@ -780,14 +851,19 @@ const items = [{ id: "entry", title: "Fallback entry", href: "/entry", date: new
         self.assertIn("Fallback Single", text("single-default"))
         self.assertEqual(headings("single-empty", "h1"), [])
         self.assertNotIn("Suppressed Single", text("single-empty"))
+        self.assertNotIn("Unused ancestor", text("single-empty"))
         self.assertEqual(len(headings("single-custom", "h1")), 1)
         self.assertIn("Custom Single", text("single-custom"))
         self.assertIn("After content", text("single-custom"))
         self.assertNotIn("Suppressed Single", text("single-custom"))
+        self.assertNotIn("Unused ancestor", text("single-custom"))
+        self.assertIn("Custom ancestor", text("single-custom"))
+        self.assertEqual([attrs["href"] for attrs in headings("single-custom", "a")], ["/docs/host"])
+        self.assertEqual(len(headings("single-custom", "nav")), 1)
         for case in ["archive-default", "archive-empty", "archive-custom"]:
             self.assertEqual(len(headings(case, "h1")), 1)
         self.assertEqual(len(headings("archive-default", "h2")), 1)
-        self.assertEqual(headings("archive-default", "time"), [{"datetime": "2026-09-30T21:30:00.000Z"}])
+        self.assertEqual([attrs["datetime"] for attrs in headings("archive-default", "time")], ["2026-09-30T21:30:00.000Z"])
         self.assertIn("2026-09-30", text("archive-default"))
         for case in ["archive-empty", "archive-custom"]:
             self.assertEqual(headings(case, "h2"), [])

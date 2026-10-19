@@ -9,6 +9,13 @@ import { getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
 import { getTaxonomyPaths } from "@wpmoo/astro/taxonomies/queries";
 
 // The example host owns these routes; they are excluded from the npm package.
+/** @param {string} title @param {string} [locale] @param {readonly { label: string, href?: string }[]} [items] */
+export async function getDemoBreadcrumbs(title, locale = getSiteContext().site.defaults.lang, items = [{ label: title }]) {
+  const { site } = getSiteContext();
+  const { homeHref } = await getDemoNavigation(getLocaleHref("/", locale), locale);
+  return [{ label: site.brand, href: homeHref }, ...items];
+}
+
 export async function getDemoNavigation(currentPath, locale) {
   const { site, i18n, plugins, taxonomies } = getSiteContext();
   const copy = getDemoMessages(locale);
