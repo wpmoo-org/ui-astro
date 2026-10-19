@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resolveExecutionLayout } from '../scripts/execution_layout.mjs';
-import { validateBridgeMatrix, prepareBridgeRecipe, runBridgeRecipe } from '../scripts/bridge_recipes.mjs';
+import { validateBridgeMatrix, prepareBridgeRecipe, runBridgeRecipe, bridgeEnvironment } from '../scripts/bridge_recipes.mjs';
 
 test('bridge layout separates inputs, scratch and output', () => {
   assert.deepEqual(resolveExecutionLayout('bridge-v1'), {
@@ -22,4 +22,10 @@ test('every declared SDK and Starter profile and byte assertion is required', ()
   const tamper = structuredClone(result);tamper.profiles.default.authored_after['src/a']='tampered';
   assert.throws(() => validateBridgeMatrix('consumers',tamper,{'@wpmoo/astro':artifact}));
   assert.equal(typeof prepareBridgeRecipe,'function');assert.equal(typeof runBridgeRecipe,'function');
+});
+
+import {spawnSync} from 'node:child_process';
+test('bridge npm uses distinct empty global and user config files', () => {
+  const native = spawnSync('npm',['config','get','cache'],{env:bridgeEnvironment(),encoding:'utf8'});
+  assert.equal(native.status,0,native.stderr);
 });

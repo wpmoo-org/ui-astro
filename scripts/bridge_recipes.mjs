@@ -13,13 +13,13 @@ export const CONSUMER_PROFILES = Object.freeze(['default','theme','ui-only','pag
 export const STARTER_PROFILES = Object.freeze(['en-category','de-category','en-short','de-short','en-root','de-root']);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const readJson = async file => JSON.parse(await readFile(file, 'utf8'));
-const env = () => ({PATH:'/usr/local/bin:/usr/bin:/bin', HOME:'/work/home', TMPDIR:'/work/tmp', LANG:'C.UTF-8', CI:'true',
+export const bridgeEnvironment = () => ({PATH:'/usr/local/bin:/usr/bin:/bin', HOME:'/work/home', TMPDIR:'/work/tmp', LANG:'C.UTF-8', CI:'true',
   npm_config_cache:'/work/npm-cache', npm_config_offline:'true', npm_config_ignore_scripts:'true',
-  npm_config_userconfig:'/dev/null',npm_config_globalconfig:'/dev/null',npm_config_audit:'false',npm_config_fund:'false',
+  npm_config_userconfig:'/work/home/user.npmrc',npm_config_globalconfig:'/work/home/global.npmrc',npm_config_audit:'false',npm_config_fund:'false',
   ASTRO_TELEMETRY_DISABLED:'1',WPMOO_EXECUTION_LAYOUT:'bridge-v1'});
 
 async function execute(command, args, cwd, output) {
-  const result = spawnSync(command, args, {cwd, env:env(), encoding:'utf8', maxBuffer:16*1024*1024});
+  const result = spawnSync(command, args, {cwd, env:bridgeEnvironment(), encoding:'utf8', maxBuffer:16*1024*1024});
   const text = `${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`;
   await appendFile(join(output, 'run.log'), text);
   assert.equal(result.status, 0, `offline recipe failed: ${command}; ${text.slice(-4000)}`);
