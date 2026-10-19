@@ -112,6 +112,17 @@ class PublicComponentRendering(unittest.TestCase):
                 if name != "ui-only":
                     self.assertGreater(len(trails), 0)
                     self.assertTrue(all('aria-current="page"' in trail for trail in trails))
+                if name == "theme":
+                    posts = {path: html for path, html in result.generated_html.items()
+                             if path.startswith("posts/") and path != "posts/index.html"}
+                    self.assertEqual(len(posts), 2)
+                    for path, html in posts.items():
+                        hero = re.search(r'<section\b[^>]*data-host-section="hero"[^>]*>[\s\S]*?</section>', html)
+                        self.assertIsNotNone(hero, path)
+                        heading = hero[0]
+                        self.assertLess(heading.index('</h1>'), heading.index('</p>'), path)
+                        self.assertLess(heading.index('</p>'), heading.index('<nav'), path)
+                        self.assertLess(heading.index('</nav>'), heading.index('<time'), path)
 
     def test_content_heading_renders_each_alignment_and_keeps_its_ordered_accessible_trail(self):
         result, html = self.build('''---
