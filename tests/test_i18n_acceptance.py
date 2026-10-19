@@ -79,7 +79,7 @@ class AcceptedLanguageControls(unittest.TestCase):
                 expect(trigger).to_be_focused()
                 self.assertEqual(errors, [])
 
-    def test_contact_breadcrumb_keeps_the_brand_and_current_page_on_the_header_rail(self):
+    def test_contact_breadcrumb_keeps_the_brand_and_current_page_below_the_content_description(self):
         for width, theme, direction in [(1440, "light", "ltr"), (1440, "dark", "rtl"),
                                         (390, "light", "ltr"), (390, "dark", "rtl")]:
             with self.subTest(width=width, theme=theme, direction=direction):
@@ -90,8 +90,10 @@ class AcceptedLanguageControls(unittest.TestCase):
                 trigger = page.get_by_role("button", name="Seitensprache wählen", exact=True)
                 breadcrumb_box, trigger_box = breadcrumb.bounding_box(), trigger.bounding_box()
                 self.assertGreater(breadcrumb_box["width"], 0)
-                self.assertLess(abs(breadcrumb_box["y"] + breadcrumb_box["height"] / 2
-                                    - trigger_box["y"] - trigger_box["height"] / 2), 2)
+                description = page.locator("main article header p").bounding_box()
+                self.assertGreaterEqual(breadcrumb_box["y"], description["y"] + description["height"] - 1)
+                self.assertGreaterEqual(breadcrumb_box["y"], trigger_box["y"] + trigger_box["height"])
+                self.assertTrue(breadcrumb.evaluate("e => Boolean(e.closest('header').querySelector('h1'))"))
                 self.assertGreaterEqual(breadcrumb_box["x"], -1)
                 self.assertLessEqual(breadcrumb_box["x"] + breadcrumb_box["width"], width + 1)
                 self.assertEqual(errors, [])

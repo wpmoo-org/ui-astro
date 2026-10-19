@@ -164,7 +164,7 @@ class AcceptedSharedParts(unittest.TestCase):
         self.assertEqual(self.page.locator('[data-slot="sidebar"]').count(), 0)
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
-    def test_breadcrumb_and_header_controls_share_a_vertical_center(self):
+    def test_header_controls_share_one_row_and_breadcrumb_follows_the_content_description(self):
         for width, theme, direction in [(1440, "light", "ltr"), (390, "dark", "rtl")]:
             with self.subTest(width=width, theme=theme, direction=direction):
                 self.page.set_viewport_size({"width": width, "height": 844})
@@ -174,15 +174,23 @@ class AcceptedSharedParts(unittest.TestCase):
                 )
                 self.open_preview("preview/single")
                 header = self.page.locator('[data-slot="page"] > header')
-                centers = [
+                controls = [
                     locator.bounding_box()
-                    for locator in [header.locator("ol.breadcrumb"),
-                                    header.locator("[data-sidebar-trigger]"),
-                                    header.locator('a[href="/"]').last]
+                    for locator in [header.locator("[data-sidebar-trigger]"),
+                                     header.locator('a[href="/"]').last]
                 ]
-                breadcrumb_center = centers[0]["y"] + centers[0]["height"] / 2
-                for box in centers[1:]:
-                    self.assertAlmostEqual(breadcrumb_center, box["y"] + box["height"] / 2, delta=1)
+                self.assertAlmostEqual(controls[0]["y"] + controls[0]["height"] / 2,
+                                       controls[1]["y"] + controls[1]["height"] / 2, delta=1)
+                heading = self.page.locator("main article header")
+                title = heading.locator("h1").bounding_box()
+                description = heading.locator("p").bounding_box()
+                breadcrumb = heading.locator("ol.breadcrumb").bounding_box()
+                self.assertGreaterEqual(description["y"], title["y"] + title["height"] - 1)
+                self.assertGreaterEqual(breadcrumb["y"], description["y"] + description["height"] - 1)
+                self.assertGreaterEqual(breadcrumb["y"], header.bounding_box()["y"] + header.bounding_box()["height"])
+                self.assertEqual(header.locator("ol.breadcrumb").count(), 0)
+                self.assertIn(heading.evaluate("e => getComputedStyle(e).textAlign"),
+                              ("start", "right" if direction == "rtl" else "left"))
                 self.assertEqual(self.page.locator("html").get_attribute("dir"), direction)
                 self.assertEqual(self.page.locator(".moo-ui").get_attribute("data-bs-theme"), theme)
                 self.assert_region_rails_align()

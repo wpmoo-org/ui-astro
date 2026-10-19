@@ -3,6 +3,7 @@ import { getDemoOptions } from "../../settings.js";
 import Layout from "../../layouts/Layout.astro";
 import Single from "@wpmoo/astro/views/Single.astro";
 import type { EntryClassContext } from "@wpmoo/astro/config";
+import { getDemoBreadcrumbs } from "../../navigation.js";
 
 const entryContext: EntryClassContext = {
   type: "post",
@@ -19,6 +20,7 @@ const preferences = getDemoOptions("post", "single");
   pageContext={{ view: "single", entry: entryContext }}
 >
   <Single
+    breadcrumbs={await getDemoBreadcrumbs("Single preview", preferences.lang)}
     parts={preferences.parts}
     title="A sample post"
     description="A common Single view composed with published Moo UI components."

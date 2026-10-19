@@ -51,7 +51,6 @@ test("shared part defaults have one owned immutable fallback", () => {
   ]);
   assert.deepEqual(defaults.header.contentUtilities, [
     "d-flex",
-    "flex-wrap",
     "align-items-center",
     "gap-2",
     "py-2",
@@ -67,7 +66,6 @@ test("accessible part labels require nonempty plain text without restricting emp
   for (const field of [
     "toggleLabel",
     "navigationLabel",
-    "breadcrumbLabel",
     "skipLabel",
   ]) {
     for (const value of ["", "   ", "Menu\u0000"]) {
@@ -77,6 +75,13 @@ test("accessible part labels require nonempty plain text without restricting emp
       );
     }
   }
+  for (const value of ["", "   ", "Breadcrumb\u0000"]) {
+    assert.throws(
+      () => resolveParts({ pageHeader: { breadcrumbLabel: value } }),
+      (error) => error.message.includes("pageHeader.breadcrumbLabel"),
+    );
+  }
+  assert.equal(resolveParts({ pageHeader: { breadcrumbLabel: " Path " } }).pageHeader.breadcrumbLabel, "Path");
   assert.equal(
     resolveParts({ header: { toggleLabel: " Menu " }, loop: { emptyText: "" } })
       .header.toggleLabel,

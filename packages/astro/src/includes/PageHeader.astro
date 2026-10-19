@@ -1,23 +1,39 @@
 ---
 import Typography from "../components/Typography.astro";
+import Breadcrumb from "../components/Breadcrumb.astro";
+import { navigationHref } from "../internal/href.js";
 import { resolveParts, type PartsInput } from "../config/index.js";
 
 interface Props {
   title: string;
   description?: string;
+  breadcrumbs?: readonly { label: string; href?: string }[];
   parts?: PartsInput;
 }
 
-const { title, description } = Astro.props;
+const { title, description, breadcrumbs = [] } = Astro.props;
 const parts = resolveParts(Astro.props.parts);
+const alignment = {
+  start: { text: "text-start", items: "align-items-start", breadcrumb: "justify-content-start" },
+  center: { text: "text-center", items: "align-items-center", breadcrumb: "justify-content-center" },
+  end: { text: "text-end", items: "align-items-end", breadcrumb: "justify-content-end" },
+}[parts.pageHeader.alignment];
 if (typeof title !== "string" || !title.trim())
   throw new TypeError("PageHeader title is required");
 if (description !== undefined && typeof description !== "string") {
   throw new TypeError("PageHeader description must be text");
 }
+if (!Array.isArray(breadcrumbs))
+  throw new TypeError("PageHeader breadcrumbs must be an array");
+for (const [index, item] of breadcrumbs.entries()) {
+  if (!item || typeof item.label !== "string" || !item.label.trim())
+    throw new TypeError(`PageHeader breadcrumbs[${index}].label must be nonempty text`);
+  if (item.href !== undefined)
+    navigationHref(item.href, `PageHeader breadcrumbs[${index}].href`);
+}
 ---
 
-<header class:list={parts.pageHeader.utilities}>
+<header class:list={[parts.pageHeader.utilities, alignment.text, alignment.items]}>
   <Typography
     variant="page-title"
     content={title}
@@ -32,6 +48,13 @@ if (description !== undefined && typeof description !== "string") {
       />
     ) : null
   }
+  {breadcrumbs.length > 1 ? (
+    <Breadcrumb
+      items={[...breadcrumbs]}
+      ariaLabel={parts.pageHeader.breadcrumbLabel}
+      class={[...parts.pageHeader.breadcrumbUtilities, alignment.breadcrumb].join(" ")}
+    />
+  ) : null}
   {Astro.slots.has("metadata") ? <slot name="metadata" /> : null}
   {Astro.slots.has("actions") ? <slot name="actions" /> : null}
 </header>

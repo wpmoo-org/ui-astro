@@ -2,6 +2,7 @@
 import { getDemoOptions } from "../../settings.js";
 import Layout from "../../layouts/Layout.astro";
 import Archive from "@wpmoo/astro/views/Archive.astro";
+import { getDemoBreadcrumbs } from "../../navigation.js";
 
 const items = [
   {
@@ -33,6 +34,7 @@ const preferences = getDemoOptions("post", "archive");
   pageContext={{ view: "archive", type: "post" }}
 >
   <Archive
+    breadcrumbs={await getDemoBreadcrumbs("Archive preview", preferences.lang)}
     lang={preferences.lang}
     parts={preferences.parts}
     title="Posts"

@@ -5,6 +5,7 @@ import { resolvePageOptions } from "@wpmoo/astro/config";
 import Archive from "@wpmoo/astro/plugins/post/views/Archive.astro";
 import Layout from "../../layouts/Layout.astro";
 import Hero from "../../components/Hero.astro";
+import { getThemeBreadcrumbs } from "../../navigation.js";
 import Loop from "../../views/Loop.astro";
 const { site } = getSiteContext();
 const options = resolvePageOptions(site, "post", "archive");
@@ -27,6 +28,7 @@ const entries = await getPublishedPosts();
       id="archive-hero"
       heading="page-title"
       title="Posts"
+      breadcrumbs={await getThemeBreadcrumbs("Posts", Astro.url.pathname)}
       description="A theme-owned Archive with an explicitly selected Loop."
       parts={options.parts}
     />

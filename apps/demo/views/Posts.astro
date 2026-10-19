@@ -7,6 +7,7 @@ import { getLocaleHref, getRouteLocale } from "@wpmoo/astro/i18n";
 import { getPublishedPosts } from "@wpmoo/astro/plugins/post/queries";
 import { resolveSeoMetadata } from "@wpmoo/astro/seo";
 import { getDemoMessages } from "../messages.js";
+import { getDemoBreadcrumbs } from "../navigation.js";
 
 const { site, plugins, i18n, base, trailingSlash } = getSiteContext();
 const locale = i18n ? getRouteLocale(Astro.routePattern) : undefined;
@@ -30,6 +31,7 @@ const { sidebar, ...options } = resolvePageOptions(
 );
 const entries = await getPublishedPosts({ locale });
 const description = getDemoMessages(locale ?? site.defaults.lang).postsDescription;
+const breadcrumbs = await getDemoBreadcrumbs(label, options.lang);
 const languageLinks =
   i18n?.locales.map((value) => ({
     locale: value,
@@ -63,6 +65,7 @@ const metadata = Astro.site
   pageContext={{ view: "archive", type: "post" }}
 >
   <Archive
+    breadcrumbs={breadcrumbs}
     entries={entries}
     title={label}
     description={description}

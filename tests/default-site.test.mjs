@@ -235,21 +235,21 @@ test("default_site_uses_available_navigation_when_home_is_unpublished", async ()
     ["enhanced/index.html", "/contact"],
     ["de/zielgruppe/studierende/index.html", "/de/contact"],
   ]) {
-    const header = html[name].match(/<header\b[\s\S]*?<\/header>/u)?.[0] ?? "";
+    const heading = html[name].match(/<header\b[^>]*>\s*<h1\b[\s\S]*?<\/header>/u)?.[0] ?? "";
     const footer = html[name].match(/<footer\b[\s\S]*?<\/footer>/u)?.[0] ?? "";
     assert.ok(
-      anchorAttributes(header).some((link) => link.href === expected),
-      header,
+      anchorAttributes(heading).some((link) => link.href === expected),
+      heading,
     );
     assert.ok(
       anchorAttributes(footer).some((link) => link.href === expected),
       footer,
     );
     assert.ok(
-      !anchorAttributes(header).some(
+      !anchorAttributes(heading).some(
         (link) => link.href === (expected.startsWith("/de/") ? "/de" : "/"),
       ),
-      header,
+      heading,
     );
   }
 });
@@ -264,12 +264,12 @@ test("default_taxonomy_shell_preserves_localized_ancestor_breadcrumbs", async ()
       "Lernende",
     ],
   ]) {
-    const header = html[name].match(/<header\b[\s\S]*?<\/header>/u)?.[0] ?? "";
+    const heading = html[name].match(/<header\b[^>]*>\s*<h1\b[\s\S]*?<\/header>/u)?.[0] ?? "";
     assert.ok(
-      anchorAttributes(header).some((link) => link.href === parent),
-      header,
+      anchorAttributes(heading).some((link) => link.href === parent),
+      heading,
     );
-    assert.ok(header.includes(label), header);
+    assert.ok(heading.includes(label), heading);
   }
 });
 

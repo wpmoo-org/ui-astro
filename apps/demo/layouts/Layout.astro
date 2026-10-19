@@ -16,14 +16,12 @@ import { demoControls, getDemoOptions } from "../settings.js";
 type Props = ComponentProps<typeof Layout> & {
   sidebarOptions?: PageOptions["sidebar"];
   languageLinks?: readonly LanguageLink[];
-  breadcrumbItems?: readonly { label: string; href?: string }[];
 };
 const {
   title,
   sidebar,
   sidebarOptions,
   languageLinks = [],
-  breadcrumbItems,
   ...options
 } = Astro.props;
 const context = getSiteContext();
@@ -55,10 +53,6 @@ const { groups, homeHref, homeLabel } = await getDemoNavigation(
   Astro.url.pathname,
   lang,
 );
-const breadcrumbs = [
-  { label: context.site.brand, href: homeHref },
-  ...(breadcrumbItems ?? [{ label: title }]),
-];
 const { sidebar: _sidebar, ...layoutDefaults } = defaults;
 const layoutProps = {
   ...layoutDefaults,
@@ -99,12 +93,7 @@ const languageItems = languageLinks.map((link) => ({
         rail={selectedSidebar?.rail}
         ariaLabel={copy.examples}
       />
-      <Header
-        slot="header"
-        parts={parts}
-        breadcrumbs={breadcrumbs}
-        ariaLabel={parts.header.breadcrumbLabel}
-      >
+      <Header slot="header">
         {languageItems.length > 1 ? (
           <DropdownMenu
             slot="actions"
@@ -136,12 +125,7 @@ const languageItems = languageLinks.map((link) => ({
     </Layout>
   ) : (
     <Layout {...layoutProps}>
-      <Header
-        slot="header"
-        parts={parts}
-        breadcrumbs={breadcrumbs}
-        ariaLabel={parts.header.breadcrumbLabel}
-      >
+      <Header slot="header">
         {languageItems.length > 1 ? (
           <DropdownMenu
             slot="actions"

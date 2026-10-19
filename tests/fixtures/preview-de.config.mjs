@@ -19,8 +19,8 @@ export default {
           parts: {
             header: {
               skipLabel: copy.skipToContent,
-              breadcrumbLabel: copy.breadcrumb,
             },
+            pageHeader: { breadcrumbLabel: copy.breadcrumb },
           },
         },
         types: { page: { sidebar: {} } },

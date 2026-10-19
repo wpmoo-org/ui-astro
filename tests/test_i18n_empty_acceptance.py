@@ -35,7 +35,7 @@ class AcceptedEmptyStates(unittest.TestCase):
                 self.assertEqual(page.locator("main h2").all_text_contents(), ["Items", "Pages"])
                 self.assertEqual(page.locator("main .empty-state").count(), 2)
                 self.assertEqual(page.locator("main .empty-state-title").all_text_contents(), ["No items yet.", "No pages yet."])
-                self.assertEqual(page.locator('header nav[aria-label="Breadcrumb"]').count(), 1)
+                self.assertEqual(page.locator('main header:has(h1) nav[aria-label="Breadcrumb"]').count(), 1)
                 self.assertEqual(page.locator('[data-moo-document-owner]').count(), 1)
                 self.assertEqual(page.locator('main#main-content > [data-page-container]').count(), 1)
                 self.assertFalse(page.evaluate("document.documentElement.scrollWidth > innerWidth"))

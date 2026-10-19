@@ -4,6 +4,7 @@ import { resolvePageOptions } from "@wpmoo/astro/config";
 import Single from "@wpmoo/astro/views/Single.astro";
 import Layout from "../layouts/Layout.astro";
 import Hero from "../components/Hero.astro";
+import { getThemeBreadcrumbs } from "../navigation.js";
 const { site } = getSiteContext();
 const options = resolvePageOptions(site, "page", "single", { sidebar: null });
 ---
@@ -19,6 +20,7 @@ const options = resolvePageOptions(site, "page", "single", { sidebar: null });
       id="landing-hero"
       heading="page-title"
       title="Native landing"
+      breadcrumbs={await getThemeBreadcrumbs("Native landing", Astro.url.pathname)}
       description="A native Astro page composes the same public Layout and host Hero."
       parts={options.parts}
     />

@@ -10,6 +10,7 @@ import PageLoop from "@wpmoo/astro/plugins/page/views/Loop.astro";
 import { getPublishedPages } from "@wpmoo/astro/plugins/page/queries";
 import { getSiteContext } from "@wpmoo/astro/context";
 import { getDemoMessages } from "../../messages.js";
+import { getDemoBreadcrumbs } from "../../navigation.js";
 
 const lang = Astro.currentLocale ?? getSiteContext().site.defaults.lang;
 const locale = getSiteContext().i18n ? lang : undefined;
@@ -37,6 +38,7 @@ const preferences = getDemoOptions("page", "archive");
     emptyText={copy.emptyPages}
   >
     <PageHeader
+      breadcrumbs={await getDemoBreadcrumbs("Custom Page archive preview", lang)}
       parts={preferences.parts}
       slot="page-header"
       title="Custom Pages"

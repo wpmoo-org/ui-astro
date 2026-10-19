@@ -26,7 +26,6 @@ interface Props {
   locale?: string;
   metadata?: SeoMetadata | null;
   languageLinks?: readonly LanguageLink[];
-  breadcrumbs?: readonly { label: string; href?: string }[];
   pageContext?: PageClassContext;
 }
 const {
@@ -37,7 +36,6 @@ const {
   locale,
   metadata,
   languageLinks = [],
-  breadcrumbs,
   pageContext,
 } = Astro.props;
 const plan = Astro.props.plan ?? await preparePlacements({ href, locale, title, view: pageContext?.view === "native" && pageContext.key === "not-found" ? "not-found" : "native" });
@@ -80,11 +78,7 @@ const layoutProps = {
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
       <Fragment slot="after-footer"><Placement plan={plan} at="footer.after" /></Fragment>
-      <Header
-        slot="header"
-        breadcrumbs={[...(breadcrumbs ?? chrome.breadcrumbs)]}
-        parts={options.parts}
-      >
+      <Header slot="header">
         {presentation.themeToggle ||
         presentation.languageSwitcher ||
         Astro.slots.has("header-actions") ? (
@@ -130,11 +124,7 @@ const layoutProps = {
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
       <Fragment slot="after-footer"><Placement plan={plan} at="footer.after" /></Fragment>
-      <Header
-        slot="header"
-        breadcrumbs={[...(breadcrumbs ?? chrome.breadcrumbs)]}
-        parts={options.parts}
-      >
+      <Header slot="header">
         {drawer ? (
           <Button slot="trigger" variant={options.parts.header.trigger.variant} size={options.parts.header.trigger.size} data-bs-toggle="offcanvas" data-bs-target="#moo-site-drawer" ariaLabel={options.parts.header.toggleLabel} ariaControls="moo-site-drawer">
             <Icon name={options.parts.header.trigger.icon} />
