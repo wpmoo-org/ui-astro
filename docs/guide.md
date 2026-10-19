@@ -1686,6 +1686,13 @@ Its independent reader runs with `python3 tests/test_astro_starter.py
 while keeping inspection records and proof files. Browser/static-host acceptance
 remains separate from this offline evidence.
 
+When reading a copied proof on a different machine, supply
+`--mounted-proof-root /absolute/original/docker-proof-path` to the Python
+reader. This explicitly identifies the original inspected mount; without the
+option it must match the current proof directory. Archive, installed-file,
+authored-source, isolation and rendered-content checks still use the retained
+bytes. A copied location alone never substitutes for the original mount identity.
+
 For an unpublished content-breadcrumb SDK trial, the controller additionally
 accepts `--lock /absolute/candidate-lock.json` and
 `--breadcrumb-profile content-owned`. The external lock must bind the exact

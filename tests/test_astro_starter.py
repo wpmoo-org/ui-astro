@@ -15,9 +15,9 @@ import tempfile
 import unittest
 
 
-SDK_SHA = "80d13d0497de6251e85f2955573dfcb429351ff1e287fdc0f52aab2152874df4"
-PINS = {"astro": "7.3.3", "@wpmoo/ui": "1.0.0", "bootstrap": "5.3.8",
-        "@astrojs/mdx": "8.0.2", "@astrojs/check": "0.9.10", "typescript": "6.0.3"}
+SDK_SHA = "26777197360fa216c99606864bbde1242da10097063978e069c4e9edc26a2276"
+PINS = {"astro": "7.3.8", "@wpmoo/ui": "1.3.0", "bootstrap": "5.3.8",
+        "@astrojs/mdx": "8.0.3", "@astrojs/check": "0.9.10", "typescript": "6.0.3"}
 ARCHIVE_ITEMS = {
     "archive": ("announcement", "update"),
     "category": ("enhanced", "guide", "update"),
@@ -38,7 +38,15 @@ ENTRY_TERMS = {
     "announcement": ("categoryNews", "tagRelease", "sector"),
     "update": ("category", "categoryNews", "tag", "tagRelease", "sector", "sectorDevelopment"),
 }
+MOUNTED_PROOF_ROOT = None
+if "--mounted-proof-root" in sys.argv:
+    position = sys.argv.index("--mounted-proof-root")
+    if position + 1 >= len(sys.argv) or not Path(sys.argv[position + 1]).is_absolute():
+        raise ValueError("--mounted-proof-root requires the original absolute Docker mount path")
+    MOUNTED_PROOF_ROOT = Path(sys.argv[position + 1]).resolve()
+    del sys.argv[position:position + 2]
 ROOT = Path(sys.argv.pop(1)).resolve() if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
+MOUNTED_PROOF_ROOT = MOUNTED_PROOF_ROOT or ROOT
 
 
 def sha(path):
@@ -269,7 +277,7 @@ def verify_archives(root, artifacts):
             require(manifest == record["manifest"], "archive manifest differs")
         require(manifest["private"] and manifest["license"] == "MIT", "private MIT package required")
         if name == "@wpmoo/astro":
-            require(record["sha256"] == SDK_SHA and len(actual) == 141, "foundation archive checkpoint differs")
+            require(record["sha256"] == SDK_SHA and len(actual) == 169, "foundation archive checkpoint differs")
 
 
 
@@ -302,8 +310,8 @@ def verify_profile(root, profile, artifacts, inset="py-2"):
         exports = profile["installed"]["packages"][name]["exports"]
         require(set(exports) == {name if key == "." else name + "/" + key[2:] for key in artifact["manifest"]["exports"]}, "public SDK export coverage incomplete")
         require(profile["installed"]["packages"][name]["files"] == artifact["files"], "installed byte receipt differs")
-    published = read_json(directory / "node_modules/@wpmoo/astro/contracts/ui-1.0.0-package.json")
-    require(published["version"] == "1.0.0", "published Core pin differs")
+    published = read_json(directory / "node_modules/@wpmoo/astro/contracts/ui-1.3.0-package.json")
+    require(published["version"] == "1.3.0", "published Core pin differs")
     for specifier, record in published["exports"].items():
         path = directory / "node_modules/@wpmoo/ui" / record["target"]
         require(sha(path) == record["sha256"] == profile["installed"]["core_files"][specifier], "actual Core public bytes differ")
@@ -354,7 +362,7 @@ class StarterTests(unittest.TestCase):
             require(not host.get("PortBindings") and not host.get("VolumesFrom") and not host.get("CapAdd"), "unexpected service/source access")
             mounts = {m["Destination"]: m for m in container["Mounts"]}
             require(set(mounts) == {"/proof", "/cache"} and mounts["/proof"]["RW"] and not mounts["/cache"]["RW"], "sealed mounts differ")
-            require(Path(mounts["/proof"]["Source"]).resolve() == ROOT, "actual proof mount differs")
+            require(Path(mounts["/proof"]["Source"]).resolve() == MOUNTED_PROOF_ROOT, "actual proof mount differs")
             require(container["Config"]["Entrypoint"] == ["node"] and container["Config"]["Cmd"] == ["/proof/run_packed_consumer.mjs", "/proof/request.json"], "retained command differs")
             if phase == "after":
                 require(not container["State"]["Running"] and container["State"]["ExitCode"] == 0, "container did not pass")
@@ -423,6 +431,22 @@ class StarterTests(unittest.TestCase):
         require(manifest["dependencies"]["@wpmoo/astro"] == "0.1.0", "portable manifest contains local SDK path")
         require("@wpmoo/astro-theme-starter" not in manifest["dependencies"], "portable theme dependency present")
         require(not (ROOT / "source/package-lock.json").exists(), "portable unpublished template contains local lock")
+
+    def test_declared_breadcrumb_trial_preserves_original_and_other_profile_fields(self):
+        preparation = self.proof.get("preparation", {"breadcrumbProfile": "native"})
+        require(preparation == self.request.get("preparation", {"breadcrumbProfile": "native"}), "preparation receipt differs")
+        if preparation["breadcrumbProfile"] == "native":
+            return
+        require(preparation["breadcrumbProfile"] == "content-owned", "unsupported breadcrumb preparation")
+        require(re.fullmatch(r"[a-f0-9]{64}", preparation["lockSeedSha256"]) is not None, "lock seed identity missing")
+        original = owned(ROOT / "source", "src/definitions.js").read_text()
+        legacy = "              breadcrumbLabel: copy.breadcrumb,\n"
+        anchor = "              skipLabel: copy.skip,\n            },"
+        require(original.count(legacy) == original.count(anchor) == 1, "original legacy preference block differs")
+        expected = original.replace(legacy, "").replace(anchor, anchor + "\n            pageHeader: { breadcrumbLabel: copy.breadcrumb },")
+        for profile in self.proof["profiles"].values():
+            actual = owned(ROOT / profile["directory"], "src/definitions.js").read_text()
+            require(actual == expected, "breadcrumb trial changed unrelated authored fields")
 
     def test_minimal_starter_builds_translated_routes_without_host_route_files(self):
         require(not any(name.startswith("routes/") or name.startswith("src/views/") or name.startswith("src/layouts/") for name in self.request["source_sha256"]), "copied rendering remains")
