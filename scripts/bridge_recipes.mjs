@@ -64,7 +64,15 @@ async function packSdk(output, packing) {
   return {archive,record};
 }
 
-export async function prepareBridgeRecipe({suite, variant, manifest, layout}) {
+export async function prepareBridgeRecipe(options) {
+  try { return await prepareRecipe(options); }
+  catch (error) {
+    await appendFile(join(options.layout.output,'run.log'), String(error.stack ?? error).slice(-8000)+'\n');
+    throw error;
+  }
+}
+
+async function prepareRecipe({suite, variant, manifest, layout}) {
   assert.deepEqual(layout, resolveExecutionLayout('bridge-v1'), 'fixed bridge layout required');
   assert.ok(['consumers','starter'].includes(suite), 'unsupported matrix suite');
   assert.ok(suite === 'starter' ? ['native','content-owned'].includes(variant) : variant === 'native', 'unsupported variant');

@@ -78,7 +78,7 @@ function step(directory, name, command, args, env) {
   return writeFile(join(directory, record.log), output).then(() => {
     if (result.error || result.status !== 0)
       throw new Error(
-        `${relative(PROOF, directory)}: ${name} failed; retained ${record.log}`,
+        `${relative(PROOF, directory)}: ${name} failed; retained ${record.log}\n${output.slice(-8000)}`,
       );
     return record;
   });
