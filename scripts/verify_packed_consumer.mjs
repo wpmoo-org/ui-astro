@@ -285,37 +285,7 @@ async function copyFixture(source, target) {
   return names.sort();
 }
 
-export async function verifyPackedConsumer({
-  cache,
-  output,
-  fixture = "all",
-  image,
-}) {
-  const selected = fixture === "all" ? Object.keys(PACKED_PROFILES) : [fixture];
-  const cachePath = await canonicalMount(cache, "cache");
-  const outputPath = await canonicalMount(output, "output", {
-    mustExist: false,
-  });
-  if (!(await lstat(cachePath)).isDirectory())
-    throw new Error("cache must be a primed npm directory");
-  await assertPlainInputTree(cachePath);
-  if (
-    cachePath === outputPath ||
-    cachePath.startsWith(`${outputPath}/`) ||
-    outputPath.startsWith(`${cachePath}/`)
-  ) {
-    throw new Error("cache and output directories must be disjoint");
-  }
-  try {
-    if ((await readdir(outputPath)).length)
-      throw new Error("output must be an empty proof directory");
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  // Inspect first: docker create uses this immutable local ID and never pulls.
-  const imageRecord = JSON.parse(run("docker", ["image", "inspect", image]))[0];
-  if (!/^sha256:[a-f0-9]{64}$/u.test(imageRecord?.Id ?? ""))
-    throw new Error("An existing local image ID is required");
+export async function preparePackedConsumerInputs({outputPath, selected = Object.keys(PACKED_PROFILES), fixture = "all", imageRecord = {}}) {
   const manifest = JSON.parse(
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
@@ -480,6 +450,7 @@ export async function verifyPackedConsumer({
   for (const name of [
     "run_packed_consumer.mjs",
     "packed_consumer_contracts.mjs",
+    "execution_layout.mjs",
   ]) {
     await writeFile(
       join(outputPath, name),
@@ -506,6 +477,41 @@ export async function verifyPackedConsumer({
     `${JSON.stringify(request, null, 2)}\n`,
   );
   await assertPlainInputTree(outputPath);
+  return {request, artifacts, manifest, publicImports, profiles};
+}
+
+export async function verifyPackedConsumer({
+  cache,
+  output,
+  fixture = "all",
+  image,
+}) {
+  const selected = fixture === "all" ? Object.keys(PACKED_PROFILES) : [fixture];
+  const cachePath = await canonicalMount(cache, "cache");
+  const outputPath = await canonicalMount(output, "output", {
+    mustExist: false,
+  });
+  if (!(await lstat(cachePath)).isDirectory())
+    throw new Error("cache must be a primed npm directory");
+  await assertPlainInputTree(cachePath);
+  if (
+    cachePath === outputPath ||
+    cachePath.startsWith(`${outputPath}/`) ||
+    outputPath.startsWith(`${cachePath}/`)
+  ) {
+    throw new Error("cache and output directories must be disjoint");
+  }
+  try {
+    if ((await readdir(outputPath)).length)
+      throw new Error("output must be an empty proof directory");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  // Inspect first: docker create uses this immutable local ID and never pulls.
+  const imageRecord = JSON.parse(run("docker", ["image", "inspect", image]))[0];
+  if (!/^sha256:[a-f0-9]{64}$/u.test(imageRecord?.Id ?? ""))
+    throw new Error("An existing local image ID is required");
+  const {request, artifacts, manifest, publicImports, profiles} = await preparePackedConsumerInputs({outputPath, selected, fixture, imageRecord});
   const id = run("docker", [
     "create",
     "--network",

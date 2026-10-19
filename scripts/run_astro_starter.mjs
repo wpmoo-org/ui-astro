@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // Copied to /proof: only retained inputs and exact installed packages are visible.
 import assert from "node:assert/strict";
+import { resolveExecutionLayout } from "./execution_layout.mjs";
+const layout = resolveExecutionLayout(process.env.WPMOO_EXECUTION_LAYOUT ?? "legacy");
+const PROOF = layout.proof;
 import { spawnSync } from "node:child_process";
-import { cp, readFile, realpath, writeFile } from "node:fs/promises";
+import { cp, rm, readFile, realpath, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -81,7 +84,7 @@ async function resolution(directory, request) {
         resolved,
         join(root, typeof target === "string" ? target : target.default),
       );
-      exports[specifier] = relative("/proof", resolved);
+      exports[specifier] = relative(PROOF, resolved);
     }
     const privatePath = `${name}/src/types.js`;
     assert.throws(() => require.resolve(privatePath), {
@@ -89,7 +92,7 @@ async function resolution(directory, request) {
     });
     packages[name] = {
       version: artifact.manifest.version,
-      root: relative("/proof", root),
+      root: relative(PROOF, root),
       files: hashes,
       exports,
       private: {
@@ -130,7 +133,7 @@ async function resolution(directory, request) {
     }
   }
   return {
-    host: relative("/proof", host),
+    host: relative(PROOF, host),
     packages,
     core_files: coreFiles,
     closure,
@@ -143,7 +146,7 @@ async function certify(
   env,
   { generateLock = false, inset = "py-2" } = {},
 ) {
-  const directory = join("/proof", profile.directory);
+  const directory = join(PROOF, profile.directory);
   const manifest = await readJson(join(directory, "package.json"));
   const before = await fileHashes(directory, profile.authored_files);
   assert.deepEqual(before, profile.authored_sha256, "prepared authored files");
@@ -216,7 +219,7 @@ async function certify(
       directory,
       "mdx-development",
       "node",
-      ["/proof/mdx-development-graph.mjs", directory, profile.mainLanguage],
+      [join(PROOF, 'mdx-development-graph.mjs'), directory, profile.mainLanguage],
       profileEnv,
     );
   }
@@ -248,29 +251,29 @@ async function certify(
 async function main() {
   assert.equal(
     dirname(fileURLToPath(import.meta.url)),
-    "/proof",
+    PROOF,
     "runner must execute sealed inputs",
   );
-  assert.equal(resolve(process.argv[2] ?? ""), "/proof/request.json");
-  const request = await readJson("/proof/request.json");
+  assert.equal(resolve(process.argv[2] ?? ""), join(PROOF, 'request.json'));
+  const request = await readJson(join(PROOF, 'request.json'));
   assert.equal(request.schema_version, 2);
   assert.equal(request.kind, "astro-moo-starter");
   assert.deepEqual(Object.keys(request.artifacts), ["@wpmoo/astro"]);
-  await assertStarterArchives("/proof", request.artifacts);
+  await assertStarterArchives(PROOF, request.artifacts);
   assert.deepEqual(
-    await fileHashes("/proof", Object.keys(request.scripts_sha256)),
+    await fileHashes(PROOF, Object.keys(request.scripts_sha256)),
     request.scripts_sha256,
     "retained runner inputs",
   );
   assert.deepEqual(
-    await fileHashes("/proof/source", Object.keys(request.source_sha256)),
+    await fileHashes(join(PROOF, 'source'), Object.keys(request.source_sha256)),
     request.source_sha256,
     "original portable source snapshot",
   );
-  await cp("/cache", "/tmp/npm-cache", { recursive: true });
+  if (layout.proof === "/proof") await cp("/cache", layout.cache, { recursive: true });
   const env = {
     ...process.env,
-    npm_config_cache: "/tmp/npm-cache",
+    npm_config_cache: layout.cache,
     npm_config_offline: "true",
     npm_config_audit: "false",
     npm_config_fund: "false",
@@ -300,7 +303,8 @@ async function main() {
   for (const profile of request.profiles) {
     const record = await certify(profile, request, env, { generateLock: true });
     proof.profiles[profile.name] = record;
-    await writeJson("/proof/proof.json", proof);
+    await writeJson(join(PROOF, 'proof.json'), proof);
+    if (layout.proof !== "/proof") for (const name of ["node_modules", ".astro", "dist"]) await rm(join(PROOF, profile.directory, name), {recursive:true, force:true});
     console.log(
       `${profile.name}: ${Object.keys(record.output.html).length} compiled pages, strict check/build/closure passed`,
     );

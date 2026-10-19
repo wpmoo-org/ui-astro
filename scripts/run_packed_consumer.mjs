@@ -2,10 +2,14 @@
 
 // This runner is copied beside the archives. It has no checkout or tool dependency.
 import assert from "node:assert/strict";
+import { resolveExecutionLayout } from "./execution_layout.mjs";
+const layout = resolveExecutionLayout(process.env.WPMOO_EXECUTION_LAYOUT ?? "legacy");
+const PROOF = layout.proof;
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   cp,
+  rm,
   mkdir,
   readFile,
   readdir,
@@ -74,7 +78,7 @@ function step(directory, name, command, args, env) {
   return writeFile(join(directory, record.log), output).then(() => {
     if (result.error || result.status !== 0)
       throw new Error(
-        `${relative("/proof", directory)}: ${name} failed; retained ${record.log}`,
+        `${relative(PROOF, directory)}: ${name} failed; retained ${record.log}`,
       );
     return record;
   });
@@ -134,7 +138,7 @@ async function resolution(directory, request) {
       const target = typeof value === "string" ? value : value.default;
       const resolved = require.resolve(specifier);
       assert.equal(resolved, join(directory, "node_modules", name, target));
-      publicRecords[specifier] = relative("/proof", resolved);
+      publicRecords[specifier] = relative(PROOF, resolved);
     }
     const privatePaths =
       name === "@wpmoo/astro"
@@ -176,8 +180,8 @@ async function resolution(directory, request) {
     public: publicRecords,
     private: privateRecords,
     upstream_files: upstreamFiles,
-    host_astro_path: relative("/proof", host),
-    adapter_astro_path: relative("/proof", adapterHost),
+    host_astro_path: relative(PROOF, host),
+    adapter_astro_path: relative(PROOF, adapterHost),
   };
   await writeJson(join(directory, "resolution.json"), record);
   return record;
@@ -185,25 +189,25 @@ async function resolution(directory, request) {
 
 async function main() {
   if (
-    resolve(process.argv[2] ?? "") !== "/proof/request.json" ||
-    dirname(fileURLToPath(import.meta.url)) !== "/proof"
+    resolve(process.argv[2] ?? "") !== join(PROOF, 'request.json') ||
+    dirname(fileURLToPath(import.meta.url)) !== PROOF
   ) {
     throw new Error(
       "The isolated runner must execute from its prepared /proof directory",
     );
   }
-  const request = await readJson("/proof/request.json");
+  const request = await readJson(join(PROOF, 'request.json'));
   for (const artifact of Object.values(request.artifacts)) {
     assert.equal(
-      sha256(await readFile(join("/proof", artifact.filename))),
+      sha256(await readFile(join(PROOF, artifact.filename))),
       artifact.sha256,
       "Retained archive changed before execution",
     );
   }
-  await cp("/cache", "/tmp/npm-cache", { recursive: true });
+  if (layout.proof === "/proof") await cp("/cache", layout.cache, { recursive: true });
   const env = {
     ...process.env,
-    npm_config_cache: "/tmp/npm-cache",
+    npm_config_cache: layout.cache,
     npm_config_offline: "true",
     npm_config_audit: "false",
     npm_config_fund: "false",
@@ -218,9 +222,9 @@ async function main() {
     },
     profiles: {},
   };
-  await writeJson("/proof/runtime.json", result.runtime);
+  await writeJson(join(PROOF, 'runtime.json'), result.runtime);
   for (const profile of request.profiles) {
-    const directory = join("/proof", profile.directory);
+    const directory = join(PROOF, profile.directory);
     const manifest = await readJson(join(directory, "package.json"));
     const before = await hashes(directory, profile.authored_files);
     assert.deepEqual(
@@ -360,48 +364,49 @@ async function main() {
       public_resolution_count: Object.keys(resolved.public).length,
       private_errors: resolved.private,
     };
-    await writeJson("/proof/runner-result.json", result);
+    await writeJson(join(PROOF, 'runner-result.json'), result);
+    if (layout.proof !== "/proof") for (const name of ["node_modules", ".astro", "dist"]) await rm(join(directory, name), {recursive:true, force:true});
     console.log(
       `${profile.name}: offline install, check, build and public boundary passed`,
     );
   }
-  await mkdir("/proof/peer-conflict");
+  await mkdir(join(PROOF, 'peer-conflict'));
   const manifest = structuredClone(
     await readJson(
-      join("/proof", request.profiles[0].directory, "package.json"),
+      join(PROOF, request.profiles[0].directory, "package.json"),
     ),
   );
   const lock = structuredClone(
     await readJson(
-      join("/proof", request.profiles[0].directory, "package-lock.json"),
+      join(PROOF, request.profiles[0].directory, "package-lock.json"),
     ),
   );
   manifest.dependencies.astro = request.incompatible.version;
   lock.packages[""].dependencies.astro = request.incompatible.version;
   lock.packages["node_modules/astro"] = request.incompatible;
-  await writeJson("/proof/peer-conflict/package.json", manifest);
-  await writeJson("/proof/peer-conflict/package-lock.json", lock);
+  await writeJson(join(PROOF, 'peer-conflict/package.json'), manifest);
+  await writeJson(join(PROOF, 'peer-conflict/package-lock.json'), lock);
   const peer = spawnSync(
     "npm",
     ["ci", "--offline", "--strict-peer-deps", "--audit=false", "--fund=false"],
-    { cwd: "/proof/peer-conflict", env, encoding: "utf8" },
+    { cwd: join(PROOF, 'peer-conflict'), env, encoding: "utf8" },
   );
   assertPeerConflict(
     peer,
     request.artifacts["@wpmoo/astro"].manifest.peerDependencies.astro,
   );
-  await writeFile("/proof/peer-conflict.log", `${peer.stdout}${peer.stderr}`);
+  await writeFile(join(PROOF, 'peer-conflict.log'), `${peer.stdout}${peer.stderr}`);
   result.incompatible_peer = {
     exit_code: peer.status,
     code: "ERESOLVE",
     host_version: request.incompatible.version,
   };
-  await writeJson("/proof/runner-result.json", result);
+  await writeJson(join(PROOF, 'runner-result.json'), result);
 }
 
 main().catch(async (error) => {
   console.error(error.stack ?? error.message);
-  await writeJson("/proof/runner-failure.json", { error: error.message }).catch(
+  await writeJson(join(PROOF, 'runner-failure.json'), { error: error.message }).catch(
     () => {},
   );
   process.exitCode = 1;

@@ -93,19 +93,7 @@ export async function assertStarterLocations({ starterPath, cache, output }) {
   }
   return { starterPath, cachePath, outputPath };
 }
-export async function verifyAstroStarter(options) {
-  assert.ok([undefined, "native", "content-owned"].includes(options.breadcrumbProfile), "unsupported breadcrumb proof profile");
-  const { starterPath, cachePath, outputPath } =
-    await assertStarterLocations(options);
-  assert.match(
-    options.image,
-    /^sha256:[a-f0-9]{64}$/u,
-    "existing immutable image ID required",
-  );
-  const image = JSON.parse(
-    run("docker", ["image", "inspect", options.image]),
-  )[0];
-  assert.equal(image.Id, options.image);
+export async function prepareStarterInputs(options, {starterPath, outputPath}, image = {}) {
   const prepared = await prepareAstroStarter({
     starterPath,
     sdkArchive: options.sdkArchive,
@@ -146,6 +134,7 @@ export async function verifyAstroStarter(options) {
   const scripts = [
     "run_packed_consumer.mjs",
     "astro_starter_contracts.mjs",
+    "execution_layout.mjs",
     "mdx-development-graph.mjs",
   ];
   for (const script of scripts)
@@ -170,8 +159,8 @@ export async function verifyAstroStarter(options) {
     },
     artifacts,
     profiles,
-    source_commit: run("git", ["rev-parse", "HEAD"], { cwd: REPO }).trim(),
-    starter_commit: run("git", ["rev-parse", "HEAD"], {
+    source_commit: options.sourceCommit ?? run("git", ["rev-parse", "HEAD"], { cwd: REPO }).trim(),
+    starter_commit: options.starterCommit ?? run("git", ["rev-parse", "HEAD"], {
       cwd: starterPath,
     }).trim(),
     source_sha256: prepared.sourceHashes,
@@ -189,6 +178,23 @@ export async function verifyAstroStarter(options) {
     `${JSON.stringify(image, null, 2)}\n`,
   );
   await assertPlainInputTree(outputPath);
+  return {request, prepared};
+}
+
+export async function verifyAstroStarter(options) {
+  assert.ok([undefined, "native", "content-owned"].includes(options.breadcrumbProfile), "unsupported breadcrumb proof profile");
+  const { starterPath, cachePath, outputPath } =
+    await assertStarterLocations(options);
+  assert.match(
+    options.image,
+    /^sha256:[a-f0-9]{64}$/u,
+    "existing immutable image ID required",
+  );
+  const image = JSON.parse(
+    run("docker", ["image", "inspect", options.image]),
+  )[0];
+  assert.equal(image.Id, options.image);
+  await prepareStarterInputs(options, {starterPath, outputPath}, image);
   const id = run("docker", [
     "create",
     "--name",
