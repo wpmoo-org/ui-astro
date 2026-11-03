@@ -229,7 +229,7 @@ const partsSchema = z.strictObject({
 const partDefaults = {
   content: {
     utilities: ["mx-0", "py-4", "py-md-5", "px-3", "px-md-5"],
-    scrollUtilities: ["scroll-fade-y", "no-scrollbar", "scroll-smooth"],
+    scrollUtilities: ["scroll-fade-y", "scroll-smooth"],
   },
   header: {
     utilities: ["bg-body-tertiary"],
@@ -325,7 +325,8 @@ export function formatDate(date, options = {}) {
 }
 const sidebarSchema = z
   .strictObject({
-    mode: z.enum(["sidebar", "drawer"]).optional(),
+    mode: z.enum(["sidebar", "drawer", "header"]).optional(),
+    breakpoint: z.enum(["lg", "xl", "xxl"]).optional(),
     side: z.enum(["left", "right"]).optional(),
     variant: z.enum(["sidebar", "floating", "inset"]).optional(),
     collapsible: z.enum(["icon", "offcanvas", "none"]).optional(),
@@ -334,13 +335,15 @@ const sidebarSchema = z
   })
   .superRefine((value, context) => {
     if (
-      value.mode === "drawer" &&
-      Object.keys(value).some((key) => !["mode", "side"].includes(key))
+      ["drawer", "header"].includes(value.mode) &&
+      Object.keys(value).some((key) => !["mode", "side", ...(value.mode === "header" ? ["breakpoint"] : [])].includes(key))
     )
       context.addIssue({
         code: "custom",
-        message: "drawer accepts only mode and side",
+        message: `${value.mode} accepts only mode and side${value.mode === "header" ? " and breakpoint" : ""}`,
       });
+    if (value.mode === "sidebar" && value.breakpoint !== undefined)
+      context.addIssue({ code: "custom", path: ["breakpoint"], message: "breakpoint requires header mode" });
   });
 
 export const contentAsideSchema = z.strictObject({
@@ -362,6 +365,7 @@ const asideDefaults = Object.freeze({
 
 export const layoutSchema = z.strictObject({
   shellMode: z.enum(["viewport", "contained"]).optional(),
+  overlayScrollbar: z.boolean().optional(),
   pageWidth: width.optional(),
   headerWidth: width.nullable().optional(),
   theme: z.enum(["light", "dark"]).optional(),
@@ -438,6 +442,7 @@ const sidebarDefaults = Object.freeze({
 });
 const builtIn = Object.freeze({
   shellMode: "viewport",
+  overlayScrollbar: true,
   pageWidth: "xl",
   headerWidth: "fluid",
   theme: "light",
@@ -502,14 +507,16 @@ function mergeLayout(...layers) {
           const mode = value.mode ?? sidebar.mode ?? "sidebar";
           if (value.mode && mode !== (sidebar.mode ?? "sidebar"))
             sidebar =
-              mode === "drawer"
-                ? { mode, side: "left" }
+              mode === "drawer" || mode === "header"
+                ? { mode, side: "left", ...(mode === "header" ? { breakpoint: "xl" } : {}) }
                 : { ...sidebarDefaults, mode };
           if (
-            mode === "drawer" &&
-            Object.keys(value).some((key) => !["mode", "side"].includes(key))
+            ["drawer", "header"].includes(mode) &&
+            Object.keys(value).some((key) => !["mode", "side", ...(mode === "header" ? ["breakpoint"] : [])].includes(key))
           )
-            throw new TypeError("sidebar drawer accepts only mode and side");
+            throw new TypeError(`sidebar ${mode} accepts only mode and side${mode === "header" ? " and breakpoint" : ""}`);
+          if (mode !== "header" && value.breakpoint !== undefined)
+            throw new TypeError("sidebar breakpoint requires header mode");
           for (const [field, option] of Object.entries(value)) {
             if (option !== undefined) sidebar[field] = option;
           }

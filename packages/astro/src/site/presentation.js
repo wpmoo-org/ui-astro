@@ -17,6 +17,8 @@ const locale = z.string().refine((value) => {
   }
 }, "must be a valid locale");
 const labelsSchema = z.strictObject({
+  home: text.optional(),
+  collections: text.optional(),
   site: text.optional(),
   pages: text.optional(),
   taxonomies: text.optional(),
@@ -66,6 +68,8 @@ const schema = copySchema.extend({
 });
 const messages = {
   en: {
+    home: "Home",
+    collections: "Collections",
     site: "Site",
     pages: "Pages",
     taxonomies: "Taxonomies",
@@ -79,6 +83,8 @@ const messages = {
     aside: "Page information",
   },
   de: {
+    home: "Home",
+    collections: "Collections",
     site: "Website",
     pages: "Seiten",
     taxonomies: "Taxonomien",

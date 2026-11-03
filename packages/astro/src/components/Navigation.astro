@@ -1,19 +1,32 @@
 ---
 import Typography from "./Typography.astro";
-interface Item {
+import DropdownMenu from "./DropdownMenu.astro";
+import Icon from "./internal/Icon.astro";
+import { navigationHref } from "../internal/href.js";
+interface Link {
   label: string;
   href?: string;
   active?: boolean;
   disabled?: boolean;
   badgeLabel?: string;
   badgeVariant?: string;
+  icon?: string;
+}
+interface Item extends Link {
+  children?: readonly Link[];
+  sections?: readonly { label: string; items: readonly Link[] }[];
+  open?: boolean;
 }
 interface Props {
   heading?: string;
   rootClass?: string;
   ariaLabel: string;
   items?: Item[];
-  style?: "base" | "pills" | "underline";
+  style?: "base" | "pills" | "underline" | "navbar";
+  brand?: string;
+  brandHref?: string;
+  brandClass?: string;
+  linkClass?: string;
   vertical?: boolean;
   dir?: "" | "ltr" | "rtl";
   class?: string;
@@ -26,6 +39,10 @@ const {
   ariaLabel,
   items = [],
   style = "pills",
+  brand = "",
+  brandHref = "/",
+  brandClass = "",
+  linkClass = "",
   vertical = false,
   dir = "",
   class: className = "",
@@ -34,28 +51,38 @@ const {
 const navClass =
   style === "base"
     ? "nav"
-    : style === "underline"
-      ? "nav nav-underline"
-      : "nav nav-pills";
+    : style === "navbar"
+      ? "navbar-nav"
+      : style === "underline"
+        ? "nav nav-underline"
+        : "nav nav-pills";
+const rootClasses = [style === "navbar" ? "navbar navbar-expand" : "", rootClass].filter(Boolean).join(" ");
 ---
 
-<nav {...rest} aria-label={ariaLabel} dir={dir || undefined} class={rootClass || undefined}>
+<nav {...rest} aria-label={ariaLabel} dir={dir || undefined} class={rootClasses || undefined}>
+  {brand ? <a href={navigationHref(brandHref, "Navigation brandHref")} class:list={["navbar-brand", brandClass]} data-slot="navigation-brand">{brand}</a> : null}
   {heading ? <Typography content={heading} variant="section-label" class="mb-2" /> : null}
-  <ul class:list={[navClass, vertical ? "flex-column gap-1" : "", className]}>
+  <ul class:list={[navClass, vertical ? "flex-column gap-1" : "", className]} data-slot={style === "navbar" ? "navigation-menu" : undefined}>
     {
       items.map((item) => (
         <li class="nav-item">
-          <a
+          {item.children?.length || item.sections?.length ? (
+            <DropdownMenu label={item.label} triggerPresentation="nav-link" disabled={item.disabled} caret align={style === "navbar" ? "end" : ""} activeCurrent="page" triggerClass={`${linkClass} ${item.open ? "active" : ""}`} itemClass={style === "navbar" ? "text-nowrap" : "text-wrap text-break"} items={item.children} groups={item.sections}>
+              {item.icon ? <Icon slot="trigger-icon" name={item.icon} /> : null}
+            </DropdownMenu>
+          ) : <a
             class:list={[
               "nav-link",
               item.active ? "active" : "",
               item.disabled ? "disabled" : "",
+              linkClass,
             ]}
             href={item.disabled ? undefined : item.href || "#"}
             aria-disabled={item.disabled ? "true" : undefined}
             tabindex={item.disabled ? -1 : undefined}
             aria-current={item.active ? "page" : undefined}
           >
+            {item.icon ? <Icon name={item.icon} /> : null}
             <span>{item.label}</span>
             {item.badgeLabel ? (
               <span
@@ -71,7 +98,7 @@ const navClass =
                 {item.badgeLabel}
               </span>
             ) : null}
-          </a>
+          </a>}
         </li>
       ))
     }<slot />

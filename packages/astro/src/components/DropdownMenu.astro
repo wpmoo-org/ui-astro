@@ -19,6 +19,7 @@ interface Props {
   itemClass?: string;
   label: string;
   items?: readonly Item[];
+  groups?: readonly { label?: string; items: readonly Item[] }[];
   menuLabel?: string;
   variant?:
     | "default"
@@ -42,6 +43,9 @@ interface Props {
   offset?: string;
   ariaLabel?: string;
   triggerClass?: string;
+  triggerPresentation?: "button" | "nav-link";
+  disabled?: boolean;
+  activeCurrent?: "page" | "true";
   class?: string;
   [key: string]: unknown;
 }
@@ -52,6 +56,7 @@ const {
   itemClass = "",
   label,
   items = [],
+  groups = [],
   menuLabel = "",
   variant = "outline",
   size = "default",
@@ -61,17 +66,44 @@ const {
   offset = "",
   ariaLabel = "",
   triggerClass = "",
+  triggerPresentation = "button",
+  disabled = false,
+  activeCurrent = "true",
   class: className = "",
   ...rest
 } = Astro.props;
 if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu element");
+if (!["button", "nav-link"].includes(triggerPresentation)) throw new TypeError("Invalid DropdownMenu trigger presentation");
+type Entry = { kind: "item"; item: Item } | { kind: "heading"; label: string } | { kind: "divider" };
+const entries: Entry[] = items.map((item) => ({ kind: "item", item }));
+for (const group of groups) {
+  if (!group.items.length) continue;
+  if (entries.length) entries.push({ kind: "divider" });
+  if (group.label) entries.push({ kind: "heading", label: group.label });
+  entries.push(...group.items.map((item): Entry => ({ kind: "item", item })));
+}
 ---
 
 <Element {...rest} class:list={["dropdown", className]}>
-  <Button
+  {triggerPresentation === "nav-link" ? (
+    <button
+      type="button"
+      class:list={["nav-link", caret ? "dropdown-toggle" : "", triggerClass]}
+      disabled={disabled}
+      data-bs-toggle="dropdown"
+      data-bs-offset={offset || undefined}
+      data-bs-auto-close={autoClose || undefined}
+      aria-expanded="false"
+      aria-label={ariaLabel || undefined}
+    >
+      <slot name="trigger-icon" />
+      <slot name="trigger-label">{label}</slot>
+    </button>
+  ) : <Button
     label={label}
     variant={variant}
     size={size}
+    disabled={disabled}
     ariaLabel={ariaLabel}
     class={triggerClass}
     dropdown
@@ -81,7 +113,7 @@ if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu
   >
     <slot name="trigger-icon" slot="icon-start" />
     <slot name="trigger-label">{label}</slot>
-  </Button>
+  </Button>}
   <slot name="after-trigger" />
   <ul class:list={["dropdown-menu", align ? `dropdown-menu-${align}` : "", menuClass]}>
     {
@@ -97,7 +129,11 @@ if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu
       ) : null
     }
     {
-      items.map((item) => (
+      entries.map((entry) => {
+        if (entry.kind === "heading") return <li><h6 class="dropdown-header">{entry.label}</h6></li>;
+        if (entry.kind === "divider") return <li><hr class="dropdown-divider" /></li>;
+        const item = entry.item;
+        return (
         <li>
           {item.href ? (
             <a
@@ -114,7 +150,7 @@ if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu
               hreflang={item.hreflang}
               aria-disabled={item.disabled ? "true" : undefined}
               tabindex={item.disabled ? -1 : undefined}
-              aria-current={item.active ? "true" : undefined}
+              aria-current={item.active ? activeCurrent : undefined}
               data-variant={item.destructive ? "destructive" : undefined}
             >
               <span>{item.label}</span>
@@ -140,7 +176,8 @@ if (!["div", "nav"].includes(Element)) throw new TypeError("Invalid DropdownMenu
             </button>
           )}
         </li>
-      ))
+        );
+      })
     }
     <slot />
   </ul>

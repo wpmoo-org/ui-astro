@@ -187,6 +187,7 @@ export interface AppSidebarOptionsInput {
   collapsible?: "icon" | "offcanvas" | "none";
   rail?: boolean;
   defaultOpen?: boolean;
+  breakpoint?: never;
 }
 
 export type SidebarOptionsInput =
@@ -198,14 +199,35 @@ export type SidebarOptionsInput =
       collapsible?: never;
       rail?: never;
       defaultOpen?: never;
+      breakpoint?: never;
+    }
+  | {
+      mode: "header";
+      side?: "left" | "right";
+      breakpoint?: "lg" | "xl" | "xxl";
+      variant?: never;
+      collapsible?: never;
+      rail?: never;
+      defaultOpen?: never;
     };
 export type SidebarOptions =
-  | (Readonly<Required<Omit<AppSidebarOptionsInput, "mode">>> & {
+  | (Readonly<Required<Omit<AppSidebarOptionsInput, "mode" | "breakpoint">>> & {
       readonly mode?: "sidebar";
+      readonly breakpoint?: never;
     })
   | {
       readonly mode: "drawer";
       readonly side: "left" | "right";
+      variant?: never;
+      collapsible?: never;
+      rail?: never;
+      defaultOpen?: never;
+      breakpoint?: never;
+    }
+  | {
+      readonly mode: "header";
+      readonly side: "left" | "right";
+      readonly breakpoint: "lg" | "xl" | "xxl";
       variant?: never;
       collapsible?: never;
       rail?: never;
@@ -224,6 +246,7 @@ export type ContentAside = Readonly<Required<ContentAsideInput>>;
 
 export interface PageOptionsInput {
   shellMode?: "viewport" | "contained";
+  overlayScrollbar?: boolean;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
   theme?: "light" | "dark";
@@ -236,6 +259,7 @@ export interface PageOptionsInput {
 
 export interface PageOptions {
   shellMode: "viewport" | "contained";
+  overlayScrollbar: boolean;
   pageWidth: PageWidth;
   headerWidth: PageWidth | null;
   theme: "light" | "dark";
@@ -251,6 +275,8 @@ export interface TypeOptionsInput extends PageOptionsInput {
 }
 
 export interface SiteLabelsInput {
+  home?: string;
+  collections?: string;
   site?: string;
   pages?: string;
   taxonomies?: string;

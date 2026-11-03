@@ -69,6 +69,21 @@ test("layout options are strict partial data and five layers preserve false and 
   );
 });
 
+test("overlay scrollbar defaults on and supports layered boolean opt-out", () => {
+  assert.equal(defineSite().defaults.overlayScrollbar, true);
+  const site = defineSite({
+    defaults: { overlayScrollbar: false },
+    locales: { de: { overlayScrollbar: true } },
+    types: { post: { overlayScrollbar: true, views: { single: { overlayScrollbar: false } } } },
+  });
+  assert.equal(resolvePageOptions(site, "page", "single").overlayScrollbar, false);
+  assert.equal(resolvePageOptions(site, "page", "single", undefined, "de").overlayScrollbar, true);
+  assert.equal(resolvePageOptions(site, "post", "archive").overlayScrollbar, true);
+  assert.equal(resolvePageOptions(site, "post", "single").overlayScrollbar, false);
+  assert.equal(resolvePageOptions(site, "post", "single", { overlayScrollbar: true }).overlayScrollbar, true);
+  assert.throws(() => defineSite({ defaults: { overlayScrollbar: "false" } }), /overlayScrollbar/);
+});
+
 test("layout configuration rejects unknown fields and unsupported views", () => {
   assert.throws(
     () => defineSite({ defaults: { style: "width: 100px" } }),

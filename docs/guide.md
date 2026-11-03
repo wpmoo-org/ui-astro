@@ -24,7 +24,7 @@ For a short overview, see the [README](../README.md).
 - [Direct Moo Astro Starter](#direct-moo-astro-starter)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.3.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.5.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -268,11 +268,32 @@ moo({
 ```
 
 The app Sidebar remains the default when `sidebar` has no `mode`.
-`mode: "drawer"` uses the existing Sheet/Offcanvas navigation, opened by the
+`mode: "drawer"` uses the public Sidebar with native Offcanvas navigation, opened by the
 header toggle. Drawer input accepts only `mode` and physical `side`; app-only
 rail, collapsible and default-open settings do not carry across mode changes.
 `sidebar: null` removes either navigation presentation. Header controls and
 the content aside remain available.
+
+`sidebar: { mode: "header", breakpoint: "xl" }` selects horizontal Header
+navigation above the configured Bootstrap breakpoint and the same Sidebar
+drawer below it. `breakpoint` accepts `lg`, `xl` (default), or `xxl`; drawer
+`side` configures the LTR edge and mirrors in RTL for this mode. Both views use the same prepared navigation groups,
+localized labels, canonical links and active-page state. The Header composes
+public Navigation and DropdownMenu components without custom CSS; Button is
+reserved for actual controls such as opening the mobile drawer.
+If the selected Header rail is too narrow for its actual brand/menu/controls,
+it keeps the drawer trigger instead of clipping or truncating menu links.
+Resizing an open mobile drawer into a fitting desktop Header closes the native
+Offcanvas and moves focus to the brand. Existing app Sidebar, always-drawer and
+`sidebar: null` choices remain unchanged; content aside/TOC is independent.
+
+Header page items and the brand are native anchors, without `role="button"` or
+Button press motion. `Navigation style="navbar"` uses Bootstrap's shipped text
+navigation colors: quieter at rest and more prominent on hover/focus. Addressless
+submenu groups remain native buttons using DropdownMenu's
+`triggerPresentation="nav-link"`, so keyboard opening/closing still works, but
+they use the same unboxed text presentation and have no Button press motion.
+Other DropdownMenu callers retain the default Button trigger presentation.
 
 ### Native reusable content
 
@@ -363,6 +384,13 @@ native headings from the current entry, in authored order; its default depths
 are h2/h3. Layout initializes the shared Core tracker; there is no extra heading
 scanner. Entries without matching headings emit no TOC.
 
+Single and Archive content columns share the available rail's logical start
+edge, including when no aside is rendered (left in LTR, right in RTL). The
+responsive reading width is unchanged; a missing TOC does not silently center
+the Single column or reserve an empty aside. The application navigation drawer,
+content aside and heading-text alignment are independent preferences. The
+intentional centered404 recovery view remains separate.
+
 Each default aside placement is rendered in its own `section.aside-section`.
 An inner Bootstrap flex column spaces these sections with `gap-5`; set
 `defaults.aside.gap: 2` for `gap-2`, or override `aside.gap` for a content type,
@@ -370,18 +398,32 @@ view or entry. Empty blocks emit no section. The desktop TOC's entire section
 is hidden on narrow screens, so it leaves no gap before the remaining blocks.
 An explicit custom `aside` slot retains ownership of its section markup.
 
+With the default `stack-after` policy, the compact TOC is a Header-owned reading
+bar below the aside breakpoint, following Core1.4.0's catalog recipe. It starts
+hidden and inert, fades in after the reader scrolls into the content, and hides
+again near the top. It stays in the Header's normal layout flow, below the main
+controls: Header height includes the bar and main begins beneath it. The main
+scroll-fade remains visible at its own top edge rather than being covered by an
+overlay. Above the selected breakpoint the normal aside
+list remains authoritative. Compact triggers use the public ghost button and
+Bootstrap background utilities; no theme-specific CSS is required. Section
+navigation uses the actual main scroll boundary, with Core's activation offset
+remaining zero because there is no overlay. It preserves
+native fragments, keyboard selection and responsive changes. The Header still
+contains no content breadcrumb.
+
 The default main scroll container includes Core's `scroll-smooth` utility.
 TOC clicks keep native fragments and browser history, with immediate scrolling
 when the visitor prefers reduced motion. To disable animation for a project,
-set `parts.content.scrollUtilities` to `['scroll-fade-y', 'no-scrollbar']`.
+set `parts.content.scrollUtilities` to `['scroll-fade-y']`.
 
 For a custom theme, `layouts/ContentFrame.astro` supplies this frame around its
 default and `aside` slots; pure `blocks/TableOfContents.astro` accepts native
 `headings`, optional `depths` and a translated `label`.
 
 The accepted starter foundation has compiled regression checks for matching
-`container-xl` regions, separate drawer taxonomy groups, and the native TOC
-disclosure before the content. Run against a built, directly consuming starter:
+`container-xl` regions, separate drawer taxonomy groups, and Header-owned compact
+TOC markup. Run against a built, directly consuming starter:
 
 ```sh
 python3 tests/test_placements_acceptance.py /absolute/starter/dist
@@ -425,7 +467,25 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.8
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `1.3.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `1.5.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+
+Core's auto-hiding `OverlayScrollbar` is enabled by default. Set
+`defaults: { overlayScrollbar: false }` in `defineSite` to disable that control.
+The main-content scroll root then uses its native scrollbar. Locale, type,
+Single/Archive and entry options can override
+the same boolean; primitive Layout also accepts `overlayScrollbar={false}`.
+The adapter selects the actual main/document scroll owner on responsive changes
+and disposes the Core instance before Astro page swaps. It adds no custom CSS
+and retains Core's keyboard, forced-colors, print and horizontal-overflow fallback.
+Default content scroll utilities are `['scroll-fade-y', 'scroll-smooth']`;
+an explicitly configured `no-scrollbar` remains an independent opt-in.
+
+Known Core1.4.3 intake limitation, retained in1.5.0: the published state script independently
+hides the document-native scrollbar. When a narrow `contained` layout scrolls
+the document rather than main, `overlayScrollbar: false` removes the overlay
+control but does not restore the document-native indicator. Scrolling still
+works. Restoring the previous native-indicator opt-out requires a shared Core
+contract decision; no Astro-only workaround is included in this candidate.
 
 Local checks use the approved exact development pins `@astrojs/check@0.9.10` and `typescript@6.0.3`. Run `npm run check` for the real Astro checker and `npm run build` for compilation. Each independent consumer has its own strict TypeScript configuration and checks its public imports before building. The local `@astrojs/mdx@8.0.3` development pin prepares the separate MDX certification; it is not installed by consumers of this package.
 
@@ -609,7 +669,7 @@ Layout applies `parts.content.utilities` exactly once, on the existing `data-pag
 
 | Part             | Options and fallback                                                                                                                                                                                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `content`        | `utilities: ['mx-0', 'py-4', 'py-md-5', 'px-3', 'px-md-5']`; `scrollUtilities: ['scroll-fade-y', 'no-scrollbar', 'scroll-smooth']` on the existing main owner                                                                                                         |
+| `content`        | `utilities: ['mx-0', 'py-4', 'py-md-5', 'px-3', 'px-md-5']`; `scrollUtilities: ['scroll-fade-y', 'scroll-smooth']` on the existing main owner                                                                                                         |
 | `header`         | Region `utilities: ['bg-body-tertiary']`; `contentUtilities: ['d-flex', 'align-items-center', 'gap-2', 'py-2']` |
 | `header.trigger` | Published Button `variant: 'ghost'`, `size: 'icon-sm'`, `icon: 'panel-left'`                                                                                                                                                                         |
 | `header` copy    | `toggleLabel`, `navigationLabel`, `skipLabel`; English fallback, explicit host translations |
@@ -1622,7 +1682,7 @@ the primary built page in Chromium without a server. See
 [COMPATIBILITY.md](../packages/astro/COMPATIBILITY.md) for verified runtime scope and remaining
 release gates.
 
-The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.3.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
+The exact public exports and packed files are recorded in `packages/astro/contracts/astro-public-surface.json`. The published Core export targets and hashes are recorded in `packages/astro/contracts/ui-1.5.0-package.json`. The release gate checks the registry lock, installed Core bytes, archive closure, and public export map without reading the sibling HTML checkout or using the network.
 
 ## Direct Moo Astro Starter
 

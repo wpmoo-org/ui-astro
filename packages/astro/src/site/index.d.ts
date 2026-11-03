@@ -15,6 +15,7 @@ export interface SiteChrome {
   readonly locale: string;
   readonly brand: string;
   readonly homeHref: string;
+  readonly homeNavigation?: Readonly<{ href: string; active?: boolean }> | null;
   readonly languageLinks: readonly LanguageLink[];
   readonly breadcrumbs: readonly { label: string; href?: string }[];
   readonly navigation: NonNullable<ComponentProps<typeof Sidebar>["groups"]>;

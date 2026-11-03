@@ -53,7 +53,7 @@ const hasTaxonomies = forwardedSlots?.taxonomies ?? Astro.slots.has("taxonomies"
 const cover = Astro.props.cover === undefined ? undefined : imageSchema.parse(Astro.props.cover);
 ---
 
-<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="article" class={entryClasses.concat("mx-auto", "lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
+<ContentFrame contentId={plan?.contentId} asideMobileBody={!Astro.props.compactToc || selectedAside.hasMobileBody || hasAside} element="article" class={entryClasses.concat("mx-0", "lh-lg").join(" ")} aside={aside} asideLabel={asideLabel ?? plan?.labels.aside} dir={dir}>
   <Fragment slot="aside">{hasAside ? <slot name="aside" /> : plan ? <Placement plan={plan} at="aside.content" placements={selectedAside.placements} tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={selectedAside.listClass} /> : null}</Fragment>
     {
       hasPageHeader ? (

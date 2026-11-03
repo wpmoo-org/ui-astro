@@ -56,6 +56,32 @@ class AcceptedSharedParts(unittest.TestCase):
             self.assertAlmostEqual(header["width"], main["width"], delta=1)
         self.assertFalse(self.page.evaluate("document.documentElement.scrollWidth > innerWidth"))
 
+    def test_single_without_aside_keeps_reading_width_at_logical_start(self):
+        for width in (390, 1738):
+            for theme in ("light", "dark"):
+                for direction in ("ltr", "rtl"):
+                    with self.subTest(width=width, theme=theme, direction=direction):
+                        self.page.set_viewport_size({"width": width, "height": 900})
+                        self.context.add_init_script(
+                            f"localStorage.setItem('moo:theme', '{theme}');"
+                            f"localStorage.setItem('moo:direction', '{direction}');"
+                        )
+                        self.open_preview("preview/single")
+                        geometry = self.page.locator('main article').evaluate("""element => {
+                          const box = element.getBoundingClientRect();
+                          const row = element.parentElement.getBoundingClientRect();
+                          return { left: box.left, right: box.right, width: box.width,
+                            rowLeft: row.left, rowRight: row.right, rowWidth: row.width };
+                        }""")
+                        self.assertEqual(self.page.locator('main aside').count(), 0)
+                        if direction == "rtl":
+                            self.assertAlmostEqual(geometry["right"], geometry["rowRight"], delta=1)
+                        else:
+                            self.assertAlmostEqual(geometry["left"], geometry["rowLeft"], delta=1)
+                        fraction = (8 / 12 if geometry["rowWidth"] >= 1200
+                                    else 9 / 12 if geometry["rowWidth"] >= 768 else 1)
+                        self.assertAlmostEqual(geometry["width"], geometry["rowWidth"] * fraction, delta=1)
+
     def test_single_uses_the_selected_sidebar_and_shared_page_rail(self):
         self.open_preview("preview/single")
         self.page.locator('[data-slot="sidebar-wrapper"][data-sidebar-state-ready]').wait_for()

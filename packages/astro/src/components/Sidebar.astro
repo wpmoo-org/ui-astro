@@ -21,6 +21,7 @@ interface SidebarGroup {
 }
 
 interface Props {
+  mode?: "sidebar" | "drawer";
   side?: "left" | "right";
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "icon" | "offcanvas" | "none";
@@ -44,10 +45,11 @@ import Icon from "./internal/Icon.astro";
 import { navigationHref } from "../internal/href.js";
 
 const {
+  mode = "sidebar",
   side = "left",
   variant = "sidebar",
-  collapsible = "icon",
-  rail = true,
+  collapsible = mode === "drawer" ? "none" : "icon",
+  rail = mode !== "drawer",
   railAriaLabel = "Toggle sidebar",
   id = "sidebar",
   ariaLabel = "Sidebar",
@@ -79,6 +81,8 @@ if (
 if (!["blocks", "panel-left", "layout-grid", "file-text"].includes(brandIcon)) {
   throw new TypeError("Sidebar brandIcon is unsupported");
 }
+if (!["sidebar", "drawer"].includes(mode))
+  throw new TypeError("Sidebar mode is unsupported");
 if (!["left", "right"].includes(side))
   throw new TypeError("Sidebar side is unsupported");
 if (!["sidebar", "floating", "inset"].includes(variant))
@@ -157,7 +161,7 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
   id={id}
   class:list={[
     "sidebar",
-    "offcanvas-lg",
+    mode === "drawer" ? "offcanvas position-fixed" : "offcanvas-lg",
     side === "right" ? "offcanvas-end" : "offcanvas-start",
     className,
   ]}
@@ -173,31 +177,43 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
     {
       Astro.slots.has("header") ? (
         <slot name="header" />
-      ) : brand ? (
-        <div class="sidebar-header" data-slot="sidebar-header">
-          <a
-            class="sidebar-menu-button sidebar-menu-button--lg"
-            href={resolvedBrandHref}
-            data-slot="sidebar-menu-button"
-            data-sidebar-tooltip={brand}
-            aria-label={brand}
-          >
-            <>
-              <span class="sidebar-menu-button__lead" aria-hidden="true">
-                <span class="sidebar-brand-mark sidebar-brand-mark--primary">
-                  <Icon name={brandIcon} />
-                </span>
-              </span>
-              <span class="sidebar-menu-button__text">
-                <span class="sidebar-menu-button__title">{brand}</span>
-                {brandSubtitle ? (
-                  <span class="sidebar-menu-button__subtitle">
-                    {brandSubtitle}
+      ) : brand || Astro.slots.has("header-actions") ? (
+        <div
+          class:list={[
+            "sidebar-header",
+            Astro.slots.has("header-actions") ? "flex-row align-items-center" : "",
+          ]}
+          data-slot="sidebar-header"
+        >
+          {brand ? (
+            <a
+              class:list={[
+                "sidebar-menu-button sidebar-menu-button--lg",
+                Astro.slots.has("header-actions") ? "flex-grow-1" : "",
+              ]}
+              href={resolvedBrandHref}
+              data-slot="sidebar-menu-button"
+              data-sidebar-tooltip={brand}
+              aria-label={brand}
+            >
+              <>
+                <span class="sidebar-menu-button__lead" aria-hidden="true">
+                  <span class="sidebar-brand-mark sidebar-brand-mark--primary">
+                    <Icon name={brandIcon} />
                   </span>
-                ) : null}
-              </span>
-            </>
-          </a>
+                </span>
+                <span class="sidebar-menu-button__text">
+                  <span class="sidebar-menu-button__title">{brand}</span>
+                  {brandSubtitle ? (
+                    <span class="sidebar-menu-button__subtitle">
+                      {brandSubtitle}
+                    </span>
+                  ) : null}
+                </span>
+              </>
+            </a>
+          ) : null}
+          <slot name="header-actions" />
         </div>
       ) : null
     }

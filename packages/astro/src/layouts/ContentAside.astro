@@ -35,7 +35,7 @@ const { options, classes, id, label, html, mobileBody = true } = Astro.props;
     class:list={[
       options.mobile === "collapse-before" ? ["collapse", classes.visible] : [],
       "pt-3",
-      "pt-lg-0",
+      !options.sticky && "pt-lg-0",
     ]}
   >
     <div class:list={["d-flex", "flex-column", `gap-${options.gap}`]}>

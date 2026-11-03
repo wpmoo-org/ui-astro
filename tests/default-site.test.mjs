@@ -33,6 +33,8 @@ async function buildDefaultSite(
     hierarchical = false,
     monolingual = false,
     documentLanguage,
+    overlayScrollbar = true,
+    headerNavigation = false,
   } = {},
 ) {
   const root = await realpath(
@@ -77,7 +79,7 @@ import { post } from "@wpmoo/astro/plugins/post";
 import { defineTaxonomy } from "@wpmoo/astro/taxonomies";
 const audience = defineTaxonomy({ id: "audience", label: "Audience", hierarchical: ${hierarchical}, source: new URL("./src/audience.json", import.meta.url), archive: { basePath: "/audience" }, ${monolingual ? "" : 'locales: { de: { label: "Zielgruppen", basePath: "/zielgruppe" } }'} });
 export default defineConfig({ site: "https://example.test", cacheDir: "./.astro-cache", ${monolingual ? "" : 'i18n: { locales: ["en", "de"], defaultLocale: "en", routing: { prefixDefaultLocale: false } },'} integrations: [mdx(), moo({
-site: defineSite({ brand: "Fixture", defaults: { sidebar: {} }, presentation: { navigation: "grouped", themeToggle: ${controls}, languageSwitcher: ${controls ? "{}" : "false"} }, links: { home: ${monolingual ? '{ en: "/" }' : '"/"'} } }),
+site: defineSite({ brand: "Fixture", defaults: { sidebar: ${headerNavigation ? '{ mode: "header" }' : '{}'}, overlayScrollbar: ${overlayScrollbar} }, presentation: { navigation: "grouped", themeToggle: ${controls}, languageSwitcher: ${controls ? "{}" : "false"} }, links: { home: ${monolingual ? '{ en: "/" }' : '"/"'} } }),
 plugins: [page({ source: new URL("./src/content/page/", import.meta.url), formats: ["md", "mdx"], taxonomies: ["audience"] }), post({ source: new URL("./src/content/post/", import.meta.url), taxonomies: ["audience"] })], taxonomies: [audience]
 })] });`,
     );
@@ -181,6 +183,7 @@ audience: defineCollection({ loader: file(new URL("./audience.json", import.meta
 
 test("default_site_renders_optional_controls_and_missing_translations", async () => {
   const html = await buildDefaultSite(true);
+  assert.match(html["index.html"], /data-moo-overlay-scrollbar="true"/);
   assert.match(html["index.html"], /data-moo-theme-toggle/);
   assert.match(html["index.html"], /aria-label="Language"/);
   assert.ok(
@@ -204,6 +207,37 @@ test("default_site_renders_optional_controls_and_missing_translations", async ()
         .map((link) => link.href),
       ["/audience/students"],
     );
+  }
+});
+
+test("header navigation uses native links and non-Button submenu triggers", async () => {
+  const html = await buildDefaultSite(true, { headerNavigation: true });
+  const header = html["index.html"].match(/<header\b[\s\S]*?<\/header>/u)?.[0];
+  assert.ok(header);
+  const nav = header.match(/<nav\b[^>]*data-header-navigation-drawer=[\s\S]*?<\/nav>/u)?.[0];
+  assert.ok(nav);
+  assert.match(nav, /data-slot="navigation-brand"/);
+  assert.match(nav, /<a\b[^>]*class="nav-link\b/u);
+  for (const anchor of nav.match(/<a\b[^>]*>/gu) ?? []) {
+    assert.doesNotMatch(anchor, /\brole="button"/u);
+    assert.doesNotMatch(anchor, /\bclass="[^"]*\bbtn\b/u);
+  }
+  const triggers = nav.match(/<button\b[^>]*>/gu) ?? [];
+  assert.ok(triggers.length);
+  for (const trigger of triggers) {
+    assert.match(trigger, /type="button"/u);
+    assert.match(trigger, /class="nav-link\b/u);
+    assert.match(trigger, /data-bs-toggle="dropdown"/u);
+    assert.match(trigger, /aria-expanded="false"/u);
+    assert.doesNotMatch(trigger, /\bclass="[^"]*\bbtn\b/u);
+  }
+});
+
+test("native scrollbar opt-out reaches the rendered shared shell", async () => {
+  const html = await buildDefaultSite(false, { overlayScrollbar: false });
+  for (const output of Object.values(html)) {
+    assert.doesNotMatch(output, /data-moo-overlay-scrollbar=/);
+    assert.doesNotMatch(output.match(/<main\b[^>]*>/u)?.[0] ?? "", /no-scrollbar/);
   }
 });
 

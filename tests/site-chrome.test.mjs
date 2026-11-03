@@ -133,3 +133,43 @@ test("empty_and_custom_taxonomies_keep_separate_navigation_groups", async () => 
   assert.equal(navigation[1].items[0].children.length, 2);
   assert.equal(navigation[1].items[1].children.length, 1);
 });
+
+test("header projection separates real Home and groups all collections without mutating navigation", async () => {
+  const { buildSiteNavigation, groupTaxonomyLinks, projectHeaderNavigation } = await chrome();
+  const presentation = resolveSitePresentation(defineSite({ presentation: { navigation: "grouped" } }), "de");
+  const taxonomyGroups = groupTaxonomyLinks(taxonomies, paths, "de");
+  const navigation = buildSiteNavigation({
+    context: { plugins: [{ id: "page", label: "Pages", basePath: "/" }, { id: "post", label: "Beiträge", basePath: "/beitraege" }] },
+    links: [
+      { label: "Willkommen", href: "/de", active: false },
+      { label: "Über uns", href: "/de/ueber-uns", active: false },
+      { label: "Beiträge", href: "/de/beitraege", active: false },
+    ],
+    taxonomyGroups, locale: "de", href: "/de/kategorie/anleitungen", presentation,
+    localHref: (path) => path === "/" ? "/de" : `/de${path}`,
+  });
+  const original = structuredClone(navigation);
+  const result = projectHeaderNavigation({
+    navigation, taxonomyGroups, presentation,
+    homeHref: "/de", homeNavigation: { href: "/de", active: false },
+  });
+  assert.deepEqual(result.siteItems.map((item) => item.title), ["Home", "Seiten", "Beiträge"]);
+  assert.deepEqual(result.siteItems[1].children.map((item) => item.href), ["/de/ueber-uns"]);
+  assert.deepEqual(result.collectionItems.map((item) => item.title), ["Kategorien", "Zielgruppen"]);
+  assert.equal(result.collectionItems[0].open, true);
+  assert.deepEqual(result.groups.map((group) => group.label), ["Website", "Collections"]);
+  assert.deepEqual(result.collectionItems.flatMap((item) => item.children.map((link) => link.href)), paths.map((path) => path.props.href));
+  assert.deepEqual(navigation, original);
+});
+
+test("header projection does not invent Home or empty Collections from a fallback brand URL", async () => {
+  const { projectHeaderNavigation } = await chrome();
+  const presentation = resolveSitePresentation(defineSite(), "en");
+  const result = projectHeaderNavigation({
+    navigation: [{ items: [{ title: "About", href: "/about", active: true }] }],
+    taxonomyGroups: [], homeHref: "/about", homeNavigation: null, presentation,
+  });
+  assert.deepEqual(result.siteItems.map((item) => item.title), ["About"]);
+  assert.deepEqual(result.collectionItems, []);
+  assert.equal(result.groups.length, 1);
+});

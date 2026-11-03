@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "package": "@wpmoo/ui",
+  "version": "1.4.0",
+  "registry_url": "https://registry.npmjs.org/@wpmoo/ui/-/ui-1.4.0.tgz",
+  "integrity": "sha512-Mu4XHSg2rFqkBbdMdDgScOD0gmfpR/OCnYDUqMbotyer+0igm74pUOJryt7HDByNf8r6lIzwbu+G55UAaElW7A==",
+  "tarball_sha256": "64acb36120675e4e64630fc351dc16912fa0e0a86010fe3dba60d15531fd1a30",
+  "git_head": null,
+  "exports": {
+    "./moo-ui.css": {
+      "target": "./dist/assets/css/moo-ui.css",
+      "sha256": "cbf297fc2ca8f88bcdef8f1f27640515397a9d43018d4bb9f6745ec026f94c8d"
+    },
+    "./moo-ui.min.css": {
+      "target": "./dist/assets/css/moo-ui.min.css",
+      "sha256": "87e694ecf24a4d5b266033e0ecb6561797fc494905800a02ad521c8519a801d3"
+    },
+    "./moo.css": {
+      "target": "./dist/assets/css/moo.css",
+      "sha256": "c7700a1f9115a2aea5543e42cf831197d04be108c5a383f981174861d233893b"
+    },
+    "./moo.min.css": {
+      "target": "./dist/assets/css/moo.min.css",
+      "sha256": "3044eae0a58309edc3f30588139d2076d64d12fcb77f551788409eb5abf2ceda"
+    },
+    "./moo-ui.js": {
+      "target": "./dist/js/moo-ui.js",
+      "sha256": "65344639ffb31b0b2c44e4f424577f7406ea0eb69c5103ab902cfd7d057bfb53"
+    },
+    "./moo-ui.min.js": {
+      "target": "./dist/js/moo-ui.min.js",
+      "sha256": "aaf65dc8e190bcf0f1af8c2b41f2062ae1171341748c627d2ddbcff67766e5a1"
+    },
+    "./combobox.js": {
+      "target": "./dist/js/combobox.js",
+      "sha256": "8eb990c9be2ed8f34dd410a1927031a548aa654cfdb62864427f56c92119dee3"
+    },
+    "./sidebar.js": {
+      "target": "./dist/js/sidebar.js",
+      "sha256": "4710a7febdb23f45a2e39bd83693d325b0e838e8359016fad7559d75c26c740e"
+    },
+    "./context-menu.js": {
+      "target": "./dist/js/context-menu.js",
+      "sha256": "a1789fef9bf7e04b6e2a74158b5192b3d465dc895f120d707589bbd4c70ea509"
+    },
+    "./datatable.js": {
+      "target": "./dist/js/datatable.js",
+      "sha256": "1b8836c9710f3ba549df29144622443aa676a9e21632f91f6006b7d2e385edd3"
+    },
+    "./slider.js": {
+      "target": "./dist/js/slider.js",
+      "sha256": "a16e0f472aa2841457e90d05b25fd11e43d8eb07d6b0194198df5a017459787e"
+    },
+    "./toc.js": {
+      "target": "./dist/js/toc.js",
+      "sha256": "c69bb23edee283fb5af4382ae389e02b40c8fddf6e5718a4ca9077e64b096090"
+    },
+    "./overlay-scrollbar.js": {
+      "target": "./dist/js/overlay-scrollbar.js",
+      "sha256": "edcf867a38a1513a6d94a253997191b2775ee1f48f274412c4725e41253486a3"
+    },
+    "./table-of-contents.js": {
+      "target": "./dist/js/table-of-contents.js",
+      "sha256": "4d7c02a2698ca2cb51057bea41ca6f74e87a74277b73dde7c6d2d44a76be4cd0"
+    },
+    "./sheet.js": {
+      "target": "./dist/js/sheet.js",
+      "sha256": "cc600d177bdd8647f136fe99273c938d9dcf7f10c26bdb1067c7f9393578824b"
+    },
+    "./chart.js": {
+      "target": "./dist/js/chart.js",
+      "sha256": "71e2ee0f07cfb2e84044c4264084b9d3ac5b8ea384f137ea89cb33b8c7050599"
+    },
+    "./chart.min.js": {
+      "target": "./dist/js/chart.min.js",
+      "sha256": "bf187505a9192482542ac2e921044db5e6ebbcba815c4cebdc7217f393fdce75"
+    },
+    "./datepicker.js": {
+      "target": "./dist/js/datepicker.js",
+      "sha256": "d59d9a6b342e15c50549ff62d3385e6a9559a1d3f82e5a530e8662edd65a4536"
+    },
+    "./datepicker.min.js": {
+      "target": "./dist/js/datepicker.min.js",
+      "sha256": "abb4e8a000b73b1f6723cc6478fd1ad3b374a0cbfa232833aa772b2a775c4013"
+    },
+    "./state.js": {
+      "target": "./dist/js/state.js",
+      "sha256": "aa984bfd999a085342def93304b7c731a9378d57fae9379c65d90121c76f8003"
+    },
+    "./release-manifest.json": {
+      "target": "./dist/release-manifest.json",
+      "sha256": "d1afbd36449535475e666dc3d711946127b69316c38ab11d3ddec6270331347e"
+    },
+    "./scss/config": {
+      "target": "./scss/_config.scss",
+      "sha256": "f02861915073d2ef506c5729d6fb3a9e8a7323b65b3e58c4c48d99dc76c4695c"
+    },
+    "./scss/moo-ui": {
+      "target": "./scss/moo-ui.scss",
+      "sha256": "a64aa26923ef4649b629f834f69d9a01ce19041c4320cb242ae830a2da59a4ec"
+    },
+    "./scss/moo-core": {
+      "target": "./scss/moo-core.scss",
+      "sha256": "2f2f7f8706cb2621203e80e02e40d29eac5e758d773ac959f243727a40114647"
+    },
+    "./scss/components": {
+      "target": "./scss/_components.scss",
+      "sha256": "b0910fd72b6bf2b1f87e403c6c00c3ce18a0e16fdeb5b4c762505e2a59c75800"
+    },
+    "./scss/settings": {
+      "target": "./scss/_settings.scss",
+      "sha256": "5428193651eb5dc39f56d203697ecade5e3761dfa7fdaf92e1c9ab4954086a21"
+    },
+    "./certification.json": {
+      "target": "./certification.json",
+      "sha256": "cd968f4f6153914c75d7600dc582f0ce9719993b068ae9a8336342f88be14033"
+    },
+    "./package.json": {
+      "target": "./package.json",
+      "sha256": "89e3233367a0756d04066bc82cb3c96f52f4294ceacb71375c329b5af696a041"
+    }
+  }
+}

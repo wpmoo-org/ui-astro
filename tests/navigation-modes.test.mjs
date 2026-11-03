@@ -19,6 +19,36 @@ test("drawer defaults are distinct from app sidebar preferences", () => {
   assert.deepEqual(site.defaults.sidebar, { mode: "drawer", side: "left" });
   assert.equal(Object.isFrozen(site.defaults.sidebar), true);
 });
+test("header navigation has its own responsive defaults and layered overrides", () => {
+  const site = defineSite({
+    defaults: { sidebar: { mode: "header" } },
+    types: { page: { sidebar: { side: "right" } } },
+  });
+  assert.deepEqual(site.defaults.sidebar, { mode: "header", side: "left", breakpoint: "xl" });
+  assert.deepEqual(resolvePageOptions(site, "page", "single").sidebar, {
+    mode: "header", side: "right", breakpoint: "xl",
+  });
+  assert.deepEqual(resolvePageOptions(site, "page", "single", {
+    sidebar: { mode: "header", breakpoint: "lg" },
+  }).sidebar, { mode: "header", side: "right", breakpoint: "lg" });
+  assert.deepEqual(resolvePageOptions(site, "page", "single", {
+    sidebar: { mode: "drawer" },
+  }).sidebar, { mode: "drawer", side: "left" });
+  assert.equal(resolvePageOptions(site, "page", "single", { sidebar: null }).sidebar, null);
+});
+test("header mode rejects app fields and other modes reject its breakpoint", () => {
+  for (const sidebar of [
+    { mode: "header", rail: true },
+    { mode: "header", variant: "inset" },
+    { mode: "header", breakpoint: "sm" },
+    { mode: "drawer", breakpoint: "lg" },
+    { mode: "sidebar", breakpoint: "xl" },
+  ]) assert.throws(() => defineSite({ defaults: { sidebar } }), /sidebar|header|breakpoint/);
+  const site = defineSite({ defaults: { sidebar: { mode: "drawer" } } });
+  assert.throws(() => resolvePageOptions(site, "page", "single", {
+    sidebar: { breakpoint: "xl" },
+  }), /drawer|breakpoint/);
+});
 test("mode changes reset incompatible inherited settings and side-only updates inherit mode", () => {
   const site = defineSite({
     defaults: { sidebar: { side: "right", variant: "inset", rail: false } },

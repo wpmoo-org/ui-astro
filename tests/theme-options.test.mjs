@@ -252,7 +252,7 @@ test("registered part defaults exist in the actual published component styleshee
 
 test("native scroll animation is a configurable Core utility", () => {
   assert.deepEqual(resolveParts().content.scrollUtilities, [
-    "scroll-fade-y", "no-scrollbar", "scroll-smooth",
+    "scroll-fade-y", "scroll-smooth",
   ]);
   assert.deepEqual(
     resolveParts({ content: { scrollUtilities: ["scroll-fade-y", "no-scrollbar"] } }).content.scrollUtilities,

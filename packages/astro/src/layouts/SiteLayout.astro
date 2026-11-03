@@ -2,6 +2,7 @@
 import Layout from "./Layout.astro";
 import NavigationDrawer from "./NavigationDrawer.astro";
 import Button from "../components/Button.astro";
+import Navigation from "../components/Navigation.astro";
 import Icon from "../components/internal/Icon.astro";
 import Header from "../includes/Header.astro";
 import Sidebar from "../includes/Sidebar.astro";
@@ -14,6 +15,7 @@ import Placement from "../placements/Placement.astro";
 import type { PageOptions, PageClassContext } from "../config/index.js";
 import type { SeoMetadata } from "../seo/index.js";
 import type { LanguageLink } from "../i18n/index.js";
+import { projectHeaderNavigation } from "../site/chrome.js";
 
 interface Props {
   plan?: PlacementPlan<unknown>;
@@ -40,16 +42,38 @@ const {
 } = Astro.props;
 const plan = Astro.props.plan ?? await preparePlacements({ href, locale, title, view: pageContext?.view === "native" && pageContext.key === "not-found" ? "not-found" : "native" });
 const selectedAside = selectAsidePlacements(plan, options.aside, Astro.props.customAside ?? false, Astro.props.compactToc ?? false);
+const compactTocClass = `${selectedAside.compactClass} py-3`;
 const chrome = plan.chrome;
 const { presentation } = chrome;
 const { sidebar, ...layout } = options;
-const appSidebar = sidebar && sidebar.mode !== "drawer" ? sidebar : null;
-const drawer = sidebar?.mode === "drawer" ? sidebar : null;
+const appSidebar = sidebar && sidebar.mode !== "drawer" && sidebar.mode !== "header" ? sidebar : null;
+const headerNavigation = sidebar?.mode === "header" ? sidebar : null;
+const drawer = sidebar?.mode === "drawer" || sidebar?.mode === "header" ? sidebar : null;
+const drawerSide = headerNavigation && options.dir === "rtl"
+  ? headerNavigation.side === "left" ? "right" : "left"
+  : drawer?.side;
+const navigationProjection = headerNavigation ? projectHeaderNavigation(chrome) : null;
+const drawerChrome = navigationProjection ? { ...chrome, navigation: navigationProjection.groups } : chrome;
+const headerItems = (navigationProjection?.siteItems ?? []).map((item) => ({
+  label: item.title, href: item.href, icon: item.icon, active: item.active,
+  disabled: item.disabled, open: item.open,
+  children: item.children?.map((child) => ({ label: child.title, href: child.href, active: child.active, disabled: child.disabled })),
+}));
+const collectionSections = navigationProjection?.collectionItems.map((item) => ({
+  label: item.title,
+  items: item.children.map((child) => ({ label: child.title, href: child.href, active: child.active })),
+})) ?? [];
+const topNavigationItems = [...headerItems, ...(collectionSections.length ? [{
+  label: presentation.labels.collections, icon: "layout-grid",
+  open: navigationProjection?.collectionItems.some((item) => item.open),
+  sections: collectionSections,
+}] : [])];
+const headerNavigationClass = headerNavigation ? `d-none d-${headerNavigation.breakpoint}-flex flex-nowrap align-items-center gap-1` : "";
 const { defaultOpen, mode: _mode, ...sidebarOptions } = appSidebar ?? {};
 const layoutProps = {
   ...layout, title, description, metadata, pageContext,
   headerTocClass: selectedAside.compact.length
-    ? `border-top ${selectedAside.compactClass}`
+    ? selectedAside.compactClass
     : "d-none",
 };
 ---
@@ -73,7 +97,7 @@ const layoutProps = {
         groups={chrome.navigation}
         parts={options.parts}
       />
-      <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={`${selectedAside.compactClass} py-2`} /></Fragment>
+      <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={compactTocClass} /></Fragment>
       <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
@@ -118,17 +142,20 @@ const layoutProps = {
     </Layout>
   ) : (
     <Layout {...layoutProps}>
-      {drawer ? <NavigationDrawer slot="overlay" chrome={chrome} side={drawer.side} /> : null}
-      <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={`${selectedAside.compactClass} py-2`} /></Fragment>
+      {drawer && drawerSide ? <NavigationDrawer slot="overlay" chrome={drawerChrome} side={drawerSide} /> : null}
+      <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={compactTocClass} /></Fragment>
       <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
       <Fragment slot="after-footer"><Placement plan={plan} at="footer.after" /></Fragment>
       <Header slot="header">
         {drawer ? (
-          <Button slot="trigger" variant={options.parts.header.trigger.variant} size={options.parts.header.trigger.size} data-bs-toggle="offcanvas" data-bs-target="#moo-site-drawer" ariaLabel={options.parts.header.toggleLabel} ariaControls="moo-site-drawer">
+          <Button slot="trigger" class={headerNavigation ? `d-${headerNavigation.breakpoint}-none` : undefined} data-header-navigation-trigger={headerNavigation ? "" : undefined} variant={options.parts.header.trigger.variant} size={options.parts.header.trigger.size} data-bs-toggle="offcanvas" data-bs-target="#moo-site-drawer" ariaLabel={options.parts.header.toggleLabel} ariaControls="moo-site-drawer">
             <Icon name={options.parts.header.trigger.icon} />
           </Button>
+        ) : null}
+        {headerNavigation ? (
+          <Navigation ariaLabel={options.parts.header.navigationLabel} style="navbar" rootClass="py-0 flex-grow-1 flex-nowrap gap-2 justify-content-between" class={headerNavigationClass} linkClass="py-1 px-2 text-nowrap" brand={chrome.brand} brandHref={chrome.homeHref} brandClass="m-0 p-0 fs-6 fw-semibold" items={topNavigationItems} data-header-navigation-drawer="moo-site-drawer" data-header-navigation-breakpoint={headerNavigation.breakpoint} data-header-navigation-side={headerNavigation.side} />
         ) : null}
         {presentation.themeToggle ||
         presentation.languageSwitcher ||
@@ -169,3 +196,98 @@ const layoutProps = {
     </Layout>
   )
 }
+
+<script>
+  import { bootstrap } from "../runtime/bootstrap.js";
+
+  const releases = new Set<() => void>();
+  function initializeHeaderNavigation() {
+    releases.forEach((release) => release());
+    releases.clear();
+    document.querySelectorAll<HTMLElement>("[data-header-navigation-drawer]").forEach((root) => {
+      const nav = root.querySelector<HTMLElement>('[data-slot="navigation-menu"]');
+      const header = root.closest("header");
+      const row = root.parentElement;
+      const trigger = header?.querySelector<HTMLElement>("[data-header-navigation-trigger]");
+      const brand = header?.querySelector<HTMLElement>('[data-slot="navigation-brand"]');
+      const drawer = document.getElementById(root.dataset.headerNavigationDrawer ?? "");
+      const breakpoint = root.dataset.headerNavigationBreakpoint;
+      if (!nav || !row || !trigger || !drawer || !breakpoint) return;
+      const hiddenClass = `d-${breakpoint}-none`;
+      let stopped = false;
+      let frame = 0;
+      let transferFocus = false;
+      let focusWithinNav = false;
+      const focusIn = () => { focusWithinNav = true; };
+      const focusOut = (event: FocusEvent) => {
+        if (event.relatedTarget instanceof Node && nav.contains(event.relatedTarget)) return;
+        if (event.relatedTarget || nav.getClientRects().length > 0) focusWithinNav = false;
+      };
+      const update = () => {
+        if (stopped) return;
+        const ltrSide = root.dataset.headerNavigationSide === "right" ? "right" : "left";
+        const side = getComputedStyle(drawer).direction === "rtl" ? ltrSide === "left" ? "right" : "left" : ltrSide;
+        drawer.dataset.side = side;
+        drawer.dataset.siteDrawer = side;
+        drawer.classList.toggle("offcanvas-start", side === "left");
+        drawer.classList.toggle("offcanvas-end", side === "right");
+        nav.classList.remove(hiddenClass);
+        trigger.classList.add(hiddenClass);
+        if (getComputedStyle(nav).display !== "none" && row.scrollWidth > row.clientWidth + 1) {
+          nav.classList.add(hiddenClass);
+          trigger.classList.remove(hiddenClass);
+        }
+        if (getComputedStyle(nav).display !== "none") {
+          transferFocus ||= drawer.contains(document.activeElement);
+          bootstrap.Offcanvas.getInstance(drawer)?.hide();
+        } else {
+          const focused = focusWithinNav || nav.contains(document.activeElement);
+          nav.querySelectorAll<HTMLElement>('[data-bs-toggle="dropdown"]').forEach((button) => {
+            bootstrap.Dropdown.getInstance(button)?.hide();
+          });
+          if (focused) trigger.focus({ preventScroll: true });
+          focusWithinNav = false;
+        }
+      };
+      const schedule = () => {
+        if (stopped || frame) return;
+        frame = requestAnimationFrame(() => { frame = 0; update(); });
+      };
+      const hidden = () => {
+        if (transferFocus && getComputedStyle(nav).display !== "none") brand?.focus({ preventScroll: true });
+        transferFocus = false;
+      };
+      const resize = new ResizeObserver(schedule);
+      resize.observe(row);
+      Array.from(row.children).forEach((child) => resize.observe(child));
+      const direction = new MutationObserver(schedule);
+      direction.observe(document.documentElement, { attributes: true, attributeFilter: ["dir"] });
+      const owner = nav.closest("[data-moo-document-owner]");
+      if (owner) direction.observe(owner, { attributes: true, attributeFilter: ["dir"] });
+      window.addEventListener("resize", schedule);
+      nav.addEventListener("focusin", focusIn);
+      nav.addEventListener("focusout", focusOut);
+      drawer.addEventListener("shown.bs.offcanvas", update);
+      drawer.addEventListener("hidden.bs.offcanvas", hidden);
+      update();
+      document.fonts.ready.then(() => { if (!stopped) update(); });
+      releases.add(() => {
+        stopped = true;
+        cancelAnimationFrame(frame);
+        resize.disconnect();
+        direction.disconnect();
+        window.removeEventListener("resize", schedule);
+        nav.removeEventListener("focusin", focusIn);
+        nav.removeEventListener("focusout", focusOut);
+        drawer.removeEventListener("shown.bs.offcanvas", update);
+        drawer.removeEventListener("hidden.bs.offcanvas", hidden);
+      });
+    });
+  }
+  initializeHeaderNavigation();
+  document.addEventListener("astro:page-load", initializeHeaderNavigation);
+  document.addEventListener("astro:before-swap", () => {
+    releases.forEach((release) => release());
+    releases.clear();
+  });
+</script>

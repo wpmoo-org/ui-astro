@@ -165,7 +165,7 @@ export async function prepareStarterInputs(options, {starterPath, outputPath}, i
     }).trim(),
     source_sha256: prepared.sourceHashes,
     core: await readJson(
-      join(REPO, "packages/astro/contracts/ui-1.3.0-package.json"),
+      join(REPO, "packages/astro/contracts/ui-1.5.0-package.json"),
     ),
     scripts_sha256: await fileHashes(outputPath, scripts),
   };

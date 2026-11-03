@@ -197,11 +197,24 @@ no replacement loader, private store mutation or request retry is introduced.
 
 ## Release intake and upgrade procedure
 
-The current baseline is published Core `1.3.0`, adopted on 2026-10-16.
+The current baseline is published Core `1.5.0`, adopted on 2026-10-31.
 Its registry integrity and all public exported target hashes are recorded in
-`contracts/ui-1.3.0-package.json`. Active SDK and consumer locks use this exact
-archive. The earlier `1.2.1`, `1.2.0`, `1.1.0` and `1.0.0` records retain their original bytes
+`contracts/ui-1.5.0-package.json`. Active SDK and consumer locks use this exact
+archive. The earlier `1.4.3`, `1.4.0`, `1.3.0`, `1.2.1`, `1.2.0`, `1.1.0` and `1.0.0` records retain their original bytes
 and dated evidence; they are not certification of the current intake.
+
+Core1.5.0 preserves the28 previous export targets and adds `floating-panel.js`.
+The exact archive SHA-256 is
+`53a16fb22282264a3a3cdfd2f4980828148d72467387c9d18516b22b12e95c29`.
+The existing runtime facade forwards FloatingPanel with matching lifecycle and
+setVisible typing. This intake adds no Astro FloatingPanel component wrapper;
+visual composition needs its own public contract and consumer proof.
+As in1.4.3, the state script hides the document-native scrollbar independently of
+OverlayScrollbar initialization. This leaves a known intake compatibility gap:
+`overlayScrollbar: false` restores the native indicator on main-content roots,
+but not on the document root used by narrow contained layouts. This candidate
+does not silently redefine the prior native-scrollbar opt-out as certified,
+patch published Core bytes, or add an adapter-only visual workaround.
 
 
 The maintainer approved the exact published Core `1.1.0` intake on 2026-10-10.
@@ -328,7 +341,7 @@ claiming the unfinished broader host/editor matrix.
 
 ## Shared Table of Contents
 
-The SDK consumes published `@wpmoo/ui@1.3.0` with exact registry integrity and
+The SDK consumes published `@wpmoo/ui@1.5.0` with exact registry integrity and
 exported target hashes. Stable release validation rejects local development
 pins, file dependencies and changed Core bytes. The earlier private intake is
 retained in `contracts/ui-1.1.0-dev.1-package.json` as historical provenance.

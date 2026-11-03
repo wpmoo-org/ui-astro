@@ -23,6 +23,7 @@ interface Props {
   metadata?: SeoMetadata | null;
   sidebar?: boolean;
   shellMode?: ShellMode;
+  overlayScrollbar?: boolean;
   theme?: Theme;
   lang?: string;
   dir?: Direction;
@@ -61,6 +62,7 @@ const {
   metadata,
   sidebar = false,
   shellMode = defaults.shellMode,
+  overlayScrollbar = defaults.overlayScrollbar,
   theme = defaults.theme,
   lang = defaults.lang,
   dir = defaults.dir,
@@ -78,6 +80,9 @@ const {
 
 if (typeof sidebar !== "boolean") {
   throw new TypeError("Layout sidebar must be boolean");
+}
+if (typeof overlayScrollbar !== "boolean") {
+  throw new TypeError("Layout overlayScrollbar must be boolean");
 }
 if (!shellModeValues.includes(shellMode)) {
   throw new TypeError(`Unknown Layout shell mode: ${String(shellMode)}`);
@@ -191,6 +196,7 @@ const jsonLd = metadata
       class:list={["moo-ui", pageClasses]}
       data-bs-theme={theme}
       data-moo-document-owner="true"
+      data-moo-overlay-scrollbar={overlayScrollbar ? "true" : undefined}
     >
       <script is:inline set:html={stateSource} />
       <Button
@@ -218,7 +224,7 @@ const jsonLd = metadata
           <slot name="before-header" />
           {
             hasHeader ? (
-              <header class:list={parts.header.utilities}>
+              <header class:list={["position-relative z-3", parts.header.utilities]}>
                 <div class={headerClass}>
                   <div class:list={parts.header.contentUtilities}>
                     {sidebar ? (
@@ -238,7 +244,15 @@ const jsonLd = metadata
                     <slot name="header" />
                   </div>
                 </div>
-                {Astro.slots.has("header-toc") ? <div class:list={[headerClass, headerTocClass]}><slot name="header-toc" /></div> : null}
+                {Astro.slots.has("header-toc") ? (
+                  <div class:list={[headerClass, headerTocClass]} data-header-reading-host>
+                    <div class="fade" data-header-reading-bar hidden inert>
+                      <div class="row bg-body border-top">
+                        <div class="col"><slot name="header-toc" /></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </header>
             ) : null
           }
@@ -271,18 +285,219 @@ const jsonLd = metadata
       <slot name="overlay" />
     </div>
     <script>
-      import "../runtime/bootstrap.js";
+      import { bootstrap } from "../runtime/bootstrap.js";
       import MooUI from "../runtime/moo-ui.js";
 
       const tocInstances = new Set<InstanceType<typeof MooUI.TableOfContents>>();
+      const readingBarReleases = new Set<() => void>();
+      function initializeReadingBars() {
+        readingBarReleases.forEach((release) => release());
+        readingBarReleases.clear();
+        document.querySelectorAll<HTMLElement>("[data-header-reading-bar]").forEach((panel) => {
+          const host = panel.parentElement;
+          const owner = panel.closest<HTMLElement>("[data-moo-document-owner]");
+          const main = owner?.querySelector<HTMLElement>("#main-content");
+          if (!host || !owner || !main || !panel.querySelector("[data-toc]")) return;
+          const navs = owner.querySelectorAll<HTMLElement>('[data-toc][data-toc-scroll-root="main-content"]');
+          let shown = false;
+          let stopped = false;
+          let frame = 0;
+          let revision = 0;
+          let previousHeight = -1;
+          let alignedTarget: HTMLElement | null = null;
+          let alignedAtBoundary = false;
+          let focusWithinPanel = false;
+          const focusTargets = new Set<HTMLElement>();
+          const focusIn = () => { focusWithinPanel = true; };
+          const focusOut = (event: FocusEvent) => {
+            if (event.relatedTarget instanceof Node && panel.contains(event.relatedTarget)) return;
+            if (event.relatedTarget || panel.getClientRects().length > 0) focusWithinPanel = false;
+          };
+          const scrollRoot = () => ["auto", "scroll"].includes(getComputedStyle(main).overflowY)
+            ? main : document.scrollingElement;
+          const update = () => {
+            if (stopped) return;
+            const root = scrollRoot();
+            const compact = getComputedStyle(host).display !== "none";
+            const next = compact && (root?.scrollTop ?? 0) > (shown ? 300 : Math.max(360, innerHeight / 2));
+            if (shown && !next) {
+              const trigger = panel.querySelector<HTMLElement>('[data-bs-toggle="dropdown"][aria-expanded="true"]');
+              if (trigger) bootstrap.Dropdown.getInstance(trigger)?.hide();
+              if (focusWithinPanel || panel.contains(document.activeElement)) {
+                const fallback = Array.from(panel.closest("header")?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]:not([aria-disabled="true"])') ?? [])
+                  .find((element) => !panel.contains(element) && element.getClientRects().length > 0 && getComputedStyle(element).visibility === "visible" && !element.closest("[inert]"));
+                (fallback ?? main).focus({ preventScroll: true });
+                focusWithinPanel = false;
+              }
+            }
+            shown = next;
+            panel.inert = !shown;
+            panel.dataset.readingBarVisible = String(shown);
+            if (shown && (panel.hidden || !panel.classList.contains("show"))) {
+              revision++;
+              panel.hidden = false;
+              void panel.offsetWidth;
+              panel.classList.add("show");
+            } else if (!shown && !panel.hidden && panel.classList.contains("show")) {
+              panel.classList.remove("show");
+              const current = ++revision;
+              Promise.allSettled(panel.getAnimations().map((animation) => animation.finished)).then(() => {
+                if (!stopped && !shown && revision === current) {
+                  panel.hidden = true;
+                  schedule();
+                }
+              });
+            }
+            const height = compact && !panel.hidden ? panel.getBoundingClientRect().height : 0;
+            if (height !== previousHeight) {
+              previousHeight = height;
+              navs.forEach((nav) => MooUI.TableOfContents.getInstance(nav)?.refresh({ activationOffset: 0 }));
+            }
+            if (alignedTarget && root) {
+              const top = root === document.scrollingElement ? Math.max(0, panel.closest("header")?.getBoundingClientRect().bottom ?? 0) : root.getBoundingClientRect().top;
+              alignedAtBoundary = Math.abs(alignedTarget.getBoundingClientRect().top - top) < 2;
+            }
+          };
+          const schedule = () => {
+            if (stopped || frame) return;
+            frame = requestAnimationFrame(() => { frame = 0; update(); });
+          };
+          const targetFor = (hash: string) => {
+            let target: HTMLElement | null;
+            try { target = document.getElementById(decodeURIComponent(hash.slice(1))); }
+            catch { return null; }
+            return target && main.contains(target) && Array.from(navs).some((nav) =>
+              Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')).some((link) => link.hash === hash)
+            ) ? target : null;
+          };
+          const align = (target: HTMLElement, behavior: ScrollBehavior) => {
+            const root = scrollRoot();
+            if (!root) return;
+            update();
+            const top = root === document.scrollingElement ? Math.max(0, panel.closest("header")?.getBoundingClientRect().bottom ?? 0) : root.getBoundingClientRect().top;
+            alignedTarget = target;
+            root.scrollTo({ top: Math.max(0, root.scrollTop + target.getBoundingClientRect().top - top), behavior: behavior === "auto" ? "instant" : behavior });
+            if (behavior === "auto") {
+              update();
+              const settledTop = root === document.scrollingElement ? Math.max(0, panel.closest("header")?.getBoundingClientRect().bottom ?? 0) : root.getBoundingClientRect().top;
+              root.scrollTo({ top: Math.max(0, root.scrollTop + target.getBoundingClientRect().top - settledTop), behavior: "instant" });
+              update();
+            }
+          };
+          const click = (event: MouseEvent) => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+            const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('[data-toc] a[href^="#"]') : null;
+            const target = link && targetFor(link.hash);
+            if (!link || !target) return;
+            event.preventDefault();
+            if (location.hash !== link.hash) history.pushState(null, "", link.hash);
+            align(target, matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth");
+            if (event.detail === 0) {
+              if (!target.hasAttribute("tabindex") && target.tabIndex < 0) {
+                target.tabIndex = -1;
+                focusTargets.add(target);
+              }
+              target.focus({ preventScroll: true });
+            }
+          };
+          const alignHash = () => {
+            const target = location.hash && targetFor(location.hash);
+            if (target) align(target, "auto");
+          };
+          const resized = () => {
+            if (alignedTarget && alignedAtBoundary) align(alignedTarget, "auto");
+            schedule();
+          };
+          document.addEventListener("scroll", schedule, { passive: true, capture: true });
+          window.addEventListener("resize", resized);
+          window.addEventListener("hashchange", alignHash);
+          window.addEventListener("load", alignHash);
+          owner.addEventListener("click", click);
+          panel.addEventListener("focusin", focusIn);
+          panel.addEventListener("focusout", focusOut);
+          const resize = new ResizeObserver(schedule);
+          resize.observe(panel);
+          resize.observe(host);
+          update();
+          alignHash();
+          document.fonts.ready.then(() => { if (!stopped) alignHash(); });
+          readingBarReleases.add(() => {
+            stopped = true;
+            revision++;
+            cancelAnimationFrame(frame);
+            resize.disconnect();
+            document.removeEventListener("scroll", schedule, true);
+            window.removeEventListener("resize", resized);
+            window.removeEventListener("hashchange", alignHash);
+            window.removeEventListener("load", alignHash);
+            owner.removeEventListener("click", click);
+            panel.removeEventListener("focusin", focusIn);
+            panel.removeEventListener("focusout", focusOut);
+            focusTargets.forEach((target) => {
+              if (target.getAttribute("tabindex") === "-1") target.removeAttribute("tabindex");
+            });
+            panel.getAnimations().forEach((animation) => animation.cancel());
+            panel.classList.remove("show");
+            panel.hidden = true;
+            panel.inert = true;
+            delete panel.dataset.readingBarVisible;
+            navs.forEach((nav) => MooUI.TableOfContents.getInstance(nav)?.refresh({ activationOffset: 0 }));
+          });
+        });
+      }
+      const scrollbarReleases = new Set<() => void>();
+      function initializeScrollbars() {
+        scrollbarReleases.forEach((release) => release());
+        scrollbarReleases.clear();
+        document.querySelectorAll<HTMLElement>('[data-moo-overlay-scrollbar="true"]').forEach((owner) => {
+          const main = owner.querySelector<HTMLElement>("#main-content");
+          let scrollElement: Element | null = null;
+          let instance: InstanceType<typeof MooUI.OverlayScrollbar> | null = null;
+          const synchronize = () => {
+            const next = main && ["auto", "scroll"].includes(getComputedStyle(main).overflowY)
+              ? main : document.scrollingElement;
+            if (next === scrollElement) return;
+            instance?.dispose();
+            instance = null;
+            scrollElement = next;
+            if (next) instance = MooUI.OverlayScrollbar.getOrCreateInstance(owner, { scrollElement: next });
+          };
+          synchronize();
+          window.addEventListener("resize", synchronize);
+          const resize = new ResizeObserver(synchronize);
+          if (main) resize.observe(main);
+          resize.observe(owner);
+          const mutations = new MutationObserver(synchronize);
+          for (let element: Element | null = main ?? owner; element; element = element.parentElement) {
+            mutations.observe(element, {
+              attributes: true,
+              attributeFilter: ["class", "style", "data-shell-mode"],
+            });
+          }
+          scrollbarReleases.add(() => {
+            window.removeEventListener("resize", synchronize);
+            resize.disconnect();
+            mutations.disconnect();
+            instance?.dispose();
+          });
+        });
+      }
       function initializeToc() {
         document.querySelectorAll("[data-toc]").forEach((root) => {
           tocInstances.add(MooUI.TableOfContents.getOrCreateInstance(root));
         });
       }
       initializeToc();
+      initializeReadingBars();
+      initializeScrollbars();
       document.addEventListener("astro:page-load", initializeToc);
+      document.addEventListener("astro:page-load", initializeReadingBars);
+      document.addEventListener("astro:page-load", initializeScrollbars);
       document.addEventListener("astro:before-swap", () => {
+        readingBarReleases.forEach((release) => release());
+        readingBarReleases.clear();
+        scrollbarReleases.forEach((release) => release());
+        scrollbarReleases.clear();
         tocInstances.forEach((instance) => instance.dispose());
         tocInstances.clear();
       });

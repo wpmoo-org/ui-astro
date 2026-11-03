@@ -114,6 +114,44 @@ export function buildSiteNavigation({
   ];
 }
 
+/** @param {import('./index.js').SiteChrome} chrome */
+export function projectHeaderNavigation(chrome) {
+  const labels = chrome.presentation.labels;
+  const home = chrome.homeNavigation;
+  const taxonomyHrefs = new Set(chrome.taxonomyGroups.flatMap((group) =>
+    group.links.map((link) => canonicalHref(link.href))));
+  const activeHrefs = new Set(chrome.navigation.flatMap((group) => group.items)
+    .flatMap((item) => [item, ...(item.children ?? [])])
+    .flatMap((item) => item.active && item.href ? [canonicalHref(item.href)] : []));
+  const siteGroups = chrome.navigation.map((group) => ({
+    ...group,
+    items: group.items.flatMap((item) => {
+      if (item.href && taxonomyHrefs.has(canonicalHref(item.href))) return [];
+      if (item.children?.length && item.children.every((child) => child.href && taxonomyHrefs.has(canonicalHref(child.href)))) return [];
+      if (home && item.href && canonicalHref(item.href) === canonicalHref(home.href)) return [];
+      if (!item.children?.length) return [{ ...item }];
+      const children = item.children.filter((child) => !home || !child.href || canonicalHref(child.href) !== canonicalHref(home.href));
+      return children.length ? [{ ...item, children, open: children.some((child) => child.active) }] : [];
+    }),
+  })).filter((group) => group.items.length);
+  if (home) {
+    const item = { title: labels.home, href: home.href, active: home.active };
+    if (siteGroups.length) siteGroups[0] = { ...siteGroups[0], items: [item, ...siteGroups[0].items] };
+    else siteGroups.push({ label: labels.site, items: [item] });
+  }
+  const collectionItems = chrome.taxonomyGroups.filter((group) => group.links.length).map((group) => {
+    const children = group.links.map((link) => ({
+      title: link.label, href: link.href, active: activeHrefs.has(canonicalHref(link.href)),
+    }));
+    return { title: group.label, icon: "layout-grid", children, open: children.some((child) => child.active) };
+  });
+  return {
+    siteItems: siteGroups.flatMap((group) => group.items),
+    collectionItems,
+    groups: [...siteGroups, ...(collectionItems.length ? [{ label: labels.collections, items: collectionItems }] : [])],
+  };
+}
+
 /** @param {{ href: string, locale?: string, title: string, languageLinks?: readonly import('../i18n/index.js').LanguageLink[] }} input @returns {Promise<import('./index.js').SiteChrome>} */
 export async function getSiteChrome({
   href,
@@ -139,15 +177,16 @@ export async function getSiteChrome({
       : [];
   const localHref = (path) => getLocaleHref(path, locale);
   const localeHome = localHref("/");
+  const homeLink = links.find((link) => canonicalHref(link.href) === canonicalHref(localeHome));
   const homeHref =
-    links.find((link) => canonicalHref(link.href) === canonicalHref(localeHome))
-      ?.href ??
+    homeLink?.href ??
     links[0]?.href ??
     href;
   return {
     locale,
     brand: context.site.brand,
     homeHref,
+    homeNavigation: homeLink ? { href: homeLink.href, active: homeLink.active } : null,
     languageLinks,
     presentation,
     taxonomyGroups,
