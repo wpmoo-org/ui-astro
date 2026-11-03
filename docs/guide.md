@@ -67,6 +67,14 @@ ThemeToggle precedes LanguageSwitcher. Explicit `sidebar: null` still
 removes the sidebar for the relevant page. All rendering uses existing Moo
 parts and Bootstrap utilities, with no added theme stylesheet.
 
+Site navigation lists every published page by default
+(`pageNavigation: "all"`), followed by plugin navigation items.
+`pageNavigation: "ordered"` lists only pages with a `navOrder`, so legal or
+utility pages can stay out of the menu. A plugin navigation item may set a
+nonnegative integer `order`; it is then sorted together with page `navOrder`
+values. Items without an order keep their existing sequence after ordered
+ones, so sites that set neither option are unchanged.
+
 Common labels are `site`, `pages`, `taxonomies`, `language`,
 `selectLanguage`, `lightMode` and `darkMode`. English/German defaults
 can be overridden through `presentation.labels` or locale-specific copy.

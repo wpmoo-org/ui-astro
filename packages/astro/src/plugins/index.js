@@ -207,7 +207,7 @@ function contentType(input, label) {
 }
 
 function navigationItem(input, label, basePath) {
-  record(input, label, ["label", "path", "match"]);
+  record(input, label, ["label", "path", "match", "order"]);
   const text = labelText(input.label, `${label}.label`);
   pathSegments(input.path, `${label}.path`);
   if (
@@ -220,7 +220,17 @@ function navigationItem(input, label, basePath) {
   const match = input.match ?? "exact";
   if (match !== "exact" && match !== "prefix")
     throw new TypeError(`${label}.match is unsupported`);
-  return Object.freeze({ label: text, path: input.path, match });
+  if (
+    input.order !== undefined &&
+    (!Number.isSafeInteger(input.order) || input.order < 0)
+  )
+    throw new TypeError(`${label}.order must be a nonnegative integer`);
+  return Object.freeze({
+    label: text,
+    path: input.path,
+    match,
+    ...(input.order === undefined ? {} : { order: input.order }),
+  });
 }
 
 function uniqueBy(items, key, label) {

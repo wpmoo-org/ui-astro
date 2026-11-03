@@ -299,6 +299,8 @@ export type SiteLanguageSwitcherInput = Pick<
 >;
 export interface SitePresentationInput extends SiteCopyInput {
   navigation?: "flat" | "grouped";
+  /** `"ordered"` lists only pages with `navOrder` in the site navigation. */
+  pageNavigation?: "all" | "ordered";
   assignedTaxonomies?: boolean;
   themeToggle?: boolean;
   languageSwitcher?: false | SiteLanguageSwitcherInput;
@@ -307,6 +309,7 @@ export interface SitePresentationInput extends SiteCopyInput {
 export type SitePresentation = DeepReadonly<
   SiteCopyInput & {
     navigation: "flat" | "grouped";
+    pageNavigation: "all" | "ordered";
     assignedTaxonomies: boolean;
     themeToggle: boolean;
     languageSwitcher: false | SiteLanguageSwitcherInput;

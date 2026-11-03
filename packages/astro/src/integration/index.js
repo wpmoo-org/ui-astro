@@ -383,7 +383,7 @@ declare module ${JSON.stringify(virtualId)} {
     readonly root: string;
     readonly sources: readonly RouteSource[];
     readonly singlePrefixes: Readonly<Record<string, string>>;
-    readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix" }[];
+    readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix"; readonly order?: number }[];
     readonly projectionFile: string | null;
     readonly errorPatterns: readonly string[];
     readonly archivePaths: readonly { readonly id: string; readonly locale: string; readonly path: string; readonly pattern: string }[];

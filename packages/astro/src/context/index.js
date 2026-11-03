@@ -15,6 +15,8 @@ import { entryPath, siteHref } from "../content/paths.js";
 import {
   navigationFromDescriptors,
   navigationFromPages,
+  pageNavigationOrders,
+  sortNavigation,
 } from "../integration/navigation.js";
 import { pagePathsFromEntries } from "../plugins/page/paths.js";
 import { getPublishedPages } from "../plugins/page/queries.js";
@@ -123,15 +125,19 @@ export async function getSiteNavigation(
         (type) => type.id === "page" && type.collection === "page",
       ),
   );
+  const ordered = context.site.presentation.pageNavigation === "ordered";
   const pages = activePage
     ? (await getPublishedPages()).filter(
-        (entry) => !context.i18n || entry.data.locale === locale,
+        (entry) =>
+          (!context.i18n || entry.data.locale === locale) &&
+          (!ordered || entry.data.navOrder !== undefined),
       )
     : [];
   if (context.i18n && !context.i18n.locales.includes(locale))
     throw new TypeError(`navigation locale ${locale} is not active`);
   if (context.i18n) {
     const current = currentPath.replace(/\/$/u, "") || "/";
+    const orders = pages.map((entry) => entry.data.navOrder);
     const items = pages.map((entry) => {
       const href = getEntryHref("page", entry);
       return Object.freeze({
@@ -151,6 +157,7 @@ export async function getSiteNavigation(
         const path = `${localized?.basePath ?? plugin.basePath}${item.path.slice(plugin.basePath.length)}`;
         const href = nativeLocaleHref(path, locale, context);
         const canonical = href.replace(/\/$/u, "");
+        orders.push(item.order);
         items.push(
           Object.freeze({
             label:
@@ -165,7 +172,7 @@ export async function getSiteNavigation(
         );
       }
     }
-    return Object.freeze(items);
+    return Object.freeze(sortNavigation(items, orders));
   }
   const options = {
     lang: context.site.defaults.lang,
@@ -173,10 +180,18 @@ export async function getSiteNavigation(
     trailingSlash: context.trailingSlash,
     reservedPrefixes: reservedPrefixes("page"),
   };
-  return Object.freeze([
-    ...navigationFromPages(pages, currentPath, options),
-    ...navigationFromDescriptors(context.navigation, currentPath, options),
-  ]);
+  return Object.freeze(
+    sortNavigation(
+      [
+        ...navigationFromPages(pages, currentPath, options),
+        ...navigationFromDescriptors(context.navigation, currentPath, options),
+      ],
+      [
+        ...pageNavigationOrders(pages, options),
+        ...context.navigation.map((item) => item.order),
+      ],
+    ),
+  );
 }
 
 export async function validateSiteContent() {

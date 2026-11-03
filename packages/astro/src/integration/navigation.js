@@ -22,6 +22,22 @@ export function navigationFromDescriptors(items, currentPath, options) {
   }));
 }
 
+// Items without an order keep their incoming sequence after ordered ones;
+// Array.prototype.sort is stable.
+export function sortNavigation(items, orders) {
+  return items
+    .map((item, index) => ({ item, order: orders[index] ?? Number.MAX_SAFE_INTEGER, index }))
+    .sort((left, right) => left.order - right.order || left.index - right.index)
+    .map(({ item }) => item);
+}
+
+export function pageNavigationOrders(entries, options) {
+  const { lang, reservedPrefixes } = options;
+  return pagePathsFromEntries(entries, { lang, reservedPrefixes }).map(
+    ({ props }) => props.entry.data.navOrder,
+  );
+}
+
 export function navigationFromPages(entries, currentPath, options) {
   const current = normalizedPath(currentPath);
   const { lang, reservedPrefixes, base, trailingSlash } = options;

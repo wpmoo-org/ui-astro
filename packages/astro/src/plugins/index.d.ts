@@ -67,12 +67,15 @@ export interface PluginNavigationInput {
   label: string;
   path: string;
   match?: "exact" | "prefix";
+  /** Sorts the item together with page `navOrder` values. */
+  order?: number;
 }
 
 export interface PluginNavigation {
   readonly label: string;
   readonly path: string;
   readonly match: "exact" | "prefix";
+  readonly order?: number;
 }
 
 export interface PluginInput {

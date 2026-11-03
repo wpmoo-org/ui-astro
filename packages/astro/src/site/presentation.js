@@ -61,6 +61,7 @@ const switcherSchema = z.strictObject({
 });
 const schema = copySchema.extend({
   navigation: z.enum(["flat", "grouped"]).default("flat"),
+  pageNavigation: z.enum(["all", "ordered"]).default("all"),
   assignedTaxonomies: z.boolean().default(true),
   themeToggle: z.boolean().default(false),
   languageSwitcher: z.union([z.literal(false), switcherSchema]).default(false),

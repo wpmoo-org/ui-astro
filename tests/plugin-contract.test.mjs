@@ -103,6 +103,14 @@ test("navigation paths are canonical, safe, and inside the plugin namespace", ()
   assert.throws(() => definePlugin(descriptor({ navigation: [{ label: "Sample", path: "/sample", match: "contains" }] })), /match/);
 });
 
+test("navigation order is an optional nonnegative integer", () => {
+  assert.equal(definePlugin(descriptor({ navigation: [{ label: "Sample", path: "/sample", order: 3 }] })).navigation[0].order, 3);
+  assert.equal(Object.hasOwn(definePlugin(descriptor({ navigation: [{ label: "Sample", path: "/sample" }] })).navigation[0], "order"), false);
+  for (const order of [-1, 1.5, "1", Number.NaN]) {
+    assert.throws(() => definePlugin(descriptor({ navigation: [{ label: "Sample", path: "/sample", order }] })), /order/, String(order));
+  }
+});
+
 test("plugin resolves through its exact public package entrypoint", async () => {
   const publicPlugin = await import("@wpmoo/astro/plugins");
   assert.equal(publicPlugin.definePlugin, definePlugin);

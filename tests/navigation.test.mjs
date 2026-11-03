@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { navigationFromPages, navigationFromDescriptors } from "../packages/astro/src/integration/navigation.js";
+import { navigationFromPages, navigationFromDescriptors, pageNavigationOrders, sortNavigation } from "../packages/astro/src/integration/navigation.js";
 
 const page = (id, status, data = {}) => ({ collection: "page", id, data: { title: id, status, ...data } });
 
@@ -37,4 +37,21 @@ test("Page navigation rejects a shadowed active namespace and unsafe current pat
   }), /reserved|namespace/i);
   assert.throws(() => navigationFromPages([], "//evil.test", { base: "/", trailingSlash: "ignore" }), /currentPath/i);
   assert.throws(() => navigationFromPages([], "/about?preview=1", { base: "/", trailingSlash: "ignore" }), /currentPath/i);
+});
+
+test("ordered plugin items interleave with pages; unordered items keep their sequence", () => {
+  const items = ["About", "Contact", "Archive", "News", "Jobs"];
+  assert.deepEqual(sortNavigation(items, [2, undefined, 1, undefined, 3]), ["Archive", "About", "Jobs", "Contact", "News"]);
+  assert.deepEqual(sortNavigation(items, []), items);
+});
+
+test("page navigation orders follow the rendered page sequence", () => {
+  const pages = [
+    page("b.md", "publish", { title: "B", navOrder: 5 }),
+    page("a.md", "publish", { title: "A" }),
+    page("c.md", "publish", { title: "C", navOrder: 2 }),
+  ];
+  const options = { lang: "en", base: "/", trailingSlash: "ignore" };
+  assert.deepEqual(navigationFromPages(pages, "/", options).map((item) => item.label), ["C", "B", "A"]);
+  assert.deepEqual(pageNavigationOrders(pages, options), [2, 5, undefined]);
 });

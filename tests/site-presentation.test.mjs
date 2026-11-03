@@ -12,6 +12,7 @@ const native = { locales: ["en", "de"], defaultLocale: "de" };
 test("presentation_defaults_keep_blocks_optional", () => {
   const site = defineSite();
   assert.equal(site.presentation?.navigation, "flat");
+  assert.equal(site.presentation.pageNavigation, "all");
   assert.equal(site.presentation.assignedTaxonomies, true);
   assert.equal(site.presentation.themeToggle, false);
   assert.equal(site.presentation.languageSwitcher, false);
@@ -173,4 +174,9 @@ test("monolingual_region_language_remains_valid_in_copy_and_link_maps", async ()
   const { resolveContentLinks, resolveSitePresentation } = await presentation();
   assert.equal(resolveContentLinks(site).home, "/");
   assert.equal(resolveSitePresentation(site, "en-US").labels.pages, "US pages");
+});
+
+test("page navigation can list only ordered pages", () => {
+  assert.equal(defineSite({ presentation: { pageNavigation: "ordered" } }).presentation.pageNavigation, "ordered");
+  assert.throws(() => defineSite({ presentation: { pageNavigation: "hidden" } }));
 });
