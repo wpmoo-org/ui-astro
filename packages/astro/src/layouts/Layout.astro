@@ -12,7 +12,7 @@ import {
 } from "../config/index.js";
 import type { SeoMetadata } from "../seo/index.js";
 
-type ShellMode = "viewport" | "contained";
+type ShellMode = "viewport" | "contained" | "document";
 type Theme = "light" | "dark";
 type Direction = "ltr" | "rtl";
 type PageWidth = "base" | "sm" | "md" | "lg" | "xl" | "xxl" | "fluid";
@@ -50,7 +50,7 @@ const containerClasses: Record<PageWidth, string> = {
   fluid: "container-fluid",
 };
 const identifierPattern = /^[A-Za-z][A-Za-z0-9_-]*$/;
-const shellModeValues: ShellMode[] = ["viewport", "contained"];
+const shellModeValues: ShellMode[] = ["viewport", "contained", "document"];
 const themeValues: Theme[] = ["light", "dark"];
 const directionValues: Direction[] = ["ltr", "rtl"];
 
@@ -86,6 +86,9 @@ if (typeof overlayScrollbar !== "boolean") {
 }
 if (!shellModeValues.includes(shellMode)) {
   throw new TypeError(`Unknown Layout shell mode: ${String(shellMode)}`);
+}
+if (shellMode === "document" && sidebar) {
+  throw new TypeError("Layout document shell mode requires no sidebar");
 }
 if (!themeValues.includes(theme)) {
   throw new TypeError(`Unknown Layout theme: ${String(theme)}`);
@@ -260,7 +263,7 @@ const jsonLd = metadata
           <main
             id="main-content"
             tabindex="-1"
-            class:list={parts.content.scrollUtilities}
+            class:list={shellMode === "document" ? undefined : parts.content.scrollUtilities}
           >
             <div
               class:list={[pageClass, parts.content.utilities]}

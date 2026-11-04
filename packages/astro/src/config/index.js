@@ -364,7 +364,7 @@ const asideDefaults = Object.freeze({
 });
 
 export const layoutSchema = z.strictObject({
-  shellMode: z.enum(["viewport", "contained"]).optional(),
+  shellMode: z.enum(["viewport", "contained", "document"]).optional(),
   overlayScrollbar: z.boolean().optional(),
   pageWidth: width.optional(),
   headerWidth: width.nullable().optional(),
@@ -537,6 +537,8 @@ function mergeLayout(...layers) {
       else output[key] = value;
     }
   }
+  if (output.shellMode === "document" && output.sidebar && (output.sidebar.mode ?? "sidebar") === "sidebar")
+    throw new TypeError("shellMode document requires sidebar mode header or drawer, or no sidebar");
   parse(partsSchema, parts, "parts");
   output.parts = parts;
   return freezeLayout(output);

@@ -245,7 +245,7 @@ export interface ContentAsideInput {
 export type ContentAside = Readonly<Required<ContentAsideInput>>;
 
 export interface PageOptionsInput {
-  shellMode?: "viewport" | "contained";
+  shellMode?: "viewport" | "contained" | "document";
   overlayScrollbar?: boolean;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
@@ -258,7 +258,7 @@ export interface PageOptionsInput {
 }
 
 export interface PageOptions {
-  shellMode: "viewport" | "contained";
+  shellMode: "viewport" | "contained" | "document";
   overlayScrollbar: boolean;
   pageWidth: PageWidth;
   headerWidth: PageWidth | null;

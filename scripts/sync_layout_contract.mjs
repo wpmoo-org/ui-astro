@@ -139,7 +139,7 @@ export async function buildSnapshot(htmlRoot) {
         root: {
           class: "wrapper",
           data_layout: "app",
-          data_shell_mode: "viewport|contained",
+          data_shell_mode: "viewport|contained|document",
         },
         direct_children: ["sidebar", "page"],
         named_slots: ["sidebar", "page"],

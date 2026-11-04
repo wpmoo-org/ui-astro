@@ -98,3 +98,13 @@ test("drawer rejects explicit app fields including later inherited overrides", (
     );
   }
 });
+test("document shell mode accepts header and drawer navigation but not an app sidebar", () => {
+  for (const sidebar of [null, { mode: "header" }, { mode: "drawer" }]) {
+    const site = defineSite({ defaults: { shellMode: "document", sidebar } });
+    assert.equal(resolvePageOptions(site, "page", "single").shellMode, "document");
+  }
+  assert.throws(() => defineSite({ defaults: { shellMode: "document", sidebar: {} } }), /shellMode document/);
+  const site = defineSite({ defaults: { shellMode: "document", sidebar: { mode: "header" } } });
+  assert.throws(() => resolvePageOptions(site, "page", "single", { sidebar: { mode: "sidebar" } }), /shellMode document/);
+  assert.throws(() => defineSite({ defaults: { shellMode: "page" } }), /shellMode/);
+});

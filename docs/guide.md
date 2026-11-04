@@ -529,7 +529,7 @@ const groups = [
 </Layout>
 ```
 
-Omit `sidebar` and the Sidebar slot for a page without a Sidebar. When `sidebar` is present, the slot is required and its `id` must match `sidebarId`. Layout supports the registered `shellMode`, `pageWidth`, `headerWidth`, `theme`, and `dir` values. Use its `header` and `footer` slots for page regions. `Sidebar` contributes the direct `<aside>` branch, while Layout supplies the app wrapper, Page rail, trigger, and initialization.
+Omit `sidebar` and the Sidebar slot for a page without a Sidebar. When `sidebar` is present, the slot is required and its `id` must match `sidebarId`. Layout supports the registered `shellMode`, `pageWidth`, `headerWidth`, `theme`, and `dir` values. `shellMode: 'document'` is for websites: the document scrolls, `main` does not, and the footer follows the content (Core `docs/contracts/DOCUMENT_SHELL.md`). It requires header or drawer navigation, or none; an app Sidebar is rejected. In this mode Layout omits `content.scrollUtilities`, because `main` is not a scroll container. It needs a Core release that includes the mode; until then a theme must carry the same two Core rules. Use its `header` and `footer` slots for page regions. `Sidebar` contributes the direct `<aside>` branch, while Layout supplies the app wrapper, Page rail, trigger, and initialization.
 
 Layout also supplies a Moo Button link to `#main-content`, hidden until keyboard focus by Bootstrap's registered `visually-hidden-focusable` helper. Its nonempty `skipText` defaults to `"Skip to main content"`; a multilingual theme supplies translated text through this prop. The link provides direct keyboard access to the main region and preserves Bootstrap's reverse-Tab loop when a mobile Sidebar is open.
 

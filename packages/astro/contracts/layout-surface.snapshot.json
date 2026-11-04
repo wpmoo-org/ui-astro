@@ -2,14 +2,14 @@
   "schema_version": 1,
   "upstream": {
     "package": "@wpmoo/ui",
-    "version": "1.0.0-rc.10"
+    "version": "2.0.0"
   },
   "source": {
     "repository": "projects/ui/html",
-    "commit": "29191dc0c65ed1dfb8e41d2cfbeed054269415cc",
+    "commit": "8b0702f39da4584606474c85e620a4f7541f6f4a",
     "files": {
       "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
-      "src/layouts/app.html.jinja": "3dac8d000fe8f0c583ca0a3d74df1e42f5e9fe93baa3b49481169549bcb671f3",
+      "src/layouts/app.html.jinja": "f8d9295eca25efec89230413efff17625a4ca6b4c597ba2c501c967613351411",
       "src/layouts/page.html.jinja": "b3072f00df72651abc30efae0cd165a9843efb6d8d84c23b4cf2994e1d434deb"
     }
   },
@@ -45,7 +45,8 @@
       ],
       "shell_mode": [
         "viewport",
-        "contained"
+        "contained",
+        "document"
       ],
       "side": [
         "left",
@@ -64,7 +65,7 @@
       "root": {
         "class": "wrapper",
         "data_layout": "app",
-        "data_shell_mode": "viewport|contained"
+        "data_shell_mode": "viewport|contained|document"
       },
       "direct_children": [
         "sidebar",
