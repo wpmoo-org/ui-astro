@@ -152,6 +152,13 @@ export function projectHeaderNavigation(chrome) {
   };
 }
 
+// The brand links Home when a plugin declares a static root route, even when
+// navigation leaves Home out; otherwise it falls back to the first link.
+export function resolveHomeHref({ links, localeHome, href, ownsRoot }) {
+  const homeLink = links.find((link) => canonicalHref(link.href) === canonicalHref(localeHome));
+  return homeLink?.href ?? (ownsRoot ? localeHome : links[0]?.href ?? href);
+}
+
 /** @param {{ href: string, locale?: string, title: string, languageLinks?: readonly import('../i18n/index.js').LanguageLink[] }} input @returns {Promise<import('./index.js').SiteChrome>} */
 export async function getSiteChrome({
   href,
@@ -178,10 +185,10 @@ export async function getSiteChrome({
   const localHref = (path) => getLocaleHref(path, locale);
   const localeHome = localHref("/");
   const homeLink = links.find((link) => canonicalHref(link.href) === canonicalHref(localeHome));
-  const homeHref =
-    homeLink?.href ??
-    links[0]?.href ??
-    href;
+  const homeHref = resolveHomeHref({
+    links, localeHome, href,
+    ownsRoot: context.plugins.some((plugin) => plugin.rootRoute === true),
+  });
   return {
     locale,
     brand: context.site.brand,

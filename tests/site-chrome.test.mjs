@@ -173,3 +173,12 @@ test("header projection does not invent Home or empty Collections from a fallbac
   assert.deepEqual(result.collectionItems, []);
   assert.equal(result.groups.length, 1);
 });
+
+test("brand links Home when the root route exists even if navigation omits it", async () => {
+  const { resolveHomeHref } = await chrome();
+  const links = [{ label: "Einrichtungen", href: "/einrichtungen", active: false }];
+  assert.equal(resolveHomeHref({ links, localeHome: "/", href: "/jobs", ownsRoot: true }), "/");
+  assert.equal(resolveHomeHref({ links, localeHome: "/", href: "/jobs", ownsRoot: false }), "/einrichtungen");
+  assert.equal(resolveHomeHref({ links: [], localeHome: "/", href: "/jobs", ownsRoot: false }), "/jobs");
+  assert.equal(resolveHomeHref({ links: [{ label: "Start", href: "/de/", active: true }], localeHome: "/de", href: "/de/", ownsRoot: true }), "/de/");
+});

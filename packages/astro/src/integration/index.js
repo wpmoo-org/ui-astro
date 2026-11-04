@@ -488,6 +488,8 @@ declare module ${JSON.stringify(virtualId)} {
               id: plugin.id,
               label: plugin.label,
               basePath: plugin.basePath,
+              // Route patterns are relative to basePath; only "/" + "/" is the site root.
+              rootRoute: plugin.basePath === "/" && plugin.routes.some((route) => route.pattern === "/"),
               ...(plugin.locales ? { locales: plugin.locales } : {}),
               contentTypes: plugin.contentTypes.map((type) => ({
                 id: type.id,
