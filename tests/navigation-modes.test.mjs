@@ -108,3 +108,10 @@ test("document shell mode accepts header and drawer navigation but not an app si
   assert.throws(() => resolvePageOptions(site, "page", "single", { sidebar: { mode: "sidebar" } }), /shellMode document/);
   assert.throws(() => defineSite({ defaults: { shellMode: "page" } }), /shellMode/);
 });
+test("footer width follows the page width unless a theme selects another", () => {
+  assert.equal(defineSite().defaults.footerWidth, null);
+  const site = defineSite({ defaults: { footerWidth: "fluid" } });
+  assert.equal(resolvePageOptions(site, "page", "single").footerWidth, "fluid");
+  assert.equal(resolvePageOptions(site, "page", "single", { footerWidth: null }).footerWidth, null);
+  assert.throws(() => defineSite({ defaults: { footerWidth: "wide" } }), /footerWidth/);
+});

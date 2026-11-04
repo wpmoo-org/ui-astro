@@ -35,6 +35,7 @@ interface Props {
   id?: string;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
+  footerWidth?: PageWidth | null;
   headerTocClass?: string;
   pageContext?: PageClassContext;
   parts?: PartsInput;
@@ -74,6 +75,7 @@ const {
   id = "",
   pageWidth = defaults.pageWidth,
   headerWidth = defaults.headerWidth,
+  footerWidth = defaults.footerWidth,
   headerTocClass = "",
   pageContext,
 } = Astro.props;
@@ -115,6 +117,9 @@ if (typeof skipText !== "string" || !skipText.trim()) {
 if (headerWidth !== null && !Object.hasOwn(containerClasses, headerWidth)) {
   throw new TypeError(`Unknown Layout header width: ${String(headerWidth)}`);
 }
+if (footerWidth !== null && !Object.hasOwn(containerClasses, footerWidth)) {
+  throw new TypeError(`Unknown Layout footer width: ${String(footerWidth)}`);
+}
 if (!Object.hasOwn(containerClasses, pageWidth)) {
   throw new TypeError(`Unknown Layout page width: ${String(pageWidth)}`);
 }
@@ -151,7 +156,23 @@ if (!Astro.slots.has("default")) {
 const resolvedHeaderWidth = headerWidth || pageWidth;
 const hasHeader = sidebar || Astro.slots.has("header");
 const pageClass = containerClasses[pageWidth];
-const headerClass = containerClasses[resolvedHeaderWidth];
+// A document page aligns header and footer text with the content rail inset.
+const railInset = shellMode === "document"
+  ? parts.content.utilities.filter((utility) => /^px(-[a-z]+)?-\d$/u.test(utility))
+  : [];
+const headerClass = [containerClasses[resolvedHeaderWidth], ...railInset].join(" ");
+const footerClass = [containerClasses[footerWidth || pageWidth], ...railInset].join(" ");
+// A document page centers its content rail like a website; app shells keep it at the start.
+const contentUtilities = shellMode === "document"
+  ? parts.content.utilities.map((utility) => (utility === "mx-0" ? "mx-auto" : utility))
+  : parts.content.utilities;
+// Region placements share their region's container; empty slots render nothing.
+const regionSlots = Object.fromEntries(await Promise.all(
+  ["before-header", "after-header", "before-footer", "after-footer"].map(async (name) => [
+    name,
+    Astro.slots.has(name) ? (await Astro.slots.render(name)).trim() : "",
+  ]),
+));
 const pageClasses = getPageClasses(pageContext);
 const headTitle = metadata?.title ?? title;
 const headDescription = metadata?.description ?? description;
@@ -224,7 +245,7 @@ const jsonLd = metadata
         {sidebar ? <script is:inline set:html={stateSource} /> : null}
         {sidebar ? <slot name="sidebar" /> : null}
         <div data-slot="page">
-          <slot name="before-header" />
+          {regionSlots["before-header"] ? <div class={headerClass}><Fragment set:html={regionSlots["before-header"]} /></div> : null}
           {
             hasHeader ? (
               <header class:list={["position-relative z-3", parts.header.utilities]}>
@@ -259,30 +280,30 @@ const jsonLd = metadata
               </header>
             ) : null
           }
-          <slot name="after-header" />
+          {regionSlots["after-header"] ? <div class={headerClass}><Fragment set:html={regionSlots["after-header"]} /></div> : null}
           <main
             id="main-content"
             tabindex="-1"
             class:list={shellMode === "document" ? undefined : parts.content.scrollUtilities}
           >
             <div
-              class:list={[pageClass, parts.content.utilities]}
+              class:list={[pageClass, contentUtilities]}
               data-page-container
             >
               <slot />
             </div>
           </main>
-          <slot name="before-footer" />
+          {regionSlots["before-footer"] ? <div class={footerClass}><Fragment set:html={regionSlots["before-footer"]} /></div> : null}
           {
             Astro.slots.has("footer") ? (
               <footer class:list={parts.footer.utilities}>
-                <div class={pageClass}>
+                <div class={footerClass}>
                   <slot name="footer" />
                 </div>
               </footer>
             ) : null
           }
-          <slot name="after-footer" />
+          {regionSlots["after-footer"] ? <div class={footerClass}><Fragment set:html={regionSlots["after-footer"]} /></div> : null}
         </div>
       </div>
       <slot name="overlay" />

@@ -249,6 +249,7 @@ export interface PageOptionsInput {
   overlayScrollbar?: boolean;
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
+  footerWidth?: PageWidth | null;
   theme?: "light" | "dark";
   lang?: string;
   dir?: "ltr" | "rtl";
@@ -262,6 +263,7 @@ export interface PageOptions {
   overlayScrollbar: boolean;
   pageWidth: PageWidth;
   headerWidth: PageWidth | null;
+  footerWidth: PageWidth | null;
   theme: "light" | "dark";
   lang: string;
   dir: "ltr" | "rtl";
