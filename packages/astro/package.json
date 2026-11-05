@@ -23,6 +23,7 @@
     "contracts/ui-1.2.0-package.json",
     "contracts/ui-1.2.1-package.json",
     "contracts/ui-1.5.0-package.json",
+    "contracts/ui-2.1.0-package.json",
     "src/blocks/entry-taxonomies/EntryTaxonomies.astro",
     "src/blocks/language-switcher/LanguageSwitcher.astro",
     "src/blocks/language-switcher/language-switcher.js",
@@ -276,8 +277,9 @@
     "./components/TableOfContents.astro": "./src/components/TableOfContents.astro"
   },
   "dependencies": {
-    "@wpmoo/ui": "1.5.0",
-    "bootstrap": "5.3.8"
+    "@wpmoo/ui": "2.1.0",
+    "bootstrap": "5.3.8",
+    "chart.js": "4.6.1"
   },
   "peerDependencies": {
     "astro": "7.3.8"

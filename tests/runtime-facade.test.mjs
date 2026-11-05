@@ -13,6 +13,7 @@ test("the facade forwards the identified Core exports without a synchronous Char
     "MooCalendar",
     "MooDateRangePicker",
     "OverlayScrollbar",
+    "PasswordRequirements",
     "Sidebar",
     "Slider",
     "TableOfContents",

@@ -197,10 +197,24 @@ no replacement loader, private store mutation or request retry is introduced.
 
 ## Release intake and upgrade procedure
 
-The current baseline is published Core `1.5.0`, adopted on 2026-10-31.
+The current baseline is published Core `2.1.0`, adopted on 2026-11-05.
 Its registry integrity and all public exported target hashes are recorded in
-`contracts/ui-1.5.0-package.json`. Active SDK and consumer locks use this exact
-archive. The earlier `1.4.3`, `1.4.0`, `1.3.0`, `1.2.1`, `1.2.0`, `1.1.0` and `1.0.0` records retain their original bytes
+`contracts/ui-2.1.0-package.json`. Active SDK and consumer locks use this exact
+archive. The registry signature and SLSA provenance attestation verify against
+the `v2.1.0` tag at `09d1a8df6f4224e1d84735b55ea0f0ba8fae6796`; the archive
+SHA-256 is `7f2a84c1874e6e6b670bfc663a476422a955c31ae29e3cde9ba024569da5eed1`.
+
+Core 2.1.0 preserves the 29 previous export targets and adds
+`password-requirements.js`. Core 2.0.0 externalized Chart.js as an optional
+peer: the aggregate's `loadChart()` now imports `chart.js/auto`, so the SDK
+depends on `chart.js@4.6.1` (with its own `@kurkle/color`) to keep the Chart
+wrapper buildable for every host. The CSS adds only the owner
+`--moo-heading-font-weight` token (default 600) and the opt-in
+`data-shell-mode="document"` app shell. The SDK adds no wrapper for the new
+modules in this intake.
+
+The earlier `1.5.0` record keeps its original bytes. The `1.5.0` intake notes
+below describe that baseline. The earlier `1.4.3`, `1.4.0`, `1.3.0`, `1.2.1`, `1.2.0`, `1.1.0` and `1.0.0` records retain their original bytes
 and dated evidence; they are not certification of the current intake.
 
 Core1.5.0 preserves the28 previous export targets and adds `floating-panel.js`.
@@ -341,7 +355,7 @@ claiming the unfinished broader host/editor matrix.
 
 ## Shared Table of Contents
 
-The SDK consumes published `@wpmoo/ui@1.5.0` with exact registry integrity and
+The SDK consumes published `@wpmoo/ui@2.1.0` with exact registry integrity and
 exported target hashes. Stable release validation rejects local development
 pins, file dependencies and changed Core bytes. The earlier private intake is
 retained in `contracts/ui-1.1.0-dev.1-package.json` as historical provenance.

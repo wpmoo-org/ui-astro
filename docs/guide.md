@@ -24,7 +24,7 @@ For a short overview, see the [README](../README.md).
 - [Direct Moo Astro Starter](#direct-moo-astro-starter)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@1.5.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@2.1.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -475,7 +475,7 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.8
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `1.5.0` and Bootstrap to `5.3.8`. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `2.1.0`, Bootstrap to `5.3.8` and Chart.js to `4.6.1`. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Core's auto-hiding `OverlayScrollbar` is enabled by default. Set
 `defaults: { overlayScrollbar: false }` in `defineSite` to disable that control.

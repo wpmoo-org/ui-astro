@@ -56,8 +56,9 @@ test("shared checker tools and host MDX never become SDK dependencies", () => {
     assert.equal(manifest.dependencies[name], undefined);
   }
   assert.deepEqual(manifest.dependencies, {
-    "@wpmoo/ui": "1.5.0",
+    "@wpmoo/ui": "2.1.0",
     bootstrap: "5.3.8",
+    "chart.js": "4.6.1",
   });
 });
 
