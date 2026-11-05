@@ -206,9 +206,13 @@ SHA-256 is `7f2a84c1874e6e6b670bfc663a476422a955c31ae29e3cde9ba024569da5eed1`.
 
 Core 2.1.0 preserves the 29 previous export targets and adds
 `password-requirements.js`. Core 2.0.0 externalized Chart.js as an optional
-peer: the aggregate's `loadChart()` now imports `chart.js/auto`, so the SDK
-depends on `chart.js@4.6.1` (with its own `@kurkle/color`) to keep the Chart
-wrapper buildable for every host. The CSS adds only the owner
+peer, and the SDK keeps it opt-in: it declares the same optional
+`chart.js >=4.6.1 <5` peer and installs nothing. A host that renders Chart
+installs `chart.js` itself (the demo and packed consumer pin `4.6.1`). The
+aggregate imports `chart.js/auto` only inside the chunk that `loadChart()`
+fetches, so a host without Chart.js still builds and never requests it; a
+chart-free fixture was rebuilt with Chart.js absent to prove this. The CSS adds
+only the owner
 `--moo-heading-font-weight` token (default 600) and the opt-in
 `data-shell-mode="document"` app shell. The SDK adds no wrapper for the new
 modules in this intake.

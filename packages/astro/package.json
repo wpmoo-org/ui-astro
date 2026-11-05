@@ -278,11 +278,16 @@
   },
   "dependencies": {
     "@wpmoo/ui": "2.1.0",
-    "bootstrap": "5.3.8",
-    "chart.js": "4.6.1"
+    "bootstrap": "5.3.8"
   },
   "peerDependencies": {
-    "astro": "7.3.8"
+    "astro": "7.3.8",
+    "chart.js": ">=4.6.1 <5"
+  },
+  "peerDependenciesMeta": {
+    "chart.js": {
+      "optional": true
+    }
   },
   "devDependencies": {}
 }

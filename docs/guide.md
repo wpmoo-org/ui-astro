@@ -475,7 +475,7 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.8
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `2.1.0`, Bootstrap to `5.3.8` and Chart.js to `4.6.1`. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `2.1.0` and Bootstrap to `5.3.8`. Chart.js is an optional peer: hosts that render `Chart` install `chart.js` (`>=4.6.1 <5`) themselves, and other hosts never load it. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Core's auto-hiding `OverlayScrollbar` is enabled by default. Set
 `defaults: { overlayScrollbar: false }` in `defineSite` to disable that control.

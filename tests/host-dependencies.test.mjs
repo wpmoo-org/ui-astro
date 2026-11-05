@@ -38,10 +38,16 @@ test("shared checker tools and host MDX never become SDK dependencies", () => {
     typescript: "6.0.3",
   });
   assert.deepEqual(demo.devDependencies, { "@astrojs/mdx": "8.0.3" });
+  // Chart.js is opt-in: the demo renders Charts, so it installs the peer
+  // itself; the SDK only declares the optional Core peer range.
   assert.deepEqual(demo.dependencies, {
     "@wpmoo/astro": "0.1.0",
     astro: "7.3.8",
+    "chart.js": "4.6.1",
   });
+  assert.equal(manifest.dependencies["chart.js"], undefined);
+  assert.equal(manifest.peerDependencies["chart.js"], ">=4.6.1 <5");
+  assert.deepEqual(manifest.peerDependenciesMeta, { "chart.js": { optional: true } });
   assert.deepEqual(lock.packages[""].devDependencies, root.devDependencies);
   assert.deepEqual(lock.packages["apps/demo"].dependencies, demo.dependencies);
   assert.deepEqual(
@@ -58,7 +64,6 @@ test("shared checker tools and host MDX never become SDK dependencies", () => {
   assert.deepEqual(manifest.dependencies, {
     "@wpmoo/ui": "2.1.0",
     bootstrap: "5.3.8",
-    "chart.js": "4.6.1",
   });
 });
 
