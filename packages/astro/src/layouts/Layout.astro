@@ -296,7 +296,12 @@ const jsonLd = metadata
           </main>
           {regionSlots["before-footer"] ? <div class={footerClass}><Fragment set:html={regionSlots["before-footer"]} /></div> : null}
           {
-            Astro.slots.has("footer") ? (
+            Astro.slots.has("footer-region") ? (
+              // A theme-owned footer keeps the landmark but supplies its own layout.
+              <footer>
+                <slot name="footer-region" />
+              </footer>
+            ) : Astro.slots.has("footer") ? (
               <footer class:list={parts.footer.utilities}>
                 <div class={footerClass}>
                   <slot name="footer" />

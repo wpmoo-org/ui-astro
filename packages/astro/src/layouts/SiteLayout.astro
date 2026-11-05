@@ -134,12 +134,16 @@ const layoutProps = {
       <Placement plan={plan} at="content.before" />
       <slot />
       <Placement plan={plan} at="content.after" />
-      <Footer
-        slot="footer"
-        brand={chrome.brand}
-        homeHref={chrome.homeHref}
-        parts={options.parts}
-      />
+      {Astro.slots.has("footer") ? (
+        <slot name="footer" slot="footer-region" />
+      ) : (
+        <Footer
+          slot="footer"
+          brand={chrome.brand}
+          homeHref={chrome.homeHref}
+          parts={options.parts}
+        />
+      )}
     </Layout>
   ) : (
     <Layout {...layoutProps}>
@@ -189,12 +193,16 @@ const layoutProps = {
       <Placement plan={plan} at="content.before" />
       <slot />
       <Placement plan={plan} at="content.after" />
-      <Footer
-        slot="footer"
-        brand={chrome.brand}
-        homeHref={chrome.homeHref}
-        parts={options.parts}
-      />
+      {Astro.slots.has("footer") ? (
+        <slot name="footer" slot="footer-region" />
+      ) : (
+        <Footer
+          slot="footer"
+          brand={chrome.brand}
+          homeHref={chrome.homeHref}
+          parts={options.parts}
+        />
+      )}
     </Layout>
   )
 }
