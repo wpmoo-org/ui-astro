@@ -234,11 +234,11 @@ test("error_preferences_inherit_shared_page_single_options", () => {
         site: {
           defaults: {
             parts: {
-              pageHeader: { titleUtilities: ["fw-normal"] },
+              pageHeader: { descriptionUtilities: ["text-primary"] },
             },
           },
         },
       }),
-    /pageHeader\.titleUtilities/,
+    /pageHeader\.descriptionUtilities/,
   );
 });

@@ -101,13 +101,6 @@ const utilityNames = [
   "mx-auto",
 ];
 const utilities = z.array(z.enum(utilityNames));
-const titleUtilities = utilities.refine(
-  (tokens) =>
-    tokens.every(
-      (token) => !token.startsWith("fw-") || token === "fw-semibold",
-    ),
-  { message: "Published Moo page-title fixes font weight to fw-semibold" },
-);
 const descriptionUtilities = utilities.refine(
   (tokens) =>
     tokens.every(
@@ -183,7 +176,7 @@ const partsSchema = z.strictObject({
       utilities: utilities.optional(),
       breadcrumbUtilities: utilities.optional(),
       breadcrumbLabel: accessibleLabel.optional(),
-      titleUtilities: titleUtilities.optional(),
+      titleUtilities: utilities.optional(),
       descriptionUtilities: descriptionUtilities.optional(),
       descriptionVariant: z.enum(["page-description", "muted"]).optional(),
     })

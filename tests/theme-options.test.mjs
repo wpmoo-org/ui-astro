@@ -171,8 +171,6 @@ test("part schema diagnoses unknown regions, unregistered utilities and unsafe v
 
 test("Typography-owned defaults reject incompatible utility overrides by their public field", () => {
   for (const [pageHeader, field] of [
-    [{ titleUtilities: ["fw-normal"] }, "pageHeader.titleUtilities"],
-    [{ titleUtilities: ["fw-bold"] }, "pageHeader.titleUtilities"],
     [
       { descriptionUtilities: ["text-primary"] },
       "pageHeader.descriptionUtilities",
@@ -192,6 +190,11 @@ test("Typography-owned defaults reject incompatible utility overrides by their p
       },
     }).pageHeader.titleUtilities,
     ["text-center", "mb-2"],
+  );
+  // Page titles take the heading weight token; an explicit weight utility wins.
+  assert.deepEqual(
+    resolveParts({ pageHeader: { titleUtilities: ["fw-medium"] } }).pageHeader.titleUtilities,
+    ["fw-medium"],
   );
   assert.deepEqual(
     resolveParts({
