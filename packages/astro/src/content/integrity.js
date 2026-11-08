@@ -157,10 +157,11 @@ export async function validateMarkdownSource({
         `${collection} ${entry.id} data differs from its current source`,
       );
     }
-    if (
-      typeof entry.body !== "string" ||
-      entry.body !== current.content.trim()
-    ) {
+    // Astro's data store omits `body` when the Markdown file has no content,
+    // so a missing body counts as empty only when the source is empty too.
+    const body =
+      entry.body ?? (current.content.trim() ? undefined : "");
+    if (typeof body !== "string" || body !== current.content.trim()) {
       throw new TypeError(
         `${collection} ${entry.id} body differs from its current source; native glob must retainBody`,
       );

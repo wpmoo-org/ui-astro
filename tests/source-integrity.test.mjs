@@ -181,6 +181,33 @@ test("the Markdown gate blocks an invalid edit even when the native loader retai
   }
 });
 
+test("an empty Markdown body needs no stored body, while a dropped body still fails", async () => {
+  const file = new URL("contact.md", base);
+  const input = { collection: "page", root, base, formats: ["md"], schema: pageSchema };
+  // Astro's data store leaves out `body` for an entry without content.
+  const withoutBody = loaded.map((item) => {
+    if (item.id !== "contact.md") return item;
+    const { body: _body, ...rest } = item;
+    return rest;
+  });
+  try {
+    await writeFile(file, "---\ntitle: contact.md\nstatus: publish\n---\n\n");
+    await assert.doesNotReject(() =>
+      validateMarkdownSource({ ...input, entries: withoutBody }),
+    );
+    await writeFile(file, "---\ntitle: contact.md\nstatus: publish\n---\nBody.\n");
+    await assert.rejects(
+      () => validateMarkdownSource({ ...input, entries: withoutBody }),
+      /page contact\.md.*body.*retainBody/i,
+    );
+  } finally {
+    await writeFile(
+      file,
+      "---\ntitle: contact.md\nstatus: publish\n---\nBody.\n",
+    );
+  }
+});
+
 test("a selected missing collection fails while an empty declared collection remains valid", () => {
   assert.throws(
     () => validateSelectedCollections({ page: undefined }, ["page"]),
