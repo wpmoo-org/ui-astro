@@ -973,6 +973,11 @@ namespaced by the plugin ID. A separately distributed plugin declares and
 tests its compatible `@wpmoo/astro` and Astro peers and commits its own lock.
 This foundation supplies no importer, plugin auto-discovery or template lookup.
 
+A plugin may also declare `contentTypes: []`. It then owns only its routes and
+navigation, for example a landing page at `/kita` whose menu item takes the
+localized `plugin.locales.<locale>.label`, and adds no collection, Single route
+or content check. Its routes still need at least one entry.
+
 Define a site's Projects type in its own `definitions.js`, for example:
 
 ```js

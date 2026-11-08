@@ -83,6 +83,7 @@ export interface PluginInput {
   id: string;
   label: string;
   basePath: string;
+  /** Empty for a content-free plugin that owns only routes and navigation. */
   contentTypes: readonly ContentTypeInput[];
   routes: readonly PluginRouteInput[];
   navigation?: readonly PluginNavigationInput[];

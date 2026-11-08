@@ -79,7 +79,8 @@ test("route ownership is closed, local ids are unique, and Single maps to a lite
 
 test("content types declare supported sources and unambiguous Single and taxonomy bindings", () => {
   const type = descriptor().contentTypes[0];
-  assert.throws(() => definePlugin(descriptor({ contentTypes: [] })), /contentTypes/);
+  assert.throws(() => definePlugin(descriptor({ contentTypes: undefined })), /contentTypes/);
+  assert.throws(() => definePlugin(descriptor({ contentTypes: {} })), /contentTypes/);
   assert.throws(() => definePlugin(descriptor({ routes: [] })), /routes/);
   assert.throws(() => definePlugin(descriptor({ contentTypes: [type, { ...type }] })), /contentTypes.*id/);
   assert.throws(() => definePlugin(descriptor({ contentTypes: [{ ...type, singleRoute: "missing" }] })), /singleRoute/);
@@ -93,6 +94,24 @@ test("content types declare supported sources and unambiguous Single and taxonom
   source.pathname = "/tmp/other.json";
   assert.equal(plugin.contentTypes[0].source.file, "file:///tmp/entries.json");
   assert.deepEqual(plugin.contentTypes[0].taxonomies, ["category"]);
+});
+
+test("a content-free plugin owns only its routes and navigation", () => {
+  const landing = {
+    id: "landing", pattern: "/", prerender: true,
+    entrypoint: new URL("../apps/consumer/src/pages/index.astro", import.meta.url),
+  };
+  const plugin = definePlugin(descriptor({
+    contentTypes: [],
+    routes: [landing],
+    locales: { de: { label: "Beispiel" } },
+  }));
+  assert.deepEqual(plugin.contentTypes, []);
+  assert.ok(Object.isFrozen(plugin.contentTypes));
+  assert.deepEqual(plugin.routes.map((route) => route.pattern), ["/"]);
+  assert.equal(plugin.navigation[0].path, "/sample");
+  assert.equal(plugin.locales.de.label, "Beispiel");
+  assert.throws(() => definePlugin(descriptor({ contentTypes: [], routes: [] })), /routes/);
 });
 
 test("navigation paths are canonical, safe, and inside the plugin namespace", () => {

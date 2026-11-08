@@ -190,6 +190,37 @@ test("registry records one owner for each active type, collection, and final rou
   );
 });
 
+test("registry records a content-free plugin's routes without a type or collection", () => {
+  const landing = definePlugin({
+    apiVersion: 1,
+    id: "landing",
+    label: "Landing",
+    basePath: "/landing",
+    contentTypes: [],
+    routes: [
+      {
+        id: "landing",
+        pattern: "/",
+        prerender: true,
+        entrypoint: new URL("../apps/consumer/src/pages/index.astro", import.meta.url),
+      },
+    ],
+    navigation: [{ label: "Landing", path: "/landing" }],
+  });
+  const registry = buildRegistry([page(), landing]);
+  assert.deepEqual(
+    registry.routes.map(({ owner, pattern }) => ({ owner, pattern })),
+    [
+      { owner: "page", pattern: "/[...slug]" },
+      { owner: "landing", pattern: "/landing" },
+    ],
+  );
+  assert.deepEqual(
+    registry.contentTypes.map(({ owner }) => owner),
+    ["page"],
+  );
+});
+
 test("registry rejects cross-plugin collection, type, and namespace conflicts", () => {
   assert.throws(
     () =>

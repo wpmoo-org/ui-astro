@@ -273,8 +273,10 @@ export function definePlugin(input) {
       "plugin.basePath / belongs only to page, and page must own /",
     );
   }
-  if (!Array.isArray(input.contentTypes) || !input.contentTypes.length) {
-    throw new TypeError("plugin.contentTypes must be a nonempty array");
+  // An empty list declares a content-free plugin that owns only its routes and
+  // navigation, such as a landing page.
+  if (!Array.isArray(input.contentTypes)) {
+    throw new TypeError("plugin.contentTypes must be an array");
   }
   if (!Array.isArray(input.routes) || !input.routes.length) {
     throw new TypeError("plugin.routes must be a nonempty array");
