@@ -250,6 +250,7 @@ export interface PageOptionsInput {
   pageWidth?: PageWidth;
   headerWidth?: PageWidth | null;
   footerWidth?: PageWidth | null;
+  headerOverlay?: boolean;
   theme?: "light" | "dark";
   lang?: string;
   dir?: "ltr" | "rtl";
@@ -264,6 +265,7 @@ export interface PageOptions {
   pageWidth: PageWidth;
   headerWidth: PageWidth | null;
   footerWidth: PageWidth | null;
+  headerOverlay: boolean;
   theme: "light" | "dark";
   lang: string;
   dir: "ltr" | "rtl";

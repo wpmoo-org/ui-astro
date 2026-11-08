@@ -362,6 +362,7 @@ export const layoutSchema = z.strictObject({
   pageWidth: width.optional(),
   headerWidth: width.nullable().optional(),
   footerWidth: width.nullable().optional(),
+  headerOverlay: z.boolean().optional(),
   theme: z.enum(["light", "dark"]).optional(),
   lang: z.string().trim().min(1).optional(),
   dir: z.enum(["ltr", "rtl"]).optional(),
@@ -440,6 +441,7 @@ const builtIn = Object.freeze({
   pageWidth: "xl",
   headerWidth: "fluid",
   footerWidth: null,
+  headerOverlay: false,
   theme: "light",
   lang: "en",
   dir: "ltr",
@@ -532,6 +534,8 @@ function mergeLayout(...layers) {
       else output[key] = value;
     }
   }
+  if (output.headerOverlay && output.shellMode !== "document")
+    throw new TypeError("headerOverlay requires shellMode document");
   if (output.shellMode === "document" && output.sidebar && (output.sidebar.mode ?? "sidebar") === "sidebar")
     throw new TypeError("shellMode document requires sidebar mode header or drawer, or no sidebar");
   parse(partsSchema, parts, "parts");

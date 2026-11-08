@@ -37,6 +37,7 @@ interface Props {
   headerWidth?: PageWidth | null;
   footerWidth?: PageWidth | null;
   headerTocClass?: string;
+  headerOverlay?: boolean;
   pageContext?: PageClassContext;
   parts?: PartsInput;
 }
@@ -77,6 +78,7 @@ const {
   headerWidth = defaults.headerWidth,
   footerWidth = defaults.footerWidth,
   headerTocClass = "",
+  headerOverlay = defaults.headerOverlay,
   pageContext,
 } = Astro.props;
 
@@ -113,6 +115,12 @@ if (
 }
 if (typeof skipText !== "string" || !skipText.trim()) {
   throw new TypeError("Layout skipText must be nonempty text");
+}
+if (typeof headerOverlay !== "boolean") {
+  throw new TypeError("Layout headerOverlay must be boolean");
+}
+if (headerOverlay && (shellMode !== "document" || sidebar)) {
+  throw new TypeError("Layout headerOverlay requires document shell mode without a sidebar");
 }
 if (headerWidth !== null && !Object.hasOwn(containerClasses, headerWidth)) {
   throw new TypeError(`Unknown Layout header width: ${String(headerWidth)}`);
@@ -249,7 +257,14 @@ const jsonLd = metadata
           {regionSlots["before-header"] ? <div class={headerClass}><Fragment set:html={regionSlots["before-header"]} /></div> : null}
           {
             hasHeader ? (
-              <header class:list={["position-relative z-3", parts.header.utilities]}>
+              // An overlay header floats as a dark, transparent owner over the first section.
+              <header
+                class:list={headerOverlay
+                  ? ["moo-ui bg-transparent position-absolute top-0 start-0 end-0 z-3"]
+                  : ["position-relative z-3", parts.header.utilities]}
+                data-bs-theme={headerOverlay ? "dark" : undefined}
+                data-header-overlay={headerOverlay ? "" : undefined}
+              >
                 <div class={headerClass}>
                   <div class:list={parts.header.contentUtilities}>
                     {sidebar ? (

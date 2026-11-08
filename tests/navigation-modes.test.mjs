@@ -108,6 +108,12 @@ test("document shell mode accepts header and drawer navigation but not an app si
   assert.throws(() => resolvePageOptions(site, "page", "single", { sidebar: { mode: "sidebar" } }), /shellMode document/);
   assert.throws(() => defineSite({ defaults: { shellMode: "page" } }), /shellMode/);
 });
+test("header overlay is a document-mode page option", () => {
+  const site = defineSite({ defaults: { shellMode: "document", sidebar: { mode: "header" } } });
+  assert.equal(resolvePageOptions(site, "page", "single").headerOverlay, false);
+  assert.equal(resolvePageOptions(site, "page", "single", { headerOverlay: true }).headerOverlay, true);
+  assert.throws(() => defineSite({ defaults: { headerOverlay: true } }), /headerOverlay requires shellMode document/);
+});
 test("footer width follows the page width unless a theme selects another", () => {
   assert.equal(defineSite().defaults.footerWidth, null);
   const site = defineSite({ defaults: { footerWidth: "fluid" } });
