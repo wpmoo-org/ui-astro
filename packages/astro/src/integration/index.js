@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { normalizePlacements } from "../placements/options.js";
+import { addTermLinks, normalizeTermLinks } from "../markdown/term-links.js";
 import {
   placementVitePlugin,
   validatePlacementRegistry,
@@ -68,6 +69,7 @@ export default function moo(input = {}) {
         "notFound",
         "blocks",
         "placements",
+        "termLinks",
       ].includes(key)
     )
       throw new TypeError(`moo.${key} is unsupported`);
@@ -107,6 +109,9 @@ export default function moo(input = {}) {
       }) => {
         root = config.root;
         commandName = command;
+        // Named things in Markdown content link to their pages (first mention).
+        const termLinks = normalizeTermLinks(input.termLinks, config.root);
+        if (termLinks.length) addTermLinks(config.markdown?.processor, termLinks);
         const i18n = resolveI18n(config.i18n, site);
         errorClaims = notFoundRouteClaims({ site, i18n, notFound });
         registry = localizeRegistry(baseRegistry, i18n);

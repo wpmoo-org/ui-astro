@@ -119,6 +119,7 @@
     "src/layouts/NavigationDrawer.astro",
     "src/layouts/SiteLayout.astro",
     "src/layouts/content-frame.js",
+    "src/markdown/term-links.js",
     "src/not-found/index.d.ts",
     "src/not-found/index.js",
     "src/not-found/options.js",

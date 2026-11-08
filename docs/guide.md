@@ -257,6 +257,36 @@ the dialog is shown and is unloaded when it hides, which also stops playback.
 `www.youtube-nocookie.com`. Dialog gains `bodyClass`, as Core's
 `dialog_body(extra_class)`, so the video can sit edge to edge.
 
+### Term links
+
+```js
+moo({
+  site,
+  plugins,
+  termLinks: [
+    {
+      terms: ["Leibniz-Zentrum Allgemeine Sprachwissenschaft", "ZAS"],
+      href: "/partners/leibniz-zas/",
+      source: new URL("./src/content/partners/leibniz-zas.md", import.meta.url),
+    },
+  ],
+});
+```
+
+`termLinks` turns the first mention of a named thing in Markdown content into
+a link to its page, for partners, schools or programmes that many texts
+mention. Each entry lists its spellings as whole-word, case-sensitive
+`terms`; only the earliest of them is linked, once per document, and a
+longer term wins where two start at the same place. Headings, code, images,
+raw HTML and existing links are left alone, and the document named by
+`source` (a file URL or a path relative to the project root) never links to
+itself. `href` must be a site path or an https address; a term may belong to
+only one entry. The option joins the configured Markdown processor, as an
+mdast plugin for Sätteri (Astro's default) or a remark plugin for
+`unified()`, so it applies to content collections and Markdown pages alike;
+another processor fails with a clear error, and plain frontmatter fields stay
+text.
+
 ## Content placements, drawer and aside
 
 Declare a reusable block once in the integration, then select where it appears.
