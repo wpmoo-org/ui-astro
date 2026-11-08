@@ -1,0 +1,47 @@
+---
+// Dialog of the Moo Core "Video Dialog" block. The frame carries the video
+// address in data-video-src and no src, so nothing is fetched until the
+// visitor opens the dialog; closing it unloads the frame and stops playback.
+// Open it with one or more VideoPlay triggers that use the same id.
+import Dialog from "../../components/Dialog.astro";
+
+interface Props {
+  id: string;
+  title: string;
+  /** An https embed address, for example https://www.youtube-nocookie.com/embed/<id>. */
+  src: string;
+  dismissAriaLabel?: string;
+  class?: string;
+}
+const { id, title, src, dismissAriaLabel = "Close", class: className = "" } = Astro.props;
+if (typeof title !== "string" || !title.trim() || /[\x00-\x1f\x7f]/u.test(title)) {
+  throw new TypeError("VideoDialog title must be nonempty plain text");
+}
+let source: URL;
+try {
+  source = new URL(src);
+} catch {
+  throw new TypeError("VideoDialog src must be an absolute https address");
+}
+if (source.protocol !== "https:") {
+  throw new TypeError("VideoDialog src must be an absolute https address");
+}
+---
+
+<Dialog id={id} title={title} size="xl" centered dismissAriaLabel={dismissAriaLabel} bodyClass="p-0" class={className} data-moo-video-dialog>
+  <div class="ratio ratio-16x9">
+    <iframe
+      class="border-0"
+      title={title}
+      data-video-src={source.href}
+      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen
+    ></iframe>
+  </div>
+</Dialog>
+
+<script>
+  import { initVideoDialogs } from "./video-dialog.js";
+  initVideoDialogs();
+</script>

@@ -6,6 +6,8 @@ interface Props {
   title?: string;
   description?: string;
   headerClass?: string;
+  /** Extra classes for the body, as Core's dialog_body(extra_class). */
+  bodyClass?: string;
   size?: "default" | "sm" | "lg" | "xl" | "fullscreen";
   centered?: boolean;
   scrollable?: boolean;
@@ -23,6 +25,7 @@ const {
   title = "",
   description = "",
   headerClass = "",
+  bodyClass = "",
   size = "default",
   centered = false,
   scrollable = false,
@@ -87,7 +90,7 @@ const descriptionId = description ? `${id}-description` : "";
           </div>
         ) : null
       }
-      <div class="modal-body"><slot /></div>
+      <div class:list={["modal-body", bodyClass]}><slot /></div>
       {
         Astro.slots.has("footer") ? (
           <div class="modal-footer">

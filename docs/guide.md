@@ -230,6 +230,33 @@ embedded owners persist only with an explicit `data-moo-theme-key`.
 Denied storage still allows an in-page change. The block adds no stylesheet
 and never places theme state on `html` or `body`.
 
+### Video dialog
+
+```astro
+---
+import VideoDialog from "@wpmoo/astro/blocks/VideoDialog.astro";
+import VideoPlay from "@wpmoo/astro/blocks/VideoPlay.astro";
+---
+
+<VideoPlay dialogId="film" ariaLabel="Watch the film" class="d-none d-lg-inline-flex" />
+<VideoPlay dialogId="film" label="Watch the film" class="d-lg-none" />
+<VideoDialog id="film" title="Our film" src="https://www.youtube-nocookie.com/embed/M7lc1UVf-VE" />
+```
+
+The Astro side of the Core "Video Dialog" block: Button and Dialog markup with
+Bootstrap utilities. `VideoPlay` without `label` is the round button in a
+translucent ring; with `label` it is a compact pill for narrow screens.
+`iconClass` (default `text-primary`) colours the triangle. The ring uses the
+Core `animate-breathe` utility, which runs only for visitors who allow motion;
+it needs the Core release that adds `scss/utilities/_motion.scss`, and with
+`@wpmoo/ui@2.1.0` the ring is simply static.
+
+`VideoDialog` keeps the address in `data-video-src`: the frame loads only when
+the dialog is shown and is unloaded when it hides, which also stops playback.
+`src` must be an absolute https address; prefer privacy-enhanced hosts such as
+`www.youtube-nocookie.com`. Dialog gains `bodyClass`, as Core's
+`dialog_body(extra_class)`, so the video can sit edge to edge.
+
 ## Content placements, drawer and aside
 
 Declare a reusable block once in the integration, then select where it appears.

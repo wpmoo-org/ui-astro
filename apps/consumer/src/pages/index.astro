@@ -11,6 +11,8 @@ import Placement from "@wpmoo/astro/placements/Placement.astro";
 import { preparePlacements } from "@wpmoo/astro/placements";
 import { contentBlockSchema } from "@wpmoo/astro/placements/content";
 import ThemeToggle from "@wpmoo/astro/blocks/ThemeToggle.astro";
+import VideoDialog from "@wpmoo/astro/blocks/VideoDialog.astro";
+import VideoPlay from "@wpmoo/astro/blocks/VideoPlay.astro";
 import Accordion from "@wpmoo/astro/components/Accordion.astro";
 import Alert from "@wpmoo/astro/components/Alert.astro";
 import AlertDialog from "@wpmoo/astro/components/AlertDialog.astro";
@@ -250,6 +252,8 @@ void [
   MooIntegration,
   LanguageSwitcher,
   ThemeToggle,
+  VideoDialog,
+  VideoPlay,
   getPagePaths,
   getPublishedPages,
   configuredPage,
