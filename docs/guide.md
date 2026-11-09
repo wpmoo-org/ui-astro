@@ -275,6 +275,7 @@ const { gallery } = post.data; // gallery: { layout, limit, images: [{ src: imag
   limit={gallery.limit ?? 9}
   labels={{
     title: "Fotos",
+    strip: "Fotos, seitlich scrollen",
     close: "Schließen",
     previous: "Zurück",
     next: "Weiter",
@@ -301,7 +302,18 @@ needs `width` and `height`. `caption` titles the photo in the lightbox
   `3x2`), `justified` (rows of one height, uncropped, in reading order; the
   last row keeps its natural size), `masonry` (uncropped columns; the
   lightbox still follows the list order) or `featured` (the first photo
-  large, the rest as tiles).
+  large, the rest as tiles) or `strip` (one row at the photos' own shape and
+  one height that scrolls sideways with a gentle snap; the next photo always
+  peeks in, the row is one named focusable region, and `limit` does not
+  apply). `stripUntil` (`sm` to `xxl`) keeps the strip below that breakpoint
+  and justified rows from it up; `stripBleed` runs the strip to the screen
+  edges through the content gutter (`--moo-gallery-strip-bleed`).
+- `transition`: `fade` (default; a cross-fade through the stage colour) or
+  `slide`.
+- `sizes`: the thumbnails' `sizes` attribute when the gallery sits in a
+  narrower column than the viewport, for example
+  `"(min-width: 992px) 22vw, 50vw"`; by default it follows the columns over
+  the full viewport.
 - `columns`: tiles or masonry columns per breakpoint, 1 to 4, for example
   `{ xs: 2, md: 3 }` (default). `gap`: spacer 0 to 5 (default 2).
 - `limit`: thumbnails shown before a "show all" button that opens the
@@ -312,13 +324,15 @@ Every thumbnail links to its large image, so the gallery works without
 JavaScript. With JavaScript the lightbox, a Dialog in the page colour mode
 that fills the screen below the `lg` breakpoint, opens at the clicked photo
 with a counter, ghost full-screen and close buttons, the caption and credit,
-Previous, Next, arrow keys and swipe, and a slideshow whose Progress bar
-times each photo. Only the current photo and its neighbours load, and none
+Previous, Next, arrow keys and swipe, and a slideshow whose faint Progress
+line runs along the stage's bottom edge (`--moo-gallery-progress-height`,
+`--moo-gallery-progress-opacity`). Only the current photo and its neighbours load, and none
 before the lightbox opens.
 
 `image-gallery.js` is a byte copy of the Core public module
 `@wpmoo/ui/image-gallery.js` and `image-gallery.css` carries the Core gallery
-rules (`.ratio-3x2`, `.columns-*`, `.gallery-justified`, `.gallery-stage`);
+rules at ui `bba43ec` (`.ratio-3x2`, `.columns-*`, `.gallery-justified`,
+`.gallery-stage`, `.gallery-strip*`, `.gallery-progress`);
 both bridge `@wpmoo/ui@2.1.0` and go away once the pinned Core release ships
 them. Dialog gains `fullscreenDown` and a `content` slot that lays out the
 whole dialog, as Core's `dialog()` caller. The Layout moves a dialog that

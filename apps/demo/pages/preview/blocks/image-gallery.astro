@@ -32,7 +32,8 @@ const images = Object.entries(files)
   />
   <div class="d-grid gap-5">
     <ImageGallery id="gallery-justified" images={images} layout="justified" />
-    <ImageGallery id="gallery-grid" images={images.slice(0, 6)} ratio="3x2" />
+    <ImageGallery id="gallery-strip" images={images} layout="strip" stripUntil="md" stripBleed />
+    <ImageGallery id="gallery-grid" images={images.slice(0, 6)} ratio="3x2" transition="slide" />
     <ImageGallery id="gallery-masonry" images={images} layout="masonry" limit="all" />
     <ImageGallery
       id="gallery-featured"

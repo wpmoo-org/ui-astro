@@ -1,6 +1,7 @@
 ---
 // Astro side of the Moo Core "Image Gallery" block: photo thumbnails as a
-// grid, justified rows, masonry columns or a featured layout, and one
+// grid, justified rows, masonry columns, a featured layout or a sideways
+// strip, and one
 // lightbox Dialog with a Bootstrap Carousel. The markup mirrors Core's
 // src/blocks/image_gallery.html.jinja; image-gallery.js is a byte copy of
 // Core's public module until the pinned @wpmoo/ui ships it.
@@ -34,6 +35,8 @@ export interface GalleryImage {
 
 export interface GalleryLabels {
   title: string;
+  /** Accessible name of the strip's scroll region. */
+  strip: string;
   close: string;
   previous: string;
   next: string;
@@ -51,17 +54,27 @@ export interface GalleryLabels {
 interface Props {
   id: string;
   images: GalleryImage[];
-  layout?: "grid" | "justified" | "masonry" | "featured";
+  layout?: "grid" | "justified" | "masonry" | "featured" | "strip";
   ratio?: "1x1" | "4x3" | "3x2";
   columns?: Partial<Record<Breakpoint, 1 | 2 | 3 | 4>>;
   gap?: 0 | 1 | 2 | 3 | 4 | 5;
   limit?: number | "all";
+  /** Strip only below this breakpoint, justified rows from it up. */
+  stripUntil?: "" | "sm" | "md" | "lg" | "xl" | "xxl";
+  /** Run the strip to the screen edges through the content gutter. */
+  stripBleed?: boolean;
+  /** How the lightbox changes photos. */
+  transition?: "fade" | "slide";
+  /** Thumbnail sizes attribute, for example "(min-width: 992px) 20vw, 50vw"
+   *  when the gallery sits in a narrower column than the viewport. */
+  sizes?: string;
   labels?: Partial<GalleryLabels>;
   class?: string;
 }
 
 const DEFAULT_LABELS: GalleryLabels = {
   title: "Photos",
+  strip: "Photos, scroll sideways",
   close: "Close",
   previous: "Previous",
   next: "Next",
@@ -91,6 +104,10 @@ const {
   columns = { xs: 2, md: 3 },
   gap = 2,
   limit = 9,
+  stripUntil = "",
+  stripBleed = false,
+  transition = "fade",
+  sizes = "",
   labels = {},
   class: className = "",
 } = Astro.props;
@@ -101,11 +118,20 @@ if (typeof id !== "string" || !/^[A-Za-z][\w-]*$/u.test(id)) {
 if (!Array.isArray(images) || images.length === 0) {
   throw new TypeError("ImageGallery requires at least one image");
 }
-if (!["grid", "justified", "masonry", "featured"].includes(layout)) {
+if (!["grid", "justified", "masonry", "featured", "strip"].includes(layout)) {
   throw new TypeError(`Unknown ImageGallery layout: ${layout}`);
 }
 if (!["1x1", "4x3", "3x2"].includes(ratio)) {
   throw new TypeError(`Unknown ImageGallery ratio: ${ratio}`);
+}
+if (!["", "sm", "md", "lg", "xl", "xxl"].includes(stripUntil)) {
+  throw new TypeError(`Unknown ImageGallery stripUntil breakpoint: ${stripUntil}`);
+}
+if (!["fade", "slide"].includes(transition)) {
+  throw new TypeError("ImageGallery transition must be fade or slide");
+}
+if (typeof sizes !== "string" || /[\x00-\x1f\x7f]/u.test(sizes)) {
+  throw new TypeError("ImageGallery sizes must be plain text");
 }
 if (![0, 1, 2, 3, 4, 5].includes(gap)) {
   throw new TypeError("ImageGallery gap must be a spacer from 0 to 5");
@@ -129,7 +155,8 @@ for (const [name, value] of Object.entries(text)) {
 }
 
 const total = images.length;
-const shown = limit === "all" ? total : Math.min(limit, total);
+// A strip scrolls through every photo, so limit does not apply to it.
+const shown = limit === "all" || layout === "strip" ? total : Math.min(limit, total);
 const lightboxId = `${id}-lightbox`;
 const infix = (breakpoint: Breakpoint) => (breakpoint === "xs" ? "" : `${breakpoint}-`);
 const ordered = BREAKPOINTS.filter((breakpoint) => columns[breakpoint]);
@@ -199,9 +226,10 @@ const prepared = await Promise.all(
 const ratioOf = (entry: { width: number; height: number }) =>
   Math.round((entry.width / entry.height) * 10000) / 10000;
 const thumbSizes = (entry: { width: number; height: number }, index: number) => {
+  if (sizes) return sizes;
   if (layout === "featured" && index === 0) return "100vw";
-  // A justified photo is about as wide as its ratio at twice the row height.
-  if (layout === "justified") return `${Math.ceil(ratioOf(entry) * 256)}px`;
+  // A justified or strip photo is about as wide as its ratio at 16rem.
+  if (layout === "justified" || layout === "strip") return `${Math.ceil(ratioOf(entry) * 256)}px`;
   return columnSizes || "100vw";
 };
 const counter = (current: number) =>
@@ -209,6 +237,14 @@ const counter = (current: number) =>
 const first = prepared[0];
 const rest = layout === "featured" ? prepared.slice(1) : prepared;
 const restOffset = layout === "featured" ? 1 : 0;
+const stripClasses = [
+  stripUntil ? `gallery-justified gallery-strip-${stripUntil}-down` : "gallery-strip",
+  stripBleed && "gallery-strip-bleed",
+  "scroll-smooth",
+  `gap-${gap}`,
+]
+  .filter(Boolean)
+  .join(" ");
 const linkData = (index: number) => ({
   href: prepared[index].href,
   "data-bs-toggle": "modal",
@@ -228,6 +264,14 @@ const linkData = (index: number) => ({
             style={`--moo-gallery-ratio: ${ratioOf(entry)}`}
           >
             <img class="d-block w-100 h-auto" src={entry.src} srcset={entry.srcset} sizes={entry.srcset ? thumbSizes(entry, index) : undefined} width={entry.width} height={entry.height} alt={entry.image.alt} loading="lazy" decoding="async" />
+          </a>
+        ))}
+      </div>
+    ) : layout === "strip" ? (
+      <div class={stripClasses} role="region" tabindex="0" aria-label={text.strip}>
+        {prepared.map((entry, index) => (
+          <a class="d-block rounded overflow-hidden" {...linkData(index)} style={`--moo-gallery-ratio: ${ratioOf(entry)}`}>
+            <img class="d-block w-100 h-100 object-fit-cover" src={entry.src} srcset={entry.srcset} sizes={entry.srcset ? thumbSizes(entry, index) : undefined} width={entry.width} height={entry.height} alt={entry.image.alt} loading="lazy" decoding="async" />
           </a>
         ))}
       </div>
@@ -291,7 +335,7 @@ const linkData = (index: number) => ({
         </div>
       </div>
       <div class="modal-body d-flex p-0 bg-body-tertiary">
-        <div class="carousel slide flex-grow-1 gallery-stage" id={`${lightboxId}-carousel`} data-bs-interval="false" data-bs-touch="true" data-gallery-stage>
+        <div class:list={["carousel slide", transition === "fade" && "carousel-fade", "flex-grow-1 gallery-stage"]} id={`${lightboxId}-carousel`} data-bs-interval="false" data-bs-touch="true" data-gallery-stage>
           <div class="carousel-inner h-100">
             {prepared.map((entry, index) => (
               <div
@@ -299,15 +343,19 @@ const linkData = (index: number) => ({
                 data-gallery-slide-title={entry.image.caption || entry.image.alt}
                 data-gallery-slide-credit={entry.image.credit || undefined}
               >
-                <div class="h-100 d-flex align-items-center justify-content-center p-3 p-sm-4">
+                <div class="h-100 d-flex align-items-center justify-content-center p-3 p-sm-4 bg-body-tertiary">
                   <img class="mw-100 mh-100 w-auto h-auto rounded-2 border shadow-sm" data-gallery-src={entry.href} data-gallery-srcset={entry.largeSrcset} sizes={entry.largeSrcset ? "(min-width: 1200px) 1140px, 100vw" : undefined} width={entry.width} height={entry.height} alt={entry.image.alt} decoding="async" />
                 </div>
               </div>
             ))}
           </div>
         </div>
+        {
+          total > 1 ? (
+            <Progress value={0} ariaLabel={text.progress} class="gallery-progress position-absolute bottom-0 start-0 z-2 w-100 rounded-0 bg-transparent d-none" />
+          ) : null
+        }
       </div>
-      {total > 1 ? <Progress value={0} ariaLabel={text.progress} class="rounded-0 d-none" /> : null}
       <div class="d-flex flex-wrap align-items-center gap-3 border-top px-3 px-sm-4 py-3">
         <div class="me-auto">
           <p class="m-0 fw-medium" data-gallery-caption>{first.image.caption || first.image.alt}</p>

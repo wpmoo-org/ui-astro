@@ -7,7 +7,7 @@ const block = (name) =>
   new URL(`../packages/astro/src/blocks/image-gallery/${name}`, import.meta.url);
 
 // SHA-256 of Moo UI Core src/js/components/image-gallery.js at ui commit
-// c919a79. The Astro copy must stay byte-identical until @wpmoo/astro pins a
+// c919a79 (unchanged at e33ed6b). The Astro copy must stay byte-identical until @wpmoo/astro pins a
 // Core release that exports @wpmoo/ui/image-gallery.js.
 const CORE_MODULE_SHA256 =
   "e10c2c9d2864e67bd5f11a672dddea33d1edc2376a1f1c74dd6f506704133e61";
@@ -29,9 +29,14 @@ test("image gallery bridge stylesheet carries the Core gallery rules", async () 
     "@media (min-width: 1400px) { .columns-xxl-1 { column-count: 1 !important; }",
     ".gallery-justified { --moo-gallery-row-height: 6rem; display: flex; flex-wrap: wrap; }",
     "@media (min-width: 768px) { .gallery-justified { --moo-gallery-row-height: 8rem; } }",
-    ".gallery-justified > * { flex: var(--moo-gallery-ratio, 1) 1 calc(var(--moo-gallery-ratio, 1) * var(--moo-gallery-row-height)); }",
+    ".gallery-justified > * { flex: var(--moo-gallery-ratio, 1) 1 calc(var(--moo-gallery-ratio, 1) * var(--moo-gallery-row-height)); aspect-ratio: var(--moo-gallery-ratio, 1); }",
     '.gallery-justified::after { flex-grow: 1e9; content: ""; }',
     ".gallery-stage { height: min(62svh, 38rem); }",
+    ".gallery-strip { display: flex; --moo-gallery-strip-height: 13rem; flex-wrap: nowrap; overflow-x: auto; scroll-snap-type: x proximity; contain: inline-size; }",
+    ".gallery-strip > * { flex: none; width: calc(var(--moo-gallery-ratio, 1) * var(--moo-gallery-strip-height)); max-width: 85%; height: var(--moo-gallery-strip-height); scroll-snap-align: start; }",
+    ".gallery-strip.gallery-strip-bleed { margin-inline: calc(-1 * var(--moo-gallery-strip-bleed, 0.75rem)); padding-inline: var(--moo-gallery-strip-bleed, 0.75rem); scroll-padding-inline: var(--moo-gallery-strip-bleed, 0.75rem); }",
+    "@media (max-width: 767.98px) { .gallery-strip-md-down { --moo-gallery-strip-height: 13rem;",
+    ".progress.gallery-progress { --bs-progress-height: var(--moo-gallery-progress-height, 0.25rem); opacity: var(--moo-gallery-progress-opacity, 0.08); }",
   ]) {
     assert.ok(css.includes(rule), rule);
   }
@@ -58,11 +63,15 @@ test("image gallery markup mirrors the Core Image Gallery recipe", async () => {
     'class="d-flex align-items-center justify-content-between gap-3 border-bottom ps-3 ps-sm-4 pe-2 py-2"',
     'class="m-0 small text-body-secondary" aria-live="polite" data-gallery-counter={text.counter}',
     'class="modal-body d-flex p-0 bg-body-tertiary"',
-    'class="carousel slide flex-grow-1 gallery-stage"',
+    '["carousel slide", transition === "fade" && "carousel-fade", "flex-grow-1 gallery-stage"]',
+    'class={stripClasses} role="region" tabindex="0" aria-label={text.strip}',
+    '`gallery-justified gallery-strip-${stripUntil}-down` : "gallery-strip"',
+    'stripBleed && "gallery-strip-bleed"',
+    'class="d-block w-100 h-100 object-fit-cover"',
     'data-bs-interval="false" data-bs-touch="true" data-gallery-stage',
-    'class="h-100 d-flex align-items-center justify-content-center p-3 p-sm-4"',
+    'class="h-100 d-flex align-items-center justify-content-center p-3 p-sm-4 bg-body-tertiary"',
     'class="mw-100 mh-100 w-auto h-auto rounded-2 border shadow-sm" data-gallery-src={entry.href}',
-    'class="rounded-0 d-none"',
+    'class="gallery-progress position-absolute bottom-0 start-0 z-2 w-100 rounded-0 bg-transparent d-none"',
     'class="d-flex flex-wrap align-items-center gap-3 border-top px-3 px-sm-4 py-3"',
     'class="m-0 fw-medium" data-gallery-caption',
     'id={`${lightboxId}-fullscreen`}',
@@ -84,6 +93,7 @@ test("image gallery labels default to English and are all overridable", async ()
   const source = await readFile(block("ImageGallery.astro"), "utf8");
   for (const [name, value] of Object.entries({
     title: "Photos",
+    strip: "Photos, scroll sideways",
     close: "Close",
     previous: "Previous",
     next: "Next",
