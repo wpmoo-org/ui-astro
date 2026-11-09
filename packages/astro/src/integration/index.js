@@ -111,7 +111,8 @@ export default function moo(input = {}) {
         commandName = command;
         // Named things in Markdown content link to their pages (first mention).
         const termLinks = normalizeTermLinks(input.termLinks, config.root);
-        if (termLinks.length) addTermLinks(config.markdown?.processor, termLinks);
+        if (termLinks.length)
+          addTermLinks(config.markdown?.processor, termLinks, { site: config.site });
         const i18n = resolveI18n(config.i18n, site);
         errorClaims = notFoundRouteClaims({ site, i18n, notFound });
         registry = localizeRegistry(baseRegistry, i18n);

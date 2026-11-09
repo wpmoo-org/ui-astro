@@ -13,6 +13,8 @@ export interface TermLink {
   href: string;
   /** The content file of the target itself, which then does not link to itself. */
   source?: URL | string;
+  /** Root-relative globs (`**`, `*`, `?`) of the documents this entry applies to, for example one language folder. */
+  include?: readonly string[];
 }
 
 export interface MooInput extends PlacementInputOptions {

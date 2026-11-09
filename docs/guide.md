@@ -269,6 +269,11 @@ moo({
       href: "/partners/leibniz-zas/",
       source: new URL("./src/content/partners/leibniz-zas.md", import.meta.url),
     },
+    {
+      terms: ["Grundschule"],
+      href: "/de/grundschule/",
+      include: ["src/content/**/de/**"],
+    },
   ],
 });
 ```
@@ -280,8 +285,14 @@ mention. Each entry lists its spellings as whole-word, case-sensitive
 longer term wins where two start at the same place. Headings, code, images,
 raw HTML and existing links are left alone, and the document named by
 `source` (a file URL or a path relative to the project root) never links to
-itself. `href` must be a site path or an https address; a term may belong to
-only one entry. The option joins the configured Markdown processor, as an
+itself. A target the document already links by hand anywhere in its Markdown,
+as a link, reference definition, bare address or raw HTML `href`, is not
+linked again; the comparison ignores the query, fragment and trailing slash,
+and reads an address on the configured `site` as its path. `include` limits an
+entry to documents whose root-relative path matches one of its globs (`**`
+spans folders, `*` and `?` stay within one), for example one language folder;
+a document without a path is then left out. `href` must be a site path or an
+https address; a term may belong to only one entry. The option joins the configured Markdown processor, as an
 mdast plugin for Sätteri (Astro's default) or a remark plugin for
 `unified()`, so it applies to content collections and Markdown pages alike;
 another processor fails with a clear error, and plain frontmatter fields stay
