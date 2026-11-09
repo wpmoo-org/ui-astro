@@ -85,6 +85,7 @@
     "./i18n": "./src/i18n/index.js",
     "./not-found": "./src/not-found/index.js",
     "./views/NotFound.astro": "./src/views/NotFound.astro",
+    "./blocks/ImageGallery.astro": "./src/blocks/image-gallery/ImageGallery.astro",
     "./blocks/LanguageSwitcher.astro": "./src/blocks/language-switcher/LanguageSwitcher.astro",
     "./blocks/ThemeToggle.astro": "./src/blocks/theme-toggle/ThemeToggle.astro",
     "./blocks/VideoDialog.astro": "./src/blocks/video-dialog/VideoDialog.astro",
@@ -111,6 +112,9 @@
     "contracts/ui-2.1.0-package.json",
     "package.json",
     "src/blocks/entry-taxonomies/EntryTaxonomies.astro",
+    "src/blocks/image-gallery/ImageGallery.astro",
+    "src/blocks/image-gallery/image-gallery.css",
+    "src/blocks/image-gallery/image-gallery.js",
     "src/blocks/language-switcher/LanguageSwitcher.astro",
     "src/blocks/language-switcher/language-switcher.js",
     "src/blocks/table-of-contents/TableOfContents.astro",
@@ -275,6 +279,8 @@
     "src/views/Single.astro"
   ],
   "private_transitives": [
+    "src/blocks/image-gallery/image-gallery.css",
+    "src/blocks/image-gallery/image-gallery.js",
     "src/blocks/language-switcher/language-switcher.js",
     "src/blocks/table-of-contents/headings.js",
     "src/blocks/theme-toggle/theme-toggle.js",

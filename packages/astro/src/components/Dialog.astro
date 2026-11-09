@@ -9,6 +9,8 @@ interface Props {
   /** Extra classes for the body, as Core's dialog_body(extra_class). */
   bodyClass?: string;
   size?: "default" | "sm" | "lg" | "xl" | "fullscreen";
+  /** Fill the screen below this breakpoint, as Core's dialog(fullscreen_down). */
+  fullscreenDown?: "" | "sm" | "md" | "lg" | "xl" | "xxl";
   centered?: boolean;
   scrollable?: boolean;
   static?: boolean;
@@ -27,6 +29,7 @@ const {
   headerClass = "",
   bodyClass = "",
   size = "default",
+  fullscreenDown = "",
   centered = false,
   scrollable = false,
   static: staticBackdrop = false,
@@ -37,15 +40,23 @@ const {
   class: className = "",
   ...rest
 } = Astro.props;
+if (!["", "sm", "md", "lg", "xl", "xxl"].includes(fullscreenDown)) {
+  throw new TypeError(`Unknown Dialog fullscreenDown breakpoint: ${fullscreenDown}`);
+}
 const dialogClasses = [
   "modal-dialog",
   size !== "default" ? `modal-${size}` : "",
+  fullscreenDown ? `modal-fullscreen-${fullscreenDown}-down` : "",
   centered ? "modal-dialog-centered" : "",
   scrollable ? "modal-dialog-scrollable" : "",
 ]
   .filter(Boolean)
   .join(" ");
 const descriptionId = description ? `${id}-description` : "";
+// A "content" slot lays out the whole dialog, as Core's dialog() caller does.
+const rawContent = Astro.slots.has("content");
+const showHeader =
+  title || description || Astro.slots.has("header") || Astro.slots.has("icon");
 ---
 
 <div
@@ -64,10 +75,9 @@ const descriptionId = description ? `${id}-description` : "";
   <div class={dialogClasses}>
     <div class="modal-content">
       {
-        title ||
-        description ||
-        Astro.slots.has("header") ||
-        Astro.slots.has("icon") ? (
+        rawContent ? (
+          <slot name="content" />
+        ) : showHeader ? (
           <div class:list={["modal-header", headerClass]}>
             {Astro.slots.has("header") ? (
               <slot name="header" />
@@ -90,9 +100,9 @@ const descriptionId = description ? `${id}-description` : "";
           </div>
         ) : null
       }
-      <div class:list={["modal-body", bodyClass]}><slot /></div>
+      {rawContent ? null : <div class:list={["modal-body", bodyClass]}><slot /></div>}
       {
-        Astro.slots.has("footer") ? (
+        !rawContent && Astro.slots.has("footer") ? (
           <div class="modal-footer">
             <slot name="footer" />
           </div>

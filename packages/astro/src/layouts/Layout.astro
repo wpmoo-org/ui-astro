@@ -550,6 +550,33 @@ const jsonLd = metadata
       document
         .querySelectorAll('[data-slot="sidebar-wrapper"]')
         .forEach((root) => MooUI.Sidebar.getOrCreateInstance(root));
+
+      // A Dialog placed inside the page content, such as an Image Gallery
+      // lightbox in a Markdown entry, would stay in the stacking context of
+      // the scrolling main element (its scroll-fade mask creates one), under
+      // Bootstrap's body-level backdrop. Move an opening dialog to the
+      // document owner, where the overlay slot places dialogs, and its
+      // backdrop with it so the owner's Bootstrap and theme rules apply.
+      document.addEventListener("show.bs.modal", (event) => {
+        const dialog = event.target;
+        if (!(dialog instanceof HTMLElement) || !dialog.classList.contains("modal")) return;
+        const owner = dialog.closest<HTMLElement>("[data-moo-document-owner]");
+        if (!owner) return;
+        if (dialog.closest("#main-content")) {
+          owner.append(dialog);
+          dialog.dataset.mooLifted = "true";
+        }
+        // Every opening creates a new backdrop, so a lifted dialog moves it
+        // each time.
+        if (dialog.dataset.mooLifted !== "true") return;
+        const backdrops = new Set(document.querySelectorAll("body > .modal-backdrop"));
+        // Bootstrap appends the backdrop right after this event returns.
+        queueMicrotask(() => {
+          const backdrop = Array.from(document.querySelectorAll<HTMLElement>("body > .modal-backdrop"))
+            .find((element) => !backdrops.has(element));
+          if (backdrop) owner.append(backdrop);
+        });
+      }, true);
     </script>
   </body>
 </html>

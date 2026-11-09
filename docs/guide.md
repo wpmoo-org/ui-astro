@@ -257,6 +257,74 @@ the dialog is shown and is unloaded when it hides, which also stops playback.
 `www.youtube-nocookie.com`. Dialog gains `bodyClass`, as Core's
 `dialog_body(extra_class)`, so the video can sit edge to edge.
 
+### Image gallery
+
+```astro
+---
+import { getEntry } from "astro:content";
+import ImageGallery from "@wpmoo/astro/blocks/ImageGallery.astro";
+
+const post = await getEntry("posts", "sports-day");
+const { gallery } = post.data; // gallery: { layout, limit, images: [{ src: image(), alt }] }
+---
+
+<ImageGallery
+  id="sports-day-photos"
+  images={gallery.images}
+  layout={gallery.layout ?? "justified"}
+  limit={gallery.limit ?? 9}
+  labels={{
+    title: "Fotos",
+    close: "Schließen",
+    previous: "Zurück",
+    next: "Weiter",
+    play: "Diashow starten",
+    pause: "Diashow anhalten",
+    progress: "Zeit bis zum nächsten Foto",
+    fullscreen: "Vollbild",
+    exitFullscreen: "Vollbild beenden",
+    counter: "{current} von {total}",
+    showAll: "Alle {total} Fotos anzeigen",
+  }}
+/>
+```
+
+The Astro side of the Core "Image Gallery" block. `images` are
+`{ src, alt, width?, height?, caption?, credit? }`: `src` is an
+`ImageMetadata` (an imported file or a content-collection `image()`), which
+`astro:assets` resizes into a thumbnail `srcset` for the layout and a large
+`srcset` for the lightbox, or a string address used as given, which then
+needs `width` and `height`. `caption` titles the photo in the lightbox
+(default `alt`) and `credit` adds a muted line under it.
+
+- `layout`: `grid` (default; equal tiles cropped to `ratio` `1x1`, `4x3` or
+  `3x2`), `justified` (rows of one height, uncropped, in reading order; the
+  last row keeps its natural size), `masonry` (uncropped columns; the
+  lightbox still follows the list order) or `featured` (the first photo
+  large, the rest as tiles).
+- `columns`: tiles or masonry columns per breakpoint, 1 to 4, for example
+  `{ xs: 2, md: 3 }` (default). `gap`: spacer 0 to 5 (default 2).
+- `limit`: thumbnails shown before a "show all" button that opens the
+  lightbox (default 9); `"all"` shows every thumbnail.
+- `labels`: every visible and accessible text; English defaults.
+
+Every thumbnail links to its large image, so the gallery works without
+JavaScript. With JavaScript the lightbox, a Dialog in the page colour mode
+that fills the screen below the `lg` breakpoint, opens at the clicked photo
+with a counter, ghost full-screen and close buttons, the caption and credit,
+Previous, Next, arrow keys and swipe, and a slideshow whose Progress bar
+times each photo. Only the current photo and its neighbours load, and none
+before the lightbox opens.
+
+`image-gallery.js` is a byte copy of the Core public module
+`@wpmoo/ui/image-gallery.js` and `image-gallery.css` carries the Core gallery
+rules (`.ratio-3x2`, `.columns-*`, `.gallery-justified`, `.gallery-stage`);
+both bridge `@wpmoo/ui@2.1.0` and go away once the pinned Core release ships
+them. Dialog gains `fullscreenDown` and a `content` slot that lays out the
+whole dialog, as Core's `dialog()` caller. The Layout moves a dialog that
+opens inside the page content, and its backdrop, to the document owner, so
+the scroll-fade mask of `main` cannot keep it under the backdrop.
+
 ### Term links
 
 ```js
