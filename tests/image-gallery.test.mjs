@@ -103,6 +103,7 @@ test("image gallery labels default to English and are all overridable", async ()
     fullscreen: "Full screen",
     exitFullscreen: "Exit full screen",
     counter: "{current} of {total}",
+    photo: "Photo {current} of {total}",
     showAll: "Show all {total} photos",
   })) {
     assert.ok(source.includes(`  ${name}: "${value}",`), name);
@@ -130,4 +131,10 @@ test("layout lifts dialogs out of the scrolling main content", async () => {
   assert.match(source, /if \(dialog\.closest\("#main-content"\)\) \{\s+owner\.append\(dialog\);/u);
   assert.match(source, /document\.querySelectorAll<HTMLElement>\("body > \.modal-backdrop"\)/u);
   assert.match(source, /if \(backdrop\) owner\.append\(backdrop\);/u);
+});
+
+test("image gallery names photos without alt text by their place", async () => {
+  const source = await readFile(block("ImageGallery.astro"), "utf8");
+  assert.match(source, /"aria-label": prepared\[index\]\.image\.alt\.trim\(\) \? undefined : photoName\(index\)/u);
+  assert.match(source, /entry\.image\.caption \|\| entry\.image\.alt \|\| photoName\(index\)/u);
 });

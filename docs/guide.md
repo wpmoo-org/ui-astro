@@ -285,6 +285,7 @@ const { gallery } = post.data; // gallery: { layout, limit, images: [{ src: imag
     fullscreen: "Vollbild",
     exitFullscreen: "Vollbild beenden",
     counter: "{current} von {total}",
+    photo: "Foto {current} von {total}",
     showAll: "Alle {total} Fotos anzeigen",
   }}
 />
@@ -296,7 +297,10 @@ The Astro side of the Core "Image Gallery" block. `images` are
 `astro:assets` resizes into a thumbnail `srcset` for the layout and a large
 `srcset` for the lightbox, or a string address used as given, which then
 needs `width` and `height`. `caption` titles the photo in the lightbox
-(default `alt`) and `credit` adds a muted line under it.
+(default `alt`) and `credit` adds a muted line under it. A photo with empty
+`alt` names its link and lightbox title by its place, through
+`labels.photo` ("Photo {current} of {total}", German "Foto {current} von
+{total}").
 
 - `layout`: `grid` (default; equal tiles cropped to `ratio` `1x1`, `4x3` or
   `3x2`), `justified` (rows of one height, uncropped, in reading order; the

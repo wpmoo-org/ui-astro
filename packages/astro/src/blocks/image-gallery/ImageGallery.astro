@@ -47,6 +47,8 @@ export interface GalleryLabels {
   exitFullscreen: string;
   /** {current} and {total} are replaced. */
   counter: string;
+  /** Name of a photo without alt text; {current} and {total} are replaced. */
+  photo: string;
   /** {total} is replaced. */
   showAll: string;
 }
@@ -84,6 +86,7 @@ const DEFAULT_LABELS: GalleryLabels = {
   fullscreen: "Full screen",
   exitFullscreen: "Exit full screen",
   counter: "{current} of {total}",
+  photo: "Photo {current} of {total}",
   showAll: "Show all {total} photos",
 };
 const BREAKPOINTS: Breakpoint[] = ["xs", "sm", "md", "lg", "xl", "xxl"];
@@ -245,7 +248,11 @@ const stripClasses = [
 ]
   .filter(Boolean)
   .join(" ");
+// A photo with empty alt text is named by its place in the album.
+const photoName = (index: number) =>
+  text.photo.replaceAll("{current}", String(index + 1)).replaceAll("{total}", String(total));
 const linkData = (index: number) => ({
+  "aria-label": prepared[index].image.alt.trim() ? undefined : photoName(index),
   href: prepared[index].href,
   "data-bs-toggle": "modal",
   "data-bs-target": `#${lightboxId}`,
@@ -340,7 +347,7 @@ const linkData = (index: number) => ({
             {prepared.map((entry, index) => (
               <div
                 class:list={["carousel-item h-100", index === 0 && "active"]}
-                data-gallery-slide-title={entry.image.caption || entry.image.alt}
+                data-gallery-slide-title={entry.image.caption || entry.image.alt || photoName(index)}
                 data-gallery-slide-credit={entry.image.credit || undefined}
               >
                 <div class="h-100 d-flex align-items-center justify-content-center p-3 p-sm-4 bg-body-tertiary">
@@ -358,7 +365,7 @@ const linkData = (index: number) => ({
       </div>
       <div class="d-flex flex-wrap align-items-center gap-3 border-top px-3 px-sm-4 py-3">
         <div class="me-auto">
-          <p class="m-0 fw-medium" data-gallery-caption>{first.image.caption || first.image.alt}</p>
+          <p class="m-0 fw-medium" data-gallery-caption>{first.image.caption || first.image.alt || photoName(0)}</p>
           <p class:list={["m-0 small text-body-secondary", !first.image.credit && "d-none"]} data-gallery-credit>{first.image.credit || ""}</p>
         </div>
         {
