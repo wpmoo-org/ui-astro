@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import re
 import unittest
 
 import test_view_structure as native
@@ -43,7 +44,10 @@ class MixedContentConsumer(unittest.TestCase):
         self.assertIn("Markdown Page body.", result.generated_html["about/index.html"])
         self.assertIn("Reusable MDX Hero", result.generated_html["enhanced/index.html"])
         self.assertIn("Reusable Astro Hero", result.generated_html["landing/index.html"])
-        self.assertIn('role="button" href="/landing"', result.generated_html["enhanced/index.html"])
+        landing_link = re.search(r'<a [^>]*href="/landing"[^>]*>', result.generated_html["enhanced/index.html"])
+        self.assertIsNotNone(landing_link)
+        self.assertIn('class="btn btn-outline-secondary"', landing_link.group(0))
+        self.assertNotIn("role=", landing_link.group(0))
         self.assertIn('datetime="2026-09-28T01:30:00.000Z"', result.generated_html["posts/enhanced-article/index.html"])
         self.assertIn("category-guides", result.generated_html["enhanced/index.html"])
         self.assertIn("tag-astro", result.generated_html["posts/enhanced-article/index.html"])

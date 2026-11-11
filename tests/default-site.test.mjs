@@ -139,7 +139,7 @@ audience: defineCollection({ loader: file(new URL("./audience.json", import.meta
     }
     await write(
       "src/content/page/en/enhanced.mdx",
-      `---\ntitle: Enhanced\nslug: enhanced\nstatus: publish\n${monolingual ? "" : "locale: en\ntranslationKey: enhanced\n"}${documentLanguage ? `options:\n  lang: ${documentLanguage}\n` : ""}taxonomies:\n  audience: [students]\n---\nimport Button from "@wpmoo/astro/components/Button.astro";\n\n<Button element="a" href={props.links.home} label="Prepared home" />\n`,
+      `---\ntitle: Enhanced\nslug: enhanced\nstatus: publish\n${monolingual ? "" : "locale: en\ntranslationKey: enhanced\n"}${documentLanguage ? `options:\n  lang: ${documentLanguage}\n` : ""}taxonomies:\n  audience: [students]\n---\nimport Button from "@wpmoo/astro/components/Button.astro";\n\n<Button element="a" href={props.links.home} label="Prepared home" />\n\n<Button element="a" href="#" dialogTarget="enhanced-dialog" label="Open details" />\n`,
     );
     await write(
       "src/content/post/en/update.md",
@@ -200,6 +200,15 @@ test("default_site_renders_optional_controls_and_missing_translations", async ()
     html["enhanced/index.html"],
     /href="\/"[^>]*>Prepared home<\/a>/,
   );
+  // A navigating anchor Button keeps the native link role; an in-page
+  // trigger is announced as a button.
+  const preparedHome = html["enhanced/index.html"].match(/<a\b[^>]*>(?=Prepared home<\/a>)/u)?.[0];
+  assert.ok(preparedHome);
+  assert.doesNotMatch(preparedHome, /\brole=/u);
+  const openDetails = html["enhanced/index.html"].match(/<a\b[^>]*>(?=Open details<\/a>)/u)?.[0];
+  assert.ok(openDetails);
+  assert.match(openDetails, /\brole="button"/u);
+  assert.match(openDetails, /data-bs-toggle="modal"/u);
   for (const name of ["enhanced/index.html", "posts/update/index.html"]) {
     assert.deepEqual(
       anchorAttributes(html[name])

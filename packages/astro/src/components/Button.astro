@@ -165,6 +165,18 @@ const pluginAttributes = tooltip
         ? { "data-bs-toggle": "offcanvas", "data-bs-target": `#${sheetTarget}` }
         : {};
 
+const anchorTriggers = Boolean(
+  popoverContent ||
+    dialogTarget ||
+    sheetTarget ||
+    dismiss ||
+    toastTarget ||
+    rest["data-bs-toggle"] ||
+    rest["data-bs-dismiss"] ||
+    rest["data-bs-slide"],
+);
+const anchorRole = anchorTriggers ? "button" : disabled ? "link" : undefined;
+
 const commonAttributes = {
   ...pluginAttributes,
   ...(dismiss ? { "data-bs-dismiss": dismiss } : {}),
@@ -195,7 +207,7 @@ const buttonAttributes = {
       {...rest}
       {...commonAttributes}
       class={resolvedClasses}
-      role="button"
+      role={anchorRole}
       href={disabled ? undefined : href}
       aria-label={ariaLabel || undefined}
       aria-controls={ariaControls || undefined}
