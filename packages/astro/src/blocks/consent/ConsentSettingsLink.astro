@@ -1,0 +1,17 @@
+---
+// Reopens the Consent card with the stored choices, for example in the footer.
+import Button from "../../components/Button.astro";
+import { consentLabels } from "./consent-config.js";
+
+interface Props {
+  target?: string;
+  label?: string;
+  locale?: string;
+  variant?: "link" | "ghost" | "outline";
+  class?: string;
+}
+const { target = "consent", locale = Astro.currentLocale ?? "en", variant = "link", class: className = "" } = Astro.props;
+const label = Astro.props.label ?? consentLabels(locale).settings;
+---
+
+<Button label={label} variant={variant} class={className} data-consent-open={target} aria-haspopup="dialog" />

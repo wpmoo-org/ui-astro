@@ -1,0 +1,106 @@
+---
+// Astro side of the Moo Core "Consent" block: the first-visit card,
+// bottom-right, with one accordion row and switch per shown category, three
+// equal answers and the legal links. The markup mirrors Core's
+// src/blocks/consent.html.jinja; behaviour comes from Core's public
+// @wpmoo/ui/consent.js module through the typed runtime facade. Place it
+// once per page in Layout's or SiteLayout's overlay slot, outside the
+// scrolling main region; reopen it with ConsentSettingsLink.
+import Accordion from "../../components/Accordion.astro";
+import Button from "../../components/Button.astro";
+import Card from "../../components/Card.astro";
+import Switch from "../../components/Switch.astro";
+import ConsentService from "./ConsentService.astro";
+import {
+  consentLabels,
+  localize,
+  runtimeConfig,
+  scriptJson,
+  shownCategories,
+  type ConsentConfig,
+  type ConsentLabels,
+} from "./consent-config.js";
+
+interface Props {
+  config: ConsentConfig;
+  /** Selects the built-in EN or DE labels and localized config text. */
+  locale?: string;
+  labels?: Partial<ConsentLabels>;
+  id?: string;
+}
+const { config, locale = Astro.currentLocale ?? "en", labels: overrides = {}, id = "consent" } = Astro.props;
+if (!/^[A-Za-z][\w-]*$/.test(id)) throw new TypeError("ConsentManager id must be a plain identifier");
+const labels = consentLabels(locale, overrides);
+const categories = shownCategories(config);
+const runtime = scriptJson(runtimeConfig(config));
+const items = categories.map((category) => ({ id: category.id, title: localize(category.label, locale), content: "" }));
+---
+
+<aside
+  id={id}
+  class="fixed-bottom row g-0 justify-content-end pe-none mh-100 overflow-auto"
+  role="dialog"
+  aria-modal="false"
+  aria-labelledby={`${id}-title`}
+  aria-describedby={`${id}-text`}
+  data-consent
+  hidden
+>
+  <div class="col-12 col-sm-9 col-md-7 col-lg-6 col-xl-5 col-xxl-4 p-3 pe-auto">
+    <Card class="shadow">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        {config.logo && <img src={config.logo.src} alt={config.logo.alt ?? ""} height={config.logo.height ?? 24} class="flex-shrink-0" />}
+        <h2 class="h6 mb-0" id={`${id}-title`} tabindex="-1">{labels.title}</h2>
+      </div>
+      <p class="small text-body-secondary" id={`${id}-text`}>{labels.text}</p>
+      {
+        items.length > 0 && (
+          <Accordion id={`${id}-categories`} items={items} alwaysOpen>
+            {categories.map((category) => (
+              <Switch
+                slot={`action-${category.id}`}
+                id={`${id}-category-${category.id}`}
+                labelledby={`${id}-categories-${category.id}-trigger`}
+                checked={category.required === true}
+                disabled={category.required === true}
+                class="flex-shrink-0 mb-0"
+              />
+            ))}
+            {categories.map((category) => (
+              <Fragment slot={`content-${category.id}`}>
+                {category.description && <p class="small mb-1">{localize(category.description, locale)}</p>}
+                {(category.services ?? []).map((service) => (
+                  <ConsentService service={service} labels={labels} locale={locale} />
+                ))}
+              </Fragment>
+            ))}
+          </Accordion>
+        )
+      }
+      <div class="w-100" slot="footer">
+        <div class="row g-2">
+          <div class="col-12 col-sm"><Button label={labels.acceptAll} variant="outline" id={`${id}-accept`} class="w-100" /></div>
+          <div class="col-12 col-sm"><Button label={labels.decline} variant="outline" id={`${id}-decline`} class="w-100" /></div>
+          <div class="col-12 col-sm"><Button label={labels.save} variant="outline" id={`${id}-save`} class="w-100" /></div>
+        </div>
+        {
+          config.links?.length ? (
+            <nav class="mt-2" aria-label={labels.links}>
+              <ul class="list-unstyled d-flex flex-wrap column-gap-3 row-gap-1 small mb-0">
+                {config.links.map((link) => (
+                  <li><a class="text-body-secondary" href={link.href}>{localize(link.label, locale)}</a></li>
+                ))}
+              </ul>
+            </nav>
+          ) : null
+        }
+      </div>
+    </Card>
+  </div>
+  <script type="application/json" data-consent-config set:html={runtime} />
+</aside>
+
+<script>
+  import { initConsent } from "../../runtime/consent.js";
+  initConsent();
+</script>

@@ -116,6 +116,7 @@ const languageItems = languageLinks.map((link) => ({
         )}
       </Header>
       <slot />
+      <slot name="overlay" slot="overlay" />
       <Footer
         slot="footer"
         parts={parts}
@@ -148,6 +149,7 @@ const languageItems = languageLinks.map((link) => ({
         )}
       </Header>
       <slot />
+      <slot name="overlay" slot="overlay" />
       <Footer
         slot="footer"
         parts={parts}

@@ -13,6 +13,11 @@ import { contentBlockSchema } from "@wpmoo/astro/placements/content";
 import ThemeToggle from "@wpmoo/astro/blocks/ThemeToggle.astro";
 import Carousel from "@wpmoo/astro/blocks/Carousel.astro";
 import ImageGallery from "@wpmoo/astro/blocks/ImageGallery.astro";
+import ConsentManager from "@wpmoo/astro/blocks/ConsentManager.astro";
+import ConsentPlaceholder from "@wpmoo/astro/blocks/ConsentPlaceholder.astro";
+import ConsentPolicy from "@wpmoo/astro/blocks/ConsentPolicy.astro";
+import ConsentSettingsLink from "@wpmoo/astro/blocks/ConsentSettingsLink.astro";
+import { revisionOf } from "@wpmoo/astro/blocks/consent-config.js";
 import VideoDialog from "@wpmoo/astro/blocks/VideoDialog.astro";
 import VideoPlay from "@wpmoo/astro/blocks/VideoPlay.astro";
 import Accordion from "@wpmoo/astro/components/Accordion.astro";
@@ -256,6 +261,11 @@ void [
   ThemeToggle,
   Carousel,
   ImageGallery,
+  ConsentManager,
+  ConsentPlaceholder,
+  ConsentPolicy,
+  ConsentSettingsLink,
+  revisionOf,
   VideoDialog,
   VideoPlay,
   getPagePaths,
@@ -366,6 +376,8 @@ void [
 <script>
   import "@wpmoo/astro/runtime/bootstrap.js";
   import MooUI from "@wpmoo/astro/runtime/moo-ui.js";
+  import { initConsent } from "@wpmoo/astro/runtime/consent.js";
+  void initConsent;
   void MooUI.Sidebar;
   const disposeSheets = MooUI.initSheets(document);
   window.addEventListener("pagehide", disposeSheets, { once: true });

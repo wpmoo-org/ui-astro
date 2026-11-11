@@ -27,6 +27,19 @@ const {
   class: className = "",
   ...rest
 } = Astro.props;
+
+// Optional per-item slots: "action-<id>" sits beside the trigger (for
+// example a Switch), "content-<id>" replaces the item's content string.
+const parts = await Promise.all(
+  items.map(async (item) => ({
+    action: Astro.slots.has(`action-${item.id}`)
+      ? await Astro.slots.render(`action-${item.id}`)
+      : "",
+    content: Astro.slots.has(`content-${item.id}`)
+      ? await Astro.slots.render(`content-${item.id}`)
+      : "",
+  })),
+);
 ---
 
 <div
@@ -35,13 +48,19 @@ const {
   id={id}
 >
   {
-    items.map((item) => {
+    items.map((item, index) => {
+      const { action, content } = parts[index];
       const panelId = `${id}-${item.id}`;
       const triggerId = `${panelId}-trigger`;
       return (
         <div class="accordion-item">
           <>
-            <h3 class="accordion-header">
+            <h3
+              class:list={[
+                "accordion-header",
+                action ? "d-flex align-items-center gap-3" : "",
+              ]}
+            >
               <button
                 class:list={[
                   "accordion-button",
@@ -61,6 +80,7 @@ const {
                   <Icon name="chevron-down" position="inline-end" />
                 </slot>
               </button>
+              {action ? <Fragment set:html={action} /> : null}
             </h3>
             <div
               id={panelId}
@@ -73,7 +93,9 @@ const {
               aria-labelledby={triggerId}
             >
               <div class="accordion-body">
-                {trustedHtml ? (
+                {content ? (
+                  <Fragment set:html={content} />
+                ) : trustedHtml ? (
                   <Fragment set:html={item.content} />
                 ) : (
                   item.content

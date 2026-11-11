@@ -1,0 +1,52 @@
+---
+// One service inside a Consent category: provider, purpose, storage and an
+// optional privacy link. Internal to the Consent blocks.
+import { localize, type ConsentLabels, type ConsentService } from "./consent-config.js";
+
+interface Props {
+  service: ConsentService;
+  labels: ConsentLabels;
+  locale?: string;
+}
+const { service, labels, locale } = Astro.props;
+const provider = localize(service.provider, locale);
+const purpose = localize(service.purpose, locale);
+---
+
+<div class="border-top pt-2 mt-2">
+  <p class="fw-medium mb-1">{localize(service.name, locale)}</p>
+  <dl class="row small mb-0">
+    {provider && <><dt class="col-4 fw-normal text-body-secondary">{labels.provider}</dt><dd class="col-8 mb-1">{provider}</dd></>}
+    {purpose && <><dt class="col-4 fw-normal text-body-secondary">{labels.purpose}</dt><dd class="col-8 mb-1">{purpose}</dd></>}
+    {
+      service.storage?.length ? (
+        <>
+          <dt class="col-4 fw-normal text-body-secondary">{labels.storage}</dt>
+          <dd class="col-8 mb-1">
+            <ul class="list-unstyled mb-0">
+              {service.storage.map((item) => (
+                <li>
+                  <code>{item.name}</code>{" "}
+                  <span class="text-body-secondary">
+                    {labels.types[item.type]}
+                    {item.lifetime ? `, ${localize(item.lifetime, locale)}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </dd>
+        </>
+      ) : null
+    }
+    {
+      service.privacyUrl && (
+        <>
+          <dt class="col-4 fw-normal text-body-secondary">{labels.privacy}</dt>
+          <dd class="col-8 mb-1">
+            <a href={service.privacyUrl} rel="noopener noreferrer" target="_blank">{provider || localize(service.name, locale)}</a>
+          </dd>
+        </>
+      )
+    }
+  </dl>
+</div>

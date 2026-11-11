@@ -88,6 +88,7 @@ const layoutProps = {
       sidebarKey="moo-site"
     >
       <slot name="head" slot="head" />
+      <slot name="overlay" slot="overlay" />
       <Sidebar
         slot="sidebar"
         {...sidebarOptions}
@@ -148,6 +149,7 @@ const layoutProps = {
   ) : (
     <Layout {...layoutProps}>
       <slot name="head" slot="head" />
+      <slot name="overlay" slot="overlay" />
       {drawer && drawerSide ? <NavigationDrawer slot="overlay" chrome={drawerChrome} side={drawerSide} /> : null}
       <Fragment slot="header-toc"><Placement plan={plan} at="aside.content" placements={selectedAside.compact} tocPresentation="compact" tocContentId={plan.contentId} tocScrollRootId="main-content" tocClass={compactTocClass} /></Fragment>
       <Fragment slot="before-header"><Placement plan={plan} at="header.before" /></Fragment>

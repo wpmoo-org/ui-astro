@@ -38,7 +38,7 @@ const fixtureLock = JSON.parse(
 const core = JSON.parse(
   await readFile(
     new URL(
-      "../packages/astro/contracts/ui-2.2.0-package.json",
+      "../packages/astro/contracts/ui-2.3.0-package.json",
       import.meta.url,
     ),
     "utf8",
@@ -82,7 +82,7 @@ test("packed native errors retain locale recovery and real error content", () =>
 });
 
 test("the independent fixture resolves every published Astro source entrypoint", () => {
-  assert.equal(validateConsumerFixture({ source: fixture, manifest }), 95);
+  assert.equal(validateConsumerFixture({ source: fixture, manifest }), 101);
   assert.throws(
     () =>
       validateConsumerFixture({
@@ -109,7 +109,7 @@ test("public fixture imports distinguish executed declarations from comments and
     );
     assert.equal(
       validateConsumerFixture({ source: withExample, manifest }),
-      95,
+      101,
     );
     const withoutDeclaration = fixture.replace(
       'import "@wpmoo/astro/styles.css";',
@@ -124,7 +124,7 @@ test("public fixture imports distinguish executed declarations from comments and
     '<!-- <script>import "@wpmoo/astro/styles.css";</script> -->';
   assert.equal(
     validateConsumerFixture({ source: `${fixture}\n${htmlExample}`, manifest }),
-    95,
+    101,
   );
   assert.throws(
     () =>

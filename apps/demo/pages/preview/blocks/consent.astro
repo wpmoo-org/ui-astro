@@ -1,0 +1,47 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import ConsentManager from "@wpmoo/astro/blocks/ConsentManager.astro";
+import ConsentPlaceholder from "@wpmoo/astro/blocks/ConsentPlaceholder.astro";
+import ConsentPolicy from "@wpmoo/astro/blocks/ConsentPolicy.astro";
+import ConsentSettingsLink from "@wpmoo/astro/blocks/ConsentSettingsLink.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoBreadcrumbs } from "../../../navigation.js";
+import { consent } from "../../../data/consent.js";
+import poster from "../../../assets/gallery/dawn-hills.webp";
+
+const { site } = getSiteContext();
+const locale = Astro.currentLocale ?? site.defaults.lang;
+---
+
+<Layout title="Consent" lang={locale}>
+  <ConsentManager slot="overlay" config={consent} locale={locale} />
+  <PageHeader
+    breadcrumbs={await getDemoBreadcrumbs("Consent", locale)}
+    title="Consent"
+    description="A first-visit consent card from one configuration, with a settings link, an embed placeholder and the cookie policy table."
+  />
+  <div class="d-grid gap-5">
+    <div class="col-12 col-md-8 col-lg-6">
+      <ConsentPlaceholder
+        id="consent-video"
+        category="external_media"
+        title="Video platform"
+        text="This video loads from Example Video Ltd., which receives your IP address."
+        privacyUrl="#video-privacy"
+        locale={locale}
+        class="ratio ratio-16x9 bg-body-secondary rounded overflow-hidden"
+      >
+        <img
+          class="object-fit-cover w-100 h-100"
+          alt="Introduction video"
+          data-consent-category="external_media"
+          data-consent-src={poster.src}
+          hidden
+        />
+      </ConsentPlaceholder>
+    </div>
+    <ConsentPolicy config={consent} locale={locale} headingLevel={2} />
+    <p><ConsentSettingsLink locale={locale} /></p>
+  </div>
+</Layout>

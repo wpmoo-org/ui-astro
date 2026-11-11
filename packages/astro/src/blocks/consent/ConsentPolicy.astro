@@ -1,0 +1,57 @@
+---
+// The Consent configuration as tables for a cookie policy page, one per
+// shown category, in the same order as the card.
+import Badge from "../../components/Badge.astro";
+import Table from "../../components/Table.astro";
+import { consentLabels, localize, shownCategories, type ConsentConfig, type ConsentLabels } from "./consent-config.js";
+
+interface Props {
+  config: ConsentConfig;
+  locale?: string;
+  labels?: Partial<ConsentLabels>;
+  headingLevel?: 2 | 3 | 4;
+}
+const { config, locale = Astro.currentLocale ?? "en", labels: overrides = {}, headingLevel = 3 } = Astro.props;
+const labels = consentLabels(locale, overrides);
+const Heading = `h${headingLevel}`;
+const escape = (value: string) =>
+  value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
+const sections = shownCategories(config).map((category) => ({
+  category,
+  rows: (category.services ?? []).map((service) => [
+    escape(localize(service.name, locale)) +
+      (service.privacyUrl
+        ? `<br><a class="small" href="${escape(service.privacyUrl)}" rel="noopener noreferrer" target="_blank">${escape(labels.privacy)}</a>`
+        : ""),
+    escape(localize(service.provider, locale)),
+    escape(localize(service.purpose, locale)),
+    (service.storage ?? [])
+      .map((item) =>
+        `<code>${escape(item.name)}</code> <span class="text-body-secondary">${escape(labels.types[item.type])}` +
+        (item.lifetime ? `, ${escape(localize(item.lifetime, locale))}` : "") + "</span>",
+      )
+      .join("<br>"),
+  ]),
+}));
+---
+
+<div class="w-100">
+  {
+    sections.map(({ category, rows }) => (
+      <section class="mb-4" data-consent-policy={category.id}>
+        <Heading>
+          {localize(category.label, locale)}{" "}
+          {category.required && <Badge label={labels.alwaysActive} variant="secondary" />}
+        </Heading>
+        {category.description && <p>{localize(category.description, locale)}</p>}
+        <Table
+          headers={[labels.service, labels.provider, labels.purpose, labels.storage]}
+          rows={rows}
+          rowHeader
+          small
+          trustedHtml
+        />
+      </section>
+    ))
+  }
+</div>

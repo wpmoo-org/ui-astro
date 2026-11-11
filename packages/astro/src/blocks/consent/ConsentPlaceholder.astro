@@ -1,0 +1,41 @@
+---
+// Stands in for an embed until its category is granted. Put the gated
+// element in the default slot with data-consent-category and data-consent-src
+// (and hidden). "Load" activates this embed once; with "Always allow" ticked
+// it grants the category for the whole site and saves.
+import Button from "../../components/Button.astro";
+import Card from "../../components/Card.astro";
+import Checkbox from "../../components/Checkbox.astro";
+import { consentLabels, type ConsentLabels } from "./consent-config.js";
+
+interface Props {
+  id: string;
+  category: string;
+  title: string;
+  text: string;
+  privacyUrl?: string;
+  locale?: string;
+  labels?: Partial<ConsentLabels>;
+  class?: string;
+}
+const { id, category, title, text, privacyUrl, locale = Astro.currentLocale ?? "en", labels: overrides = {}, class: className = "" } = Astro.props;
+const labels = consentLabels(locale, overrides);
+---
+
+<div class:list={["position-relative", className]} data-consent-embed>
+  <div class="h-100" data-consent-placeholder={category}>
+    <div class="d-flex align-items-center justify-content-center h-100 p-3">
+      <Card title={title} class="w-100 mw-100">
+        <p class="small text-body-secondary">
+          {text}
+          {privacyUrl && <> <a href={privacyUrl} rel="noopener noreferrer" target="_blank">{labels.privacy}</a></>}
+        </p>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <Button label={labels.load} variant="default" id={`${id}-load`} data-consent-grant={category} />
+          <Checkbox id={`${id}-remember`} label={labels.remember} class="mb-0" data-consent-remember />
+        </div>
+      </Card>
+    </div>
+  </div>
+  <slot />
+</div>
