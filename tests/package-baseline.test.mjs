@@ -20,7 +20,7 @@ import {
   corePackageRoot,
 } from "../scripts/project-paths.mjs";
 
-test("workspace uses the exact published Core 2.1.0 baseline", async () => {
+test("workspace uses the exact published Core 2.2.0 baseline", async () => {
   const packageJson = JSON.parse(
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
@@ -29,11 +29,11 @@ test("workspace uses the exact published Core 2.1.0 baseline", async () => {
   );
   const artifactRecord = JSON.parse(
     await readFile(
-      join(SDK_ROOT, "contracts/ui-2.1.0-package.json"),
+      join(SDK_ROOT, "contracts/ui-2.2.0-package.json"),
       "utf8",
     ),
   );
-  assert.equal(artifactRecord.version, "2.1.0");
+  assert.equal(artifactRecord.version, "2.2.0");
   assert.doesNotThrow(() => assertReleasePin({ packageJson, packageLock }));
   assert.throws(
     () =>
@@ -47,7 +47,7 @@ test("workspace uses the exact published Core 2.1.0 baseline", async () => {
         },
         packageLock,
       }),
-    /declared.*must be 2.1.0/,
+    /declared.*must be 2.2.0/,
   );
   await assertCoreArtifact({ artifactRecord });
 });
@@ -192,7 +192,7 @@ test("package retains all existing public wrappers plus the shared TOC and the e
 
 const packageJson = {
   dependencies: {
-    "@wpmoo/ui": "2.1.0",
+    "@wpmoo/ui": "2.2.0",
   },
 };
 
@@ -202,10 +202,10 @@ const packageLock = {
     "": { name: "@wpmoo/astro-workspace" },
     "packages/astro": packageJson,
     "node_modules/@wpmoo/ui": {
-      version: "2.1.0",
-      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-2.1.0.tgz",
+      version: "2.2.0",
+      resolved: "https://registry.npmjs.org/@wpmoo/ui/-/ui-2.2.0.tgz",
       integrity:
-        "sha512-z6XRz35hPusjXxbxbcpPPVdjSL+20o8gXacXy2CXlwpGbhJauG0uBLxi4v7Z/CSnWZKQV8nc/wKnCwMexNwoVg==",
+        "sha512-a19/arz6Rr5ACNszq4nLEoQMdDWmN1Vjxa9VVXMds+l68c2We+U9FZVlWFCLT+ThnHXKD1IBcT9dB15M0Hpthg==",
     },
   },
 };
@@ -356,7 +356,7 @@ test("package compatibility rejects a different package name or version", () => 
   assert.doesNotThrow(() =>
     assertPackageCompatibility({
       packageName: "@wpmoo/ui",
-      packageVersion: "2.1.0",
+      packageVersion: "2.2.0",
       packageJson,
     }),
   );
@@ -364,7 +364,7 @@ test("package compatibility rejects a different package name or version", () => 
     () =>
       assertPackageCompatibility({
         packageName: "@other/ui",
-        packageVersion: "2.1.0",
+        packageVersion: "2.2.0",
         packageJson,
       }),
     /package name/,
@@ -418,7 +418,7 @@ test("release checking rejects changed manifest and browser artifacts after lock
       await writeFile(path, `${await readFile(path, "utf8")}\n `);
       const artifactRecord = JSON.parse(
         await readFile(
-          join(SDK_ROOT, "contracts/ui-2.1.0-package.json"),
+          join(SDK_ROOT, "contracts/ui-2.2.0-package.json"),
           "utf8",
         ),
       );
@@ -449,7 +449,7 @@ test("Core resolved by the SDK cannot be shadowed by a different local artifact"
           repoRoot: root,
           artifactRecord: JSON.parse(
             readFileSync(
-              join(SDK_ROOT, "contracts/ui-2.1.0-package.json"),
+              join(SDK_ROOT, "contracts/ui-2.2.0-package.json"),
               "utf8",
             ),
           ),

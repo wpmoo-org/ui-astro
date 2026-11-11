@@ -290,7 +290,7 @@ export async function preparePackedConsumerInputs({outputPath, selected = Object
     await readFile(join(SDK_ROOT, "package.json"), "utf8"),
   );
   const core = JSON.parse(
-    await readFile(join(SDK_ROOT, "contracts/ui-2.1.0-package.json"), "utf8"),
+    await readFile(join(SDK_ROOT, "contracts/ui-2.2.0-package.json"), "utf8"),
   );
   const surface = JSON.parse(
     await readFile(

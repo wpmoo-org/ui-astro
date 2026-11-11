@@ -31,6 +31,7 @@ export declare const TableOfContents: RuntimeConstructor<TocRuntimeInstance>;
 export declare const Slider: RuntimeConstructor;
 export declare const OverlayScrollbar: RuntimeConstructor;
 export declare const PasswordRequirements: RuntimeConstructor;
+export declare const ImageGallery: RuntimeConstructor;
 
 declare const MooUI: {
   readonly loadChart: typeof loadChart;
@@ -47,5 +48,6 @@ declare const MooUI: {
   readonly Slider: typeof Slider;
   readonly OverlayScrollbar: typeof OverlayScrollbar;
   readonly PasswordRequirements: typeof PasswordRequirements;
+  readonly ImageGallery: typeof ImageGallery;
 };
 export default MooUI;

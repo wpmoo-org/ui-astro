@@ -24,7 +24,7 @@ For a short overview, see the [README](../README.md).
 - [Direct Moo Astro Starter](#direct-moo-astro-starter)
 - [Theme and plugin upgrades](#upgrade-a-theme-or-plugin)
 
-`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@2.1.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
+`@wpmoo/astro` composes Astro pages from the published `@wpmoo/ui@2.2.0` CSS, state script, and ESM components. Its package has 47 public component wrappers, a primitive Layout and a complete SiteLayout, four shared includes, three generic views, pure configuration and plugin-descriptor entrypoints, Page/Post descriptors, schemas, native queries and specialized views, and three CSS/runtime entrypoints. The demonstration routes stay in this repository and are not packed.
 
 `@wpmoo/astro` is licensed under the [MIT license](../packages/astro/LICENSE). It is the reusable foundation for independently licensed themes and extensions. The package remains marked `private` until a separate release decision. Third-party dependencies, including `@wpmoo/ui`, retain their own licenses.
 
@@ -247,9 +247,7 @@ The Astro side of the Core "Video Dialog" block: Button and Dialog markup with
 Bootstrap utilities. `VideoPlay` without `label` is the round button in a
 translucent ring; with `label` it is a compact pill for narrow screens.
 `iconClass` (default `text-primary`) colours the triangle. The ring uses the
-Core `animate-breathe` utility, which runs only for visitors who allow motion;
-it needs the Core release that adds `scss/utilities/_motion.scss`, and with
-`@wpmoo/ui@2.1.0` the ring is simply static.
+Core `animate-breathe` utility, which runs only for visitors who allow motion.
 
 `VideoDialog` keeps the address in `data-video-src`: the frame loads only when
 the dialog is shown and is unloaded when it hides, which also stops playback.
@@ -629,7 +627,7 @@ npm install /absolute/path/wpmoo-astro-0.1.0.tgz astro@7.3.8
 Use a separate application and its own committed lockfile. No demo content,
 host content config, host pages or CMS is installed with the package.
 
-The package pins `@wpmoo/ui` to `2.1.0` and Bootstrap to `5.3.8`. Chart.js is an optional peer: hosts that render `Chart` install `chart.js` (`>=4.6.1 <5`) themselves, and other hosts never load it. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
+The package pins `@wpmoo/ui` to `2.2.0` and Bootstrap to `5.3.8`. Chart.js is an optional peer: hosts that render `Chart` install `chart.js` (`>=4.6.1 <5`) themselves, and other hosts never load it. The application supplies the certified `astro@7.3.8` peer; the adapter's development checks use that same version. MDX is an explicit host opt-in and is absent from the MD-only consumer. Layout imports the canonical Moo CSS and places the published state script at the document owner and Sidebar wrapper before their visible branches render. Astro owns routes, page content, and host state.
 
 Core's auto-hiding `OverlayScrollbar` is enabled by default. Set
 `defaults: { overlayScrollbar: false }` in `defineSite` to disable that control.

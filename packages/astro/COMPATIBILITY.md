@@ -197,14 +197,28 @@ no replacement loader, private store mutation or request retry is introduced.
 
 ## Release intake and upgrade procedure
 
-The current baseline is published Core `2.1.0`, adopted on 2026-11-05.
+The current baseline is published Core `2.2.0`, adopted on 2026-11-11.
 Its registry integrity and all public exported target hashes are recorded in
-`contracts/ui-2.1.0-package.json`. Active SDK and consumer locks use this exact
-archive. The registry signature and SLSA provenance attestation verify against
-the `v2.1.0` tag at `09d1a8df6f4224e1d84735b55ea0f0ba8fae6796`; the archive
-SHA-256 is `7f2a84c1874e6e6b670bfc663a476422a955c31ae29e3cde9ba024569da5eed1`.
+`contracts/ui-2.2.0-package.json`. Active SDK and consumer locks use this exact
+archive. The registry lists a signature and an SLSA provenance attestation for
+it; the release tag `v2.2.0` is `cdb69c2c262284644b9de8766439e43068b93292`,
+and the archive SHA-256 is
+`66fbb2518d068506aac73473fae0b435b18a04b087b0e67fa3d29701bd352555`, the hash
+of the Core release rehearsal. This intake compared the archive bytes with the
+registry integrity; it did not re-verify the signature or the attestation.
 
-Core 2.1.0 preserves the 29 previous export targets and adds
+Core 2.2.0 preserves the 30 previous export targets and adds
+`image-gallery.js`. Its stylesheet differs from 2.1.0 only by additions: the
+`.ratio-3x2` and `.columns-*` utilities, the Item component, the
+`.gallery-*` rules and the `animate-breathe` utility. VideoPlay's ring now
+breathes for visitors who allow motion, as the block always declared. The
+runtime also carries the Core 2.1.1 fixes for Sidebar flyout keyboard use,
+Combobox, Context Menu, DataTable sorting, the date picker and Chart
+tooltips. The runtime facade forwards the new `ImageGallery` aggregate
+export; the SDK adds no Item wrapper in this intake.
+
+The earlier `2.1.0` record keeps its original bytes; the `2.1.0` intake notes
+follow. Core 2.1.0 preserves the 29 previous export targets and adds
 `password-requirements.js`. Core 2.0.0 externalized Chart.js as an optional
 peer, and the SDK keeps it opt-in: it declares the same optional
 `chart.js >=4.6.1 <5` peer and installs nothing. A host that renders Chart
@@ -359,7 +373,7 @@ claiming the unfinished broader host/editor matrix.
 
 ## Shared Table of Contents
 
-The SDK consumes published `@wpmoo/ui@2.1.0` with exact registry integrity and
+The SDK consumes published `@wpmoo/ui@2.2.0` with exact registry integrity and
 exported target hashes. Stable release validation rejects local development
 pins, file dependencies and changed Core bytes. The earlier private intake is
 retained in `contracts/ui-1.1.0-dev.1-package.json` as historical provenance.
