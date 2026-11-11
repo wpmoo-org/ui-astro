@@ -1,0 +1,42 @@
+---
+// The Previous, Play/Pause and Next Buttons of the Carousel block: outline
+// Buttons below the photo, or round light Buttons on the photo's corner.
+import Button from "../../components/Button.astro";
+import Icon from "../../components/internal/Icon.astro";
+
+interface Props {
+  carouselId: string;
+  innerId: string;
+  inside: boolean;
+  /** Show the Play and Pause Buttons. */
+  pauseControl: boolean;
+  dir: "ltr" | "rtl";
+  labels: { previous: string; next: string; play: string; pause: string };
+}
+
+const { carouselId, innerId, inside, pauseControl, dir, labels } = Astro.props;
+const [previousIcon, nextIcon] = dir === "rtl" ? ["chevron-right", "chevron-left"] : ["chevron-left", "chevron-right"];
+const look = inside
+  ? ({ variant: "light", size: "icon", class: "rounded-circle shadow-sm" } as const)
+  : ({ variant: "outline", size: "icon", class: "" } as const);
+const shared = { variant: look.variant, size: look.size, ariaControls: innerId };
+---
+
+<Button {...shared} class={look.class} ariaLabel={labels.previous} data-bs-target={`#${carouselId}`} data-bs-slide="prev">
+  <Icon slot="icon-start" name={previousIcon} />
+</Button>
+{
+  pauseControl ? (
+    <>
+      <Button {...shared} class={`${look.class} d-none`.trim()} ariaLabel={labels.play} data-carousel-play>
+        <Icon slot="icon-start" name="play" />
+      </Button>
+      <Button {...shared} class={look.class} ariaLabel={labels.pause} data-carousel-pause>
+        <Icon slot="icon-start" name="pause" />
+      </Button>
+    </>
+  ) : null
+}
+<Button {...shared} class={look.class} ariaLabel={labels.next} data-bs-target={`#${carouselId}`} data-bs-slide="next">
+  <Icon slot="icon-start" name={nextIcon} />
+</Button>

@@ -255,6 +255,78 @@ the dialog is shown and is unloaded when it hides, which also stops playback.
 `www.youtube-nocookie.com`. Dialog gains `bodyClass`, as Core's
 `dialog_body(extra_class)`, so the video can sit edge to edge.
 
+### Carousel
+
+```astro
+---
+import Carousel from "@wpmoo/astro/blocks/Carousel.astro";
+import pupils from "../assets/pupils.jpg";
+import garden from "../assets/garden.jpg";
+---
+
+<Carousel
+  id="campus-hero"
+  label="Schulleben"
+  slides={[
+    { image: pupils, alt: "Kinder lesen gemeinsam", caption: "Gemeinsam lernen." },
+    { image: garden, alt: "Schulgarten im Frühling", caption: "Draußen entdecken." },
+  ]}
+  labels={{ previous: "Vorheriges Bild", next: "Nächstes Bild", slide: "Bild {current} von {total}" }}
+/>
+```
+
+A slide sequence on Bootstrap's native Carousel, whose styles ship in the
+Core stylesheet. `slides` are `{ image, alt, caption?, width?, height? }`:
+`image` is an `ImageMetadata`, which `astro:assets` resizes into a `srcset`,
+or a string address used as given, which then needs `width` and `height`.
+`id` and the translated accessible `label` are required.
+
+- By default it never cycles on its own (`data-bs-ride="false"`,
+  `data-bs-interval="false"`). Visitors move with the outline Previous and
+  Next Buttons, the Bootstrap indicators on the photo's lower edge, arrow
+  keys while a control has focus, or a swipe. The block starts its Carousel
+  when the page loads, so keys and swipe work before the first click.
+- `autoplay`: milliseconds between slides (at least 1000; `0`, the default,
+  is off), for example `autoplay={6000}` beside a fixed hero text. The block
+  then shows a Pause Button between Previous and Next, which turns into
+  Play. The cycle holds while the pointer is over the carousel, stops when
+  the visitor navigates (a Button, a key, a swipe) or keyboard focus enters
+  it, until Play is pressed, and does not start for visitors who ask for
+  reduced motion. `pauseControl={false}` drops the Pause/Play Button; then
+  that navigation is the only way to stop the cycle, which falls short of
+  an explicit pause control (WCAG 2.2.2), so use it only where that trade
+  is accepted. While it cycles the live region is
+  off, so screen readers are not interrupted by each slide.
+- The caption is plain text below the photo, not over it, and changes with
+  the slide in a polite live region. Without captions the slides themselves
+  are the live region. A single slide shows no controls.
+- The first photo loads eagerly with `fetchpriority="high"`, so the block can
+  be a page hero; the others load lazily, each together with its neighbours
+  just before it comes into view.
+- `controls`: `below` (default; outline Buttons beside the caption) or
+  `inside` (round light Buttons together in the photo's lower end corner,
+  the right in a left-to-right page). `indicators`: `false` hides
+  Bootstrap's indicator bars; keep them off with `inside` on a narrow photo
+  so the two do not meet.
+- `ratio`: `16x9` (default), `21x9`, `3x2`, `4x3` or `1x1`, or the portrait
+  frames `4x5` and `3x4`, which Core has no class for and which use
+  Bootstrap's documented `--bs-aspect-ratio` on the `.ratio` frame; photos
+  are cropped to fill the frame. `transition`: `fade` (default, the same in both
+  directions) or `slide`. `sizes`: the photos' `sizes` when the block is
+  narrower than the viewport (default `100vw`). `dir`: pass the Layout's
+  `rtl` so the chevrons point the right way. `labels`: `previous`, `next` and
+  `slide` (`"Slide {current} of {total}"`, the name of each slide and its
+  indicator), `play` and `pause`; English defaults. `class`: utility classes on the carousel.
+- Bootstrap's transitions stop for visitors who ask for reduced motion, and
+  its keyboard handling follows the document direction. The indicators are
+  white over the photo in both colour modes; Core has no indicator colour
+  for a page background, so they stay on the photo.
+
+The block adds no stylesheet. The repository-only `/preview/blocks/carousel`
+example shows a two-column hero whose `4x5` portrait photo cycles on its
+own with Previous, Pause and Next in the photo's corner and no indicators, a wide carousel with captions, a German `21x9` slide sequence and a
+single slide.
+
 ### Image gallery
 
 ```astro

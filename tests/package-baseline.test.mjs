@@ -101,7 +101,11 @@ test("package retains all existing public wrappers plus the shared TOC and the e
   assert.equal(lock.name, "@wpmoo/astro-workspace");
   assert.equal(lock.packages["packages/astro"].name, declared.name);
   assert.equal(surface.package, declared.name);
-  assert.equal(Object.keys(declared.exports).length, 95);
+  assert.equal(Object.keys(declared.exports).length, 96);
+  assert.equal(
+    declared.exports["./blocks/Carousel.astro"],
+    "./src/blocks/carousel/Carousel.astro",
+  );
   assert.equal(
     declared.exports["./blocks/ImageGallery.astro"],
     "./src/blocks/image-gallery/ImageGallery.astro",

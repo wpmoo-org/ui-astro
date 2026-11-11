@@ -1,0 +1,87 @@
+---
+import type { ImageMetadata } from "astro";
+import Layout from "../../../layouts/Layout.astro";
+import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+import Badge from "@wpmoo/astro/components/Badge.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import Carousel from "@wpmoo/astro/blocks/Carousel.astro";
+import { getSiteContext } from "@wpmoo/astro/context";
+import { getDemoBreadcrumbs } from "../../../navigation.js";
+
+const { site } = getSiteContext();
+const locale = Astro.currentLocale ?? site.defaults.lang;
+// Drawn landscapes from the Moo UI catalog, resized through astro:assets.
+const files = import.meta.glob<{ default: ImageMetadata }>("../../../assets/gallery/*.webp", {
+  eager: true,
+});
+const photo = (name: string) => files[`../../../assets/gallery/${name}.webp`].default;
+const hero = [
+  { image: photo("green-valley"), alt: "A green valley under a clear sky", caption: "Learning together, from the first day to the last." },
+  { image: photo("forest-path"), alt: "A path through a sunlit forest", caption: "Every path starts with a first step." },
+  { image: photo("harbour-blue"), alt: "Boats in a blue harbour", caption: "Curious about the world, at home in our neighbourhood." },
+  { image: photo("night-sky"), alt: "Stars above a quiet ridge at night", caption: "Room for big questions." },
+];
+const portrait = hero.map(({ image, alt }) => ({ image, alt }));
+const features = [
+  { value: "3", label: "schools on one campus", tone: "success" },
+  { value: "20", label: "children per class", tone: "info" },
+  { value: "7–17 h", label: "open all day", tone: "warning" },
+];
+const plain = ["dawn-hills", "dunes", "lake-evening"].map((name) => ({
+  image: photo(name),
+  alt: name.replace("-", " "),
+}));
+---
+
+<Layout title="Carousel" lang={locale}>
+  <PageHeader
+    breadcrumbs={await getDemoBreadcrumbs("Carousel", locale)}
+    title="Carousel"
+    description="A slide sequence on Bootstrap's native Carousel, manual or with autoplay and a Pause Button."
+  />
+  <div class="d-grid gap-5">
+    <section class="row g-4 g-lg-5 align-items-center" aria-labelledby="hero-title">
+      <div class="col-lg-7 d-grid gap-4">
+        <div><Badge label="Open day on Saturday" variant="success" pill /></div>
+        <h2 class="display-4 fw-bold m-0" id="hero-title">
+          A school day full of <span class="text-success-emphasis">discoveries</span>
+        </h2>
+        <p class="lead text-body-secondary m-0">
+          A hero composed from Bootstrap utilities and Moo components: the text and actions stay fixed while the
+          portrait photo on the right changes on its own.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <Button label="Visit us" size="lg" href="#hero-title" />
+          <Button label="Our schools" size="lg" variant="outline" href="#hero-title" />
+        </div>
+        <ul class="row row-cols-1 row-cols-sm-3 g-3 list-unstyled mb-0">
+          {features.map((feature) => (
+            <li class="col">
+              <div class={`h-100 rounded-4 p-4 bg-${feature.tone}-subtle text-${feature.tone}-emphasis`}>
+                <p class="m-0 display-6 fw-bold">{feature.value}</p>
+                <p class="m-0 fw-medium">{feature.label}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="col-lg-5 position-relative">
+        <Carousel id="carousel-portrait" label="Campus photos" slides={portrait} ratio="4x5" autoplay={6000} controls="inside" indicators={false} sizes="(min-width: 992px) 40vw, 100vw" />
+        <div class="position-absolute top-0 start-0 z-3 m-3 rounded-3 bg-body shadow px-3 py-2">
+          <p class="m-0 small text-body-secondary">Next open day</p>
+          <p class="m-0 fw-semibold">Saturday, 10 to 14 h</p>
+        </div>
+      </div>
+    </section>
+    <Carousel id="carousel-hero" label="Campus life" slides={hero} />
+    <Carousel
+      id="carousel-de"
+      label="Landschaften"
+      slides={plain}
+      ratio="21x9"
+      transition="slide"
+      labels={{ previous: "Vorheriges Bild", next: "Nächstes Bild", slide: "Bild {current} von {total}" }}
+    />
+    <Carousel id="carousel-single" label="One photo" slides={[{ ...hero[0], caption: "A single slide shows no controls." }]} ratio="3x2" class="col-md-6" />
+  </div>
+</Layout>

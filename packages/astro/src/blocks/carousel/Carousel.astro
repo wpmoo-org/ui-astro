@@ -1,0 +1,272 @@
+---
+// A slide sequence of photos with an optional caption under each one, built
+// on Bootstrap's native Carousel, whose styles ship in the Moo Core
+// stylesheet. Visitors move with the Previous and Next Buttons, the
+// indicators on the photo's lower edge, arrow keys or a swipe. By default it
+// never cycles on its own; with `autoplay` it does, with an optional Pause
+// Button, and it holds or stops for hover, navigation, keyboard focus and
+// reduced motion. Captions sit below the photo, not over it. The first
+// photo loads eagerly so the block can serve as a page hero; the others
+// load lazily, each just before it comes into view.
+//
+// Local images (ImageMetadata, including content-collection image()) are
+// resized through astro:assets into a srcset. A string image is used as
+// given and needs its width and height.
+import type { ImageMetadata } from "astro";
+import { getImage } from "astro:assets";
+import CarouselControls from "./CarouselControls.astro";
+
+export interface CarouselSlide {
+  image: ImageMetadata | string;
+  alt: string;
+  /** Plain text shown below the photo while this slide is current. */
+  caption?: string;
+  /** Required for a string image. */
+  width?: number;
+  height?: number;
+}
+
+export interface CarouselLabels {
+  previous: string;
+  next: string;
+  /** Name of each slide and its indicator; {current} and {total} are replaced. */
+  slide: string;
+  play: string;
+  pause: string;
+}
+
+interface Props {
+  id: string;
+  /** Accessible name of the whole carousel, such as "Campus life". */
+  label: string;
+  slides: CarouselSlide[];
+  /** Shape of the photo frame; photos are cropped to fill it. 4x5 and 3x4
+   *  are portrait frames, through Bootstrap's --bs-aspect-ratio. */
+  ratio?: "16x9" | "21x9" | "3x2" | "4x3" | "1x1" | "4x5" | "3x4";
+  /** Milliseconds between slides when it cycles on its own (at least 1000);
+   *  0, the default, turns autoplay off. */
+  autoplay?: number;
+  /** Where Previous, Play/Pause and Next sit: outline Buttons below the
+   *  photo (default) or round Buttons in the photo's lower end corner. */
+  controls?: "below" | "inside";
+  /** With autoplay, the Pause/Play Button between Previous and Next.
+   *  Without it the cycle stops for good once the visitor navigates. */
+  pauseControl?: boolean;
+  /** Bootstrap's slide indicators on the photo's lower edge. */
+  indicators?: boolean;
+  /** How slides change: a cross-fade (default) or a sideways slide. */
+  transition?: "fade" | "slide";
+  /** The Layout's direction, so the Previous and Next chevrons point the
+   *  right way. */
+  dir?: "ltr" | "rtl";
+  /** The photos' sizes attribute when the block is narrower than the
+   *  viewport, for example "(min-width: 1200px) 1140px, 100vw". */
+  sizes?: string;
+  labels?: Partial<CarouselLabels>;
+  class?: string;
+}
+
+const DEFAULT_LABELS: CarouselLabels = {
+  previous: "Previous slide",
+  next: "Next slide",
+  slide: "Slide {current} of {total}",
+  play: "Play slideshow",
+  pause: "Pause slideshow",
+};
+const RATIOS = ["16x9", "21x9", "3x2", "4x3", "1x1", "4x5", "3x4"];
+// Bootstrap's documented custom ratio for the portrait frames Core has no
+// class for.
+const CUSTOM_RATIOS: Record<string, string> = { "4x5": "125%", "3x4": "133.3333%" };
+const WIDTHS = [640, 960, 1280, 1600, 1920, 2560];
+const plain = (value: unknown) =>
+  typeof value === "string" && value.trim().length > 0 && !/[\x00-\x1f\x7f]/u.test(value);
+
+const {
+  id,
+  label,
+  slides,
+  ratio = "16x9",
+  autoplay = 0,
+  controls = "below",
+  indicators = true,
+  pauseControl = true,
+  transition = "fade",
+  dir = "ltr",
+  sizes = "100vw",
+  labels = {},
+  class: className = "",
+} = Astro.props;
+
+if (typeof id !== "string" || !/^[A-Za-z][\w-]*$/u.test(id)) {
+  throw new TypeError("Carousel id must be a plain element id");
+}
+if (!plain(label)) {
+  throw new TypeError("Carousel requires a plain-text accessible label");
+}
+if (!Array.isArray(slides) || slides.length === 0) {
+  throw new TypeError("Carousel requires at least one slide");
+}
+if (!RATIOS.includes(ratio)) {
+  throw new TypeError(`Unknown Carousel ratio: ${ratio}`);
+}
+if (autoplay !== 0 && !(Number.isInteger(autoplay) && autoplay >= 1000)) {
+  throw new TypeError("Carousel autoplay must be 0 or at least 1000 milliseconds");
+}
+if (!["below", "inside"].includes(controls)) {
+  throw new TypeError("Carousel controls must be below or inside");
+}
+if (typeof pauseControl !== "boolean") {
+  throw new TypeError("Carousel pauseControl must be true or false");
+}
+if (typeof indicators !== "boolean") {
+  throw new TypeError("Carousel indicators must be true or false");
+}
+if (!["fade", "slide"].includes(transition)) {
+  throw new TypeError("Carousel transition must be fade or slide");
+}
+if (!["ltr", "rtl"].includes(dir)) {
+  throw new TypeError("Carousel dir must be ltr or rtl");
+}
+if (!plain(sizes)) {
+  throw new TypeError("Carousel sizes must be plain text");
+}
+const text: CarouselLabels = { ...DEFAULT_LABELS, ...labels };
+for (const [name, value] of Object.entries(text)) {
+  if (!plain(value)) throw new TypeError(`Carousel label ${name} must be plain text`);
+}
+
+const total = slides.length;
+const slideName = (index: number) =>
+  text.slide.replaceAll("{current}", String(index + 1)).replaceAll("{total}", String(total));
+const within = (width: number) => [
+  ...WIDTHS.filter((candidate) => candidate < width),
+  Math.min(width, WIDTHS[WIDTHS.length - 1]),
+];
+
+const prepared = await Promise.all(
+  slides.map(async (slide) => {
+    if (!slide || typeof slide.alt !== "string" || /[\x00-\x1f\x7f]/u.test(slide.alt)) {
+      throw new TypeError("Carousel slides need plain alt text");
+    }
+    if (slide.caption !== undefined && slide.caption !== "" && !plain(slide.caption)) {
+      throw new TypeError("Carousel slide caption must be plain text");
+    }
+    if (typeof slide.image === "string") {
+      if (!slide.image.trim() || !(Number(slide.width) > 0) || !(Number(slide.height) > 0)) {
+        throw new TypeError("Carousel string images need width and height");
+      }
+      return { slide, src: slide.image, width: Number(slide.width), height: Number(slide.height) };
+    }
+    const { width, height } = slide.image;
+    const widths = within(width);
+    const image = await getImage({ src: slide.image, width: Math.min(width, 1600), widths });
+    return {
+      slide,
+      src: image.src,
+      srcset: image.srcSet.attribute || undefined,
+      width,
+      height,
+    };
+  }),
+);
+
+const innerId = `${id}-slides`;
+const hasCaptions = prepared.some((entry) => entry.slide.caption);
+const cycles = autoplay > 0 && total > 1;
+// The live region is off while the carousel cycles; the script turns it on
+// when it stops.
+const live = cycles ? "off" : "polite";
+const frame = CUSTOM_RATIOS[ratio]
+  ? { class: "ratio", style: `--bs-aspect-ratio: ${CUSTOM_RATIOS[ratio]}` }
+  : { class: `ratio ratio-${ratio}` };
+const inside = controls === "inside";
+// The lower end corner: right in a left-to-right page, left in a right-to-left one.
+const corner = dir === "rtl" ? "start-0" : "end-0";
+const controlProps = { carouselId: id, innerId, pauseControl: cycles && pauseControl, dir, labels: text };
+---
+
+<section
+  class:list={["carousel slide", transition === "fade" && "carousel-fade", className]}
+  id={id}
+  aria-roledescription="carousel"
+  aria-label={label}
+  data-bs-ride="false"
+  data-bs-interval="false"
+  data-moo-carousel-autoplay={cycles ? String(autoplay) : undefined}
+  data-bs-touch="true"
+  data-bs-keyboard="true"
+  data-moo-carousel
+>
+  <div class="position-relative">
+    <div class="carousel-inner rounded overflow-hidden bg-body-tertiary" id={innerId} aria-live={hasCaptions ? undefined : live} data-carousel-live={hasCaptions ? undefined : ""}>
+      {
+        prepared.map((entry, index) => (
+          <div class:list={["carousel-item", index === 0 && "active"]} role="group" aria-roledescription="slide" aria-label={slideName(index)}>
+            <div class={frame.class} style={frame.style}>
+              <img
+                class="object-fit-cover"
+                src={entry.src}
+                srcset={entry.srcset}
+                sizes={entry.srcset ? sizes : undefined}
+                width={entry.width}
+                height={entry.height}
+                alt={entry.slide.alt}
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchpriority={index === 0 ? "high" : undefined}
+                decoding="async"
+              />
+            </div>
+          </div>
+        ))
+      }
+    </div>
+    {
+      total > 1 && inside ? (
+        <div class={`position-absolute bottom-0 ${corner} z-2 d-flex gap-2 m-3`}>
+          <CarouselControls {...controlProps} inside />
+        </div>
+      ) : null
+    }
+    {
+      total > 1 && indicators ? (
+        <div class="carousel-indicators">
+          {prepared.map((_, index) => (
+            <button
+              type="button"
+              class:list={["bg-white", index === 0 && "active"]}
+              data-bs-target={`#${id}`}
+              data-bs-slide-to={String(index)}
+              aria-label={slideName(index)}
+              aria-controls={innerId}
+              aria-current={index === 0 ? "true" : undefined}
+            />
+          ))}
+        </div>
+      ) : null
+    }
+  </div>
+  {
+    hasCaptions || (total > 1 && !inside) ? (
+      <div class="d-flex align-items-start gap-3 mt-3">
+        <div class="flex-grow-1" aria-live={hasCaptions ? live : undefined} data-carousel-live={hasCaptions ? "" : undefined}>
+          {prepared.map((entry, index) => (
+            <p class:list={["m-0 fs-5 fw-medium", index !== 0 && "d-none"]} data-carousel-caption>
+              {entry.slide.caption || ""}
+            </p>
+          ))}
+        </div>
+        {total > 1 && !inside ? (
+          <div class="d-flex flex-shrink-0 gap-2">
+            <CarouselControls {...controlProps} inside={false} />
+          </div>
+        ) : null}
+      </div>
+    ) : null
+  }
+</section>
+
+<script>
+  import { bootstrap } from "../../runtime/bootstrap.js";
+  import { initCarousels } from "./carousel.js";
+  initCarousels(bootstrap.Carousel);
+</script>
