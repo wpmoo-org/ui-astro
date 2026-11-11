@@ -331,12 +331,13 @@ line runs along the stage's bottom edge (`--moo-gallery-progress-height`,
 `--moo-gallery-progress-opacity`). Only the current photo and its neighbours load, and none
 before the lightbox opens.
 
-`image-gallery.js` is a byte copy of the Core public module
-`@wpmoo/ui/image-gallery.js` and `image-gallery.css` carries the Core gallery
-rules at ui `bba43ec` (`.ratio-3x2`, `.columns-*`, `.gallery-justified`,
-`.gallery-stage`, `.gallery-strip*`, `.gallery-progress`);
-both bridge `@wpmoo/ui@2.1.0` and go away once the pinned Core release ships
-them. Dialog gains `fullscreenDown` and a `content` slot that lays out the
+The lightbox behaviour is the Core public module
+`@wpmoo/ui/image-gallery.js`, imported through a typed re-export because
+Core ships no type declarations, and the gallery rules (`.ratio-3x2`,
+`.columns-*`, `.gallery-justified`, `.gallery-stage`, `.gallery-strip*`,
+`.gallery-progress`) come from the Core stylesheet; the SDK keeps no copy
+of either. Core scopes the `.gallery-*` rules to the `.moo-ui` document
+owner, which `Layout` and `SiteLayout` provide. Dialog gains `fullscreenDown` and a `content` slot that lays out the
 whole dialog, as Core's `dialog()` caller. The Layout moves a dialog that
 opens inside the page content, and its backdrop, to the document owner, so
 the scroll-fade mask of `main` cannot keep it under the backdrop.

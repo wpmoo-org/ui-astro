@@ -1,27 +1,36 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const block = (name) =>
   new URL(`../packages/astro/src/blocks/image-gallery/${name}`, import.meta.url);
 
-// SHA-256 of Moo UI Core src/js/components/image-gallery.js at ui commit
-// c919a79 (unchanged at e33ed6b). The Astro copy must stay byte-identical until @wpmoo/astro pins a
-// Core release that exports @wpmoo/ui/image-gallery.js.
-const CORE_MODULE_SHA256 =
-  "e10c2c9d2864e67bd5f11a672dddea33d1edc2376a1f1c74dd6f506704133e61";
-
-test("image gallery runtime is a byte copy of the Core module", async () => {
-  const source = await readFile(block("image-gallery.js"));
-  assert.equal(createHash("sha256").update(source).digest("hex"), CORE_MODULE_SHA256);
-  const module = await import(block("image-gallery.js"));
-  assert.equal(typeof module.default.getOrCreateInstance, "function");
-  assert.equal(typeof module.initImageGalleries, "function");
+test("image gallery runtime is the Core public module", async () => {
+  const component = await readFile(block("ImageGallery.astro"), "utf8");
+  assert.match(
+    component,
+    /^  import \{ initImageGalleries \} from "\.\.\/\.\.\/runtime\/image-gallery\.js";$/mu,
+  );
+  const facadeUrl = new URL(
+    "../packages/astro/src/runtime/image-gallery.js",
+    import.meta.url,
+  );
+  assert.equal(
+    (await readFile(facadeUrl, "utf8")).trim(),
+    'export { default, initImageGalleries } from "@wpmoo/ui/image-gallery.js";',
+  );
+  const published = await import("@wpmoo/ui/image-gallery.js");
+  const facade = await import(facadeUrl);
+  assert.equal(facade.default, published.default);
+  assert.equal(facade.initImageGalleries, published.initImageGalleries);
+  assert.equal(typeof facade.default.getOrCreateInstance, "function");
+  assert.equal(facade.default.getInstance(null), null);
 });
 
-test("image gallery bridge stylesheet carries the Core gallery rules", async () => {
-  const css = (await readFile(block("image-gallery.css"), "utf8")).replace(/\s+/gu, " ");
+test("image gallery rules come from the Core stylesheet", async () => {
+  const css = (
+    await readFile(new URL(import.meta.resolve("@wpmoo/ui/moo-ui.css")), "utf8")
+  ).replace(/\s+/gu, " ");
   for (const rule of [
     ".ratio-3x2 { --bs-aspect-ratio: calc(2 / 3 * 100%); }",
     ".columns-2 { column-count: 2 !important; }",
@@ -36,12 +45,13 @@ test("image gallery bridge stylesheet carries the Core gallery rules", async () 
     ".gallery-strip > * { flex: none; width: calc(var(--moo-gallery-ratio, 1) * var(--moo-gallery-strip-height)); max-width: 85%; height: var(--moo-gallery-strip-height); scroll-snap-align: start; }",
     ".gallery-strip.gallery-strip-bleed { margin-inline: calc(-1 * var(--moo-gallery-strip-bleed, 0.75rem)); padding-inline: var(--moo-gallery-strip-bleed, 0.75rem); scroll-padding-inline: var(--moo-gallery-strip-bleed, 0.75rem); }",
     "@media (max-width: 767.98px) { .gallery-strip-md-down { --moo-gallery-strip-height: 13rem;",
-    ".progress.gallery-progress { --bs-progress-height: var(--moo-gallery-progress-height, 0.25rem); opacity: var(--moo-gallery-progress-opacity, 0.08); }",
+    ".gallery-progress { --bs-progress-height: var(--moo-gallery-progress-height, 0.25rem); opacity: var(--moo-gallery-progress-opacity, 0.08); }",
   ]) {
     assert.ok(css.includes(rule), rule);
   }
+  // The SDK keeps no copy of the Core gallery styles or runtime.
   const component = await readFile(block("ImageGallery.astro"), "utf8");
-  assert.match(component, /^import "\.\/image-gallery\.css";$/mu);
+  assert.doesNotMatch(component, /["']\.\/image-gallery\.(?:css|js)["']/u);
 });
 
 test("image gallery markup mirrors the Core Image Gallery recipe", async () => {

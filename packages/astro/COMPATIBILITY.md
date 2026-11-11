@@ -210,7 +210,14 @@ registry integrity; it did not re-verify the signature or the attestation.
 Core 2.2.0 preserves the 30 previous export targets and adds
 `image-gallery.js`. Its stylesheet differs from 2.1.0 only by additions: the
 `.ratio-3x2` and `.columns-*` utilities, the Item component, the
-`.gallery-*` rules and the `animate-breathe` utility. VideoPlay's ring now
+`.gallery-*` rules and the `animate-breathe` utility. ImageGallery now imports
+`@wpmoo/ui/image-gallery.js` and takes its rules from the Core stylesheet; the
+SDK's bridge copies `image-gallery.js` and `image-gallery.css` are removed.
+The Core module is the built form of the source the copy mirrored. Core keeps
+the `.gallery-*` rules inside its `.moo-ui` scope, where the bridge declared
+them globally, and names the slideshow line `.gallery-progress` after the
+Progress rule instead of `.progress.gallery-progress`; a gallery under
+`Layout` or `SiteLayout` computes the same values. VideoPlay's ring now
 breathes for visitors who allow motion, as the block always declared. The
 runtime also carries the Core 2.1.1 fixes for Sidebar flyout keyboard use,
 Combobox, Context Menu, DataTable sorting, the date picker and Chart

@@ -1,10 +1,11 @@
 ---
 // Astro side of the Moo Core "Image Gallery" block: photo thumbnails as a
 // grid, justified rows, masonry columns, a featured layout or a sideways
-// strip, and one
-// lightbox Dialog with a Bootstrap Carousel. The markup mirrors Core's
-// src/blocks/image_gallery.html.jinja; image-gallery.js is a byte copy of
-// Core's public module until the pinned @wpmoo/ui ships it.
+// strip, and one lightbox Dialog with a Bootstrap Carousel. The markup
+// mirrors Core's src/blocks/image_gallery.html.jinja; the styles come from
+// Core's stylesheet and the lightbox behaviour from Core's public
+// @wpmoo/ui/image-gallery.js module, through its typed re-export in
+// runtime/image-gallery.js.
 //
 // Local images (ImageMetadata, including content-collection image()) are
 // resized through astro:assets: thumbnails get a srcset for their layout,
@@ -18,7 +19,6 @@ import Button from "../../components/Button.astro";
 import Dialog from "../../components/Dialog.astro";
 import Progress from "../../components/Progress.astro";
 import Icon from "../../components/internal/Icon.astro";
-import "./image-gallery.css";
 
 type Breakpoint = "xs" | "sm" | "md" | "lg" | "xl" | "xxl";
 
@@ -392,6 +392,6 @@ const linkData = (index: number) => ({
 </div>
 
 <script>
-  import { initImageGalleries } from "./image-gallery.js";
+  import { initImageGalleries } from "../../runtime/image-gallery.js";
   initImageGalleries();
 </script>
