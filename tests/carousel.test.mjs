@@ -168,6 +168,8 @@ test("carousel markup is Bootstrap's native Carousel with accessible slides", as
     'class="d-flex align-items-start gap-3 mt-3"',
     '["m-0 fs-5 fw-medium", index !== 0 && "d-none"]',
     "pauseControl: cycles && pauseControl",
+    'size: controlSize',
+    '["default", "lg"].includes(controlSize)',
     'initCarousels(bootstrap.Carousel);',
   ]) {
     assert.ok(component.includes(fragment), fragment);
@@ -182,8 +184,10 @@ test("carousel controls are Moo Buttons that follow the direction", async () => 
   const controls = await source("CarouselControls.astro");
   for (const fragment of [
     'dir === "rtl" ? ["chevron-right", "chevron-left"] : ["chevron-left", "chevron-right"]',
-    '{ variant: "light", size: "icon", class: "rounded-circle shadow-sm" }',
-    '{ variant: "outline", size: "icon", class: "" }',
+    '{ variant: "light", class: "rounded-circle shadow-sm" }',
+    '{ variant: "outline", class: "" }',
+    'const iconSize = size === "lg" ? "icon-lg" : "icon";',
+    "const shared = { variant: look.variant, size: iconSize, ariaControls: innerId };",
     'ariaLabel={labels.previous} data-bs-target={`#${carouselId}`} data-bs-slide="prev"',
     'ariaLabel={labels.next} data-bs-target={`#${carouselId}`} data-bs-slide="next"',
     "ariaLabel={labels.play} data-carousel-play",

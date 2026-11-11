@@ -49,6 +49,9 @@ interface Props {
   /** Where Previous, Play/Pause and Next sit: outline Buttons below the
    *  photo (default) or round Buttons in the photo's lower end corner. */
   controls?: "below" | "inside";
+  /** Size of those Buttons: Moo's icon Button (default) or the large one,
+   *  a bigger touch target on a photo. */
+  controlSize?: "default" | "lg";
   /** With autoplay, the Pause/Play Button between Previous and Next.
    *  Without it the cycle stops for good once the visitor navigates. */
   pauseControl?: boolean;
@@ -88,6 +91,7 @@ const {
   ratio = "16x9",
   autoplay = 0,
   controls = "below",
+  controlSize = "default",
   indicators = true,
   pauseControl = true,
   transition = "fade",
@@ -114,6 +118,9 @@ if (autoplay !== 0 && !(Number.isInteger(autoplay) && autoplay >= 1000)) {
 }
 if (!["below", "inside"].includes(controls)) {
   throw new TypeError("Carousel controls must be below or inside");
+}
+if (!["default", "lg"].includes(controlSize)) {
+  throw new TypeError("Carousel controlSize must be default or lg");
 }
 if (typeof pauseControl !== "boolean") {
   throw new TypeError("Carousel pauseControl must be true or false");
@@ -182,7 +189,7 @@ const frame = CUSTOM_RATIOS[ratio]
 const inside = controls === "inside";
 // The lower end corner: right in a left-to-right page, left in a right-to-left one.
 const corner = dir === "rtl" ? "start-0" : "end-0";
-const controlProps = { carouselId: id, innerId, pauseControl: cycles && pauseControl, dir, labels: text };
+const controlProps = { carouselId: id, innerId, pauseControl: cycles && pauseControl, dir, size: controlSize, labels: text };
 ---
 
 <section

@@ -11,15 +11,18 @@ interface Props {
   /** Show the Play and Pause Buttons. */
   pauseControl: boolean;
   dir: "ltr" | "rtl";
+  /** Moo's icon Button or its large size. */
+  size: "default" | "lg";
   labels: { previous: string; next: string; play: string; pause: string };
 }
 
-const { carouselId, innerId, inside, pauseControl, dir, labels } = Astro.props;
+const { carouselId, innerId, inside, pauseControl, dir, size, labels } = Astro.props;
 const [previousIcon, nextIcon] = dir === "rtl" ? ["chevron-right", "chevron-left"] : ["chevron-left", "chevron-right"];
 const look = inside
-  ? ({ variant: "light", size: "icon", class: "rounded-circle shadow-sm" } as const)
-  : ({ variant: "outline", size: "icon", class: "" } as const);
-const shared = { variant: look.variant, size: look.size, ariaControls: innerId };
+  ? ({ variant: "light", class: "rounded-circle shadow-sm" } as const)
+  : ({ variant: "outline", class: "" } as const);
+const iconSize = size === "lg" ? "icon-lg" : "icon";
+const shared = { variant: look.variant, size: iconSize, ariaControls: innerId };
 ---
 
 <Button {...shared} class={look.class} ariaLabel={labels.previous} data-bs-target={`#${carouselId}`} data-bs-slide="prev">

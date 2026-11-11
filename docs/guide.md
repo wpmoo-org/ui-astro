@@ -308,6 +308,8 @@ or a string address used as given, which then needs `width` and `height`.
   the right in a left-to-right page). `indicators`: `false` hides
   Bootstrap's indicator bars; keep them off with `inside` on a narrow photo
   so the two do not meet.
+- `controlSize`: `default` (Moo's icon Button) or `lg` (its large icon
+  size), a bigger touch target, for example on a phone hero.
 - `ratio`: `16x9` (default), `21x9`, `3x2`, `4x3` or `1x1`, or the portrait
   frames `4x5` and `3x4`, which Core has no class for and which use
   Bootstrap's documented `--bs-aspect-ratio` on the `.ratio` frame; photos
