@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "@wpmoo/astro": "0.1.0",
-    "astro": "7.3.8",
+    "astro": "7.4.7",
     "chart.js": "4.6.1"
   },
   "devDependencies": {
-    "@astrojs/mdx": "8.0.3"
+    "@astrojs/mdx": "8.1.3"
   }
 }
