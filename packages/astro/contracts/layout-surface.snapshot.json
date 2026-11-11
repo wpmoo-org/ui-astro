@@ -2,11 +2,11 @@
   "schema_version": 1,
   "upstream": {
     "package": "@wpmoo/ui",
-    "version": "2.0.0"
+    "version": "2.2.0"
   },
   "source": {
     "repository": "projects/ui/html",
-    "commit": "8b0702f39da4584606474c85e620a4f7541f6f4a",
+    "commit": "f1561d9ffd61e39d6f424693d42d08acfaa465b0",
     "files": {
       "src/registry/layouts.json": "f7121942a264f2fa1367d76ed3da5e718cb71ed29d6e7b3b58fbbce67b0521f1",
       "src/layouts/app.html.jinja": "f8d9295eca25efec89230413efff17625a4ca6b4c597ba2c501c967613351411",
