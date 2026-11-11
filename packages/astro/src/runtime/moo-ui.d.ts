@@ -32,6 +32,7 @@ export declare const Slider: RuntimeConstructor;
 export declare const OverlayScrollbar: RuntimeConstructor;
 export declare const PasswordRequirements: RuntimeConstructor;
 export declare const ImageGallery: RuntimeConstructor;
+export declare const ConsentManager: RuntimeConstructor;
 
 declare const MooUI: {
   readonly loadChart: typeof loadChart;
@@ -49,5 +50,6 @@ declare const MooUI: {
   readonly OverlayScrollbar: typeof OverlayScrollbar;
   readonly PasswordRequirements: typeof PasswordRequirements;
   readonly ImageGallery: typeof ImageGallery;
+  readonly ConsentManager: typeof ConsentManager;
 };
 export default MooUI;

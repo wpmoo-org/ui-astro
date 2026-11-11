@@ -25,6 +25,7 @@
     "contracts/ui-1.5.0-package.json",
     "contracts/ui-2.1.0-package.json",
     "contracts/ui-2.2.0-package.json",
+    "contracts/ui-2.3.0-package.json",
     "src/blocks/carousel/Carousel.astro",
     "src/blocks/carousel/CarouselControls.astro",
     "src/blocks/carousel/carousel.js",
@@ -292,7 +293,7 @@
     "./components/TableOfContents.astro": "./src/components/TableOfContents.astro"
   },
   "dependencies": {
-    "@wpmoo/ui": "2.2.0",
+    "@wpmoo/ui": "2.3.0",
     "bootstrap": "5.3.8"
   },
   "peerDependencies": {

@@ -6,6 +6,7 @@ import * as facade from "../packages/astro/src/runtime/moo-ui.js";
 test("the facade forwards the identified Core exports without a synchronous Chart", () => {
   const names = [
     "Combobox",
+    "ConsentManager",
     "ContextMenu",
     "DataTable",
     "Datepicker",
