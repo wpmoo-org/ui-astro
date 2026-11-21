@@ -1,5 +1,7 @@
 ---
 import "../styles.css";
+import "../theme/site-theme.css";
+import { typography } from "../theme/active.js";
 import stateSource from "@wpmoo/ui/state.js?raw";
 import Button from "../components/Button.astro";
 import Icon from "../components/internal/Icon.astro";
@@ -230,6 +232,7 @@ const jsonLd = metadata
       class:list={["moo-ui", pageClasses]}
       data-bs-theme={theme}
       data-moo-document-owner="true"
+      data-moo-typography={typography === "website" ? "website" : undefined}
       data-moo-overlay-scrollbar={overlayScrollbar ? "true" : undefined}
     >
       <script is:inline set:html={stateSource} />

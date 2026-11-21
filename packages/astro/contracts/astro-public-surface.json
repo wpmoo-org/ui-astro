@@ -294,6 +294,10 @@
     "src/taxonomies/queries.js",
     "src/taxonomies/routes/[taxonomy]/[slug].astro",
     "src/taxonomies/urls.js",
+    "src/theme/active.js",
+    "src/theme/index.d.ts",
+    "src/theme/index.js",
+    "src/theme/site-theme.css",
     "src/views/Archive.astro",
     "src/views/Loop.astro",
     "src/views/NotFound.astro",
@@ -356,6 +360,10 @@
     "src/site/presentation.js",
     "src/taxonomies/paths.js",
     "src/taxonomies/routes/[taxonomy]/[slug].astro",
-    "src/taxonomies/urls.js"
+    "src/taxonomies/urls.js",
+    "src/theme/active.js",
+    "src/theme/index.d.ts",
+    "src/theme/index.js",
+    "src/theme/site-theme.css"
   ]
 }

@@ -11,6 +11,11 @@ import {
   type PageOptionsInput,
   type PartsInput,
   type SiteConfig,
+  type SiteTheme,
+  type ThemeColorsInput,
+  type ThemeFontsInput,
+  type ThemeInput,
+  type ThemeRadius,
   type SiteInput,
   type TypeOptionsInput,
   type ViewKind,
@@ -53,3 +58,20 @@ const incompleteLogo: SiteInput = { logo: { src: "/logo.svg" } };
 // @ts-expect-error surface is a closed set
 const badSurface: PartsInput = { header: { surface: "blue" } };
 void [logoSite, darkParts, incompleteLogo, badSurface];
+
+const themeSite: SiteInput = {
+  theme: {
+    colors: { primary: "#016db7", primaryForeground: "#ffffff", inverseSurface: "#0b2545", inverseForeground: "#ffffff" },
+    fonts: { body: "Inter, sans-serif", heading: "Georgia, serif" },
+    radius: "small",
+    typography: "website",
+  },
+};
+const themeTypes: [ThemeInput, ThemeColorsInput, ThemeFontsInput, ThemeRadius, SiteTheme | undefined] = [
+  themeSite.theme!, themeSite.theme!.colors!, themeSite.theme!.fonts!, "large", undefined,
+];
+// @ts-expect-error radius is a closed set
+const badRadius: ThemeInput = { radius: "huge" };
+// @ts-expect-error colors.primary is required
+const noPrimary: ThemeInput = { colors: { inverseSurface: "#0b2545" } };
+void [themeSite, themeTypes, badRadius, noPrimary];

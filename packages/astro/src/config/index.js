@@ -1,4 +1,5 @@
 import { z } from "astro/zod";
+import { themeSchema, resolveTheme } from "../theme/index.js";
 import {
   normalizePresentation,
   normalizeNamedLinks,
@@ -445,6 +446,7 @@ const logoUrl = (value) => (typeof value === "string" ? value : value.src);
 const siteSchema = z.strictObject({
   brand: z.string().trim().min(1).optional(),
   logo: logoSchema.optional(),
+  theme: themeSchema.optional(),
   presentation: z.unknown().optional(),
   links: z.unknown().optional(),
   organization: organizationSchema.optional(),
@@ -570,10 +572,16 @@ function mergeLayout(...layers) {
   return freezeLayout(output);
 }
 
+function validatedTheme(theme) {
+  resolveTheme(theme);
+  return freezeTree(theme);
+}
+
 export function defineSite(input = {}) {
   requireRecord(input, "site", [
     "brand",
     "logo",
+    "theme",
     "presentation",
     "links",
     "organization",
@@ -624,6 +632,7 @@ export function defineSite(input = {}) {
   }
   return Object.freeze({
     brand: parsed.brand ?? parsed.organization?.name ?? "Moo UI",
+    ...(parsed.theme ? { theme: validatedTheme(parsed.theme) } : {}),
     ...(parsed.logo
       ? {
           logo: Object.freeze({
@@ -655,6 +664,7 @@ export function resolvePageOptions(site, type, view, page, locale) {
   requireRecord(site, "site", [
     "brand",
     "logo",
+    "theme",
     "presentation",
     "links",
     "organization",

@@ -1,3 +1,5 @@
+import type { SiteTheme, ThemeInput } from "../theme/index.js";
+export type { SiteTheme, ThemeColorsInput, ThemeFontsInput, ThemeInput, ThemeRadius } from "../theme/index.js";
 import type { z } from "astro/zod";
 import type { ComponentProps } from "astro/types";
 import type LanguageSwitcher from "../blocks/language-switcher/LanguageSwitcher.astro";
@@ -351,6 +353,8 @@ export interface SiteLogo {
 export interface SiteInput {
   brand?: string;
   logo?: LogoInput;
+  /** Typed site theme; see the README "Site theme" section. */
+  theme?: ThemeInput;
   presentation?: SitePresentationInput;
   links?: NamedLinksInput;
   organization?: OrganizationInput;
@@ -363,6 +367,7 @@ export interface SiteInput {
 export interface SiteConfig {
   readonly brand: string;
   readonly logo?: SiteLogo;
+  readonly theme?: SiteTheme;
   readonly presentation: SitePresentation;
   readonly links: NamedLinksInput;
   readonly organization?: DeepReadonly<OrganizationInput>;

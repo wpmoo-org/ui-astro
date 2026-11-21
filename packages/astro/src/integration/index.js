@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { normalizePlacements } from "../placements/options.js";
 import { addTermLinks, normalizeTermLinks } from "../markdown/term-links.js";
@@ -8,6 +8,7 @@ import {
 } from "../placements/vite.js";
 
 import { defineSite } from "../config/index.js";
+import { resolveTheme, themeCss } from "../theme/index.js";
 import { siteHref } from "../content/paths.js";
 import { page } from "../plugins/page/index.js";
 import { post } from "../plugins/post/index.js";
@@ -33,6 +34,10 @@ const resolvedVirtualId = "\0virtual:wpmoo-astro/routes";
 const facadePath = fileURLToPath(
   new URL("../context/index.js", import.meta.url),
 );
+// Real files so Layout resolves without the integration; the integration's
+// Vite plugin replaces their contents when a theme is configured.
+const themeCssPath = realpathSync(fileURLToPath(new URL("../theme/site-theme.css", import.meta.url)));
+const themeActivePath = realpathSync(fileURLToPath(new URL("../theme/active.js", import.meta.url)));
 const localeVirtualId = "virtual:wpmoo-astro/i18n";
 const resolvedLocaleVirtualId = "\0virtual:wpmoo-astro/i18n";
 const localeFacadePath = fileURLToPath(
@@ -75,6 +80,9 @@ export default function moo(input = {}) {
       throw new TypeError(`moo.${key} is unsupported`);
   }
   const site = defineSite(input.site);
+  const resolvedTheme = site.theme ? resolveTheme(site.theme) : null;
+  const themeStylesheet = themeCss(resolvedTheme);
+  const themeTypography = resolvedTheme?.typography === "website" ? "website" : null;
   const placementOptions = normalizePlacements({
     blocks: input.blocks,
     placements: input.placements,
@@ -175,6 +183,17 @@ export default function moo(input = {}) {
             ssr: { noExternal: ["@wpmoo/astro"] },
             plugins: [
               placementVitePlugin(() => placementProfile),
+              {
+                // One stylesheet, imported by Layout after the Core stylesheet.
+                name: "wpmoo-astro-theme",
+                load(id) {
+                  const file = id.split("?")[0];
+                  if (file === themeCssPath) return themeStylesheet || null;
+                  if (file === themeActivePath)
+                    return `export const typography = ${JSON.stringify(themeTypography ?? "app")};`;
+                  return null;
+                },
+              },
               {
                 name: "wpmoo-astro-context",
                 resolveId(source, importer, options) {

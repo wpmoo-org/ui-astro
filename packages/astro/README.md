@@ -82,6 +82,75 @@ A plugin sets the same value with `placement` in a `navigation` item.
   `inverseSrc` on the dark surface; with the default surface it always uses
   `src`, also in dark colour mode.
 
+## Site theme
+
+`site.theme` replaces hand-written site CSS such as doubled `.moo-ui.moo-ui[...]`
+selectors and parallel `--moo-*` / `--bs-*-rgb` overrides. It is optional; without
+it nothing is emitted and no attribute is added.
+
+```js
+moo({
+  site: {
+    theme: {
+      colors: {
+        primary: "#016db7",
+        // primaryForeground: "#ffffff", // default: #ffffff or #0a0a0a, whichever contrasts more
+        inverseSurface: "#0b2545", // dark header surface
+        // inverseForeground: "#ffffff", // default by contrast; needs inverseSurface
+      },
+      fonts: { body: '"Inter", system-ui, sans-serif', heading: "Georgia, serif" }, // the site loads the fonts
+      radius: "small", // "default" | "none" | "small" | "medium" | "large"
+      typography: "website", // "app" (default) | "website"
+    },
+  },
+});
+```
+
+All colours are `#rrggbb`. `colors.accent` is reserved for later; today unknown
+keys are rejected.
+
+One stylesheet (a bundled CSS module imported by `Layout` after the Core
+stylesheet, no inline style) sets only these rules:
+
+- `.moo-ui[data-bs-theme]` (both modes): `--moo-primary`, `--bs-primary`,
+  `--bs-primary-rgb`, `--moo-primary-foreground(-dark)`, `--moo-primary-hover`,
+  `--moo-primary-active`, the font families and the radius tokens.
+- `.moo-ui[data-bs-theme="light"]`: link colour (primary), link hover colour
+  (derived as text, see below) and the light ring. In dark mode links keep
+  Moo's default colour; `.moo-ui[data-bs-theme="dark"]` only gets the dark ring.
+- `.moo-ui[data-bs-theme][data-header-surface="dark"]`, only with
+  `inverseSurface`: surface, tertiary background, foreground, body and emphasis
+  colour, and links (normal and hover) in `inverseForeground`, plus the ring for
+  that surface. It matches the header of `parts.header.surface: "dark"`.
+- `typography: "website"` sets `data-moo-typography="website"` on the document
+  owner; the matching rules ship with Core.
+
+Derivation: hover and active fills of the primary button are Core's
+`primaryStateColors` (documented in Core's THEME_PRESETS "Primary Hover and
+Active"). The link hover colour is separate text, since the button fill is not
+text: primary mixed toward black by the smallest step of 0.08 (0.08 to 0.96)
+that reaches 4.5:1 on every light text surface. The ring is the primary mixed
+toward black (light) or white (dark) by the smallest step of 0.08 (0 to 0.96)
+whose 50 percent alpha rendering reaches 3:1 on every Core surface of the mode.
+Core surfaces: light `#ffffff`, `#fafafa` (tertiary, sidebar), `#f4f4f5`
+(muted); dark `#0a0a0a`, `#1c1c1f` (sidebar), `#19191a` (input), `#202024`
+(tertiary), `#27272a` (muted). The inverse ring uses `inverseSurface` plus the
+dark surfaces. Radius values are the ones Core exports per name.
+
+Validation is a build-time config error that names the pair and the measured
+ratio, for example `site.theme: link colour primary #757575 on surface #f4f4f5
+is 4.19:1, needs 4.5:1`. Checked at 4.5:1: primary with `primaryForeground`;
+primary as link colour on every light surface; the link hover colour; the hover
+and active fills with the foreground; `inverseSurface` must be dark (against
+`#ffffff`); `inverseForeground` on `inverseSurface` and on the dark muted
+surface `#27272a` (the inverse surface is a dark scope); and the navbar link
+(`inverseForeground` at 65 percent alpha over `inverseSurface`). Every ring
+must reach 3:1 on its surfaces.
+
+The theme is site-wide (one stylesheet for all pages). The hover and active
+tokens and the dark ring fix need Core `@wpmoo/ui` built from html `9acdcdd` or
+later; on older Core the hover and active tokens are ignored.
+
 ## License
 
 [MIT](LICENSE). Themes and extensions can use their own licenses.
