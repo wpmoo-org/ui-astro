@@ -13,6 +13,7 @@ interface Props {
   brand?: string;
   brandSubtitle?: string;
   brandIcon?: "blocks" | "panel-left" | "layout-grid" | "file-text";
+  brandLogo?: ComponentProps<typeof MooSidebar>["brandLogo"];
   groups?: SidebarGroup[];
   side?: "left" | "right";
   variant?: "sidebar" | "floating" | "inset";

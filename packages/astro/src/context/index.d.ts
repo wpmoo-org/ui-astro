@@ -34,6 +34,8 @@ export interface NavigationItem {
   readonly label: string;
   readonly href: string;
   readonly active: boolean;
+  /** Present only for `"utility"` or `"drawer"`; see `sidebar.mode: "header"`. */
+  readonly placement?: "utility" | "drawer";
 }
 
 export declare function getSiteContext(): SiteContext;

@@ -9,6 +9,7 @@ import {
   type PageClassContext,
   type PageOptions,
   type PageOptionsInput,
+  type PartsInput,
   type SiteConfig,
   type SiteInput,
   type TypeOptionsInput,
@@ -42,3 +43,13 @@ const nestedViews: PageOptionsInput = { views: { single: {} } };
 // @ts-expect-error type views accept only Single and Archive
 const unknownView: TypeOptionsInput = { views: { loop: {} } };
 void [invalidView, invalidWidth, nestedViews, unknownView];
+
+const logoSite: SiteInput = {
+  logo: { src: "/logo.svg", inverseSrc: { src: "/logo-inverse.svg" }, alt: "Example", width: 120, height: 32, brandText: false },
+};
+const darkParts: PartsInput = { header: { surface: "dark" } };
+// @ts-expect-error logo requires alt, width and height
+const incompleteLogo: SiteInput = { logo: { src: "/logo.svg" } };
+// @ts-expect-error surface is a closed set
+const badSurface: PartsInput = { header: { surface: "blue" } };
+void [logoSite, darkParts, incompleteLogo, badSurface];

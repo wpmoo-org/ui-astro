@@ -15,6 +15,7 @@ import { entryPath, siteHref } from "../content/paths.js";
 import {
   navigationFromDescriptors,
   navigationFromPages,
+  placementKey,
   pageNavigationOrders,
   sortNavigation,
 } from "../integration/navigation.js";
@@ -144,6 +145,7 @@ export async function getSiteNavigation(
         label: entry.data.navLabel ?? entry.data.title,
         href,
         active: (href.replace(/\/$/u, "") || "/") === current,
+        ...placementKey(entry.data.navPlacement),
       });
     });
     for (const plugin of context.plugins) {
@@ -168,6 +170,7 @@ export async function getSiteNavigation(
             active:
               current === canonical ||
               (item.match === "prefix" && current.startsWith(`${canonical}/`)),
+            ...placementKey(item.placement),
           }),
         );
       }

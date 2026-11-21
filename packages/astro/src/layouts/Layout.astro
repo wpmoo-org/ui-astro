@@ -81,6 +81,7 @@ const {
   headerOverlay = defaults.headerOverlay,
   pageContext,
 } = Astro.props;
+const darkHeader = parts.header.surface === "dark" && !headerOverlay;
 
 if (typeof sidebar !== "boolean") {
   throw new TypeError("Layout sidebar must be boolean");
@@ -261,9 +262,10 @@ const jsonLd = metadata
               <header
                 class:list={headerOverlay
                   ? ["moo-ui bg-transparent position-absolute top-0 start-0 end-0 z-3"]
-                  : ["position-relative z-3", parts.header.utilities]}
-                data-bs-theme={headerOverlay ? "dark" : undefined}
+                  : ["position-relative z-3", darkHeader ? "moo-ui" : "", parts.header.utilities]}
+                data-bs-theme={headerOverlay || darkHeader ? "dark" : undefined}
                 data-header-overlay={headerOverlay ? "" : undefined}
+                data-header-surface={darkHeader ? "dark" : undefined}
               >
                 <div class={headerClass}>
                   <div class:list={parts.header.contentUtilities}>

@@ -42,6 +42,7 @@ export function buildSiteNavigation({
     title: link.label,
     href: link.href,
     active: link.active,
+    ...placementOf(link.placement),
   });
   if (presentation.navigation === "flat") return [{ items: links.map(item) }];
   const canonical = (path) => path.replace(/\/$/u, "") || "/";
@@ -135,7 +136,7 @@ export function projectHeaderNavigation(chrome) {
     }),
   })).filter((group) => group.items.length);
   if (home) {
-    const item = { title: labels.home, href: home.href, active: home.active };
+    const item = { title: labels.home, href: home.href, active: home.active, ...placementOf(home.placement) };
     if (siteGroups.length) siteGroups[0] = { ...siteGroups[0], items: [item, ...siteGroups[0].items] };
     else siteGroups.push({ label: labels.site, items: [item] });
   }
@@ -145,8 +146,28 @@ export function projectHeaderNavigation(chrome) {
     }));
     return { title: group.label, icon: "layout-grid", children, open: children.some((child) => child.active) };
   });
+  // The drawer keeps every item; only the desktop header row honours placement.
+  const utilityItems = [];
+  const siteItems = siteGroups.flatMap((group) => group.items).flatMap((item) => {
+    if (item.children?.length && item.placement) {
+      // A parent's own placement wins; its children never reach the utility row.
+      if (item.placement === "utility" && item.href) utilityItems.push(item);
+      return [];
+    }
+    if (item.children?.length) {
+      const children = item.children.filter((child) => {
+        if (child.placement === "utility") utilityItems.push(child);
+        return !child.placement;
+      });
+      if (children.length === item.children.length) return [item];
+      return children.length ? [{ ...item, children, open: children.some((child) => child.active) }] : [];
+    }
+    if (item.placement === "utility") utilityItems.push(item);
+    return item.placement ? [] : [item];
+  });
   return {
-    siteItems: siteGroups.flatMap((group) => group.items),
+    siteItems,
+    utilityItems,
     collectionItems,
     groups: [...siteGroups, ...(collectionItems.length ? [{ label: labels.collections, items: collectionItems }] : [])],
   };
@@ -192,8 +213,9 @@ export async function getSiteChrome({
   return {
     locale,
     brand: context.site.brand,
+    logo: context.site.logo ? { ...context.site.logo } : null,
     homeHref,
-    homeNavigation: homeLink ? { href: homeLink.href, active: homeLink.active } : null,
+    homeNavigation: homeLink ? { href: homeLink.href, active: homeLink.active, ...placementOf(homeLink.placement) } : null,
     languageLinks,
     presentation,
     taxonomyGroups,
@@ -211,6 +233,9 @@ export async function getSiteChrome({
       localHref,
     }),
   };
+}
+function placementOf(placement) {
+  return placement === "utility" || placement === "drawer" ? { placement } : {};
 }
 function canonicalHref(href) {
   return href.replace(/\/$/u, "") || "/";

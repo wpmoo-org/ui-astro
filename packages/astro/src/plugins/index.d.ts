@@ -69,6 +69,8 @@ export interface PluginNavigationInput {
   match?: "exact" | "prefix";
   /** Sorts the item together with page `navOrder` values. */
   order?: number;
+  /** Header placement in `sidebar.mode: "header"`; the drawer always lists the item. Default `"main"`. */
+  placement?: "main" | "utility" | "drawer";
 }
 
 export interface PluginNavigation {
@@ -76,6 +78,7 @@ export interface PluginNavigation {
   readonly path: string;
   readonly match: "exact" | "prefix";
   readonly order?: number;
+  readonly placement?: "utility" | "drawer";
 }
 
 export interface PluginInput {

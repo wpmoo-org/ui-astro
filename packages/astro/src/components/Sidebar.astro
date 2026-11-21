@@ -20,6 +20,15 @@ interface SidebarGroup {
   items: SidebarItem[];
 }
 
+interface BrandLogo {
+  src: string;
+  inverseSrc?: string;
+  alt: string;
+  width: number;
+  height: number;
+  brandText?: boolean;
+}
+
 interface Props {
   mode?: "sidebar" | "drawer";
   side?: "left" | "right";
@@ -34,6 +43,7 @@ interface Props {
   brandHref?: string;
   brandSubtitle?: string;
   brandIcon?: "blocks" | "panel-left" | "layout-grid" | "file-text";
+  brandLogo?: BrandLogo;
   items?: SidebarItem[];
   groups?: SidebarGroup[];
   footerText?: string;
@@ -58,6 +68,7 @@ const {
   brandHref = "/",
   brandSubtitle = "",
   brandIcon = "blocks",
+  brandLogo,
   items = [],
   groups = [],
   footerText = "",
@@ -194,22 +205,32 @@ for (const [groupIndex, group] of navigationGroups.entries()) {
               href={resolvedBrandHref}
               data-slot="sidebar-menu-button"
               data-sidebar-tooltip={brand}
-              aria-label={brand}
+              aria-label={brandLogo && !brandLogo.brandText ? brandLogo.alt : brand}
             >
               <>
-                <span class="sidebar-menu-button__lead" aria-hidden="true">
-                  <span class="sidebar-brand-mark sidebar-brand-mark--primary">
-                    <Icon name={brandIcon} />
+                {brandLogo ? (
+                  brandLogo.inverseSrc ? (
+                    <picture class="d-block">
+                      <source media="(forced-colors: active) and (prefers-color-scheme: dark)" srcset={brandLogo.inverseSrc} />
+                      <source media="(forced-colors: active)" srcset={brandLogo.src} />
+                      <img src={brandLogo.src} alt={brandLogo.brandText ? "" : brandLogo.alt} width={brandLogo.width} height={brandLogo.height} class="d-block" data-slot="sidebar-brand-logo" />
+                    </picture>
+                  ) : <img src={brandLogo.src} alt={brandLogo.brandText ? "" : brandLogo.alt} width={brandLogo.width} height={brandLogo.height} class="d-block" data-slot="sidebar-brand-logo" />
+                ) : (
+                  <span class="sidebar-menu-button__lead" aria-hidden="true">
+                    <span class="sidebar-brand-mark sidebar-brand-mark--primary">
+                      <Icon name={brandIcon} />
+                    </span>
                   </span>
-                </span>
-                <span class="sidebar-menu-button__text">
-                  <span class="sidebar-menu-button__title">{brand}</span>
+                )}
+                {brandLogo && !brandLogo.brandText && !brandSubtitle ? null : <span class="sidebar-menu-button__text">
+                  {brandLogo && !brandLogo.brandText ? null : <span class="sidebar-menu-button__title">{brand}</span>}
                   {brandSubtitle ? (
                     <span class="sidebar-menu-button__subtitle">
                       {brandSubtitle}
                     </span>
                   ) : null}
-                </span>
+                </span>}
               </>
             </a>
           ) : null}

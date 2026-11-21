@@ -10,6 +10,11 @@ function normalizedPath(path) {
   return path.replace(/\/$/u, "") || "/";
 }
 
+// The key is added only for a non-default placement so existing shapes stay unchanged.
+export function placementKey(placement) {
+  return placement === "utility" || placement === "drawer" ? { placement } : {};
+}
+
 export function navigationFromDescriptors(items, currentPath, options) {
   const current = normalizedPath(currentPath);
   return Object.freeze(items.map(item => {
@@ -18,6 +23,7 @@ export function navigationFromDescriptors(items, currentPath, options) {
     return Object.freeze({
       label: item.label, href,
       active: current === path || (item.match === "prefix" && current.startsWith(`${path}/`)),
+      ...placementKey(item.placement),
     });
   }));
 }
@@ -47,6 +53,7 @@ export function navigationFromPages(entries, currentPath, options) {
       label: props.entry.data.navLabel ?? props.entry.data.title,
       href,
       active: normalizedPath(href) === current,
+      ...placementKey(props.entry.data.navPlacement),
     });
   }));
 }

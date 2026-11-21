@@ -68,7 +68,27 @@ const topNavigationItems = [...headerItems, ...(collectionSections.length ? [{
   open: navigationProjection?.collectionItems.some((item) => item.open),
   sections: collectionSections,
 }] : [])];
+const utilityItems = (navigationProjection?.utilityItems ?? []).map((item) => ({
+  label: item.title, href: item.href, active: item.active, disabled: item.disabled,
+}));
+const hasHeaderUtility = utilityItems.length > 0 || Astro.slots.has("header-utility");
 const headerNavigationClass = headerNavigation ? `d-none d-${headerNavigation.breakpoint}-flex flex-nowrap align-items-center gap-1` : "";
+const brandLogo = chrome.logo ?? undefined;
+const headerNavigationProps = headerNavigation ? {
+  ariaLabel: options.parts.header.navigationLabel, style: "navbar" as const,
+  rootClass: "py-0 flex-grow-1 flex-nowrap gap-2 justify-content-between",
+  class: hasHeaderUtility
+    ? "flex-nowrap align-items-center gap-1"
+    : headerNavigationClass,
+  rowsClass: hasHeaderUtility ? `d-none d-${headerNavigation.breakpoint}-flex` : undefined,
+  utilityItems, linkClass: "py-1 px-2 text-nowrap",
+  brand: chrome.brand, brandHref: chrome.homeHref, brandLogo,
+  brandSurface: options.parts.header.surface === "dark" ? "dark" as const : "light" as const,
+  brandClass: "m-0 p-0 fs-6 fw-semibold", items: topNavigationItems,
+  "data-header-navigation-drawer": "moo-site-drawer",
+  "data-header-navigation-breakpoint": headerNavigation.breakpoint,
+  "data-header-navigation-side": headerNavigation.side,
+} : null;
 const { defaultOpen, mode: _mode, ...sidebarOptions } = appSidebar ?? {};
 const layoutProps = {
   ...layout, title, description, metadata, pageContext,
@@ -96,6 +116,7 @@ const layoutProps = {
         brand={chrome.brand}
         brandSubtitle={presentation.brandDescription}
         brandHref={chrome.homeHref}
+        brandLogo={brandLogo}
         groups={chrome.navigation}
         parts={options.parts}
       />
@@ -163,7 +184,9 @@ const layoutProps = {
           </Button>
         ) : null}
         {headerNavigation ? (
-          <Navigation ariaLabel={options.parts.header.navigationLabel} style="navbar" rootClass="py-0 flex-grow-1 flex-nowrap gap-2 justify-content-between" class={headerNavigationClass} linkClass="py-1 px-2 text-nowrap" brand={chrome.brand} brandHref={chrome.homeHref} brandClass="m-0 p-0 fs-6 fw-semibold" items={topNavigationItems} data-header-navigation-drawer="moo-site-drawer" data-header-navigation-breakpoint={headerNavigation.breakpoint} data-header-navigation-side={headerNavigation.side} />
+          Astro.slots.has("header-utility") ? (
+            <Navigation {...headerNavigationProps!}><slot name="header-utility" slot="utility" /></Navigation>
+          ) : <Navigation {...headerNavigationProps!} />
         ) : null}
         {presentation.themeToggle ||
         presentation.languageSwitcher ||
@@ -217,7 +240,7 @@ const layoutProps = {
     releases.forEach((release) => release());
     releases.clear();
     document.querySelectorAll<HTMLElement>("[data-header-navigation-drawer]").forEach((root) => {
-      const nav = root.querySelector<HTMLElement>('[data-slot="navigation-menu"]');
+      const nav = root.querySelector<HTMLElement>('[data-slot="navigation-rows"]') ?? root.querySelector<HTMLElement>('[data-slot="navigation-menu"]');
       const header = root.closest("header");
       const row = root.parentElement;
       const trigger = header?.querySelector<HTMLElement>("[data-header-navigation-trigger]");

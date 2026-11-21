@@ -123,6 +123,8 @@ interface HeaderPartInput {
   toggleLabel?: string;
   navigationLabel?: string;
   skipLabel?: string;
+  /** `"dark"` renders the header on a dark colour-mode surface. Default `"default"`. */
+  surface?: "default" | "dark";
 }
 interface PageHeaderPartBase {
   alignment?: "start" | "center" | "end";
@@ -172,7 +174,8 @@ type DeepReadonly<T> = T extends object
   : T;
 export interface Parts {
   readonly content: Readonly<Required<ContentPartInput>>;
-  readonly header: Readonly<Required<Omit<HeaderPartInput, "trigger">>> & {
+  readonly header: Readonly<Required<Omit<HeaderPartInput, "trigger" | "surface">>> & {
+    readonly surface?: "default" | "dark";
     readonly trigger: Readonly<Required<TriggerInput>>;
   };
   readonly pageHeader: Readonly<Required<PageHeaderPartInput>>;
@@ -324,8 +327,30 @@ export type NamedLinksInput = Readonly<
   Record<string, string | Readonly<Record<string, string>>>
 >;
 
+export interface LogoInput {
+  /** URL string or an imported Astro image (its `.src` is used). */
+  src: string | { readonly src: string };
+  /** Non-empty plain text; the brand link takes its accessible name from it. May be empty only with `brandText: true`. */
+  alt: string;
+  width: number;
+  height: number;
+  /** Variant for the dark header surface (`parts.header.surface: "dark"`); also used for forced-colors dark. */
+  inverseSrc?: string | { readonly src: string };
+  /** Keep the brand text visible next to the image; the image becomes decorative (`alt=""`). Default false. */
+  brandText?: boolean;
+}
+export interface SiteLogo {
+  readonly src: string;
+  readonly alt: string;
+  readonly width: number;
+  readonly height: number;
+  readonly inverseSrc?: string;
+  readonly brandText?: true;
+}
+
 export interface SiteInput {
   brand?: string;
+  logo?: LogoInput;
   presentation?: SitePresentationInput;
   links?: NamedLinksInput;
   organization?: OrganizationInput;
@@ -337,6 +362,7 @@ export interface SiteInput {
 
 export interface SiteConfig {
   readonly brand: string;
+  readonly logo?: SiteLogo;
   readonly presentation: SitePresentation;
   readonly links: NamedLinksInput;
   readonly organization?: DeepReadonly<OrganizationInput>;

@@ -17,6 +17,14 @@ interface Item extends Link {
   sections?: readonly { label: string; items: readonly Link[] }[];
   open?: boolean;
 }
+interface BrandLogo {
+  src: string;
+  inverseSrc?: string;
+  alt: string;
+  width: number;
+  height: number;
+  brandText?: boolean;
+}
 interface Props {
   heading?: string;
   rootClass?: string;
@@ -26,6 +34,10 @@ interface Props {
   brand?: string;
   brandHref?: string;
   brandClass?: string;
+  brandLogo?: BrandLogo;
+  brandSurface?: "light" | "dark";
+  utilityItems?: Link[];
+  rowsClass?: string;
   linkClass?: string;
   vertical?: boolean;
   dir?: "" | "ltr" | "rtl";
@@ -42,6 +54,10 @@ const {
   brand = "",
   brandHref = "/",
   brandClass = "",
+  brandLogo,
+  brandSurface = "light",
+  utilityItems = [],
+  rowsClass = "",
   linkClass = "",
   vertical = false,
   dir = "",
@@ -56,12 +72,29 @@ const navClass =
       : style === "underline"
         ? "nav nav-underline"
         : "nav nav-pills";
+const hasUtility = style === "navbar" && (utilityItems.length > 0 || Astro.slots.has("utility"));
+const Rows = hasUtility ? "div" : Fragment;
+const rowsProps = hasUtility
+  ? { "data-slot": "navigation-rows", class: ["d-flex flex-column-reverse align-items-end gap-1", rowsClass].filter(Boolean).join(" ") }
+  : {};
 const rootClasses = [style === "navbar" ? "navbar navbar-expand" : "", rootClass].filter(Boolean).join(" ");
 ---
 
 <nav {...rest} aria-label={ariaLabel} dir={dir || undefined} class={rootClasses || undefined}>
-  {brand ? <a href={navigationHref(brandHref, "Navigation brandHref")} class:list={["navbar-brand", brandClass]} data-slot="navigation-brand">{brand}</a> : null}
+  {brand ? <a href={navigationHref(brandHref, "Navigation brandHref")} class:list={["navbar-brand", brandLogo?.brandText ? "d-flex align-items-center gap-2" : "", brandClass]} data-slot="navigation-brand">{brandLogo ? (
+    <>
+      {brandLogo.inverseSrc ? (
+        <picture class="d-block">
+          <source media="(forced-colors: active) and (prefers-color-scheme: dark)" srcset={brandLogo.inverseSrc} />
+          <source media="(forced-colors: active)" srcset={brandLogo.src} />
+          <img src={brandSurface === "dark" ? brandLogo.inverseSrc : brandLogo.src} alt={brandLogo.brandText ? "" : brandLogo.alt} width={brandLogo.width} height={brandLogo.height} class="d-block" data-slot="navigation-brand-logo" />
+        </picture>
+      ) : <img src={brandLogo.src} alt={brandLogo.brandText ? "" : brandLogo.alt} width={brandLogo.width} height={brandLogo.height} class="d-block" data-slot="navigation-brand-logo" />}
+      {brandLogo.brandText ? <span>{brand}</span> : null}
+    </>
+  ) : brand}</a> : null}
   {heading ? <Typography content={heading} variant="section-label" class="mb-2" /> : null}
+  <Rows {...rowsProps}>
   <ul class:list={[navClass, vertical ? "flex-column gap-1" : "", className]} data-slot={style === "navbar" ? "navigation-menu" : undefined}>
     {
       items.map((item) => (
@@ -103,4 +136,23 @@ const rootClasses = [style === "navbar" ? "navbar navbar-expand" : "", rootClass
       ))
     }<slot />
   </ul>
+  {hasUtility ? (
+    <ul class="navbar-nav flex-nowrap small" data-slot="navigation-utility">
+      {utilityItems.map((item) => (
+        <li class="nav-item">
+          <a
+            class:list={["nav-link", item.active ? "active" : "", item.disabled ? "disabled" : "", linkClass]}
+            href={item.disabled ? undefined : navigationHref(item.href || "#", "Navigation utilityItems href")}
+            aria-disabled={item.disabled ? "true" : undefined}
+            tabindex={item.disabled ? -1 : undefined}
+            aria-current={item.active ? "page" : undefined}
+          >
+            {item.icon ? <Icon name={item.icon} /> : null}
+            <span>{item.label}</span>
+          </a>
+        </li>
+      ))}{Astro.slots.has("utility") ? <li class="nav-item d-flex align-items-center"><slot name="utility" /></li> : null}
+    </ul>
+  ) : null}
+  </Rows>
 </nav>

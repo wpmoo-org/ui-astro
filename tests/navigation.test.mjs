@@ -55,3 +55,22 @@ test("page navigation orders follow the rendered page sequence", () => {
   assert.deepEqual(navigationFromPages(pages, "/", options).map((item) => item.label), ["C", "B", "A"]);
   assert.deepEqual(pageNavigationOrders(pages, options), [2, 5, undefined]);
 });
+
+test("navPlacement and descriptor placement are carried only when not main", () => {
+  const options = { lang: "en", base: "/", trailingSlash: "ignore" };
+  const pages = [
+    page("a.md", "publish", { title: "A", navPlacement: "utility" }),
+    page("b.md", "publish", { title: "B", navPlacement: "main" }),
+    page("c.md", "publish", { title: "C", navPlacement: "drawer" }),
+    page("d.md", "publish", { title: "D" }),
+  ];
+  const items = navigationFromPages(pages, "/", options);
+  assert.deepEqual(items.map((item) => item.placement), ["utility", undefined, "drawer", undefined]);
+  assert.equal(Object.hasOwn(items[1], "placement"), false);
+  const declared = navigationFromDescriptors([
+    { label: "Jobs", path: "/jobs", match: "exact", placement: "utility" },
+    { label: "News", path: "/news", match: "exact" },
+  ], "/", options);
+  assert.deepEqual(declared.map((item) => item.placement), ["utility", undefined]);
+  assert.equal(Object.hasOwn(declared[1], "placement"), false);
+});

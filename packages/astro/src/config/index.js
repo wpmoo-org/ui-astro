@@ -168,6 +168,7 @@ const partsSchema = z.strictObject({
       toggleLabel: accessibleLabel.optional(),
       navigationLabel: accessibleLabel.optional(),
       skipLabel: accessibleLabel.optional(),
+      surface: z.enum(["default", "dark"]).optional(),
     })
     .optional(),
   pageHeader: z
@@ -416,8 +417,34 @@ const seoSchema = z.strictObject({
     })
     .optional(),
 });
+const logoSource = z.union([
+  z.string().trim().min(1).refine((value) => !/[\x00-\x1f\x7f]/u.test(value), "must be plain text"),
+  z.object({ src: z.string().trim().min(1) }).passthrough(),
+]);
+const logoSchema = z
+  .strictObject({
+    src: logoSource,
+    alt: z
+      .string()
+      .trim()
+      .refine((value) => !/[\x00-\x1f\x7f]/u.test(value), "must be plain text"),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    inverseSrc: logoSource.optional(),
+    brandText: z.boolean().optional(),
+  })
+  .superRefine((logo, context) => {
+    if (!logo.alt && logo.brandText !== true)
+      context.addIssue({
+        code: "custom",
+        path: ["alt"],
+        message: "must be nonempty unless brandText is true",
+      });
+  });
+const logoUrl = (value) => (typeof value === "string" ? value : value.src);
 const siteSchema = z.strictObject({
   brand: z.string().trim().min(1).optional(),
+  logo: logoSchema.optional(),
   presentation: z.unknown().optional(),
   links: z.unknown().optional(),
   organization: organizationSchema.optional(),
@@ -546,6 +573,7 @@ function mergeLayout(...layers) {
 export function defineSite(input = {}) {
   requireRecord(input, "site", [
     "brand",
+    "logo",
     "presentation",
     "links",
     "organization",
@@ -596,6 +624,18 @@ export function defineSite(input = {}) {
   }
   return Object.freeze({
     brand: parsed.brand ?? parsed.organization?.name ?? "Moo UI",
+    ...(parsed.logo
+      ? {
+          logo: Object.freeze({
+            src: logoUrl(parsed.logo.src),
+            alt: parsed.logo.alt,
+            width: parsed.logo.width,
+            height: parsed.logo.height,
+            ...(parsed.logo.inverseSrc === undefined ? {} : { inverseSrc: logoUrl(parsed.logo.inverseSrc) }),
+            ...(parsed.logo.brandText === true ? { brandText: true } : {}),
+          }),
+        }
+      : {}),
     ...(parsed.organization
       ? { organization: freezeTree(parsed.organization) }
       : {}),
@@ -614,6 +654,7 @@ export function resolvePageOptions(site, type, view, page, locale) {
     throw new TypeError(`Invalid view: ${String(view)}`);
   requireRecord(site, "site", [
     "brand",
+    "logo",
     "presentation",
     "links",
     "organization",

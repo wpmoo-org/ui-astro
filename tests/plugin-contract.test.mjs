@@ -134,3 +134,12 @@ test("plugin resolves through its exact public package entrypoint", async () => 
   const publicPlugin = await import("@wpmoo/astro/plugins");
   assert.equal(publicPlugin.definePlugin, definePlugin);
 });
+
+test("navigation placement is validated and omitted when main", () => {
+  const nav = (placement) => descriptor({ navigation: [{ label: "Sample", path: "/sample", placement }] }).navigation;
+  assert.equal(definePlugin(descriptor({ navigation: nav("utility") })).navigation[0].placement, "utility");
+  assert.equal(definePlugin(descriptor({ navigation: nav("drawer") })).navigation[0].placement, "drawer");
+  assert.equal(Object.hasOwn(definePlugin(descriptor({ navigation: nav("main") })).navigation[0], "placement"), false);
+  assert.equal(Object.hasOwn(definePlugin(descriptor()).navigation[0], "placement"), false);
+  assert.throws(() => definePlugin(descriptor({ navigation: nav("footer") })), /placement/);
+});
