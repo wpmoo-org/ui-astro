@@ -58,11 +58,6 @@ import { defineConfig } from "astro/config";
 import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
 export default defineConfig({ site: "${site}", base: "/docs", trailingSlash: "always", cacheDir: "./.astro-cache",
-  // The copied SDK sits in node_modules, and moo()'s ssr.noExternal does not
-  // reach Astro's prerender environment, so a host page's JS import of
-  // @wpmoo/astro (config, context, seo) would load virtual modules in plain
-  // Node. Pre-existing at 2d90315; bundling it here keeps this test on Layout.
-  vite: { environments: { prerender: { resolve: { noExternal: ["@wpmoo/astro"] } } } },
   i18n: { locales: ["en", "de"], defaultLocale: "en", routing: { prefixDefaultLocale: false } },
   integrations: [moo({ plugins: [page()], site: { brand: "Fixture", organization: { name: "Fixture" } }, notFound: { routeOwner: "host" } })] });`);
   // An active site (the Page plugin with a home per locale), as hosts run it.

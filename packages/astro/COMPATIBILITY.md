@@ -37,6 +37,11 @@ automatic locale fallbacks and other Astro/MDX combinations require separate
 certification. Plugin `apiVersion: 1` versions descriptors; it does not version
 frontmatter, Layout options, storage or the Astro peer contract.
 
+`moo()` adds `@wpmoo/astro` to `vite.ssr.noExternal` and to Astro 7's separate
+`vite.environments.prerender.resolve.noExternal`, merged with host entries, so
+prerendered host pages can import SDK server APIs (`context`, `seo`, `config`)
+in plain JS; client settings are untouched.
+
 ## Package boundary
 
 The explicit public export/file ledger is `contracts/astro-public-surface.json`.

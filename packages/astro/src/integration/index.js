@@ -217,9 +217,14 @@ export default function moo(input = {}) {
           });
         }
         // Server query facades must pass through Vite's private virtual-module guard.
+        // Astro builds prerendered pages in a separate "prerender" environment
+        // that does not inherit ssr.noExternal, so it is named there too.
         updateConfig({
           vite: {
             ssr: { noExternal: ["@wpmoo/astro"] },
+            environments: {
+              prerender: { resolve: { noExternal: ["@wpmoo/astro"] } },
+            },
             plugins: [
               placementVitePlugin(() => placementProfile),
               {
