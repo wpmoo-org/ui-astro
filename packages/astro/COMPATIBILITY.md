@@ -208,6 +208,12 @@ plain XML, which stays valid. Behavior changes for existing hosts:
   the SDK output off to keep the other one.
 - An alternate that is not a listed page, a duplicate canonical, or several
   canonicals on one page fail the build.
+- The default copy of the HTML sitemap page and of `sitemap.xsl` no longer
+  links or mentions sitemaps.org; the page intro links only the XML sitemap
+  (same tab). The `protocolLabel` field and the `{protocol}` placeholder are
+  gone: a host `sitemap.messages` entry with `protocolLabel` fails as
+  unsupported, and an `intro` or `xmlIntro` holding `{protocol}` fails
+  validation; drop the field and the placeholder.
 
 Taking this SDK version:
 

@@ -180,7 +180,8 @@ test("each locale's /sitemap/ lists that locale's pages and all rows equal the X
   assert.match(en, /This page lists all \d+ public pages/u);
   assert.match(en, new RegExp(`all ${enRows.size} public pages`, "u"));
   assert.match(en, /<a href="\/docs\/sitemap\.xml">XML sitemap<\/a>/u);
-  assert.match(en, /<a href="https:\/\/www\.sitemaps\.org\/protocol\.html" target="_blank" rel="noopener noreferrer">/u);
+  assert.match(en, /machine-readable <a href="\/docs\/sitemap\.xml">XML sitemap<\/a>\.<\/p>/u);
+  assert.ok(!en.includes("sitemaps.org/protocol") && !de.includes("sitemaps.org/protocol"));
   assert.match(de, /<th scope="col">Seite<\/th><th scope="col" class="text-end">Aktualisiert<\/th>/u);
   assert.match(de, /alle \d+ öffentlichen Seiten/u);
   // Hostile titles are text: escaped once, never markup.

@@ -20,10 +20,9 @@ export interface TermLink {
 /** Copy of the HTML sitemap page and of sitemap.xsl, as plain text. */
 export interface SitemapMessages {
   title: string;
-  /** Holds `{count}`, `{xml}` and `{protocol}` exactly once each. */
+  /** Holds `{count}` and `{xml}` exactly once each. */
   intro: string;
   xmlLabel: string;
-  protocolLabel: string;
   pageLabel: string;
   updatedLabel: string;
   /** Label of the top-level group. */
@@ -33,7 +32,7 @@ export interface SitemapMessages {
   /** Dev server note: the full list appears in the build. */
   devNote: string;
   xmlTitle: string;
-  /** Holds `{count}` and `{protocol}` exactly once each. */
+  /** Holds `{count}` exactly once. */
   xmlIntro: string;
   /** Holds `{page}` exactly once. */
   xmlPageLink: string;

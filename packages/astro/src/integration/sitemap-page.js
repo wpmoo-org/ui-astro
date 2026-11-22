@@ -432,7 +432,6 @@ function placeholders(text, parts) {
     .join("");
 }
 
-const protocolUrl = "https://www.sitemaps.org/protocol.html";
 const listed = "sitemap:urlset/sitemap:url | sitemap:sitemapindex/sitemap:sitemap";
 
 /**
@@ -442,10 +441,8 @@ const listed = "sitemap:urlset/sitemap:url | sitemap:sitemapindex/sitemap:sitema
  * (an index lists its sitemap files).
  */
 export function renderSitemapXsl({ copy, lang = "en", dir = "ltr", theme = "light", siteName, stylesheets = [], stateScript = "", pageHref = null }) {
-  const protocol = `<a href="${protocolUrl}" target="_blank" rel="noopener noreferrer">${xmlText(copy.protocolLabel)}</a>`;
   const intro = placeholders(copy.xmlIntro, {
     "{count}": `<strong><xsl:value-of select="count(${listed})"/></strong>`,
-    "{protocol}": protocol,
   });
   const pageLink = pageHref
     ? `\n                  ${placeholders(copy.xmlPageLink, {

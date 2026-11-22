@@ -223,6 +223,8 @@ test("sitemap.xsl is well-formed XSLT with noindex, the page link, safe hrefs an
   assert.ok(xsl.includes("]]]]><![CDATA[>"));
   assert.ok(xsl.includes('data-bs-theme="dark"'));
   assert.ok(xsl.includes("<title>XML Sitemap — Org &amp; Co</title>"));
+  assert.ok(xsl.includes("public URLs of this site for search engines such as Google and Bing."));
+  assert.ok(!xsl.includes("sitemaps.org/protocol") && !xsl.includes("{protocol}"));
   // A urlset and a sitemap index render alike.
   assert.ok(xsl.includes('select="sitemap:urlset/sitemap:url | sitemap:sitemapindex/sitemap:sitemap"'));
   const off = renderSitemapXsl({ copy, pageHref: null });
@@ -335,7 +337,12 @@ test("copy: built-in en and de, host override per locale, and the fallback chain
   assert.equal(resolveSitemapOptions(custom, "en").xmlHref, "/docs/sitemap.xml");
   assert.deepEqual(resolveSitemapOptions(custom, "en").languageLinks.map((link) => link.href), ["/docs/sitemap/", "/docs/en/sitemap/", "/docs/fr/sitemap/"]);
   assert.equal(sitemapPagePath("en", plain.i18n), "/en/sitemap");
-  assert.throws(() => normalizeSitemap({ messages: { de: { intro: "Ohne Platzhalter" } } }), /intro must contain \{count\}, \{xml\}, \{protocol\} exactly once each/u);
+  assert.throws(() => normalizeSitemap({ messages: { de: { intro: "Ohne Platzhalter" } } }), /intro must contain \{count\}, \{xml\} exactly once each/u);
+  // The sitemaps.org link is gone: its label and placeholder are rejected.
+  assert.throws(() => normalizeSitemap({ messages: { de: { protocolLabel: "x" } } }), /moo\.sitemap\.messages\.de\.protocolLabel is unsupported/u);
+  assert.throws(() => normalizeSitemap({ messages: { de: { intro: "{count} {xml} {protocol}" } } }), /intro must not contain \{protocol\}/u);
+  assert.throws(() => normalizeSitemap({ messages: { en: { xmlIntro: "{count} {protocol}" } } }), /xmlIntro must not contain \{protocol\}/u);
+  assert.equal(normalizeSitemap({ messages: { de: { intro: "{count} Seiten, siehe {xml}." } } }).messages.de.intro, "{count} Seiten, siehe {xml}.");
   assert.throws(() => normalizeSitemap({ messages: { de: { heading: "x" } } }), /moo\.sitemap\.messages\.de\.heading is unsupported/u);
   assert.throws(() => normalizeSitemap({ messages: { de: { title: "a\nb" } } }), /nonempty plain text/u);
   assert.throws(() => normalizeSitemap({ pages: [] }), /moo\.sitemap\.pages is unsupported/u);

@@ -8,15 +8,14 @@ import { localePath, validLocale } from "../i18n/profile.js";
 
 /** Placeholders each templated field must contain exactly once. */
 const placeholders = Object.freeze({
-  intro: ["{count}", "{xml}", "{protocol}"],
-  xmlIntro: ["{count}", "{protocol}"],
+  intro: ["{count}", "{xml}"],
+  xmlIntro: ["{count}"],
   xmlPageLink: ["{page}"],
 });
 export const sitemapCopyFields = Object.freeze([
   "title",
   "intro",
   "xmlLabel",
-  "protocolLabel",
   "pageLabel",
   "updatedLabel",
   "topLabel",
@@ -33,9 +32,8 @@ const copy = Object.freeze({
   en: Object.freeze({
     title: "Sitemap",
     intro:
-      "This page lists all {count} public pages of this site with a short description and, where a page records one, the date its content last changed. Search engines read the same list from the machine-readable {xml}, which follows the {protocol}.",
+      "This page lists all {count} public pages of this site with a short description and, where a page records one, the date its content last changed. Search engines read the same list from the machine-readable {xml}.",
     xmlLabel: "XML sitemap",
-    protocolLabel: "sitemaps.org protocol",
     pageLabel: "Page",
     updatedLabel: "Updated",
     topLabel: "Pages",
@@ -44,7 +42,7 @@ const copy = Object.freeze({
       "The development server lists published content and static routes only. The build lists every built page.",
     xmlTitle: "XML Sitemap",
     xmlIntro:
-      "This XML sitemap lists the {count} public URLs of this site for search engines such as Google and Bing. It follows the {protocol}.",
+      "This XML sitemap lists the {count} public URLs of this site for search engines such as Google and Bing.",
     xmlPageLink: "For a version grouped by section with page descriptions, open the {page}.",
     xmlPageLabel: "Sitemap page",
     urlLabel: "URL",
@@ -53,9 +51,8 @@ const copy = Object.freeze({
   de: Object.freeze({
     title: "Sitemap",
     intro:
-      "Diese Seite listet alle {count} öffentlichen Seiten dieser Website mit einer kurzen Beschreibung und, wo eine Seite es angibt, dem Datum der letzten inhaltlichen Änderung. Suchmaschinen lesen dieselbe Liste aus der maschinenlesbaren {xml}, die dem {protocol} folgt.",
+      "Diese Seite listet alle {count} öffentlichen Seiten dieser Website mit einer kurzen Beschreibung und, wo eine Seite es angibt, dem Datum der letzten inhaltlichen Änderung. Suchmaschinen lesen dieselbe Liste aus der maschinenlesbaren {xml}.",
     xmlLabel: "XML-Sitemap",
-    protocolLabel: "sitemaps.org-Protokoll",
     pageLabel: "Seite",
     updatedLabel: "Aktualisiert",
     topLabel: "Seiten",
@@ -64,7 +61,7 @@ const copy = Object.freeze({
       "Der Entwicklungsserver listet nur veröffentlichte Inhalte und statische Routen. Der Build listet jede gebaute Seite.",
     xmlTitle: "XML-Sitemap",
     xmlIntro:
-      "Diese XML-Sitemap listet die {count} öffentlichen URLs dieser Website für Suchmaschinen wie Google und Bing. Sie folgt dem {protocol}.",
+      "Diese XML-Sitemap listet die {count} öffentlichen URLs dieser Website für Suchmaschinen wie Google und Bing.",
     xmlPageLink: "Eine nach Bereichen gegliederte Fassung mit Seitenbeschreibungen bietet die {page}.",
     xmlPageLabel: "Sitemap-Seite",
     urlLabel: "URL",
@@ -92,6 +89,9 @@ function placeholdersValid(key, value) {
   return (placeholders[key] ?? []).every((token) => value.split(token).length === 2);
 }
 
+/** The retired sitemaps.org link placeholder would otherwise print as text. */
+const retiredPlaceholder = "{protocol}";
+
 /** @param {{ messages?: Record<string, Record<string, string>> }} [input] */
 export function normalizeSitemap(input = {}) {
   record(input, "moo.sitemap", ["messages"]);
@@ -109,6 +109,8 @@ export function normalizeSitemap(input = {}) {
       if (value === undefined) continue;
       if (typeof value !== "string" || !value.trim() || /[\x00-\x1f\x7f]/u.test(value))
         throw new TypeError(`${field}.${key} must be nonempty plain text`);
+      if (key in placeholders && value.includes(retiredPlaceholder))
+        throw new TypeError(`${field}.${key} must not contain ${retiredPlaceholder}`);
       if (!placeholdersValid(key, value))
         throw new TypeError(
           `${field}.${key} must contain ${placeholders[key].join(", ")} exactly once each`,

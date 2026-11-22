@@ -1686,10 +1686,9 @@ sitemap page per locale and `robots.txt` into the build output at
   and so on, by the native i18n prefix rules), in the site's `SiteLayout`, as
   the 404 route is. It lists that locale's pages from the same scan as the XML,
   so the rows equal the XML entries and the page lists itself. The body is the
-  page title (h1), an intro with the count and links to `sitemap.xml` and the
-  sitemaps.org protocol (new tab, `rel="noopener noreferrer"`), then one
-  `section-title` heading (h2) and one `Table` per group (Page and Updated
-  columns). Each `<section>` and `<table>` is named by its heading with
+  page title (h1), an intro with the count and a link to `sitemap.xml` (same
+  tab), then one `section-title` heading (h2) and one `Table` per group (Page
+  and Updated columns). Each `<section>` and `<table>` is named by its heading with
   `aria-labelledby`, as in Core.
   - Grouping needs no host input: by the first path segment after the locale
     and `base`. A group's label is the title of the segment's own listed index
@@ -1710,10 +1709,10 @@ sitemap page per locale and `robots.txt` into the build output at
     lists every built page.
   - Copy comes from built-in English and German and can be overridden per
     locale, like the 404 copy, with `moo({ sitemap: { messages: { de: {...} } } })`.
-    Fields: `title`, `intro` (with `{count}`, `{xml}` and `{protocol}` once
-    each), `xmlLabel`, `protocolLabel`, `pageLabel`, `updatedLabel`, `topLabel`,
-    `noDate`, `devNote`, and for the xsl `xmlTitle`, `xmlIntro` (`{count}`,
-    `{protocol}`), `xmlPageLink` (`{page}`), `xmlPageLabel`, `urlLabel`,
+    Fields: `title`, `intro` (with `{count}` and `{xml}` once each),
+    `xmlLabel`, `pageLabel`, `updatedLabel`, `topLabel`, `noDate`, `devNote`,
+    and for the xsl `xmlTitle`, `xmlIntro` (`{count}`), `xmlPageLink`
+    (`{page}`), `xmlPageLabel`, `urlLabel`,
     `lastModifiedLabel`. Missing fields fall back to the built-in copy of the
     locale, the host and built-in copy of the default locale, then English.
     `sitemap.messages` holds copy only; the on/off switches live under
