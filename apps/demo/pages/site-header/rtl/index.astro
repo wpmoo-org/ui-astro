@@ -1,0 +1,33 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import SiteHeader from "@wpmoo/astro/blocks/SiteHeader.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+
+// Core's RTL preview (site/src/pages/blocks/previews/site-header-rtl.html
+// .jinja): the RTL example inside a dir="rtl" wrapper. Core's RTL CSS rules
+// come after @wpmoo/ui 2.3.0, so the drawer side, caret and close button
+// still follow the 2.3.0 styles here; only the markup mirrors Core.
+const items = [
+  { label: "Home", href: "#home", active: true },
+  { label: "About", href: "#about", children: [
+    { label: "Our team", href: "#team" },
+    { label: "History", href: "#history" },
+    { label: "Careers", href: "#careers", disabled: true },
+  ] },
+  { label: "Programmes", href: "#programmes" },
+  { label: "News", href: "#news" },
+  { label: "Contact", href: "#contact" },
+];
+---
+
+<Layout title="Site header RTL">
+  <div class="border my-4" dir="rtl">
+    <SiteHeader id="site-header-rtl-preview" ariaLabel="Main navigation" brand={{ label: "Moo UI", href: "#home", mark: "blocks", subtitle: "Component system" }} items={items}>
+      <Button size="sm" element="a" href="#apply">Apply</Button>
+    </SiteHeader>
+    <div class="container py-4">
+      <h1 class="h3">Welcome</h1>
+      <p class="text-body-secondary">Resize the frame below the breakpoint to open the drawer with the Menu button.</p>
+    </div>
+  </div>
+</Layout>

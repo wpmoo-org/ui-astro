@@ -1,0 +1,32 @@
+---
+// Internal to SiteHeader: the brand link, rendered twice (bar and drawer).
+// A lockup (mark or logo with visible text) sits in an inner span; the link
+// keeps the page direction, and a fixed lockup order (dir) lives on that span.
+import Icon from "../../components/internal/Icon.astro";
+
+interface Props {
+  href: string;
+  label: string;
+  textLabel: string;
+  logo?: { src: string; alt?: string; width?: number | string; height?: number | string };
+  mark?: string;
+  subtitle?: string;
+  dir?: string;
+  showLabel: boolean;
+  alt: string;
+  extraClass?: string;
+}
+const { href, label, textLabel, logo, mark, subtitle, dir, showLabel, alt, extraClass = "" } = Astro.props;
+const lockup = Boolean(logo || mark) && showLabel;
+const classes = [
+  "navbar-brand",
+  lockup ? "d-flex align-items-center" : logo ? "d-flex align-items-center gap-2" : "",
+  extraClass,
+].filter(Boolean).join(" ");
+---
+
+{lockup ? (
+  <a class={classes} href={href}><span class="d-inline-flex align-items-center gap-2" dir={dir || undefined}>{mark ? <span class="sidebar-brand-mark sidebar-brand-mark--primary"><Icon name={mark} group /></span> : <img src={logo!.src} alt={alt} width={logo!.width || undefined} height={logo!.height || undefined} class="flex-shrink-0" />}{subtitle ? <span class="d-flex flex-column lh-sm fs-6"><span>{label}</span><span class="small text-body-secondary">{subtitle}</span></span> : <span>{label}</span>}</span></a>
+) : (
+  <a class={classes} href={href}>{logo ? <img src={logo.src} alt={alt} width={logo.width || undefined} height={logo.height || undefined} class="flex-shrink-0" /> : null}{showLabel ? (subtitle ? <span class="d-flex flex-column lh-sm fs-6"><span>{label}</span><span class="small text-body-secondary">{subtitle}</span></span> : textLabel) : null}</a>
+)}

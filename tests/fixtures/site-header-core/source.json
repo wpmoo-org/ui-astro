@@ -1,0 +1,27 @@
+{
+  "core": "projects/ui/html",
+  "commit": "a6db8f0",
+  "previews": [
+    "site-header",
+    "site-header-logo",
+    "site-header-dark",
+    "site-header-rtl"
+  ],
+  "cases": [
+    "brand-mark",
+    "brand-mark-subtitle",
+    "brand-mark-dir-ltr",
+    "brand-mark-dir-rtl",
+    "brand-mark-dir-auto",
+    "brand-mark-panel-left",
+    "brand-mark-layout-grid",
+    "brand-mark-file-text",
+    "brand-logo-label",
+    "brand-logo-label-subtitle-dir-rtl",
+    "brand-logo-only",
+    "brand-logo-only-dir-rtl",
+    "brand-text",
+    "brand-text-subtitle",
+    "brand-text-dir-rtl"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "commit": "4c4e1d0",
+  "cases": [
+    "header-slot",
+    "document-shell",
+    "sidebar",
+    "no-header"
+  ]
+}

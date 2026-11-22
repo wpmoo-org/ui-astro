@@ -1,0 +1,68 @@
+<html dir="ltr" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta content="width=device-width" name="viewport">
+<link href="data:," rel="icon">
+<title>
+T
+</title>
+</head>
+<body>
+<div class="moo-ui" data-bs-theme="light" data-moo-document-owner="true" data-moo-overlay-scrollbar="true">
+<script>
+/*! * Moo UI state.js v2.3.0 (https://wpmoo.org/) * Copyright 2026 WPMoo Authors * Licensed under MIT (https://github.com/wpmoo-org/ui/blob/main/LICENSE) */ (() => { const ownerDocument = typeof document === "undefined" ? null : document; const owner = ownerDocument?.currentScript?.parentElement; if (!owner) return; const view = ownerDocument?.defaultView || (typeof window === "undefined" ? null : window); if (owner.matches?.('.moo-ui[data-bs-theme="light"], .moo-ui[data-bs-theme="dark"]')) { const body = ownerDocument?.body; const documentOwner = owner.dataset?.mooDocumentOwner === "true" && owner.parentElement === body && owner === body?.firstElementChild; if (documentOwner && ownerDocument.documentElement?.classList) { const root = ownerDocument.documentElement; owner.__mooNativeScrollbarBaseline ?? (owner.__mooNativeScrollbarBaseline = root.classList.contains("scrollbar-overlay-native")); root.classList.add("scrollbar-overlay-native"); } const normalizeDirection = (value) => value === "ltr" || value === "rtl" ? value : null; const ownerDirection = normalizeDirection( owner.getAttribute?.("dir") || owner.dir ); const documentDirection = normalizeDirection( ownerDocument?.documentElement?.getAttribute?.("dir") || ownerDocument?.documentElement?.dir ); owner.__mooStateBaseline = { theme: owner.dataset.bsTheme === "dark" ? "dark" : "light", direction: documentOwner ? documentDirection || "ltr" : ownerDirection }; const readPreference = (axis, allowed) => { const dataKey = axis === "theme" ? "mooThemeKey" : "mooDirectionKey"; const explicit = owner.dataset?.[dataKey]?.trim(); const key2 = explicit || (documentOwner ? `moo:${axis}` : null); if (!key2) return null; try { const value = view?.localStorage?.getItem(key2); return allowed.includes(value) ? value : null; } catch (_) { return null; } }; const systemPrefersDark = () => { try { const matchMedia = view?.matchMedia; if (typeof matchMedia !== "function") return null; return Boolean( matchMedia.call(view, "(prefers-color-scheme: dark)")?.matches ); } catch (_) { return null; } }; try { const storedTheme = readPreference("theme", ["light", "dark", "system"]); const mediaPrefersDark = storedTheme === "system" ? systemPrefersDark() : null; const resolvedTheme = storedTheme === "dark" ? "dark" : storedTheme === "light" ? "light" : storedTheme === "system" && mediaPrefersDark !== null ? mediaPrefersDark ? "dark" : "light" : owner.dataset.bsTheme === "dark" ? "dark" : "light"; owner.dataset.bsTheme = resolvedTheme; const storedDirection = readPreference("direction", ["ltr", "rtl"]); if (storedDirection) { if (documentOwner) ownerDocument.documentElement.dir = storedDirection; else owner.dir = storedDirection; } } finally { owner.dataset.mooState = "ready"; } return; } if (!owner.matches?.('[data-slot="sidebar-wrapper"][data-sidebar-key]')) return; const key = owner.dataset?.sidebarKey; if (!key) return; try { const state = view?.localStorage?.getItem(`moo-sidebar:${key}`); if (state === "expanded" || state === "collapsed") { owner.dataset.sidebarState = state; } } catch (_) { } finally { owner.dataset.sidebarStateReady = ""; } })();
+</script>
+<a class="btn btn-primary visually-hidden-focusable position-absolute top-0 start-0 z-3" href="#main-content">
+Skip to main content
+</a>
+<div class="wrapper" data-layout="app" data-shell-mode="document">
+<div data-slot="page">
+<div class="container-fluid px-3 px-md-5">
+<i>
+b
+</i>
+</div>
+<header class="position-relative z-3 bg-body-tertiary">
+<div class="container-fluid px-3 px-md-5">
+<div class="d-flex align-items-center gap-2 py-2">
+<span>
+h
+</span>
+</div>
+</div>
+<div class="container-fluid px-3 px-md-5" data-header-reading-host="">
+<div class="fade" data-header-reading-bar="" hidden="" inert="">
+<div class="row bg-body border-top">
+<div class="col">
+<nav>
+toc
+</nav>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main id="main-content" tabindex="-1">
+<div class="container-xl mx-auto py-4 py-md-5 px-3 px-md-5" data-page-container="">
+<p>
+x
+</p>
+</div>
+</main>
+<footer>
+<span>
+f
+</span>
+</footer>
+<div class="container-xl px-3 px-md-5">
+<i>
+a
+</i>
+</div>
+</div>
+</div>
+</div>
+<script type="module">
+</script>
+</body>
+</html>

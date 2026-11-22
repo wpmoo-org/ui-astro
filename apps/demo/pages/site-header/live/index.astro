@@ -1,0 +1,54 @@
+---
+import SiteLayout from "@wpmoo/astro/layouts/SiteLayout.astro";
+import SiteHeader from "@wpmoo/astro/blocks/SiteHeader.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+import { getDemoOptions } from "../../../settings.js";
+
+// The block as the real page header, through SiteLayout's site-header slot
+// (Layout header-region). Inputs follow Core's logo example.
+// A website page: document shell, so the content rail is centred like the
+// header and footer. The block's container repeats the page's container and
+// rail inset, so all three share one edge.
+const { sidebar: _sidebar, ...pageOptions } = getDemoOptions("page", "single");
+const options = { ...pageOptions, shellMode: "document" as const };
+const headerContainer = "container-xl px-3 px-md-5";
+const items = [
+  { label: "Home", href: "#home", active: true },
+  { label: "About", href: "#about", children: [
+    { label: "Our team", href: "#team" },
+    { label: "History", href: "#history" },
+    { label: "Careers", href: "#careers", disabled: true },
+  ] },
+  { label: "Programmes", href: "#programmes" },
+  { label: "News", href: "#news" },
+  { label: "Contact", href: "#contact" },
+  { label: "Donate", href: "#donate", drawerOnly: true },
+];
+const utilityItems = [
+  { label: "Parents", href: "#parents" },
+  { label: "Press", href: "#press" },
+  { label: "Deutsch", href: "#de" },
+];
+const logo = { src: "/site-header-logo.svg", alt: "Moo UI", width: 32, height: 32 };
+---
+
+<SiteLayout
+  title="Site header live"
+  options={{ ...options, sidebar: null }}
+  href="/site-header/live/"
+  pageContext={{ view: "native", key: "site-header-live" }}
+>
+  <SiteHeader
+    slot="site-header"
+    id="site-header-live"
+    ariaLabel="Main navigation"
+    brand={{ label: "Moo UI", href: "#home", showLabel: true, logo }}
+    items={items}
+    utilityItems={utilityItems}
+    container={headerContainer}
+  >
+    <Button size="sm" element="a" href="#apply">Apply</Button>
+  </SiteHeader>
+  <h1 class="h3 mt-4">Welcome</h1>
+  <p class="text-body-secondary">The site header is the page header here. Resize below the breakpoint to open the drawer with the Menu button.</p>
+</SiteLayout>

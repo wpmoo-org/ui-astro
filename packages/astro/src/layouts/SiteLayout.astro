@@ -40,6 +40,9 @@ const {
   languageLinks = [],
   pageContext,
 } = Astro.props;
+if (options.sidebar && Astro.slots.has("site-header")) {
+  throw new TypeError("SiteLayout site-header slot does not combine with a sidebar or navigation drawer");
+}
 const plan = Astro.props.plan ?? await preparePlacements({ href, locale, title, view: pageContext?.view === "native" && pageContext.key === "not-found" ? "not-found" : "native" });
 const selectedAside = selectAsidePlacements(plan, options.aside, Astro.props.customAside ?? false, Astro.props.compactToc ?? false);
 const compactTocClass = `${selectedAside.compactClass} py-3`;
@@ -156,6 +159,7 @@ const layoutProps = {
       <Fragment slot="after-header"><Placement plan={plan} at="header.after" /></Fragment>
       <Fragment slot="before-footer"><Placement plan={plan} at="footer.before" /></Fragment>
       <Fragment slot="after-footer"><Placement plan={plan} at="footer.after" /></Fragment>
+      {Astro.slots.has("site-header") ? <slot name="site-header" slot="header-region" /> : (
       <Header slot="header">
         {drawer ? (
           <Button slot="trigger" class={headerNavigation ? `d-${headerNavigation.breakpoint}-none` : undefined} data-header-navigation-trigger={headerNavigation ? "" : undefined} variant={options.parts.header.trigger.variant} size={options.parts.header.trigger.size} data-bs-toggle="offcanvas" data-bs-target="#moo-site-drawer" ariaLabel={options.parts.header.toggleLabel} ariaControls="moo-site-drawer">
@@ -192,6 +196,7 @@ const layoutProps = {
           </div>
         ) : null}
       </Header>
+      )}
       <Placement plan={plan} at="content.before" />
       <slot />
       <Placement plan={plan} at="content.after" />

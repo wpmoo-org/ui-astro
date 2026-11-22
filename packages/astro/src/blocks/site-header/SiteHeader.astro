@@ -1,0 +1,208 @@
+---
+// Site header block. Mirrors Core's `site_header` macro
+// (html/src/blocks/site_header.html.jinja) one to one: same element tree,
+// classes, attributes, validation and href rules. It adds no CSS; the
+// presentation belongs to Core, Bootstrap and the Moo theme.
+import Button from "../../components/Button.astro";
+import Icon from "../../components/internal/Icon.astro";
+import CloseButton from "../../components/CloseButton.astro";
+import SiteHeaderBrand from "./SiteHeaderBrand.astro";
+import SiteHeaderItems from "./SiteHeaderItems.astro";
+
+interface Link {
+  label: string;
+  href?: string;
+  active?: boolean;
+  disabled?: boolean;
+}
+interface Item extends Link {
+  drawerOnly?: boolean;
+  children?: readonly Link[];
+}
+interface Logo {
+  src: string;
+  alt?: string;
+  width?: number | string;
+  height?: number | string;
+}
+interface Brand {
+  label: string;
+  href?: string;
+  showLabel?: boolean;
+  logo?: Logo;
+  /** Icon name for Core's Sidebar brand mark tile; excludes logo. */
+  mark?: "blocks" | "panel-left" | "layout-grid" | "file-text";
+  /** Plain text under the label; needs a visible label. */
+  subtitle?: string;
+  /** Fixes the lockup order on an inner span; default follows the page. */
+  dir?: "ltr" | "rtl" | "auto";
+}
+interface Props {
+  id: string;
+  ariaLabel: string;
+  brand: Brand;
+  items?: readonly Item[];
+  utilityItems?: readonly Item[];
+  breakpoint?: "lg" | "xl";
+  surface?: "default" | "dark";
+  container?: string;
+  menuLabel?: string;
+  closeLabel?: string;
+  class?: string;
+}
+
+const {
+  id,
+  ariaLabel,
+  brand,
+  items = [],
+  utilityItems = [],
+  breakpoint = "lg",
+  surface = "default",
+  container = "container",
+  menuLabel = "Menu",
+  closeLabel = "Close",
+  class: extraClass = "",
+} = Astro.props;
+
+const breakpoints = ["lg", "xl"];
+const surfaces = ["default", "dark"];
+const schemes = ["http", "https", "mailto", "tel"];
+const brandDirs = ["ltr", "rtl", "auto"];
+// The SDK Icon carries Core's exact Lucide markup for these marks only.
+const marks = ["blocks", "panel-left", "layout-grid", "file-text"];
+// Python's str.strip() and str.split() use this whitespace set (it includes
+// \x1c-\x1f and \x85, which JavaScript's trim does not), and Core's Jinja
+// macro trims and splits with them.
+const pyWhitespace = "\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+const pyEdge = new RegExp(`^[${pyWhitespace}]+|[${pyWhitespace}]+$`, "gu");
+const pyRun = new RegExp(`[${pyWhitespace}]+`, "u");
+const pyTrim = (value: unknown) => String(value ?? "").replace(pyEdge, "");
+const pySplit = (value: string) => pyTrim(value).split(pyRun).filter(Boolean);
+const blank = (value: unknown) => !pyTrim(value);
+// Core reads these labels with default("", true): any falsy value (0, false,
+// null, "") counts as missing before the trim check.
+const missing = (value: unknown) => !value || blank(value);
+
+// Relative paths, fragments and http, https, mailto and tel only. Control
+// characters are refused too, because browsers drop them inside a scheme.
+function checkHref(href: unknown) {
+  const value = pyTrim(href);
+  for (const character of ["\t", "\n", "\r"]) {
+    if (value.includes(character)) {
+      throw new TypeError("Site header href contains a control character");
+    }
+  }
+  const head = value.split("/")[0].split("?")[0].split("#")[0];
+  if (head.includes(":") && !schemes.includes(head.split(":")[0].toLowerCase())) {
+    throw new TypeError(`Site header href scheme is not allowed: ${head.split(":")[0]}`);
+  }
+}
+
+// Same order as Core's macro: id, label, brand, logo, brand dir, mark and
+// logo, subtitle, breakpoint, surface, then brand href, mark icon, close
+// label, main items, utility items, menu label.
+if (typeof id !== "string" || blank(id) || pySplit(id).length !== 1) {
+  throw new TypeError("Site header id is required");
+}
+if (blank(ariaLabel)) throw new TypeError("Site header aria_label is required");
+if (!brand || typeof brand !== "object" || Array.isArray(brand) || missing(brand.label)) {
+  throw new TypeError("Site header brand label is required");
+}
+if (brand.logo && !brand.logo.src) throw new TypeError("Site header logo requires src");
+if (brand.dir && !brandDirs.includes(brand.dir)) {
+  throw new TypeError(`Unknown site header brand dir: ${String(brand.dir)}`);
+}
+if (brand.mark && brand.logo) {
+  throw new TypeError("Site header brand mark and logo are mutually exclusive");
+}
+if (brand.subtitle && brand.logo && !brand.showLabel) {
+  throw new TypeError("Site header brand subtitle requires a visible label");
+}
+if (!breakpoints.includes(breakpoint)) {
+  throw new TypeError(`Unknown site header breakpoint: ${String(breakpoint)}`);
+}
+if (!surfaces.includes(surface)) {
+  throw new TypeError(`Unknown site header surface: ${String(surface)}`);
+}
+
+const brandHref = brand.href || "/";
+checkHref(brandHref);
+// Core's icon renderer fails on an unknown name while rendering the brand.
+if (brand.mark && !marks.includes(brand.mark)) {
+  throw new TypeError(`Unknown Lucide icon: ${String(brand.mark)}`);
+}
+const logo = brand.logo;
+const showLabel = Boolean(brand.showLabel) || !logo;
+const logoAlt = showLabel ? "" : logo?.alt || brand.label;
+const brandProps = {
+  href: brandHref,
+  label: brand.label,
+  // Core trims the captured brand content; only a bare text label starts or
+  // ends with text, so only that case changes.
+  textLabel: pyTrim(brand.label),
+  logo,
+  mark: brand.mark || undefined,
+  subtitle: brand.subtitle || undefined,
+  dir: brand.dir || undefined,
+  showLabel,
+  alt: logoAlt,
+};
+if (blank(closeLabel)) throw new TypeError("Close button aria_label is required");
+
+function prepare(list: readonly Item[]) {
+  return list.map((item) => {
+    if (missing(item.label)) throw new TypeError("Site header item label is required");
+    checkHref(item.href || "#");
+    const children = item.children ?? [];
+    for (const child of children) checkHref(child.href || "#");
+    for (const child of children) {
+      if (blank(child.label)) throw new TypeError("Dropdown item label is required");
+    }
+    return {
+      ...item,
+      children,
+      itemClass: item.drawerOnly ? `d-${breakpoint}-none` : "",
+      activeAny: Boolean(item.active) || children.some((child) => child.active),
+    };
+  });
+}
+const mainItems = prepare(items);
+const secondaryItems = prepare(utilityItems);
+if (blank(menuLabel)) throw new TypeError("Button without a visible label requires aria_label");
+
+const drawerId = `${id}-drawer`;
+const actions = Astro.slots.has("default")
+  ? (await Astro.slots.render("default")).trim()
+  : null;
+const navClass = [
+  "navbar",
+  `navbar-expand-${breakpoint}`,
+  "bg-body-tertiary",
+  "border-bottom",
+  surface === "dark" ? "moo-ui" : "",
+  extraClass,
+].filter(Boolean).join(" ");
+---
+
+<nav id={id} class={navClass} aria-label={ariaLabel} data-bs-theme={surface === "dark" ? "dark" : undefined}>
+  <div class={container}>
+    <SiteHeaderBrand {...brandProps} />
+    <div class="offcanvas offcanvas-end" tabindex="-1" id={drawerId} aria-label={menuLabel}>
+      <div class="offcanvas-header">
+        <div class="offcanvas-title"><SiteHeaderBrand {...brandProps} extraClass="me-0" /></div>
+        <CloseButton ariaLabel={closeLabel} dismiss="offcanvas" />
+      </div>
+      <div class={`offcanvas-body d-flex flex-column flex-${breakpoint}-column-reverse align-items-${breakpoint}-end gap-3 gap-${breakpoint}-0`}>
+        <div class={`d-flex flex-column flex-${breakpoint}-row align-items-${breakpoint}-center gap-3 gap-${breakpoint}-2`}>
+          <SiteHeaderItems items={mainItems} class="navbar-nav" />
+          {actions !== null ? <div class="d-flex align-items-center gap-2"><Fragment set:html={actions} /></div> : null}
+        </div>
+        {secondaryItems.length ? <SiteHeaderItems items={secondaryItems} class="navbar-nav small" /> : null}
+      </div>
+    </div>
+    <Button variant="ghost" size="icon" ariaLabel={menuLabel} sheetTarget={drawerId} ariaControls={drawerId} class={`d-${breakpoint}-none`}>
+      <Fragment slot="icon-start"><Icon name="menu" /></Fragment>
+    </Button>
+  </div>
+</nav>

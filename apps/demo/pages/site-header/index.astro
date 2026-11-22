@@ -1,0 +1,52 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import SiteHeader from "@wpmoo/astro/blocks/SiteHeader.astro";
+import Button from "@wpmoo/astro/components/Button.astro";
+
+// Inputs of the four Core catalog examples (site_header_example.html.jinja),
+// for visual comparison with Core's site-header previews.
+const items = [
+  { label: "Home", href: "#home", active: true },
+  { label: "About", href: "#about", children: [
+    { label: "Our team", href: "#team" },
+    { label: "History", href: "#history" },
+    { label: "Careers", href: "#careers", disabled: true },
+  ] },
+  { label: "Programmes", href: "#programmes" },
+  { label: "News", href: "#news" },
+  { label: "Contact", href: "#contact" },
+  { label: "Donate", href: "#donate", drawerOnly: true },
+];
+const utilityItems = [
+  { label: "Parents", href: "#parents" },
+  { label: "Press", href: "#press" },
+  { label: "Deutsch", href: "#de" },
+];
+const logo = { src: "/site-header-logo.svg", alt: "Moo UI", width: 32, height: 32 };
+const markBrand = { label: "Moo UI", href: "#home", mark: "blocks" as const, subtitle: "Component system" };
+---
+
+<Layout title="Site header">
+  <h1 class="h3 mt-4">Site header examples</h1>
+  <p class="text-body-secondary">Mark with subtitle, logo with label, dark with mark (xl), and RTL, as in the Core catalog. Resize below the breakpoint to open the drawer. A full RTL page is at <a href="/site-header/rtl/">/site-header/rtl/</a>.</p>
+  <div class="border mb-4">
+    <SiteHeader id="site-header-text" ariaLabel="Main navigation" brand={markBrand} items={items.slice(0, 5)}>
+      <Button size="sm" element="a" href="#apply">Apply</Button>
+    </SiteHeader>
+  </div>
+  <div class="border mb-4">
+    <SiteHeader id="site-header-logo" ariaLabel="Main navigation" brand={{ label: "Moo UI", href: "#home", showLabel: true, logo }} items={items} utilityItems={utilityItems}>
+      <Button size="sm" element="a" href="#apply">Apply</Button>
+    </SiteHeader>
+  </div>
+  <div class="border mb-4">
+    <SiteHeader id="site-header-dark" ariaLabel="Main navigation" brand={{ label: "Moo UI", href: "#home", mark: "blocks" }} items={items} utilityItems={utilityItems} surface="dark" breakpoint="xl">
+      <Button variant="outline" size="sm" element="a" href="#apply">Apply</Button>
+    </SiteHeader>
+  </div>
+  <div class="border mb-4" dir="rtl">
+    <SiteHeader id="site-header-rtl" ariaLabel="Main navigation" brand={markBrand} items={items.slice(0, 5)}>
+      <Button size="sm" element="a" href="#apply">Apply</Button>
+    </SiteHeader>
+  </div>
+</Layout>

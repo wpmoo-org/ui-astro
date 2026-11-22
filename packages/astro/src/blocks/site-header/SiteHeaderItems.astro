@@ -1,0 +1,38 @@
+---
+// Internal to SiteHeader: a list of main or utility items, already validated.
+interface Child {
+  label: string;
+  href?: string;
+  active?: boolean;
+  disabled?: boolean;
+}
+interface Item extends Child {
+  children: readonly Child[];
+  itemClass: string;
+  activeAny: boolean;
+}
+interface Props {
+  items: readonly Item[];
+  class: string;
+}
+const { items, class: className } = Astro.props;
+---
+
+<ul class={className}>
+  {items.map((item) => item.children.length ? (
+    <li class:list={["nav-item dropdown", item.itemClass]}>
+      <button type="button" class:list={["nav-link dropdown-toggle", item.activeAny ? "active" : ""]} data-bs-toggle="dropdown" aria-expanded="false" disabled={item.disabled ? true : undefined}>{item.label}</button>
+      <ul class="dropdown-menu">
+        {item.children.map((child) => (
+          <li>
+            <a class:list={["dropdown-item", child.active ? "active" : "", child.disabled ? "disabled" : ""]} href={child.href || "#"} aria-disabled={child.disabled ? "true" : undefined} tabindex={child.disabled ? -1 : undefined} aria-current={child.active ? "true" : undefined}><span>{child.label}</span></a>
+          </li>
+        ))}
+      </ul>
+    </li>
+  ) : (
+    <li class:list={["nav-item", item.itemClass]}>
+      <a class:list={["nav-link", item.active ? "active" : "", item.disabled ? "disabled" : ""]} href={item.disabled ? undefined : item.href || "#"} aria-disabled={item.disabled ? "true" : undefined} tabindex={item.disabled ? -1 : undefined} aria-current={item.active ? "page" : undefined}><span>{" "}{item.label}{" "}</span></a>
+    </li>
+  ))}
+</ul>

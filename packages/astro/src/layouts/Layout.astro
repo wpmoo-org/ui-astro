@@ -163,6 +163,9 @@ if (!Astro.slots.has("default")) {
 
 const resolvedHeaderWidth = headerWidth || pageWidth;
 const hasHeader = sidebar || Astro.slots.has("header");
+if (Astro.slots.has("header-region") && (sidebar || Astro.slots.has("header") || headerOverlay)) {
+  throw new TypeError("Layout header-region does not combine with sidebar, header slot or headerOverlay");
+}
 const pageClass = containerClasses[pageWidth];
 // A document page aligns header and footer text with the content rail inset.
 const railInset = shellMode === "document"
@@ -256,7 +259,21 @@ const jsonLd = metadata
         <div data-slot="page">
           {regionSlots["before-header"] ? <div class={headerClass}><Fragment set:html={regionSlots["before-header"]} /></div> : null}
           {
-            hasHeader ? (
+            Astro.slots.has("header-region") ? (
+              // A block-owned header keeps the landmark but brings its own container.
+              <header>
+                <slot name="header-region" />
+                {Astro.slots.has("header-toc") ? (
+                  <div class:list={[headerClass, headerTocClass]} data-header-reading-host>
+                    <div class="fade" data-header-reading-bar hidden inert>
+                      <div class="row bg-body border-top">
+                        <div class="col"><slot name="header-toc" /></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </header>
+            ) : hasHeader ? (
               // An overlay header floats as a dark, transparent owner over the first section.
               <header
                 class:list={headerOverlay
