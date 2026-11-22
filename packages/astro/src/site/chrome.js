@@ -159,17 +159,14 @@ export function resolveHomeHref({ links, localeHome, href, ownsRoot }) {
   return homeLink?.href ?? (ownsRoot ? localeHome : links[0]?.href ?? href);
 }
 
-/** @param {{ href: string, locale?: string, title: string, languageLinks?: readonly import('../i18n/index.js').LanguageLink[] }} input @returns {Promise<import('./index.js').SiteChrome>} */
-export async function getSiteChrome({
-  href,
-  locale,
-  title,
-  languageLinks = [],
-}) {
-  const { getSiteContext, getSiteNavigation } =
-    await import("../context/index.js");
-  const { getLocaleHref } = await import("../i18n/index.js");
-  const { getTaxonomyPaths } = await import("../taxonomies/queries.js");
+// The content queries come from placements/site-context.js, which only a
+// site with content plugins loads; SiteLayout imports this module, so it
+// must not import the content context itself.
+/** @param {{ href: string, locale?: string, title: string, languageLinks?: readonly import('../i18n/index.js').LanguageLink[] }} input @param {{ getSiteContext: typeof import('../context/index.js').getSiteContext, getSiteNavigation: typeof import('../context/index.js').getSiteNavigation, getLocaleHref: typeof import('../i18n/index.js').getLocaleHref, getTaxonomyPaths: typeof import('../taxonomies/queries.js').getTaxonomyPaths }} queries @returns {Promise<import('./index.js').SiteChrome>} */
+export async function getSiteChrome(
+  { href, locale, title, languageLinks = [] },
+  { getSiteContext, getSiteNavigation, getLocaleHref, getTaxonomyPaths },
+) {
   const context = getSiteContext();
   locale ??= context.i18n?.defaultLocale ?? context.site.defaults.lang;
   const presentation = resolveSitePresentation(context.site, locale);

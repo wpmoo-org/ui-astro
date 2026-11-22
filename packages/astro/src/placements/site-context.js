@@ -1,6 +1,7 @@
-import { getSiteContext } from "../context/index.js";
+import { getSiteContext, getSiteNavigation } from "../context/index.js";
+import { getLocaleHref } from "../i18n/index.js";
 import { getTaxonomyPaths, getTaxonomyTerms } from "../taxonomies/queries.js";
-import { entryTaxonomyGroups, groupTaxonomyLinks } from "../site/chrome.js";
+import { entryTaxonomyGroups, getSiteChrome, groupTaxonomyLinks } from "../site/chrome.js";
 export { getTaxonomyTerms as getKnownTerms };
 export async function getAssignedTerms(entry, type, locale) {
   const site = getSiteContext();
@@ -14,4 +15,6 @@ export async function getAssignedTerms(entry, type, locale) {
   );
 }
 
-export { getSiteChrome as getChrome } from "../site/chrome.js";
+export function getChrome(input) {
+  return getSiteChrome(input, { getSiteContext, getSiteNavigation, getLocaleHref, getTaxonomyPaths });
+}

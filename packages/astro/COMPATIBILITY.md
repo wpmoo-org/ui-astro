@@ -261,6 +261,8 @@ byte-identical before and after (sha256 compared). Sites that render through
 their own shell should set `routeOwner: "host"`: the default page uses
 SiteLayout's own chrome, not the site's shell. Existing hosts need no change.
 
+A site with `moo({ plugins: [] })` now builds with the SDK 404 and sitemap routes (`SiteLayout` no longer pulls in the content context; `getSiteChrome` in `src/site/chrome.js` takes its content queries as a second argument); before, such a site failed with "virtual:wpmoo-astro/routes is unavailable before Astro config resolves". This was already broken before `2d90315`; the commit that introduced it was not identified.
+
 ## Local evidence and capability limits
 
 Packed browser inspection covers 24 selected routes across all ten profiles

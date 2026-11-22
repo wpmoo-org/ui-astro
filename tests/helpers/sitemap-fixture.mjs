@@ -3,7 +3,8 @@
 // long-titled articles. Used by tests/sitemap-page-build.test.mjs and, with
 // an outDir, for a visual check served from apps/demo/dist. Also a small
 // bilingual host-shell site that owns its sitemap pages
-// (tests/sitemap-host-build.test.mjs).
+// (tests/sitemap-host-build.test.mjs), and a site with no content plugins
+// (tests/sitemap-ui-only-build.test.mjs).
 import { spawnSync } from "node:child_process";
 import { cp, mkdir, readdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -185,6 +186,32 @@ export const collections = { page: defineCollection({ loader: glob({ base: new U
   await entry("en/contact", "Contact", "contact", "en", 'updated_at: "2026-05-02T08:00:00+02:00"\n');
   await entry("de/index", "Startseite", "index", "de", 'description: "Die Startseite."\ntranslationKey: home\n');
   await entry("de/kontakt", "Kontakt", "kontakt", "de");
+}
+
+/**
+ * A site with no content plugins (plugins: []) and the default SEO outputs:
+ * two host pages in the SDK Layout with their canonical, no content config.
+ */
+export async function createUiOnlySitemapFixture(root) {
+  await linkSdk(root);
+  await write(root, "package.json", JSON.stringify({ private: true, type: "module" }));
+  await write(
+    root,
+    "astro.config.mjs",
+    `import { defineConfig } from "astro/config";
+import moo from "@wpmoo/astro";
+export default defineConfig({ site: "${fixtureSite}", trailingSlash: "always", cacheDir: "./.astro-cache", integrations: [moo({ plugins: [] })] });`,
+  );
+  // Each page names its canonical, which the build scan lists.
+  const hostPage = (title, path) => `---
+import Layout from "@wpmoo/astro/Layout.astro";
+const canonical = "${fixtureSite}${path}";
+const metadata = { title: "${title}", canonical, openGraph: { url: canonical }, twitter: {}, jsonLd: { "@context": "https://schema.org", "@type": "WebPage", url: canonical } };
+---
+<Layout title="${title}" metadata={metadata}><p>${title}</p></Layout>
+`;
+  await write(root, "src/pages/index.astro", hostPage("Home", "/"));
+  await write(root, "src/pages/about.astro", hostPage("About", "/about/"));
 }
 
 async function linkSdk(root) {
