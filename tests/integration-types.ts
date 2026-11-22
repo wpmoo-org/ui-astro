@@ -43,6 +43,19 @@ moo({
   notFound: { routeOwner: "plugin", messages: { de: { title: "Fehler" } } },
 });
 moo({
+  sitemap: { messages: { de: { title: "Inhaltsverzeichnis", topLabel: "Allgemein" } } },
+});
+moo({
+  sitemap: {
+    messages: {
+      de: {
+        // @ts-expect-error Sitemap messages use the published finite fields.
+        heading: "Seiten",
+      },
+    },
+  },
+});
+moo({
   notFound: {
     // @ts-expect-error Native errors have only plugin or host ownership.
     routeOwner: "theme",

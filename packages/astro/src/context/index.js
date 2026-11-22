@@ -382,6 +382,7 @@ export async function validateSiteContent() {
       expected,
       context.resolvedRoutes,
       context.errorPatterns,
+      context.sitemapPatterns,
     );
   if (context.projectionFile) {
     const target = new URL(context.projectionFile);

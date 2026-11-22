@@ -421,7 +421,7 @@ const seoSchema = z.strictObject({
     })
     .optional(),
   // Build outputs written by the integration at astro:build:done. Both are
-  // on unless set to false; htmlSitemap is reserved for the HTML page.
+  // on unless set to false; htmlSitemap is the HTML page, which needs sitemap.
   sitemap: z.boolean().optional(),
   htmlSitemap: z.boolean().optional(),
   robots: z

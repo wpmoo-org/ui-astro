@@ -163,7 +163,7 @@ test("one common archive route is optional and has one namespace owner", () => {
     });
     assert.deepEqual(
       injected.filter((route) => !route.startsWith("/__moo_content_integrity")),
-      [...expected, "/404"],
+      [...expected, "/404", "/sitemap"],
     );
   }
   assert.equal(

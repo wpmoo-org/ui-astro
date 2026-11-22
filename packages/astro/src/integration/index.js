@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { normalizePlacements } from "../placements/options.js";
@@ -36,6 +37,11 @@ import {
   resolveSeoOutputs,
   writeSeoOutputs,
 } from "./sitemap.js";
+import {
+  normalizeSitemap,
+  resolveSitemapOptions,
+  sitemapPagePath,
+} from "../sitemap/options.js";
 
 const virtualId = "virtual:wpmoo-astro/routes";
 const resolvedVirtualId = "\0virtual:wpmoo-astro/routes";
@@ -55,6 +61,14 @@ const errorVirtualId = "virtual:wpmoo-astro/not-found";
 const resolvedErrorVirtualId = "\0virtual:wpmoo-astro/not-found";
 const errorFacadePath = fileURLToPath(
   new URL("../not-found/index.js", import.meta.url),
+);
+const sitemapVirtualId = "virtual:wpmoo-astro/sitemap";
+const resolvedSitemapVirtualId = "\0virtual:wpmoo-astro/sitemap";
+const sitemapFacadePath = fileURLToPath(
+  new URL("../sitemap/index.js", import.meta.url),
+);
+const sitemapEntrypoint = fileURLToPath(
+  new URL("./routes/sitemap.astro", import.meta.url),
 );
 
 function plainRecord(value) {
@@ -76,6 +90,7 @@ export default function moo(input = {}) {
         "taxonomyBasePath",
         "taxonomyRoutes",
         "notFound",
+        "sitemap",
         "blocks",
         "placements",
         "termLinks",
@@ -93,6 +108,12 @@ export default function moo(input = {}) {
   });
   let placementProfile = null;
   const notFound = normalizeNotFound(input.notFound);
+  const sitemapCopy = normalizeSitemap(input.sitemap);
+  // The HTML sitemap page, one per locale, filled at build:done.
+  let sitemapPatterns = [];
+  let sitemapProfile = null;
+  // Random per build: the page's template tokens never match host content.
+  let sitemapNonce = "";
   const plugins = input.plugins ?? [page(), post()];
   const baseRegistry = prepareRegistry(plugins, {
     taxonomies: input.taxonomies,
@@ -131,6 +152,13 @@ export default function moo(input = {}) {
           addTermLinks(config.markdown?.processor, termLinks, { site: config.site });
         const i18n = resolveI18n(config.i18n, site);
         errorClaims = notFoundRouteClaims({ site, i18n, notFound });
+        sitemapNonce = randomBytes(12).toString("hex");
+        sitemapPatterns = seoOutputs.htmlSitemap
+          ? (i18n?.locales ?? [site.defaults.lang]).map((locale) => ({
+              locale,
+              pattern: sitemapPagePath(locale, i18n),
+            }))
+          : [];
         registry = localizeRegistry(baseRegistry, i18n);
         // Content sync starts a temporary Vite server during build and sync.
         // Its optimizer must not replace files used by a running dev server.
@@ -159,6 +187,8 @@ export default function moo(input = {}) {
               entrypoint: claim.entrypoint,
               prerender: true,
             });
+        for (const { pattern } of sitemapPatterns)
+          injectRoute({ pattern, entrypoint: sitemapEntrypoint, prerender: true });
         if (active) updateConfig({ prerenderConflictBehavior: "error" });
         if (active && command === "dev") {
           // Save + format-on-save may write twice inside Chokidar's 50ms
@@ -194,6 +224,19 @@ export default function moo(input = {}) {
               {
                 name: "wpmoo-astro-context",
                 resolveId(source, importer, options) {
+                  if (
+                    source === sitemapVirtualId ||
+                    source === resolvedSitemapVirtualId
+                  ) {
+                    if (
+                      !options?.ssr ||
+                      importer?.split("?")[0] !== sitemapFacadePath
+                    )
+                      throw new Error(
+                        `${sitemapVirtualId} is private and server-only`,
+                      );
+                    return resolvedSitemapVirtualId;
+                  }
                   if (
                     source === errorVirtualId ||
                     source === resolvedErrorVirtualId
@@ -233,6 +276,7 @@ export default function moo(input = {}) {
                 load(id, options) {
                   if (
                     [
+                      resolvedSitemapVirtualId,
                       resolvedErrorVirtualId,
                       resolvedLocaleVirtualId,
                       resolvedVirtualId,
@@ -242,6 +286,30 @@ export default function moo(input = {}) {
                     throw new Error(
                       `${id.slice(1)} is private and server-only`,
                     );
+                  if (id === resolvedSitemapVirtualId) {
+                    if (!sitemapProfile)
+                      throw new Error(
+                        `${sitemapVirtualId} is unavailable before Astro config resolves`,
+                      );
+                    // Literal page routes for the development list.
+                    const errors = new Set(errorClaims.map((claim) => claim.pattern));
+                    const staticPaths = resolvedRoutes
+                      .filter(
+                        (route) =>
+                          route.type === "page" &&
+                          route.origin !== "internal" &&
+                          !route.pattern.includes("[") &&
+                          !errors.has(route.pattern),
+                      )
+                      .map((route) => route.pattern);
+                    // Only the dev list reads content; a build never loads
+                    // the content context, which an inactive site lacks.
+                    const loader =
+                      active && sitemapProfile.development
+                        ? `() => Promise.all([import("astro:content"), import(${JSON.stringify(facadePath)})])`
+                        : "null";
+                    return `export default ${JSON.stringify({ ...sitemapProfile, staticPaths })}; export const loadContent = ${loader};`;
+                  }
                   if (id === resolvedErrorVirtualId) {
                     if (!errorProfile)
                       throw new Error(
@@ -295,6 +363,32 @@ export default function moo(input = {}) {
                 ),
               );
           }
+        // The SDK owns each locale's sitemap page; a host page there collides.
+        for (const { pattern } of sitemapPatterns) {
+          const matches = routes.filter((route) => route.pattern === pattern);
+          const host = matches.find((route) => route.origin !== "external");
+          if (host)
+            throw new Error(
+              collisionMessage(
+                `${pattern}/`.replace(/^\/\//u, "/"),
+                `the route ${host.pattern} (${host.entrypoint})`,
+              ),
+            );
+          const owned = matches.filter(
+            (route) =>
+              route.origin === "external" &&
+              (root
+                ? fileURLToPath(new URL(route.entrypoint, root))
+                : route.entrypoint) === sitemapEntrypoint,
+          );
+          if (matches.length !== 1 || owned.length !== 1)
+            throw new Error(
+              collisionMessage(
+                `${pattern}/`,
+                `another route at ${pattern} (${matches.map((route) => route.entrypoint).join(", ")})`,
+              ),
+            );
+        }
         if (context)
           context.privateData.resolvedRoutes = routes
             .filter((route) => route.type === "page")
@@ -316,6 +410,7 @@ export default function moo(input = {}) {
             resolvedRoutes,
             expected,
             errorClaims.map((claim) => claim.pattern),
+            sitemapPatterns.map((claim) => claim.pattern),
           );
         }
         if (seoBuild?.config) {
@@ -326,11 +421,33 @@ export default function moo(input = {}) {
             errorPaths: errorClaims.map((claim) => claim.pattern),
             outputs: seoOutputs,
             warn: (message) => logger.warn(message),
+            i18n: sitemapProfile.i18n,
+            lang: sitemapProfile.site.defaults.lang,
+            xslCopy: resolveSitemapOptions(
+              sitemapProfile,
+              sitemapProfile.i18n?.defaultLocale ?? sitemapProfile.site.defaults.lang,
+            ).copy,
+            htmlSitemap: {
+              nonce: sitemapNonce,
+              pages: sitemapPatterns.map(({ locale, pattern }) => {
+                const resolved = resolveSitemapOptions(sitemapProfile, locale);
+                return {
+                  locale,
+                  pathname: `${pattern.replace(/^\//u, "")}/`,
+                  href: resolved.href,
+                  copy: resolved.copy,
+                };
+              }),
+            },
           });
           const report = leftOutReport(result.left);
           logger.info(
             `${result.files.join(", ")} written${seoOutputs.sitemap ? ` (${result.entries.length} URLs; ${result.skipped} pages left out${report.summary ? `: ${report.summary}` : ""})` : ""}`,
           );
+          if (result.pages.length)
+            logger.info(
+              `HTML sitemap filled: ${result.pages.map((page) => `${page.name} (${page.rows} rows)`).join(", ")}`,
+            );
           if (report.warning) logger.warn(report.warning);
           for (const line of report.details) logger.debug(line);
         }
@@ -361,7 +478,7 @@ export default function moo(input = {}) {
         if (seoBuild) {
           if (seoOutputs.sitemap && !config.site)
             throw new TypeError(missingSiteMessage());
-          for (const name of ["sitemap.xml", "robots.txt"]) {
+          for (const name of ["sitemap.xml", "sitemap.xsl", "robots.txt"]) {
             const file = reservedOutput(name, seoOutputs, "/");
             if (
               file &&
@@ -412,6 +529,35 @@ export default function moo(input = {}) {
         injectTypes({
           filename: "placements-context.d.ts",
           content: `declare module "virtual:wpmoo-astro/placements" { const profile: any; export default profile; export const factories: Record<string, import("astro/runtime/server/index.js").AstroComponentFactory>; export const collections: Record<string, unknown>; export function getAssignedTerms(entry: unknown, type: string | undefined, locale: string): Promise<import("@wpmoo/astro/placements").PlacementPlan["context"]["assignedTerms"]>; export function getKnownTerms(id: string): Promise<{ id: string }[]>; export function getChrome(input: unknown): Promise<import("@wpmoo/astro/placements").PlacementPlan["chrome"]>; }`,
+        });
+        sitemapProfile = {
+          site,
+          base: config.base,
+          trailingSlash: config.trailingSlash,
+          i18n,
+          active,
+          development: commandName === "dev",
+          nonce: sitemapNonce,
+          sitemap: sitemapCopy,
+        };
+        for (const locale of i18n?.locales ?? [site.defaults.lang])
+          resolveSitemapOptions(sitemapProfile, locale);
+        // A public file at a sitemap page would be replaced or replace it.
+        // Only the file the build format writes collides: with "directory"
+        // a public sitemap.html is another URL than /sitemap/.
+        const pageFile = (path) =>
+          (config.build?.format ?? "directory") === "directory"
+            ? `${path}/index.html`
+            : `${path}.html`;
+        for (const { pattern } of sitemapPatterns)
+          for (const name of [pageFile(pattern.slice(1))])
+            if (config.publicDir && existsSync(new URL(name, config.publicDir)))
+              throw new TypeError(
+                collisionMessage(`${pattern}/`, `public/${name}`),
+              );
+        injectTypes({
+          filename: "sitemap-context.d.ts",
+          content: `declare module ${JSON.stringify(sitemapVirtualId)} { const profile: { site: import("@wpmoo/astro/config").SiteConfig; base: string; trailingSlash: "always" | "never" | "ignore"; i18n: import("@wpmoo/astro/context").SiteContext["i18n"]; active: boolean; development: boolean; nonce: string; sitemap: { messages: Readonly<Record<string, Readonly<Record<string, string>>>> }; staticPaths: readonly string[] }; export default profile; export const loadContent: null | (() => Promise<[typeof import("astro:content"), typeof import("@wpmoo/astro/context")]>); }`,
         });
         errorProfile = {
           site,
@@ -465,6 +611,7 @@ declare module ${JSON.stringify(virtualId)} {
     readonly navigation: readonly { readonly label: string; readonly path: string; readonly match: "exact" | "prefix"; readonly order?: number }[];
     readonly projectionFile: string | null;
     readonly errorPatterns: readonly string[];
+    readonly sitemapPatterns: readonly string[];
     readonly archivePaths: readonly { readonly id: string; readonly locale: string; readonly path: string; readonly pattern: string }[];
     readonly singleRoutes: readonly { readonly type: string; readonly locale: string; readonly pattern: string; readonly allowNativeHost: boolean }[];
     readonly resolvedRoutes: readonly { readonly pattern: string; readonly patternRegex: string; readonly regexFlags: string; readonly type: "page"; readonly entrypoint: string; readonly origin: string }[];
@@ -481,6 +628,7 @@ declare module ${JSON.stringify(virtualId)} {
             root: config.root.href,
             projectionFile: projectionFile?.href ?? null,
             errorPatterns: errorClaims.map((claim) => claim.pattern),
+            sitemapPatterns: sitemapPatterns.map((claim) => claim.pattern),
             archivePaths: registry.routeClaims
               .filter((claim) => !claim.pattern.includes("["))
               .map((claim) => ({

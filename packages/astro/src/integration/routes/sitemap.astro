@@ -1,0 +1,132 @@
+---
+// The HTML sitemap of one locale. At build it renders one template group
+// whose one row holds sentinel tokens; the integration fills it at
+// astro:build:done from the same scan that writes sitemap.xml. The dev
+// server has no build:done, so it renders the pre-build list with a note.
+import {
+  getDevelopmentGroups,
+  getSitemapOptions,
+  getSitemapTokens,
+  isDevelopmentServer,
+} from "../../sitemap/index.js";
+import { displayDate, escapeHtml } from "../sitemap-page.js";
+import { resolveSeoMetadata } from "../../seo/index.js";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import ContentFrame from "../../layouts/ContentFrame.astro";
+import PageHeader from "../../includes/PageHeader.astro";
+import Typography from "../../components/Typography.astro";
+import Table from "../../components/Table.astro";
+import Alert from "../../components/Alert.astro";
+
+export const prerender = true;
+const data = getSitemapOptions(Astro.currentLocale);
+const { copy } = data;
+const development = isDevelopmentServer();
+const sentinels = getSitemapTokens();
+const metadata = Astro.site
+  ? resolveSeoMetadata(data.site, {
+      title: copy.title,
+      status: "publish",
+      view: "native",
+      lang: data.options.lang,
+      url: new URL(data.href, Astro.site).href,
+      alternates:
+        data.languageLinks.length > 1
+          ? data.languageLinks.map((link) => ({
+              locale: link.locale,
+              url: new URL(link.href, Astro.site).href,
+            }))
+          : undefined,
+    })
+  : undefined;
+const template = [
+  {
+    id: sentinels.groupId,
+    label: sentinels.groupLabel,
+    count: sentinels.groupCount,
+    pages: [
+      {
+        href: sentinels.href,
+        title: sentinels.title,
+        description: sentinels.description,
+        lastmod: sentinels.dateTime,
+        display: sentinels.date,
+      },
+    ],
+  },
+];
+const groups = development
+  ? (await getDevelopmentGroups(data.locale, copy)).map((group) => ({
+      ...group,
+      count: String(group.pages.length),
+    }))
+  : template;
+const total = development
+  ? String(groups.reduce((sum, group) => sum + group.pages.length, 0))
+  : sentinels.total;
+const cell = (page: { href: string; title: string; description?: string }) =>
+  `<a class="text-break" href="${escapeHtml(page.href)}">${escapeHtml(page.title)}</a>${
+    page.description
+      ? `<span class="d-block small text-body-secondary text-break">${escapeHtml(page.description)}</span>`
+      : ""
+  }`;
+// The date part only (the full lastmod in datetime); the XML keeps it whole.
+const updated = (lastmod?: string, display?: string) =>
+  `<span class="text-nowrap">${
+    lastmod
+      ? `<time datetime="${escapeHtml(lastmod)}">${escapeHtml(display ?? displayDate(lastmod))}</time>`
+      : escapeHtml(copy.noDate)
+  }</span>`;
+const intro = copy.intro.split(/(\{count\}|\{xml\}|\{protocol\})/u);
+---
+
+<SiteLayout
+  title={copy.title}
+  options={data.options}
+  href={data.href}
+  locale={data.locale}
+  metadata={metadata}
+  languageLinks={data.languageLinks}
+>
+  <ContentFrame element="article" dir={data.options.dir}>
+    <PageHeader title={copy.title} parts={data.options.parts} />
+    <p>
+      {
+        intro.map((part) =>
+          part === "{count}" ? (
+            total
+          ) : part === "{xml}" ? (
+            <a href={data.xmlHref}>{copy.xmlLabel}</a>
+          ) : part === "{protocol}" ? (
+            <a
+              href="https://www.sitemaps.org/protocol.html"
+              target="_blank"
+              rel="noopener noreferrer">{copy.protocolLabel}</a
+            >
+          ) : (
+            part
+          ),
+        )
+      }
+    </p>
+    {development ? <Alert variant="info" description={copy.devNote} /> : null}
+    {
+      groups.map((group) => (
+        <section aria-labelledby={group.id}>
+          <Typography
+            variant="section-title"
+            id={group.id}
+            content={`${group.label} (${group.count})`}
+          />
+          <Table
+            headers={[copy.pageLabel, copy.updatedLabel]}
+            align={["", "end"]}
+            trustedHtml
+            aria-labelledby={group.id}
+            rows={group.pages.map((page) => [cell(page), updated(page.lastmod, "display" in page ? page.display : undefined)])}
+          />
+        </section>
+      ))
+    }
+  </ContentFrame>
+</SiteLayout>

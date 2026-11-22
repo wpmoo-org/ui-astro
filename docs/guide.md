@@ -1637,8 +1637,9 @@ version support and final release acceptance remain separate gates.
 
 ### Sitemap and robots.txt
 
-The `@wpmoo/astro` integration writes `sitemap.xml` and `robots.txt` into the
-build output at `astro:build:done`. There is no extra package and no install;
+The `@wpmoo/astro` integration writes `sitemap.xml`, `sitemap.xsl`, an HTML
+sitemap page per locale and `robots.txt` into the build output at
+`astro:build:done`. There is no extra package and no install;
 `@astrojs/sitemap` is not used.
 
 - **Source: the built pages.** The integration reads the head of every built
@@ -1668,22 +1669,76 @@ build output at `astro:build:done`. There is no extra package and no install;
   redirected, noindex or not self-canonical), when two pages name the same
   canonical, when a page has several different canonicals, or when a listed URL
   is not under `site` and `base`.
+- **XML view.** Line 2 of every sitemap file is
+  `<?xml-stylesheet type="text/xsl" href="sitemap.xsl"?>`. `sitemap.xsl` is
+  Moo UI Core's xsl markup and classes with `noindex, follow`, a link to the
+  default locale's `/sitemap/` page, the stylesheet links of that built page
+  (with `htmlSitemap: false`: of the built home page, else of the first listed
+  page; unstyled when none links a stylesheet) and the same inlined
+  `@wpmoo/ui/state.js` text `Layout` inlines. It uses the default locale's copy
+  and renders a sitemap index like a urlset (one row per sitemap file).
+  Browsers without XSLT show the plain XML.
+- **HTML sitemap page.** Each locale gets one page at `/sitemap/` (`/de/sitemap/`
+  and so on, by the native i18n prefix rules), in the site's `SiteLayout`, as
+  the 404 route is. It lists that locale's pages from the same scan as the XML,
+  so the rows equal the XML entries and the page lists itself. The body is the
+  page title (h1), an intro with the count and links to `sitemap.xml` and the
+  sitemaps.org protocol (new tab, `rel="noopener noreferrer"`), then one
+  `section-title` heading (h2) and one `Table` per group (Page and Updated
+  columns). Each `<section>` and `<table>` is named by its heading with
+  `aria-labelledby`, as in Core.
+  - Grouping needs no host input: by the first path segment after the locale
+    and `base`. A group's label is the title of the segment's own listed index
+    page, else the segment text. A segment with fewer than two listed pages
+    joins the top-level group ("Pages"). Within a group the index page comes
+    first, then the rest by title; the top-level group comes first, then the
+    others by label.
+  - Title: the JSON-LD `headline` or `name` of the page's own object, else
+    `og:title` or `<title>` without a trailing ` | {og:site_name}`. Description:
+    the meta description. Date: the date part (`YYYY-MM-DD`) of the XML
+    `lastmod` in `<time datetime="{full lastmod}">`, or `—`; the XML keeps the
+    full value.
+  - The page renders with one template group and row holding sentinel tokens;
+    the build clones the rendered markup per row and replaces the tokens with
+    escaped text. A host override or changed markup that removes the template
+    fails the build. The dev server has no build step, so there the page lists
+    published SDK entries and literal host routes, with a note that the build
+    lists every built page.
+  - Copy comes from built-in English and German and can be overridden per
+    locale, like the 404 copy, with `moo({ sitemap: { messages: { de: {...} } } })`.
+    Fields: `title`, `intro` (with `{count}`, `{xml}` and `{protocol}` once
+    each), `xmlLabel`, `protocolLabel`, `pageLabel`, `updatedLabel`, `topLabel`,
+    `noDate`, `devNote`, and for the xsl `xmlTitle`, `xmlIntro` (`{count}`,
+    `{protocol}`), `xmlPageLink` (`{page}`), `xmlPageLabel`, `urlLabel`,
+    `lastModifiedLabel`. Missing fields fall back to the built-in copy of the
+    locale, the host and built-in copy of the default locale, then English.
+    `sitemap.messages` holds copy only; the on/off switches live under
+    `site.seo` (`sitemap`, `htmlSitemap`, `robots`).
+  - Known limits: the XSL transform has no automated test (the guest has no
+    XSLT processor; tests check well-formedness, noindex and links). It was
+    verified once by hand with `xsltproc --nonet` on the demo `sitemap.xml`
+    (exit 0, 24 data rows plus the header, noindex meta, the stylesheet link
+    and the sitemap page link present). Browsers without XSLT show the plain
+    XML, which stays valid.
 - **Collisions.** Nothing is overwritten. The build fails, naming the file and
-  the opt-out, when `public/robots.txt` or `public/sitemap.xml` exists, when a
-  host route emits `/sitemap.xml`, `/sitemap-N.xml` or `/robots.txt`, when the
+  the opt-out, when `public/robots.txt`, `public/sitemap.xml` or
+  `public/sitemap.xsl` exists, when a public file or host route sits at a
+  locale's `/sitemap/` page (opt-out `htmlSitemap: false`), when a
+  host route emits `/sitemap.xml`, `/sitemap-N.xml`, `/sitemap.xsl` or `/robots.txt`, when the
   file is already in the build output, or when another integration with
   `sitemap` (or `robots`) in its name is registered, such as `@astrojs/sitemap`.
   Integrations without such a name and post-build scripts that write these
   files after the SDK cannot be detected.
 
-Both outputs are on by default. Turn them off or configure robots.txt in
+All outputs are on by default. Turn them off or configure robots.txt in
 `site.seo`:
 
 ```js
 moo({
   site: {
     seo: {
-      sitemap: false, // no sitemap.xml; the build no longer needs `site`
+      sitemap: false, // no sitemap.xml, sitemap.xsl or page; no `site` needed
+      htmlSitemap: false, // keep sitemap.xml and sitemap.xsl, drop /sitemap/
       robots: { disallow: ["/intern/"] }, // or robots: false
     },
   },
@@ -1691,8 +1746,9 @@ moo({
 ```
 
 `disallow` entries are host paths starting with `/`, written as given. With
-`sitemap: false`, `robots.txt` has no `Sitemap:` line. `htmlSitemap` is
-reserved for the HTML sitemap page and has no effect yet. To keep another
+`sitemap: false`, `robots.txt` has no `Sitemap:` line and there is no HTML
+sitemap page, since it is filled from the sitemap scan. Sites link the page
+from their own footer. To keep another
 sitemap writer, turn the SDK output off with `seo.sitemap: false` (and
 `seo.robots: false` if it also writes `robots.txt`).
 

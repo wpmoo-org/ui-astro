@@ -369,7 +369,11 @@ export interface SeoInput {
    * as canonical and are not noindex. Default `true`; needs the Astro `site`.
    */
   sitemap?: boolean;
-  /** Reserved for the HTML sitemap page; it has no effect yet. */
+  /**
+   * Write an HTML sitemap page per locale at `/sitemap/`, filled at build
+   * from the same pages as `sitemap.xml`. Default `true`; off when
+   * `sitemap` is `false`.
+   */
   htmlSitemap?: boolean;
   /**
    * Write `robots.txt` at build (`User-agent: *`, `Allow: /`, the

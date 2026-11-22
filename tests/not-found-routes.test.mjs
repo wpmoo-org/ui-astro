@@ -110,12 +110,14 @@ test("default_and_host_error_claims", () => {
     }
   }
   assert.deepEqual(
-    configured({ plugins: [], notFound: { routeOwner: "host" } }).injected,
-    [],
+    configured({ plugins: [], notFound: { routeOwner: "host" } }).injected.map(
+      (route) => route.pattern,
+    ),
+    ["/sitemap"],
   );
   assert.deepEqual(
     configured().injected.map((route) => route.pattern),
-    ["/404"],
+    ["/404", "/sitemap"],
   );
 });
 test("root_fallback_survives_prefixed_default", () => {

@@ -14,9 +14,11 @@ import { defineTaxonomy } from "../packages/astro/src/taxonomies/index.js";
 
 test("omitted plugin selection registers Page and Post, while an explicit list replaces it", () => {
   for (const [input, expected] of [
-    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]", "/404"]],
-    [{ plugins: [page()] }, ["/[...slug]", "/404"]],
-    [{ plugins: [] }, ["/404"]],
+    // The HTML sitemap page is injected with the sitemap on (the default).
+    [undefined, ["/[...slug]", "/posts", "/posts/[...slug]", "/404", "/sitemap"]],
+    [{ plugins: [page()] }, ["/[...slug]", "/404", "/sitemap"]],
+    [{ plugins: [] }, ["/404", "/sitemap"]],
+    [{ plugins: [], site: { seo: { htmlSitemap: false } } }, ["/404"]],
   ]) {
     const routes = [];
     moo(input).hooks["astro:config:setup"]({
@@ -89,6 +91,8 @@ test("moo checks plugin and taxonomy namespaces in the same active locale", () =
     "/posts/[slug]",
     "/404",
     "/en/404",
+    "/en/sitemap",
+    "/sitemap",
   ]);
   assert.equal(plugins[0].basePath, "/posts");
   assert.equal(taxonomy.archive.basePath, "/c");
@@ -125,6 +129,8 @@ test("moo ignores authored namespaces overridden in every active locale", () => 
       "/posts/[slug]",
       "/404",
       "/en/404",
+      "/en/sitemap",
+      "/sitemap",
     ],
   );
   assert.throws(

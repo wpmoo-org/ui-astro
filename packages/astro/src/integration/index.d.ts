@@ -17,6 +17,36 @@ export interface TermLink {
   include?: readonly string[];
 }
 
+/** Copy of the HTML sitemap page and of sitemap.xsl, as plain text. */
+export interface SitemapMessages {
+  title: string;
+  /** Holds `{count}`, `{xml}` and `{protocol}` exactly once each. */
+  intro: string;
+  xmlLabel: string;
+  protocolLabel: string;
+  pageLabel: string;
+  updatedLabel: string;
+  /** Label of the top-level group. */
+  topLabel: string;
+  /** Shown in the Updated column when a page records no date. */
+  noDate: string;
+  /** Dev server note: the full list appears in the build. */
+  devNote: string;
+  xmlTitle: string;
+  /** Holds `{count}` and `{protocol}` exactly once each. */
+  xmlIntro: string;
+  /** Holds `{page}` exactly once. */
+  xmlPageLink: string;
+  xmlPageLabel: string;
+  urlLabel: string;
+  lastModifiedLabel: string;
+}
+
+export interface SitemapInput {
+  /** Per-locale overrides; missing fields fall back like the 404 copy. */
+  messages?: Record<string, Partial<SitemapMessages>>;
+}
+
 export interface MooInput extends PlacementInputOptions {
   site?: SiteInput;
   plugins?: readonly Plugin[];
@@ -24,6 +54,8 @@ export interface MooInput extends PlacementInputOptions {
   taxonomyBasePath?: string;
   taxonomyRoutes?: { archive?: "plugin" | "host" };
   notFound?: NotFoundInput;
+  /** Copy of the HTML sitemap page (`site.seo.htmlSitemap`) and sitemap.xsl. */
+  sitemap?: SitemapInput;
   termLinks?: readonly TermLink[];
 }
 

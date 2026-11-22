@@ -12,6 +12,7 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readStateScript, renderHtmlSitemaps, renderSitemapXsl, xslSource } from "./sitemap-page.js";
 
 /** URLs per sitemap file (sitemaps.org protocol limit). */
 export const SITEMAP_URL_LIMIT = 50_000;
@@ -21,6 +22,7 @@ const xhtmlNamespace = "http://www.w3.org/1999/xhtml";
 const optOut = {
   sitemap: "moo({ site: { seo: { sitemap: false } } })",
   robots: "moo({ site: { seo: { robots: false } } })",
+  htmlSitemap: "moo({ site: { seo: { htmlSitemap: false } } })",
 };
 // The root error pages and the SDK's own (localized) error routes are never
 // listed, whatever their head says.
@@ -47,11 +49,15 @@ export function isW3cDate(value) {
   return true;
 }
 
-/** The outputs that site.seo turns on; both default to on. */
+/**
+ * The outputs that site.seo turns on; all default to on. The HTML sitemap
+ * page needs the sitemap, since it is filled from the same scan.
+ */
 export function resolveSeoOutputs(seo) {
   const robots = seo?.robots ?? true;
   return {
     sitemap: seo?.sitemap !== false,
+    htmlSitemap: seo?.sitemap !== false && seo?.htmlSitemap !== false,
     robots: robots !== false,
     disallow: typeof robots === "object" ? [...(robots.disallow ?? [])] : [],
   };
@@ -78,12 +84,13 @@ export function reservedOutput(path, outputs, base) {
   local = local.replace(/^\/+/u, "");
   if (outputs.robots && local === "robots.txt") return "robots.txt";
   if (outputs.sitemap && /^sitemap(?:-\d+)?\.xml$/u.test(local)) return local;
+  if (outputs.sitemap && local === "sitemap.xsl") return local;
   return null;
 }
 
 /** The error message for a collision with an SDK output. */
 export function collisionMessage(file, source) {
-  const key = file === "robots.txt" ? "robots" : "sitemap";
+  const key = file === "robots.txt" ? "robots" : /^\/|\/$/u.test(file) ? "htmlSitemap" : "sitemap";
   return `@wpmoo/astro writes ${file} at build, and ${source} also provides it. Nothing is overwritten: remove the other ${file}, or turn the SDK output off with ${optOut[key]}.`;
 }
 
@@ -159,18 +166,25 @@ const scanner =
 
 /**
  * Canonical links, hreflang alternates, robots noindex and JSON-LD dates of
- * one built HTML document.
+ * one built HTML document, plus what the HTML sitemap and the xsl read: the
+ * <title>, meta description, og:title, og:site_name, JSON-LD names and the
+ * stylesheet links.
  */
 export function parseHead(html) {
   const canonicals = [];
   const alternates = [];
   const jsonLd = [];
+  const stylesheets = [];
+  const meta = {};
+  let title;
   let noindex = false;
   let inHead = true;
   for (const match of String(html).matchAll(scanner)) {
     const [whole, rawBlock, blockAttributes, blockBody, voidTag] = match;
     if (whole.startsWith("<!--")) continue;
     if (rawBlock) {
+      if (rawBlock.toLowerCase() === "title" && inHead && title === undefined)
+        title = decodeEntities(blockBody).replace(/\s+/gu, " ").trim();
       if (
         rawBlock.toLowerCase() === "script" &&
         parseAttributes(`<script${blockAttributes}>`).type?.trim().toLowerCase() ===
@@ -190,11 +204,21 @@ export function parseHead(html) {
       const href = attributes.href?.trim();
       if (!href) continue;
       if (rel.includes("canonical")) canonicals.push(href);
+      if (rel.includes("stylesheet")) stylesheets.push(href);
       if (rel.includes("alternate") && attributes.hreflang?.trim())
         alternates.push({ hreflang: attributes.hreflang.trim(), href });
     } else if (tokens(attributes.name).includes("robots")) {
       const content = tokens(attributes.content, /[\s,]+/u);
       if (content.includes("noindex") || content.includes("none")) noindex = true;
+    } else {
+      const key =
+        attributes.name?.trim().toLowerCase() === "description"
+          ? "description"
+          : { "og:title": "ogTitle", "og:site_name": "siteName" }[
+              attributes.property?.trim().toLowerCase()
+            ];
+      if (key && meta[key] === undefined && attributes.content !== undefined)
+        meta[key] = attributes.content.trim();
     }
   }
   const things = [];
@@ -221,7 +245,16 @@ export function parseHead(html) {
         typeof thing.datePublished === "string" ? thing.datePublished.trim() : undefined,
     }))
     .filter((thing) => thing.modified || thing.published);
-  return { canonicals, alternates, noindex, dates };
+  const names = things
+    .map((thing) => ({
+      url: typeof thing.url === "string" ? thing.url : undefined,
+      id: typeof thing["@id"] === "string" ? thing["@id"] : undefined,
+      name: [thing.headline, thing.name].find(
+        (value) => typeof value === "string" && value.trim(),
+      )?.trim(),
+    }))
+    .filter((thing) => thing.name);
+  return { canonicals, alternates, noindex, dates, names, title, meta, stylesheets };
 }
 
 // ------------------------------------------------------------------- listing
@@ -250,7 +283,8 @@ export function selfUrls(pathname, { site, base = "/", trailingSlash = "ignore" 
   return [...new Set(forms.map((path) => new URL(path, site).href))];
 }
 
-function htmlFile(root, pathname) {
+/** The built HTML file of a page pathname, as { file, relative }, or null. */
+export function htmlFile(root, pathname) {
   const local = String(pathname ?? "").replace(/^\/+|\/+$/gu, "");
   // Astro names a page "a/" for a/index.html (directory format) and "a" for
   // a.html (file format); try that form first, then the other.
@@ -273,17 +307,37 @@ function htmlFile(root, pathname) {
 // Only a JSON-LD object about this page dates it: its url, or its @id
 // without the fragment, is the canonical. Dates of other objects (another
 // article, an event) are never used.
-function lastmodOf(head, loc, warn, relative) {
+function aboutPage(things, loc) {
   const about = (value) => {
     const url = value && absolute(value, loc);
     return url ? url.replace(/#.*$/u, "") === loc : false;
   };
-  const own = head.dates.find((thing) => about(thing.url) || (!thing.url && about(thing.id)));
+  return things.find((thing) => about(thing.url) || (!thing.url && about(thing.id)));
+}
+
+function lastmodOf(head, loc, warn, relative) {
+  const own = aboutPage(head.dates, loc);
   if (!own) return undefined;
   const value = own.modified ?? own.published;
   if (isW3cDate(value)) return value;
   warn?.(`sitemap: ${relative} has a JSON-LD date that is not a W3C date (${value}); no lastmod written`);
   return undefined;
+}
+
+/**
+ * The page title for the HTML sitemap: the JSON-LD headline or name of the
+ * object about this page (the raw title the resolver emits), else og:title
+ * or <title> without a trailing " | {og:site_name}", else null.
+ */
+export function pageTitleOf(head, loc) {
+  const named = aboutPage(head.names ?? [], loc)?.name;
+  if (named) return named;
+  const title = head.meta?.ogTitle || head.title;
+  if (!title) return null;
+  const suffix = head.meta?.siteName ? ` | ${head.meta.siteName}` : null;
+  return suffix && title.endsWith(suffix) && title.length > suffix.length
+    ? title.slice(0, -suffix.length).trim()
+    : title;
 }
 
 /**
@@ -297,6 +351,8 @@ export function collectSitemapEntries({ dir, pages, site, base = "/", trailingSl
   const siteUrl = new URL(site);
   const mount = mountOf(base);
   const entries = [];
+  // What the HTML sitemap and the xsl read from each listed page, by loc.
+  const details = new Map();
   const owners = new Map();
   const errorPages = new Set([...rootErrorPages, ...errorPaths.map(localPath)]);
   // Pages left out, with the reason, so the build log can name them.
@@ -348,6 +404,13 @@ export function collectSitemapEntries({ dir, pages, site, base = "/", trailingSl
       );
     owners.set(loc, found.relative);
     entries.push({ loc, ...(lastmod ? { lastmod } : {}), alternates });
+    details.set(loc, {
+      file: found.relative,
+      pathname: String(pathname ?? ""),
+      title: pageTitleOf(head, loc),
+      description: head.meta.description ?? "",
+      stylesheets: head.stylesheets,
+    });
   }
   const outside = entries
     .map((entry) => entry.loc)
@@ -370,7 +433,7 @@ export function collectSitemapEntries({ dir, pages, site, base = "/", trailingSl
       `sitemap: language alternates that are not listed pages (missing, redirected, noindex or not self-canonical):\n${broken.join("\n")}`,
     );
   entries.sort((a, b) => (a.loc < b.loc ? -1 : a.loc > b.loc ? 1 : 0));
-  return { entries, left, skipped: left.length };
+  return { entries, left, skipped: left.length, details };
 }
 
 // ----------------------------------------------------------------- rendering
@@ -384,10 +447,15 @@ export function escapeXml(text) {
     .replace(/'/gu, "&apos;");
 }
 
+// Line 2 of every sitemap file: browsers render it with sitemap.xsl, which
+// is written next to it; search engines ignore the instruction.
+export const stylesheetInstruction = '<?xml-stylesheet type="text/xsl" href="sitemap.xsl"?>';
+
 function urlset(entries) {
   const alternates = entries.some((entry) => entry.alternates.length);
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
+    stylesheetInstruction,
     `<urlset xmlns="${sitemapNamespace}"${alternates ? ` xmlns:xhtml="${xhtmlNamespace}"` : ""}>`,
     ...entries.map((entry) =>
       [
@@ -420,6 +488,7 @@ export function renderSitemapFiles(entries, { site, base = "/", limit = SITEMAP_
     });
   const index = [
     '<?xml version="1.0" encoding="UTF-8"?>',
+    stylesheetInstruction,
     `<sitemapindex xmlns="${sitemapNamespace}">`,
     ...files.map(({ name }) => `<sitemap><loc>${escapeXml(outputUrl(name, { site, base }))}</loc></sitemap>`),
     "</sitemapindex>",
@@ -457,15 +526,40 @@ export function renderRobots({ sitemapUrl, disallow = [] } = {}) {
 
 /**
  * Build the outputs and write them into dir. Fails, writing nothing, when
- * any of the files is already there.
+ * any of the new files is already there. With the HTML sitemap on, the
+ * built sitemap pages (htmlSitemap: { nonce, pages: [{ locale, pathname, href, copy }] })
+ * are filled in place from the same scan; sitemap.xsl takes its copy from
+ * htmlSitemap.xslCopy (or xslCopy) and its look from a built page.
  */
-export function writeSeoOutputs({ dir, pages, site, base = "/", trailingSlash = "ignore", errorPaths, outputs, limit, warn }) {
+export function writeSeoOutputs({ dir, pages, site, base = "/", trailingSlash = "ignore", errorPaths, outputs, limit, warn, i18n = null, lang = "en", htmlSitemap = null, xslCopy = null, stateScript }) {
   const root = dir instanceof URL ? fileURLToPath(dir) : String(dir);
   const files = [];
   let listed = null;
+  let filled = [];
   if (outputs.sitemap) {
     listed = collectSitemapEntries({ dir: root, pages, site, base, trailingSlash, errorPaths, warn });
     files.push(...renderSitemapFiles(listed.entries, { site, base, limit }));
+    const pageList = outputs.htmlSitemap && htmlSitemap ? htmlSitemap.pages : [];
+    if (pageList.length)
+      filled = renderHtmlSitemaps({ root, entries: listed.entries, details: listed.details, site, base, i18n, lang, pages: pageList, nonce: htmlSitemap.nonce });
+    const main = pageList.find((page) => page.locale === (i18n?.defaultLocale ?? lang)) ?? pageList[0] ?? null;
+    const copy = xslCopy ?? main?.copy;
+    if (copy) {
+      const source = xslSource({ root, site, base, pagePathname: main?.pathname ?? null, entries: listed.entries, details: listed.details });
+      files.push({
+        name: "sitemap.xsl",
+        content: renderSitemapXsl({
+          copy,
+          lang: source.lang ?? lang,
+          dir: source.dir,
+          theme: source.theme,
+          siteName: source.siteName,
+          stylesheets: source.stylesheets,
+          stateScript: stateScript ?? readStateScript(),
+          pageHref: main?.href ?? null,
+        }),
+      });
+    }
   }
   if (outputs.robots)
     files.push({
@@ -486,8 +580,11 @@ export function writeSeoOutputs({ dir, pages, site, base = "/", trailingSlash = 
       throw error;
     }
   }
+  // The sitemap pages are SDK pages built moments ago; only their rows change.
+  for (const { name, content } of filled) writeFileSync(join(root, ...name.split("/")), content, "utf8");
   return {
     files: files.map((file) => file.name),
+    pages: filled.map(({ name, rows, locale }) => ({ name, rows, locale })),
     entries: listed?.entries ?? [],
     left: listed?.left ?? [],
     skipped: listed?.skipped ?? 0,

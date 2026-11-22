@@ -81,7 +81,12 @@ and are not `noindex`. A build without `site` fails unless
 `moo({ site: { seo: { sitemap: false } } })` turns the sitemap off;
 `seo.robots: false` or `seo.robots: { disallow: [...] }` configures
 `robots.txt`. A host `public/robots.txt` or another sitemap writer fails the
-build instead of being overwritten. See the guide's "Sitemap and robots.txt".
+build instead of being overwritten. `sitemap.xml` carries a stylesheet line
+for `sitemap.xsl`, a readable view in the site's own CSS. Each locale also gets
+an HTML sitemap page at `/sitemap/`, built from the `Table` and `Typography`
+components and filled from the same scan; `seo.htmlSitemap: false` turns it
+off, and `moo({ sitemap: { messages } })` overrides its copy per locale. See
+the guide's "Sitemap and robots.txt".
 
 ## License
 

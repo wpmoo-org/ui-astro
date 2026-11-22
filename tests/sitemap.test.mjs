@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { defineSite } from "../packages/astro/src/config/index.js";
 import moo from "../packages/astro/src/integration/index.js";
@@ -48,10 +49,13 @@ function collect(files, options = {}) {
 }
 
 test("site.seo takes sitemap, htmlSitemap and robots; both outputs default to on", () => {
-  assert.deepEqual(resolveSeoOutputs(undefined), { sitemap: true, robots: true, disallow: [] });
+  assert.deepEqual(resolveSeoOutputs(undefined), { sitemap: true, htmlSitemap: true, robots: true, disallow: [] });
   const configured = defineSite({ seo: { sitemap: false, htmlSitemap: false, robots: { disallow: ["/intern/", "/*?q="] } } });
-  assert.deepEqual(resolveSeoOutputs(configured.seo), { sitemap: false, robots: true, disallow: ["/intern/", "/*?q="] });
-  assert.deepEqual(resolveSeoOutputs(defineSite({ seo: { robots: false } }).seo), { sitemap: true, robots: false, disallow: [] });
+  assert.deepEqual(resolveSeoOutputs(configured.seo), { sitemap: false, htmlSitemap: false, robots: true, disallow: ["/intern/", "/*?q="] });
+  assert.deepEqual(resolveSeoOutputs(defineSite({ seo: { robots: false } }).seo), { sitemap: true, htmlSitemap: true, robots: false, disallow: [] });
+  // The HTML page is filled from the sitemap scan, so it needs the sitemap.
+  assert.equal(resolveSeoOutputs({ sitemap: false, htmlSitemap: true }).htmlSitemap, false);
+  assert.equal(resolveSeoOutputs({ htmlSitemap: false }).htmlSitemap, false);
   for (const [seo, field] of [
     [{ sitemap: "no" }, "site.seo.sitemap"],
     [{ robots: { disallow: ["intern"] } }, "site.seo.robots"],
@@ -150,7 +154,7 @@ test("XML is escaped, namespaced only for alternates, and absolute", () => {
   assert.equal(plain.name, "sitemap.xml");
   assert.equal(
     plain.content,
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n<url><loc>${site}/a?b=1&amp;c=2</loc></url>\n</urlset>\n`,
+    `<?xml version="1.0" encoding="UTF-8"?>\n<?xml-stylesheet type="text/xsl" href="sitemap.xsl"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n<url><loc>${site}/a?b=1&amp;c=2</loc></url>\n</urlset>\n`,
   );
   const [localized] = renderSitemapFiles(
     [{ loc: `${site}/a/`, lastmod: "2026-01-01", alternates: [{ hreflang: "de", href: `${site}/de/a/` }] }],
@@ -168,7 +172,7 @@ test("above the limit sitemap.xml becomes an index of numbered files", () => {
   assert.deepEqual(renderSitemapFiles(entries, { site, base: "/docs", limit: 5 }).map((file) => file.name), ["sitemap.xml"]);
   const files = renderSitemapFiles(entries, { site, base: "/docs", limit: 2 });
   assert.deepEqual(files.map((file) => file.name), ["sitemap.xml", "sitemap-1.xml", "sitemap-2.xml", "sitemap-3.xml"]);
-  assert.match(files[0].content, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<sitemapindex xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/u);
+  assert.match(files[0].content, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<\?xml-stylesheet type="text\/xsl" href="sitemap\.xsl"\?>\n<sitemapindex xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/u);
   assert.deepEqual(
     [...files[0].content.matchAll(/<loc>([^<]+)<\/loc>/gu)].map((match) => match[1]),
     [`${site}/docs/sitemap-1.xml`, `${site}/docs/sitemap-2.xml`, `${site}/docs/sitemap-3.xml`],
@@ -275,7 +279,8 @@ test("a competing integration or a host route for an SDK output fails the build"
   const notFound = { routeOwner: "host" };
   const { integration } = configure({ notFound }, { site });
   const error = { pattern: "/404", pathname: "/404", entrypoint: "src/pages/404.astro", type: "page", origin: "project", isPrerendered: true, patternRegex: /^\/404$/u };
-  const route = (pattern) => [error, { pattern, pathname: pattern, entrypoint: "src/pages/x.ts", type: "endpoint", origin: "project", patternRegex: /^$/u }];
+  const sitemapPage = { pattern: "/sitemap", pathname: "/sitemap", entrypoint: fileURLToPath(new URL("../packages/astro/src/integration/routes/sitemap.astro", import.meta.url)), type: "page", origin: "external", isPrerendered: true, patternRegex: /^\/sitemap$/u };
+  const route = (pattern) => [error, sitemapPage, { pattern, pathname: pattern, entrypoint: "src/pages/x.ts", type: "endpoint", origin: "project", patternRegex: /^$/u }];
   assert.throws(
     () => integration.hooks["astro:routes:resolved"]({ routes: route("/robots.txt") }),
     /writes robots\.txt at build, and the route \/robots\.txt \(src\/pages\/x\.ts\) also provides it.*robots: false/u,
@@ -295,6 +300,26 @@ test("a host public/robots.txt fails the build", () => {
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a public file collides with the sitemap page only at the file the build format writes", () => {
+  for (const [format, file, collides] of [
+    ["directory", "public/sitemap/index.html", true],
+    ["directory", "public/sitemap.html", false],
+    ["file", "public/sitemap.html", true],
+    ["file", "public/sitemap/index.html", false],
+    ["preserve", "public/sitemap.html", true],
+  ]) {
+    const root = builtSite({ [file]: "<p>host</p>" });
+    try {
+      const host = new URL(`file://${root}/`);
+      const run = () => configure({}, { site, root: host, publicDir: new URL("public/", host), build: { format } }).done();
+      if (collides) assert.throws(run, /writes \/sitemap\/ at build.*htmlSitemap: false/u, `${format} ${file}`);
+      else assert.doesNotThrow(run, `${format} ${file}`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   }
 });
 

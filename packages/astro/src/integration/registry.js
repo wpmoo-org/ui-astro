@@ -389,11 +389,16 @@ export function validateExpectedRouteOwners(
   expected,
   routes,
   errorPatterns = [],
+  sitemapPatterns = [],
 ) {
   for (const { id, locale, path, pattern, allowNativeHost } of expected) {
     if (errorPatterns.includes(path.replace(/\/$/u, "")))
       throw new TypeError(
         `moo published content ${id} (locale ${locale}) at ${path} uses a reserved native error URL`,
+      );
+    if (sitemapPatterns.includes(path.replace(/\/$/u, "")))
+      throw new TypeError(
+        `moo published content ${id} (locale ${locale}) at ${path} uses the URL of the SDK HTML sitemap page; change its slug, or turn the page off with moo({ site: { seo: { htmlSitemap: false } } })`,
       );
     const owner = routes.find((route) => {
       if (route.type !== "page") return false;
@@ -420,6 +425,7 @@ export function validateExpectedPagePaths(
   routes,
   expected,
   errorPatterns = [],
+  sitemapPatterns = [],
 ) {
   const emitted = new Set();
   for (const { pathname } of pages) {
@@ -434,5 +440,5 @@ export function validateExpectedPagePaths(
         `moo published content ${id} has no emitted route at ${path} (locale ${locale})`,
       );
   }
-  validateExpectedRouteOwners(expected, routes, errorPatterns);
+  validateExpectedRouteOwners(expected, routes, errorPatterns, sitemapPatterns);
 }

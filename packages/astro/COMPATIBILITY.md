@@ -171,11 +171,26 @@ The list is every built page whose canonical is its own URL under `site` and
 that has no robots `noindex`; alternates and `lastmod` come from the same head
 (`hreflang` links, JSON-LD `dateModified` else `datePublished`). Above 50,000
 URLs `sitemap.xml` is an index of `sitemap-1.xml`, `sitemap-2.xml`, ...
-`site.seo` takes `sitemap?: boolean`, `robots?: boolean | { disallow?: string[] }`
-and a reserved `htmlSitemap?: boolean`. Behavior changes for existing hosts:
+`site.seo` takes `sitemap?: boolean`, `htmlSitemap?: boolean` and
+`robots?: boolean | { disallow?: string[] }`. With the sitemap on, the build
+also writes `sitemap.xsl` (line 2 of every sitemap file references it) and,
+unless `htmlSitemap: false`, an HTML sitemap page per locale at `/sitemap/`
+(`/de/sitemap/` ...), injected like the 404 route and listed in
+`sitemap.xml`. `moo()` takes a new `sitemap?: { messages?: Record<locale,
+Partial<SitemapMessages>> }` option for that copy; it holds copy only, and
+the on/off switches live under `site.seo`. The page's Updated column shows
+the `YYYY-MM-DD` part of `lastmod` in `<time datetime>`; the XML keeps the
+full value. Known limit: the XSL transform has no automated test (no XSLT
+processor in the guest); it was verified once by hand with `xsltproc --nonet`
+on the demo `sitemap.xml` (exit 0, 24 data rows plus header, noindex meta,
+stylesheet link and sitemap page link present). Browsers without XSLT show the
+plain XML, which stays valid. Behavior changes for existing hosts:
 
 - A build with the sitemap on and no Astro `site` fails; set `site` or
   `site.seo.sitemap: false`.
+- A host `/sitemap/` page (route or public file) at any locale, or a host
+  `public/sitemap.xsl`, fails the build; remove it or set
+  `site.seo.htmlSitemap: false` (the page) or `site.seo.sitemap: false`.
 - A host `public/robots.txt` or `public/sitemap.xml`, a host route for those
   files, a file already in the output, or another integration named like a
   sitemap or robots writer (such as `@astrojs/sitemap`) fails the build; turn
