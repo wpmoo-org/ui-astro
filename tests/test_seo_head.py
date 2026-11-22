@@ -187,3 +187,51 @@ const metadata = resolveSeoMetadata(site, { title: "Alex", type: "team", view: "
                         if kind == "BlogPosting":
                             self.assertEqual(parsed.schemas[0]["datePublished"], "2026-09-28T10:00:00.000Z")
                             self.assertNotIn("dateModified", parsed.schemas[0])
+
+    def test_front_matter_noindex_writes_robots_and_drops_json_ld(self):
+        content = '''import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
+import { sourceEntryId } from "@wpmoo/astro/content";
+import { pageSchema } from "@wpmoo/astro/plugins/page/content";
+import { postSchema } from "@wpmoo/astro/plugins/post/content";
+export const collections = {
+  page: defineCollection({ loader: glob({ base: "./src/content/page", pattern: "**/*.md", generateId: sourceEntryId }), schema: pageSchema }),
+  post: defineCollection({ loader: glob({ base: "./src/content/post", pattern: "**/*.md", generateId: sourceEntryId }), schema: postSchema }),
+};'''
+        files = {
+            "src/content.config.mjs": content,
+            "src/content/page/contact.md": "---\ntitle: Contact\nstatus: publish\n---\nContact body.\n",
+            "src/content/page/thanks.md": "---\ntitle: Thanks\nstatus: publish\nseo:\n  noindex: true\n---\nThanks body.\n",
+            "src/content/post/hidden.md": '---\ntitle: Hidden\nstatus: publish\npublished_at: "2026-09-28T10:00:00Z"\nseo:\n  noindex: true\n---\nHidden body.\n',
+        }
+        result, _ = self.build(None, files=files,
+            config_imports='import { post } from "@wpmoo/astro/plugins/post";\n',
+            configuration='site: "https://example.test", trailingSlash: "always", integrations: [moo({ plugins: [page(), post()] })],')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for file, noindex in [("contact/index.html", False), ("thanks/index.html", True), ("posts/hidden/index.html", True)]:
+            parsed = Head(result.generated_html[file])
+            path = file.removesuffix("index.html")
+            self.assertEqual(parsed.canonicals(), [f"https://example.test/{path}"], file)
+            self.assertEqual(parsed.metas("og:url"), parsed.canonicals(), file)
+            self.assertEqual(parsed.metas("robots"), ["noindex, follow"] if noindex else [], file)
+            self.assertEqual(len(parsed.schemas), 0 if noindex else 1, file)
+        # Without site no metadata is resolved, but a published noindex page keeps its robots meta.
+        files["src/content/post/draft.md"] = "---\ntitle: Draft\nstatus: draft\nseo:\n  noindex: true\n---\nDraft body.\n"
+        result, _ = self.build(None, files=files,
+            config_imports='import { post } from "@wpmoo/astro/plugins/post";\n',
+            configuration='trailingSlash: "always", integrations: [moo({ plugins: [page(), post()] })],')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("posts/draft/index.html", result.generated_html)
+        for file, noindex in [("contact/index.html", False), ("thanks/index.html", True), ("posts/hidden/index.html", True)]:
+            parsed = Head(result.generated_html[file])
+            self.assertEqual(parsed.metas("robots"), ["noindex, follow"] if noindex else [], file)
+            self.assertEqual(parsed.canonicals(), [], file)
+            self.assertEqual(parsed.schemas, [], file)
+        del files["src/content/post/draft.md"]
+        invalid = dict(files)
+        invalid["src/content/page/thanks.md"] = "---\ntitle: Thanks\nstatus: publish\nseo:\n  noindex: \"yes\"\n---\nThanks body.\n"
+        result, _ = self.build(None, files=invalid,
+            config_imports='import { post } from "@wpmoo/astro/plugins/post";\n',
+            configuration='site: "https://example.test", trailingSlash: "always", integrations: [moo({ plugins: [page(), post()] })],')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("noindex", result.stdout + result.stderr)

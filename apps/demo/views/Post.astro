@@ -47,6 +47,7 @@ const metadata = Astro.site
       created_at: entry.data.created_at,
       published_at: entry.data.published_at,
       updated_at: entry.data.updated_at,
+      noindex: entry.data.seo?.noindex,
     })
   : undefined;
 const { Content } = await render(entry);
@@ -61,6 +62,7 @@ const breadcrumbs = await getDemoBreadcrumbs(entry.data.title, options.lang, [
   title={entry.data.title}
   description={entry.data.description}
   metadata={metadata}
+  noindex={entry.data.status === "publish" && entry.data.seo?.noindex === true}
   sidebarOptions={sidebar}
   languageLinks={languageLinks}
   pageContext={{ view: "single", entry: getDemoEntryContext("post", entry) }}

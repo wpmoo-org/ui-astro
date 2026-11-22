@@ -291,7 +291,17 @@ export const invalidSeoTemplates = defineSite({
   },
 });
 // @ts-expect-error Resolved publisher data is immutable.
-seoMetadata!.jsonLd.publisher!.name = "Changed";
+seoMetadata!.jsonLd!.publisher!.name = "Changed";
+export const noindexSeoRoute: SeoRoute = { ...seoRoute, noindex: true };
+export const seoRobots: "noindex, follow" | undefined = resolveSeoMetadata(
+  seoSite,
+  noindexSeoRoute,
+)?.robots;
+export const invalidNoindexSeoRoute: SeoRoute = {
+  ...seoRoute,
+  // @ts-expect-error noindex is a boolean, not a robots string.
+  noindex: "noindex",
+};
 
 import {
   getLocaleHref,

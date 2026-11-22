@@ -280,3 +280,19 @@ test("content and Page schemas resolve from their public package paths", async (
   assert.equal(content.jsonEntryId, jsonEntryId);
   assert.equal(page.pageSchema, pageSchema);
 });
+
+test("seo.noindex is an optional boolean on every entry schema; other seo keys and values are rejected", () => {
+  const post = { published_at: "2026-09-28T18:25:03+02:00" };
+  for (const schema of [entrySchema, pageSchema, postSchema]) {
+    const base = { title: "Contact", status: "publish", ...post };
+    assert.equal(schema.parse({ ...base, seo: { noindex: true } }).seo.noindex, true);
+    assert.equal(schema.parse({ ...base, seo: { noindex: false } }).seo.noindex, false);
+    assert.equal(Object.hasOwn(schema.parse(base), "seo"), false);
+    assert.deepEqual(schema.parse({ ...base, seo: {} }).seo, {});
+    for (const noindex of ["true", "yes", 1, null]) {
+      assert.throws(() => schema.parse({ ...base, seo: { noindex } }), /noindex/);
+    }
+    assert.throws(() => schema.parse({ ...base, seo: { robots: "noindex" } }), /robots/);
+    assert.throws(() => schema.parse({ ...base, seo: true }), /seo/);
+  }
+});

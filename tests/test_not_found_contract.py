@@ -24,7 +24,7 @@ class NotFoundContracts(unittest.TestCase):
     def tearDownClass(cls):
         native.PublicComponentRendering.tearDownClass.__func__(cls)
 
-    def assert_error(self, html, locale, title, href, content_class="py-2"):
+    def assert_error(self, html, locale, title, href, content_class="py-2", robots=True):
         parser = native.Markup()
         parser.feed(html)
         elements = parser.elements
@@ -44,6 +44,9 @@ class NotFoundContracts(unittest.TestCase):
         self.assertIn(">404<", html)
         self.assertFalse(any(tag == "link" and attrs.get("rel") in {"canonical", "alternate"} for tag, attrs in elements))
         self.assertFalse(any(attrs.get("property", "").startswith("og:") or attrs.get("name", "").startswith("twitter:") or attrs.get("type") == "application/ld+json" for _, attrs in elements))
+        # The plugin-owned error is never indexable; a host-owned error writes its own head.
+        robots_metas = [attrs.get("content") for tag, attrs in elements if tag == "meta" and attrs.get("name") == "robots"]
+        self.assertEqual(robots_metas, ["noindex, follow"] if robots else [])
 
     def test_default_error_without_collections(self):
         result, _ = self.build(None, files=files(), check=True)
@@ -58,7 +61,7 @@ class NotFoundContracts(unittest.TestCase):
         result, _ = self.build(None, files=files("not-found-host"), check=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         html = result.generated_html["de/404/index.html"]
-        self.assert_error(html, "de", "&lt;script&gt;", "/site/de/", "")
+        self.assert_error(html, "de", "&lt;script&gt;", "/site/de/", "", robots=False)
         self.assertIn("data-host-error-title", html)
         self.assertIn("data-host-error-action", html)
         self.assertIn("Zurück", html)
@@ -105,6 +108,11 @@ class NotFoundContracts(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for output in ["404-guide/index.html", "404/child/index.html", "404.html"]:
             self.assertIn(output, result.generated_html)
+        error = native.Markup()
+        error.feed(result.generated_html["404.html"])
+        self.assertEqual([attrs.get("content") for tag, attrs in error.elements if tag == "meta" and attrs.get("name") == "robots"], ["noindex, follow"])
+        self.assertFalse(any(tag == "link" and attrs.get("rel") == "canonical" for tag, attrs in error.elements))
+        self.assertFalse(any(attrs.get("type") == "application/ld+json" for _, attrs in error.elements))
 
     def test_error_has_one_shell_and_recovery_link(self):
         fixture = files()

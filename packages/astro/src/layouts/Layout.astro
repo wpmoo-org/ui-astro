@@ -21,6 +21,8 @@ interface Props {
   title: string;
   description?: string;
   metadata?: SeoMetadata | null;
+  /** Writes robots `noindex, follow` even when no metadata is resolved (no `site`). */
+  noindex?: boolean;
   sidebar?: boolean;
   shellMode?: ShellMode;
   overlayScrollbar?: boolean;
@@ -62,6 +64,7 @@ const {
   title,
   description,
   metadata,
+  noindex = false,
   sidebar = false,
   shellMode = defaults.shellMode,
   overlayScrollbar = defaults.overlayScrollbar,
@@ -187,7 +190,9 @@ const regionSlots = Object.fromEntries(await Promise.all(
 const pageClasses = getPageClasses(pageContext);
 const headTitle = metadata?.title ?? title;
 const headDescription = metadata?.description ?? description;
-const jsonLd = metadata
+const robots = metadata?.robots ?? (noindex ? "noindex, follow" : undefined);
+// Either noindex source (prop or metadata.robots) drops JSON-LD.
+const jsonLd = metadata?.jsonLd && robots === undefined
   ? JSON.stringify(metadata.jsonLd).replace(
       /[<>&\u2028\u2029]/gu,
       (character) =>
@@ -208,6 +213,7 @@ const jsonLd = metadata
     }
     <link rel="icon" href="data:," />
     <title>{headTitle}</title>
+    {robots !== undefined ? <meta name="robots" content={robots} /> : null}
     {
       metadata ? (
         <>
@@ -221,7 +227,9 @@ const jsonLd = metadata
           {Object.entries(metadata.twitter).map(([key, value]) => (
             <meta name={`twitter:${key}`} content={value} />
           ))}
-          <script is:inline type="application/ld+json" set:html={jsonLd} />
+          {jsonLd !== undefined ? (
+            <script is:inline type="application/ld+json" set:html={jsonLd} />
+          ) : null}
         </>
       ) : null
     }

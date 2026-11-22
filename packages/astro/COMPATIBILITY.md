@@ -155,6 +155,15 @@ certification is recorded separately in the dated parent handoff; prior browser
 and acceptance evidence below remains historical. Live warm-save/browser
 inspection of this URL change was not executed because access was blocked.
 
+## Unpublished SEO robots API
+
+Entries take `seo: { noindex: true }`, and `Layout` and `SiteLayout` take a
+`noindex` prop. Either one writes one
+`<meta name="robots" content="noindex, follow">` and drops JSON-LD. The SDK
+404 route always writes it. `SeoMetadata.jsonLd` is now optional, so typed
+callers must handle its absence. These are unpublished API changes, not a
+release.
+
 ## Local evidence and capability limits
 
 Packed browser inspection covers 24 selected routes across all ten profiles

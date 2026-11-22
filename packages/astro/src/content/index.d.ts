@@ -22,6 +22,9 @@ export declare const entrySchema: z.ZodObject<{
   published_at: z.ZodOptional<z.ZodType<Date>>;
   updated_at: z.ZodOptional<z.ZodType<Date>>;
   options: z.ZodOptional<z.ZodType<PageOptionsInput>>;
+  seo: z.ZodOptional<
+    z.ZodObject<{ noindex: z.ZodOptional<z.ZodBoolean> }, z.core.$strict>
+  >;
 }>;
 
 export type Entry = z.infer<typeof entrySchema>;

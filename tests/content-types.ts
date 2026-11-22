@@ -6,8 +6,9 @@ const page: Page = pageSchema.parse({ title: "Contact", status: "publish", navOr
 const published: "publish" | "draft" | "pending" | "future" = entry.status;
 const created: Date | undefined = page.created_at;
 const order: number | undefined = page.navOrder;
+const noindex: boolean | undefined = page.seo?.noindex;
 
 // @ts-expect-error status is a closed enum
 const invalid: Entry = { title: "Contact", status: "archive" };
 
-void [published, created, order, invalid];
+void [published, created, order, noindex, invalid];

@@ -30,6 +30,9 @@ const links = routeContext.i18n ? await getLanguageLinks("page", entry) : [];
 const layoutProps = {
   title: entry.data.title,
   description: entry.data.description,
+  // Publish-only, like the resolver; written even without `site`.
+  noindex:
+    entry.data.status === "publish" && entry.data.seo?.noindex === true,
   metadata: Astro.site
     ? resolveSeoMetadata(site, {
         title: entry.data.title,
@@ -46,6 +49,7 @@ const layoutProps = {
         created_at: entry.data.created_at,
         published_at: entry.data.published_at,
         updated_at: entry.data.updated_at,
+        noindex: entry.data.seo?.noindex,
       })
     : undefined,
   pageContext: {

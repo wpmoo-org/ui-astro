@@ -284,3 +284,56 @@ test("metadata resolver is available through its one declared public entrypoint"
     resolveSeoMetadata,
   );
 });
+
+test("noindex adds the robots value and drops JSON-LD, keeping canonical, social tags and alternates", () => {
+  const site = defineSite({ organization });
+  const alternates = [
+    { locale: "en", url: route.url },
+    { locale: "de", url: "https://example.test/de/docs/kontakt/" },
+  ];
+  const indexed = resolveSeoMetadata(site, { ...route, lang: "en", alternates });
+  const hidden = resolveSeoMetadata(site, {
+    ...route,
+    lang: "en",
+    alternates,
+    noindex: true,
+  });
+  assert.equal(hidden.robots, "noindex, follow");
+  assert.equal(Object.hasOwn(hidden, "jsonLd"), false);
+  const { jsonLd, ...rest } = indexed;
+  assert.ok(jsonLd);
+  assert.deepEqual(hidden, { ...rest, robots: "noindex, follow" });
+  assert.ok(Object.isFrozen(hidden));
+});
+
+test("noindex false or absent leaves the metadata unchanged", () => {
+  const site = defineSite({ organization });
+  const plain = resolveSeoMetadata(site, route);
+  const explicit = resolveSeoMetadata(site, { ...route, noindex: false });
+  assert.equal(Object.hasOwn(plain, "robots"), false);
+  assert.equal(JSON.stringify(explicit), JSON.stringify(plain));
+  assert.deepEqual(Object.keys(plain), [
+    "title",
+    "canonical",
+    "openGraph",
+    "twitter",
+    "jsonLd",
+  ]);
+});
+
+test("noindex accepts only a boolean and still returns null for unpublished routes", () => {
+  for (const value of ["true", "noindex", 1, null, {}]) {
+    assert.throws(
+      () => resolveSeoMetadata(defineSite(), { ...route, noindex: value }),
+      /route\.noindex:/u,
+    );
+  }
+  assert.equal(
+    resolveSeoMetadata(defineSite(), {
+      ...route,
+      status: "draft",
+      noindex: true,
+    }),
+    null,
+  );
+});

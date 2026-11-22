@@ -27,6 +27,7 @@ interface Props {
   href: string;
   locale?: string;
   metadata?: SeoMetadata | null;
+  noindex?: boolean;
   languageLinks?: readonly LanguageLink[];
   pageContext?: PageClassContext;
 }
@@ -37,6 +38,7 @@ const {
   href,
   locale,
   metadata,
+  noindex,
   languageLinks = [],
   pageContext,
 } = Astro.props;
@@ -74,7 +76,7 @@ const topNavigationItems = [...headerItems, ...(collectionSections.length ? [{
 const headerNavigationClass = headerNavigation ? `d-none d-${headerNavigation.breakpoint}-flex flex-nowrap align-items-center gap-1` : "";
 const { defaultOpen, mode: _mode, ...sidebarOptions } = appSidebar ?? {};
 const layoutProps = {
-  ...layout, title, description, metadata, pageContext,
+  ...layout, title, description, metadata, noindex, pageContext,
   headerTocClass: selectedAside.compact.length
     ? selectedAside.compactClass
     : "d-none",

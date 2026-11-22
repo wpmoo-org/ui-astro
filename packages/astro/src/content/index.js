@@ -46,6 +46,7 @@ export const entrySchema = z
       published_at: authoredDate.optional(),
       updated_at: authoredDate.optional(),
       options: layoutSchema.optional(),
+      seo: z.strictObject({ noindex: z.boolean().optional() }).optional(),
     },
     {
       error: (issue) =>

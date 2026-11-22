@@ -15,6 +15,8 @@ export interface SeoRoute {
   updated_at?: string | Date;
   author?: { readonly name: string; readonly url?: string };
   image?: string;
+  /** Keeps the page out of search indexes: adds robots `noindex, follow` and drops JSON-LD. */
+  noindex?: boolean;
   alternates?: readonly { readonly locale: string; readonly url: string }[];
 }
 
@@ -40,7 +42,10 @@ export interface SeoMetadata {
     description?: string;
     image?: string;
   }>;
-  readonly jsonLd: Readonly<{
+  /** Present only for a `noindex` route. */
+  readonly robots?: "noindex, follow";
+  /** Absent for a `noindex` route. */
+  readonly jsonLd?: Readonly<{
     "@context": "https://schema.org";
     "@type": "WebPage" | "BlogPosting";
     name?: string;

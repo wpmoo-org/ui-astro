@@ -1610,7 +1610,19 @@ dates are optional and never inferred from file/build/deployment times. Missing
 description, image, author or registered publisher remains missing. The public
 resolver can accept an actual absolute image URL and one Person author record
 `{ name, url? }` supplied by a host/content-type schema; it does not resolve author
-references or add those fields to every built-in schema. SEO frontmatter is not added.
+references or add those fields to every built-in schema. The only SEO front
+matter is `seo.noindex`.
+
+A Page or Post opts out of search indexing with `seo: { noindex: true }` in its
+front matter; a host route passes `noindex: true` to `resolveSeoMetadata()`. The
+value must be a boolean (default `false`). Layout then writes
+`<meta name="robots" content="noindex, follow">` and omits JSON-LD; canonical,
+alternates and Open Graph/Twitter tags stay. The robots meta does not depend on
+`site`: without it, a published noindex Page or Post still writes the robots meta
+(and no canonical or JSON-LD); a host route passes `noindex` to Layout or
+SiteLayout for the same result. The plugin-owned 404 route always writes the
+robots meta and no canonical, alternates, social tags or JSON-LD; a host-owned
+error route (`notFound.routeOwner: "host"`) writes its own head.
 
 The approved public-hook preflight certifies `@astrojs/sitemap@3.7.4` with Astro
 `7.3.3`. That historical result does not certify the current Astro `7.3.8`

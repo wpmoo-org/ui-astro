@@ -54,6 +54,7 @@ const routeSchema = z.strictObject({
   updated_at: date.optional(),
   author: z.strictObject({ name: text, url: httpUrl.optional() }).optional(),
   image: httpUrl.optional(),
+  noindex: z.boolean().optional(),
   alternates: z
     .array(
       z.strictObject({
@@ -193,7 +194,9 @@ export function resolveSeoMetadata(site, route) {
       title,
       ...optional,
     },
-    jsonLd,
+    // A non-indexable page keeps canonical, social tags and alternates but
+    // carries no structured data, as in Moo UI Core.
+    ...(data.noindex ? { robots: "noindex, follow" } : { jsonLd }),
     ...(data.alternates?.length
       ? {
           alternates: data.alternates.map((item) => ({
