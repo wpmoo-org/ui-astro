@@ -324,7 +324,7 @@
   },
   "dependencies": {
     "@wpmoo/ui": "2.3.0",
-    "bootstrap": "5.3.8"
+    "bootstrap": "5.3.9"
   },
   "peerDependencies": {
     "astro": "7.3.8",
