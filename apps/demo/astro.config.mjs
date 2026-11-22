@@ -48,7 +48,6 @@ export default defineConfig({
     moo({
       site: {
         brand: "Moo UI Astro",
-        logo: { src: "/images/demo-logo.svg", inverseSrc: "/images/demo-logo-inverse.svg", alt: "Moo UI Astro", width: 120, height: 32 },
         defaults: {
           lang: i18n.defaultLocale,
           theme: "dark",

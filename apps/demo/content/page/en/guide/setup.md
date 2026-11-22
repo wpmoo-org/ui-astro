@@ -9,6 +9,5 @@ taxonomies:
   tag: [astro]
   sector: [foundation]
 navOrder: 2
-navPlacement: drawer
 ---
 Setup guide body.

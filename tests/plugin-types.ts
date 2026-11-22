@@ -70,15 +70,3 @@ const projects: PluginInput = {
   ],
 };
 definePlugin(projects);
-
-const placed: PluginInput = {
-  ...projects,
-  navigation: [
-    { label: "Jobs", path: "/project/jobs", placement: "utility" },
-    { label: "Legal", path: "/project/legal", placement: "drawer" },
-    { label: "Main", path: "/project", placement: "main" },
-  ],
-};
-// @ts-expect-error placement is a closed set
-const badPlacement: PluginInput = { ...projects, navigation: [{ label: "X", path: "/project", placement: "footer" }] };
-void [placed, badPlacement];
