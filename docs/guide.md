@@ -945,7 +945,10 @@ import { defineConfig } from "astro/config";
 import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
 
-export default defineConfig({ integrations: [moo({ plugins: [page()] })] });
+export default defineConfig({
+  site: "https://example.test",
+  integrations: [moo({ plugins: [page()] })],
+});
 ```
 
 The host declares its native Astro collection with `defineCollection()` and `glob()`:
@@ -988,6 +991,7 @@ import moo from "@wpmoo/astro";
 import { page } from "@wpmoo/astro/plugins/page";
 
 export default defineConfig({
+  site: "https://example.test",
   integrations: [mdx(), moo({ plugins: [page({ formats: ["md", "mdx"] })] })],
 });
 ```
@@ -1098,6 +1102,7 @@ import { page } from "@wpmoo/astro/plugins/page";
 import { post } from "@wpmoo/astro/plugins/post";
 
 export default defineConfig({
+  site: "https://example.test",
   integrations: [
     moo({
       plugins: [page(), post({ label: "News", basePath: "/news" })],
@@ -1528,7 +1533,9 @@ Configure the host's actual production `site` in `astro.config.mjs`. Built-in
 Page, Post and taxonomy routes then resolve metadata from their published route
 projection and ordinary content fields. Without `site`, the existing bare
 Layout/title behavior remains valid; no localhost canonical or organization is
-invented. Sitemap is a separate, optional host integration, never a core dependency.
+invented. With `site` set, the integration also writes `sitemap.xml` and
+`robots.txt` at build (see "Sitemap and robots.txt" below); a build without
+`site` fails unless the sitemap is turned off.
 
 ```js
 // astro.config.mjs (host configuration)
@@ -1624,24 +1631,70 @@ SiteLayout for the same result. The plugin-owned 404 route always writes the
 robots meta and no canonical, alternates, social tags or JSON-LD; a host-owned
 error route (`notFound.routeOwner: "host"`) writes its own head.
 
-The approved public-hook preflight certifies `@astrojs/sitemap@3.7.4` with Astro
-`7.3.3`. That historical result does not certify the current Astro `7.3.8`
-pairing; repeat the sitemap preflight before adopting it. A host places its
-validated emitted/published URL projection hook before
-the official writer, filters its candidates and supplies canonical `url`,
-translation `links` and authored `lastmod` via public async `serialize`. Do not use
-prefix matching as evidence of translated slugs or infer existing translations
-from Astro URL helpers. Under `base: "/docs"` and `trailingSlash: "ignore"`, the
-writer's Home candidate can omit the mount slash; its serializer must retain the
-actual projected canonical. Parse the generated XML: the official writer catches
-serializer errors and a successful build exit does not prove sitemap output.
-The host can obtain content alternatives from `getLanguageLinks()` and term
-alternatives from `getTaxonomyPaths()`. Project those records in its build
-before the optional Sitemap integration runs; verify every advertised URL
-against actual output. The package does not install or configure Sitemap.
 The independent consumer matrix covers the implemented foundation. SEO and native
 locale checks additionally exercise their own compiled fixtures; broader
 version support and final release acceptance remain separate gates.
+
+### Sitemap and robots.txt
+
+The `@wpmoo/astro` integration writes `sitemap.xml` and `robots.txt` into the
+build output at `astro:build:done`. There is no extra package and no install;
+`@astrojs/sitemap` is not used.
+
+- **Source: the built pages.** The integration reads the head of every built
+  page. A page is listed when its `<link rel="canonical">` is its own address
+  under `site` (with `base` and `trailingSlash`; with `"ignore"` either slash
+  form counts) and it has no robots `noindex`. Drafts, `seo.noindex` pages,
+  pages that name another canonical, pages without a canonical, the root
+  404/500 pages and the SDK's own error routes stay out. Host routes need nothing: a host page is listed when its own
+  head names itself as canonical.
+  The build log counts the pages left out by reason (error page, noindex, no
+  canonical, canonical is another URL), warns when the home page `/` is not
+  listed, and names every left-out path with `astro build --verbose`.
+- **Entries.** `<loc>` is the canonical. The page's
+  `<link rel="alternate" hreflang>` links become `xhtml:link` alternates (the
+  `xhtml` namespace is declared only when a file has alternates). `<lastmod>` is
+  the `dateModified`, else `datePublished`, of the page's own JSON-LD object
+  (its `url`, or `@id` without the fragment, is the canonical), exactly as
+  written. An invalid W3C date is a build warning and writes no `<lastmod>`. A page without a recorded date has no `<lastmod>`; build or
+  checkout time is never used. URLs are absolute and XML-escaped, sorted by URL.
+- **Large sites.** Above 50,000 URLs, `sitemap.xml` is a sitemap index of
+  `sitemap-1.xml`, `sitemap-2.xml`, ... in the same directory. Known limit:
+  files are split by URL count only, not at the protocol's 50 MB size limit.
+- **robots.txt** is `User-agent: *`, `Allow: /`, any `Disallow:` lines, and
+  `Sitemap: <site><base>/sitemap.xml`. Crawlers read `robots.txt` only at the
+  host root, so under a `base` the host serves or merges it there itself.
+- **Guard.** The build fails when an alternate is not a listed URL (missing,
+  redirected, noindex or not self-canonical), when two pages name the same
+  canonical, when a page has several different canonicals, or when a listed URL
+  is not under `site` and `base`.
+- **Collisions.** Nothing is overwritten. The build fails, naming the file and
+  the opt-out, when `public/robots.txt` or `public/sitemap.xml` exists, when a
+  host route emits `/sitemap.xml`, `/sitemap-N.xml` or `/robots.txt`, when the
+  file is already in the build output, or when another integration with
+  `sitemap` (or `robots`) in its name is registered, such as `@astrojs/sitemap`.
+  Integrations without such a name and post-build scripts that write these
+  files after the SDK cannot be detected.
+
+Both outputs are on by default. Turn them off or configure robots.txt in
+`site.seo`:
+
+```js
+moo({
+  site: {
+    seo: {
+      sitemap: false, // no sitemap.xml; the build no longer needs `site`
+      robots: { disallow: ["/intern/"] }, // or robots: false
+    },
+  },
+});
+```
+
+`disallow` entries are host paths starting with `/`, written as given. With
+`sitemap: false`, `robots.txt` has no `Sitemap:` line. `htmlSitemap` is
+reserved for the HTML sitemap page and has no effect yet. To keep another
+sitemap writer, turn the SDK output off with `seo.sitemap: false` (and
+`seo.robots: false` if it also writes `robots.txt`).
 
 ## Theme language and visible copy
 

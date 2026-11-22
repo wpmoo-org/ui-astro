@@ -409,11 +409,26 @@ const organizationSchema = z.strictObject({
   name: accessibleLabel,
   names: z.record(localeKey, accessibleLabel).optional(),
 });
+// robots.txt Disallow values are host paths written as given: a leading
+// slash, no whitespace or control characters (one line each).
+const robotsPath = z
+  .string()
+  .regex(/^\/[^\s\x00-\x1f\x7f]*$/u, "must be a host path starting with / without whitespace");
 const seoSchema = z.strictObject({
   titleTemplates: templateGroup
     .extend({
       locales: z.record(localeKey, templateGroup).optional(),
     })
+    .optional(),
+  // Build outputs written by the integration at astro:build:done. Both are
+  // on unless set to false; htmlSitemap is reserved for the HTML page.
+  sitemap: z.boolean().optional(),
+  htmlSitemap: z.boolean().optional(),
+  robots: z
+    .union([
+      z.boolean(),
+      z.strictObject({ disallow: z.array(robotsPath).optional() }),
+    ])
     .optional(),
 });
 const siteSchema = z.strictObject({

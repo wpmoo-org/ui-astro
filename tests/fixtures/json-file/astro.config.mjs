@@ -11,4 +11,4 @@ const team = definePlugin({
   routes: [{ id: "single", pattern: "/[...slug]", prerender: true, owner: "host" }],
 });
 
-export default defineConfig({ integrations: [moo({ plugins: [team] })] });
+export default defineConfig({ integrations: [moo({ site: { seo: { sitemap: false, robots: false } }, plugins: [team] })] });

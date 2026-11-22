@@ -15,4 +15,4 @@ const sample = definePlugin({
   routes: [{ id: "single", pattern: "/[...slug]", prerender: true, owner: "host" }],
 });
 
-export default defineConfig({ integrations: [moo({ plugins: [page(), sample] })] });
+export default defineConfig({ integrations: [moo({ site: { seo: { sitemap: false, robots: false } }, plugins: [page(), sample] })] });

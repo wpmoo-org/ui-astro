@@ -16,6 +16,22 @@ SDK = ROOT / "packages/astro"
 DIST = ROOT / "apps/demo/dist"
 
 
+
+# These render contracts predate the built-in sitemap.xml and robots.txt and
+# compare exact outputs; turn both off unless a configuration sets site.seo
+# itself. tests/sitemap*.test.mjs cover the outputs.
+SDK_IMPORT = 'import moo from "@wpmoo/astro";'
+SDK_OUTPUTS_OFF = (
+    'import mooIntegration from "@wpmoo/astro";\n'
+    'const moo = (options = {}) => mooIntegration({ ...options, site: { ...options.site, '
+    'seo: { sitemap: false, robots: false, ...options.site?.seo } } });'
+)
+
+
+def sdk_outputs_off(config):
+    return config.replace(SDK_IMPORT, SDK_OUTPUTS_OFF, 1)
+
+
 class Markup(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -334,7 +350,7 @@ import Empty from "@wpmoo/astro/components/Empty.astro";
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content, encoding="utf-8")
-            (root / "astro.config.mjs").write_text(
+            (root / "astro.config.mjs").write_text(sdk_outputs_off(
                 (files or {}).get("astro.config.mjs") or (
                 'import { defineConfig } from "astro/config";\n'
                 'import moo from "@wpmoo/astro";\n'
@@ -342,7 +358,7 @@ import Empty from "@wpmoo/astro/components/Empty.astro";
                 + config_imports + '\n'
                 +
                 'export default defineConfig({ vite: { cacheDir: new URL("./.vite", import.meta.url).pathname }, '
-                + configuration + ' });\n'),
+                + configuration + ' });\n')),
                 encoding="utf-8",
             )
             result = subprocess.run([str(ROOT / "node_modules/.bin/astro"), "build"],

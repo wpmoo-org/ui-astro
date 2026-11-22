@@ -125,6 +125,7 @@
     "src/integration/registry.js",
     "src/integration/routes",
     "src/integration/routes/[...root].astro",
+    "src/integration/sitemap.js",
     "src/integration/views/Page.astro",
     "src/integration/views/Taxonomy.astro",
     "src/internal/href.js",

@@ -164,6 +164,45 @@ Entries take `seo: { noindex: true }`, and `Layout` and `SiteLayout` take a
 callers must handle its absence. These are unpublished API changes, not a
 release.
 
+## Unpublished sitemap API
+
+The integration writes `sitemap.xml` and `robots.txt` at build, on by default.
+The list is every built page whose canonical is its own URL under `site` and
+that has no robots `noindex`; alternates and `lastmod` come from the same head
+(`hreflang` links, JSON-LD `dateModified` else `datePublished`). Above 50,000
+URLs `sitemap.xml` is an index of `sitemap-1.xml`, `sitemap-2.xml`, ...
+`site.seo` takes `sitemap?: boolean`, `robots?: boolean | { disallow?: string[] }`
+and a reserved `htmlSitemap?: boolean`. Behavior changes for existing hosts:
+
+- A build with the sitemap on and no Astro `site` fails; set `site` or
+  `site.seo.sitemap: false`.
+- A host `public/robots.txt` or `public/sitemap.xml`, a host route for those
+  files, a file already in the output, or another integration named like a
+  sitemap or robots writer (such as `@astrojs/sitemap`) fails the build; turn
+  the SDK output off to keep the other one.
+- An alternate that is not a listed page, a duplicate canonical, or several
+  canonicals on one page fail the build.
+
+Taking this SDK version:
+
+- A site that already writes its own sitemap or robots.txt, such as the
+  wilhelmstadtschulen theme integration, must remove that writer or turn the
+  SDK output off. Until then the build fails by design.
+- Collision detection by integration name is a heuristic. It cannot see an
+  unnamed integration, or a post-build script that writes these files after
+  the SDK.
+
+Known limits:
+
+- Under a `base`, robots.txt is not at the host root.
+- Sitemaps are split by URL count only, not at the 50 MB size limit.
+
+The proof suites (starter, theme pilot, packed consumers) were not run for
+this change, because the guest has no Docker and no Playwright. They must run
+before any release.
+
+These are unpublished API changes, not a release.
+
 ## Local evidence and capability limits
 
 Packed browser inspection covers 24 selected routes across all ten profiles

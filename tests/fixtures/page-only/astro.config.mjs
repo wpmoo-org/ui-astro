@@ -5,5 +5,5 @@ import { page } from "@wpmoo/astro/plugins/page";
 export default defineConfig({
   base: "/docs",
   trailingSlash: "always",
-  integrations: [moo({ plugins: [page()] })],
+  integrations: [moo({ site: { seo: { sitemap: false, robots: false } }, plugins: [page()] })],
 });

@@ -9,7 +9,7 @@ export default defineConfig({
   trailingSlash: "never",
   integrations: [
     moo({
-      site: { brand: "Taxonomy consumer", defaults: { lang: "de" } },
+      site: { brand: "Taxonomy consumer", defaults: { lang: "de" }, seo: { sitemap: false, robots: false } },
       plugins: [
         page({ taxonomies: bindings }),
         post({ taxonomies: bindings }),

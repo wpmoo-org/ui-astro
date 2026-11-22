@@ -10,6 +10,7 @@ export default defineConfig({
     moo({
       plugins: [sample({ source, taxonomies: [] })],
       site: {
+        seo: { sitemap: false, robots: false },
         brand: "External content consumer",
         defaults: { lang: "de", parts: { content: { utilities: ["py-3"] } } },
         types: {

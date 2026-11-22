@@ -13,6 +13,7 @@ export default defineConfig({
     moo({
       plugins: [],
       site: {
+        seo: { sitemap: false, robots: false },
         brand: "Recovery",
         defaults: { theme: "dark" },
         types: {

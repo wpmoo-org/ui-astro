@@ -73,6 +73,16 @@ Known differences from Core:
   (drawer side, dropdown caret, close button, brand margin) need a
   `@wpmoo/ui` package newer than 2.3.0.
 
+## Sitemap and robots.txt
+
+With the Astro `site` set, the integration writes `sitemap.xml` and
+`robots.txt` at build from the built pages that name themselves as canonical
+and are not `noindex`. A build without `site` fails unless
+`moo({ site: { seo: { sitemap: false } } })` turns the sitemap off;
+`seo.robots: false` or `seo.robots: { disallow: [...] }` configures
+`robots.txt`. A host `public/robots.txt` or another sitemap writer fails the
+build instead of being overwritten. See the guide's "Sitemap and robots.txt".
+
 ## License
 
 [MIT](LICENSE). Themes and extensions can use their own licenses.

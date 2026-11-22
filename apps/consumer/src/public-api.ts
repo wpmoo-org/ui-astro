@@ -302,6 +302,18 @@ export const invalidNoindexSeoRoute: SeoRoute = {
   // @ts-expect-error noindex is a boolean, not a robots string.
   noindex: "noindex",
 };
+export const sitemapSite = defineSite({
+  seo: { sitemap: false, htmlSitemap: false, robots: { disallow: ["/intern/"] } },
+});
+export const robotsOffSite = defineSite({ seo: { robots: false } });
+export const invalidSitemapSite = defineSite({
+  // @ts-expect-error sitemap is a boolean switch.
+  seo: { sitemap: "off" },
+});
+export const invalidRobotsSite = defineSite({
+  // @ts-expect-error robots takes only disallow paths.
+  seo: { robots: { allow: ["/"] } },
+});
 
 import {
   getLocaleHref,

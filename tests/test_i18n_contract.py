@@ -405,6 +405,8 @@ export const GET = async () => {
                     files = project_files()
                     files["src/pages/content-proof.json.js"] = CONTENT_PROJECTION
                     config = configuration(base=base, slash=slash).replace('})], taxonomies', '}), sample], taxonomies').replace('taxonomies })]', 'taxonomies }), outputProjection, writer]')
+                    # The SDK writes sitemap.xml itself; this profile keeps only the optional writer.
+                    config = config.replace('integrations: [moo({ site: { ', 'integrations: [moo({ site: { seo: { sitemap: false, robots: false }, ', 1)
                     mount_regex = "\\/" if base == "/" else "\\/docs"
                     result, _ = self.build(None, files=files, config_imports=CONFIG_IMPORTS + PROJECT_IMPORTS + SITEMAP_IMPORTS.replace("BASE", mount_regex),
                                           configuration=config, extra_modules=("@astrojs/sitemap",))

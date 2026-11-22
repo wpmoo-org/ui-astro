@@ -23,6 +23,7 @@ export const taxonomies = [
 ];
 export const configuration = {
   site: defineSite({
+    seo: { sitemap: false, robots: false },
     brand: "Editable content",
     defaults: {
       lang: "en",

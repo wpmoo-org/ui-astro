@@ -10,6 +10,7 @@ export default defineConfig({
   integrations: [
     mdx(),
     moo({
+      site: { seo: { sitemap: false, robots: false } },
       plugins: [],
       taxonomies: [],
       blocks: {

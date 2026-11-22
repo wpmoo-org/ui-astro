@@ -27,6 +27,15 @@ import {
   validateResolvedRoutes,
   validateExpectedPagePaths,
 } from "./registry.js";
+import {
+  collisionMessage,
+  competingIntegrations,
+  leftOutReport,
+  missingSiteMessage,
+  reservedOutput,
+  resolveSeoOutputs,
+  writeSeoOutputs,
+} from "./sitemap.js";
 
 const virtualId = "virtual:wpmoo-astro/routes";
 const resolvedVirtualId = "\0virtual:wpmoo-astro/routes";
@@ -75,6 +84,9 @@ export default function moo(input = {}) {
       throw new TypeError(`moo.${key} is unsupported`);
   }
   const site = defineSite(input.site);
+  // sitemap.xml and robots.txt, on unless site.seo turns them off.
+  const seoOutputs = resolveSeoOutputs(site.seo);
+  let seoBuild = null;
   const placementOptions = normalizePlacements({
     blocks: input.blocks,
     placements: input.placements,
@@ -109,6 +121,10 @@ export default function moo(input = {}) {
       }) => {
         root = config.root;
         commandName = command;
+        seoBuild =
+          command === "build" && (seoOutputs.sitemap || seoOutputs.robots)
+            ? { base: config.base }
+            : null;
         // Named things in Markdown content link to their pages (first mention).
         const termLinks = normalizeTermLinks(input.termLinks, config.root);
         if (termLinks.length)
@@ -265,6 +281,20 @@ export default function moo(input = {}) {
         validateResolvedRoutes(registry, routes);
         if (active) validateNativePageRoutes(routes, integrityEntrypoint, root);
         resolvedRoutes = routes;
+        // A host route that emits an SDK output collides with it.
+        if (seoBuild)
+          for (const route of routes) {
+            const file =
+              reservedOutput(route.pattern, seoOutputs, seoBuild.base) ??
+              reservedOutput(route.pathname, seoOutputs, seoBuild.base);
+            if (file)
+              throw new Error(
+                collisionMessage(
+                  file,
+                  `the route ${route.pattern} (${route.entrypoint})`,
+                ),
+              );
+          }
         if (context)
           context.privateData.resolvedRoutes = routes
             .filter((route) => route.type === "page")
@@ -277,7 +307,7 @@ export default function moo(input = {}) {
               origin: route.origin,
             }));
       },
-      "astro:build:done": ({ pages }) => {
+      "astro:build:done": ({ pages, dir, logger }) => {
         if (active) validateBuiltPagePaths(pages, resolvedRoutes);
         if (projectionFile) {
           const expected = JSON.parse(readFileSync(projectionFile, "utf8"));
@@ -287,6 +317,22 @@ export default function moo(input = {}) {
             expected,
             errorClaims.map((claim) => claim.pattern),
           );
+        }
+        if (seoBuild?.config) {
+          const result = writeSeoOutputs({
+            dir,
+            pages,
+            ...seoBuild.config,
+            errorPaths: errorClaims.map((claim) => claim.pattern),
+            outputs: seoOutputs,
+            warn: (message) => logger.warn(message),
+          });
+          const report = leftOutReport(result.left);
+          logger.info(
+            `${result.files.join(", ")} written${seoOutputs.sitemap ? ` (${result.entries.length} URLs; ${result.skipped} pages left out${report.summary ? `: ${report.summary}` : ""})` : ""}`,
+          );
+          if (report.warning) logger.warn(report.warning);
+          for (const line of report.details) logger.debug(line);
         }
       },
       "astro:config:done": ({ config, injectTypes }) => {
@@ -312,6 +358,33 @@ export default function moo(input = {}) {
           base: config.base,
           trailingSlash: config.trailingSlash,
         });
+        if (seoBuild) {
+          if (seoOutputs.sitemap && !config.site)
+            throw new TypeError(missingSiteMessage());
+          for (const name of ["sitemap.xml", "robots.txt"]) {
+            const file = reservedOutput(name, seoOutputs, "/");
+            if (
+              file &&
+              config.publicDir &&
+              existsSync(new URL(file, config.publicDir))
+            )
+              throw new TypeError(collisionMessage(file, `public/${file}`));
+          }
+          // Hooks run in integration order: a writer listed after this one
+          // would replace the files, one listed before is caught at write.
+          for (const { name, file } of competingIntegrations(
+            config.integrations,
+            seoOutputs,
+          ))
+            throw new TypeError(
+              collisionMessage(file, `the integration ${name}`),
+            );
+          seoBuild.config = {
+            site: config.site,
+            base: config.base,
+            trailingSlash: config.trailingSlash,
+          };
+        }
         const i18n = resolveI18n(config.i18n, site);
         placementProfile = {
           ...placementOptions,

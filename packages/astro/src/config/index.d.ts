@@ -355,10 +355,27 @@ export interface TitleTemplateGroup {
   default?: string;
   types?: Readonly<Record<string, Readonly<Partial<Record<ViewKind, string>>>>>;
 }
+export interface SeoRobotsInput {
+  /** Host paths (leading `/`) written as `Disallow:` lines, as given. */
+  disallow?: readonly string[];
+}
+
 export interface SeoInput {
   titleTemplates?: TitleTemplateGroup & {
     locales?: Readonly<Record<string, TitleTemplateGroup>>;
   };
+  /**
+   * Write `sitemap.xml` at build from the built pages that name themselves
+   * as canonical and are not noindex. Default `true`; needs the Astro `site`.
+   */
+  sitemap?: boolean;
+  /** Reserved for the HTML sitemap page; it has no effect yet. */
+  htmlSitemap?: boolean;
+  /**
+   * Write `robots.txt` at build (`User-agent: *`, `Allow: /`, the
+   * `Sitemap:` line when the sitemap is on). Default `true`.
+   */
+  robots?: boolean | SeoRobotsInput;
 }
 
 type NormalizedPageOptionsInput = Readonly<

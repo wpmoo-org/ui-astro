@@ -53,6 +53,7 @@ function configured(input = { plugins: [] }, overrides = {}) {
     srcDir: new URL("src/", root),
     cacheDir: new URL(".astro/", root),
     vite: {},
+    site: "https://example.test",
     base: "/",
     trailingSlash: "ignore",
     output: "static",

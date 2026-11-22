@@ -14,6 +14,7 @@ export default {
   integrations: [
     moo({
       site: {
+        seo: { sitemap: false, robots: false },
         defaults: {
           lang: "de",
           parts: {

@@ -13,6 +13,7 @@ export default defineConfig({
   integrations: [moo({
     plugins: [page()],
     site: {
+      seo: { sitemap: false, robots: false },
       brand: "Moo",
       defaults: { lang: "tr" },
       types: { page: { sidebar: {}, pageWidth: "xl" } },
