@@ -18,6 +18,7 @@ import Select from "@wpmoo/astro/components/Select.astro";
 import Sidebar from "@wpmoo/astro/components/Sidebar.astro";
 import Typography from "@wpmoo/astro/components/Typography.astro";
 import { getSiteContext } from "@wpmoo/astro/context";
+import { resolveSeoMetadata } from "@wpmoo/astro/seo";
 import { getDemoNavigation } from "../navigation.js";
 import { demoControls } from "../settings.js";
 
@@ -25,12 +26,24 @@ const { site } = getSiteContext();
 const { lang, parts, theme, pageWidth, headerWidth, dir, shellMode } =
   site.defaults;
 const { groups, homeHref } = await getDemoNavigation(Astro.url.pathname, lang);
+const description = "Astro theme foundation powered by Moo UI.";
+const metadata = Astro.site
+  ? resolveSeoMetadata(site, {
+      title: site.brand,
+      description,
+      status: "publish",
+      view: "home",
+      lang,
+      url: new URL(Astro.url.pathname, Astro.site).href,
+    })
+  : undefined;
 ---
 
 <Layout
   title={site.brand}
   lang={lang}
-  description="Astro theme foundation powered by Moo UI."
+  description={description}
+  metadata={metadata}
   sidebar
   parts={parts}
   theme={theme}
