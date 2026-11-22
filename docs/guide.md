@@ -1628,8 +1628,12 @@ alternates and Open Graph/Twitter tags stay. The robots meta does not depend on
 `site`: without it, a published noindex Page or Post still writes the robots meta
 (and no canonical or JSON-LD); a host route passes `noindex` to Layout or
 SiteLayout for the same result. The plugin-owned 404 route always writes the
-robots meta and no canonical, alternates, social tags or JSON-LD; a host-owned
-error route (`notFound.routeOwner: "host"`) writes its own head.
+robots meta and no canonical, alternates, social tags or JSON-LD. Layout (and so
+SiteLayout) also writes the one robots meta and drops JSON-LD on every error
+page, host-owned (`notFound.routeOwner: "host"`) included: a 404 or 500 response
+status, or a path (after `base`) of `404` or `500`, alone or behind one locale
+prefix (`/404/`, `/404.html`, `/de/500/` ...), the same rule that keeps error
+pages out of the sitemap; no prop makes an error page indexable.
 
 The independent consumer matrix covers the implemented foundation. SEO and native
 locale checks additionally exercise their own compiled fixtures; broader
@@ -1646,8 +1650,8 @@ sitemap page per locale and `robots.txt` into the build output at
   page. A page is listed when its `<link rel="canonical">` is its own address
   under `site` (with `base` and `trailingSlash`; with `"ignore"` either slash
   form counts) and it has no robots `noindex`. Drafts, `seo.noindex` pages,
-  pages that name another canonical, pages without a canonical, the root
-  404/500 pages and the SDK's own error routes stay out. Host routes need nothing: a host page is listed when its own
+  pages that name another canonical, pages without a canonical, and error
+  pages (`404` or `500`, plain or behind a locale, the Layout robots rule) stay out. Host routes need nothing: a host page is listed when its own
   head names itself as canonical.
   The build log counts the pages left out by reason (error page, noindex, no
   canonical, canonical is another URL), warns when the home page `/` is not

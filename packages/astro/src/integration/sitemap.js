@@ -12,6 +12,7 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isErrorPagePath } from "../seo/error-page.js";
 import { readStateScript, renderHtmlSitemaps, renderSitemapXsl, xslSource } from "./sitemap-page.js";
 
 /** URLs per sitemap file (sitemaps.org protocol limit). */
@@ -24,10 +25,8 @@ const optOut = {
   robots: "moo({ site: { seo: { robots: false } } })",
   htmlSitemap: "moo({ site: { seo: { htmlSitemap: false } } })",
 };
-// The root error pages and the SDK's own (localized) error routes are never
-// listed, whatever their head says.
-const rootErrorPages = ["404", "500"];
-const localPath = (path) => String(path ?? "").replace(/^\/+|\/+$/gu, "");
+// Error pages (isErrorPagePath(), the rule Layout uses for its robots meta)
+// are never listed, whatever their head says.
 // W3C Datetime (https://www.w3.org/TR/NOTE-datetime): YYYY, YYYY-MM,
 // YYYY-MM-DD, or a date with hh:mm[:ss[.s]] and a zone (Z or +hh:mm).
 const w3cPattern =
@@ -345,7 +344,7 @@ export function pageTitleOf(head, loc) {
  * Throws when the guard fails: alternates must be listed URLs, canonicals
  * must be unique, and every URL must be absolute under site.
  */
-export function collectSitemapEntries({ dir, pages, site, base = "/", trailingSlash = "ignore", errorPaths = [], warn }) {
+export function collectSitemapEntries({ dir, pages, site, base = "/", trailingSlash = "ignore", locales = [], warn }) {
   if (!site) throw new TypeError(missingSiteMessage());
   const root = dir instanceof URL ? fileURLToPath(dir) : String(dir);
   const siteUrl = new URL(site);
@@ -354,13 +353,13 @@ export function collectSitemapEntries({ dir, pages, site, base = "/", trailingSl
   // What the HTML sitemap and the xsl read from each listed page, by loc.
   const details = new Map();
   const owners = new Map();
-  const errorPages = new Set([...rootErrorPages, ...errorPaths.map(localPath)]);
   // Pages left out, with the reason, so the build log can name them.
   const left = [];
   for (const { pathname } of pages) {
     const local = String(pathname ?? "").replace(/^\/+|\/+$/gu, "");
     const path = `/${local}`;
-    if (errorPages.has(local)) {
+    // Built pathnames are relative to base already.
+    if (isErrorPagePath(path, { locales })) {
       left.push({ path, reason: "error page" });
       continue;
     }
@@ -531,13 +530,13 @@ export function renderRobots({ sitemapUrl, disallow = [] } = {}) {
  * are filled in place from the same scan; sitemap.xsl takes its copy from
  * htmlSitemap.xslCopy (or xslCopy) and its look from a built page.
  */
-export function writeSeoOutputs({ dir, pages, site, base = "/", trailingSlash = "ignore", errorPaths, outputs, limit, warn, i18n = null, lang = "en", htmlSitemap = null, xslCopy = null, stateScript }) {
+export function writeSeoOutputs({ dir, pages, site, base = "/", trailingSlash = "ignore", outputs, limit, warn, i18n = null, lang = "en", htmlSitemap = null, xslCopy = null, stateScript }) {
   const root = dir instanceof URL ? fileURLToPath(dir) : String(dir);
   const files = [];
   let listed = null;
   let filled = [];
   if (outputs.sitemap) {
-    listed = collectSitemapEntries({ dir: root, pages, site, base, trailingSlash, errorPaths, warn });
+    listed = collectSitemapEntries({ dir: root, pages, site, base, trailingSlash, locales: i18n?.locales ?? [], warn });
     files.push(...renderSitemapFiles(listed.entries, { site, base, limit }));
     const pageList = outputs.htmlSitemap && htmlSitemap ? htmlSitemap.pages : [];
     if (pageList.length)

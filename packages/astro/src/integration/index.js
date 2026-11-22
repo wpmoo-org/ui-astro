@@ -37,6 +37,7 @@ import {
   resolveSeoOutputs,
   writeSeoOutputs,
 } from "./sitemap.js";
+import { isErrorPagePath } from "../seo/error-page.js";
 import {
   normalizeSitemap,
   resolveSitemapOptions,
@@ -291,15 +292,16 @@ export default function moo(input = {}) {
                       throw new Error(
                         `${sitemapVirtualId} is unavailable before Astro config resolves`,
                       );
-                    // Literal page routes for the development list.
-                    const errors = new Set(errorClaims.map((claim) => claim.pattern));
+                    // Literal page routes for the development list, without
+                    // error pages (the shared rule; patterns are base-relative).
+                    const locales = sitemapProfile.i18n?.locales ?? [];
                     const staticPaths = resolvedRoutes
                       .filter(
                         (route) =>
                           route.type === "page" &&
                           route.origin !== "internal" &&
                           !route.pattern.includes("[") &&
-                          !errors.has(route.pattern),
+                          !isErrorPagePath(route.pattern, { locales }),
                       )
                       .map((route) => route.pattern);
                     // Only the dev list reads content; a build never loads
@@ -418,7 +420,6 @@ export default function moo(input = {}) {
             dir,
             pages,
             ...seoBuild.config,
-            errorPaths: errorClaims.map((claim) => claim.pattern),
             outputs: seoOutputs,
             warn: (message) => logger.warn(message),
             i18n: sitemapProfile.i18n,

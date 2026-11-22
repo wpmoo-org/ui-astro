@@ -112,7 +112,7 @@ test("the list holds self-canonical, indexable pages only, with lastmod and alte
     "nodate/index.html": page(canonical(`${site}/nodate/`) + ld({ "@type": "WebPage", url: `${site}/nodate/`, dateModified: "last week" })),
   };
   const warnings = [];
-  const { entries, skipped } = collect(files, { errorPaths: ["/de/404"], warn: (message) => warnings.push(message) });
+  const { entries, skipped } = collect(files, { locales: ["en", "de"], warn: (message) => warnings.push(message) });
   assert.deepEqual(entries.map((entry) => entry.loc), [`${site}/`, `${site}/a/`, `${site}/blog/404/`, `${site}/de/a/`, `${site}/nodate/`]);
   assert.equal(skipped, 6);
   assert.equal(entries[0].lastmod, "2026-03-01T10:00:00.000Z");

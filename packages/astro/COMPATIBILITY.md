@@ -160,7 +160,13 @@ inspection of this URL change was not executed because access was blocked.
 Entries take `seo: { noindex: true }`, and `Layout` and `SiteLayout` take a
 `noindex` prop. Either one writes one
 `<meta name="robots" content="noindex, follow">` and drops JSON-LD. The SDK
-404 route always writes it. `SeoMetadata.jsonLd` is now optional, so typed
+404 route always writes it, and `Layout` now writes it on every error page,
+host-owned ones (`notFound.routeOwner: "host"`) included, which wrote no robots
+meta before: a 404 or 500 response status, or a path after `base` of `404` or
+`500`, alone or behind one configured locale (`/de/404/`, `/500.html`). The
+sitemap scan uses the same rule, so it now also leaves out a locale-prefixed
+`500` page. A host error page that also writes its own robots meta in the
+`head` slot now has two; drop its own. `SeoMetadata.jsonLd` is now optional, so typed
 callers must handle its absence. These are unpublished API changes, not a
 release.
 

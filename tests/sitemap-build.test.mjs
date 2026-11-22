@@ -113,6 +113,11 @@ test("sitemap.xml lists exactly the built self-canonical pages without noindex",
     assert.ok(expected.has(`${site}${url}`), url);
   for (const url of ["/docs/hidden/", "/docs/draft/", "/docs/copy/", "/docs/plain/", "/docs/404/"])
     assert.ok(!listed.includes(`${site}${url}`), url);
+  // The SDK 404 route passes noindex and is an error page: one robots meta.
+  for (const file of ["404.html", "de/404/index.html"]) {
+    const html = await readFile(join(dist, file), "utf8");
+    assert.deepEqual(html.match(/<meta name="robots"[^>]*>/gu), ['<meta name="robots" content="noindex, follow">'], file);
+  }
   assert.match(xml, /xmlns:xhtml="http:\/\/www\.w3\.org\/1999\/xhtml"/u);
   assert.match(
     xml,
