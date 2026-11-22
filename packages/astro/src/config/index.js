@@ -235,7 +235,8 @@ const partDefaults = {
     trigger: { variant: "ghost", size: "icon-sm", icon: "panel-left" },
     toggleLabel: "Toggle sidebar",
     navigationLabel: "Site navigation",
-    skipLabel: "Skip to main content",
+    // No skipLabel default: an unset skipLabel means "host set nothing", and
+    // Layout then picks built-in copy by page lang (see Layout.astro).
   },
   pageHeader: {
     alignment: "start",

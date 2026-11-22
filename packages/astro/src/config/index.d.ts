@@ -172,8 +172,10 @@ type DeepReadonly<T> = T extends object
   : T;
 export interface Parts {
   readonly content: Readonly<Required<ContentPartInput>>;
-  readonly header: Readonly<Required<Omit<HeaderPartInput, "trigger">>> & {
+  readonly header: Readonly<Required<Omit<HeaderPartInput, "trigger" | "skipLabel">>> & {
     readonly trigger: Readonly<Required<TriggerInput>>;
+    /** Present only when the host set it; Layout otherwise uses built-in copy for the page lang. */
+    readonly skipLabel?: string;
   };
   readonly pageHeader: Readonly<Required<PageHeaderPartInput>>;
   readonly loop: Readonly<Required<LoopPartInput>>;

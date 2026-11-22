@@ -60,6 +60,20 @@ const shellModeValues: ShellMode[] = ["viewport", "contained", "document"];
 const themeValues: Theme[] = ["light", "dark"];
 const directionValues: Direction[] = ["ltr", "rtl"];
 
+// Built-in skip link copy, same pattern as not-found: used only when the host
+// set no skipLabel at any level and passed no skipText. Matched on the primary
+// language subtag (de-DE -> de); unknown languages fall back to English.
+const skipCopy: Readonly<Record<string, string>> = Object.freeze({
+  en: "Skip to main content",
+  de: "Zum Hauptinhalt springen",
+});
+
+function builtInSkipText(lang: unknown): string {
+  const primary =
+    typeof lang === "string" ? lang.split("-")[0].toLowerCase() : "";
+  return Object.hasOwn(skipCopy, primary) ? skipCopy[primary] : skipCopy.en;
+}
+
 const defaults = defineSite().defaults;
 const parts = resolveParts(Astro.props.parts);
 const {
@@ -77,7 +91,7 @@ const {
   defaultOpen = true,
   sidebarId = "",
   ariaLabel = parts.header.toggleLabel,
-  skipText = parts.header.skipLabel,
+  skipText = parts.header.skipLabel ?? builtInSkipText(lang),
   id = "",
   pageWidth = defaults.pageWidth,
   headerWidth = defaults.headerWidth,

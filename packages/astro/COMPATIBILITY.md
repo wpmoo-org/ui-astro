@@ -275,6 +275,13 @@ stale collection data. Explicit host settings, including `false` and
 `watch: null`, remain authoritative. Source integrity validation stays fatal;
 no replacement loader, private store mutation or request retry is introduced.
 
+## Known issues
+
+- The consent policy table's service privacy link
+  (`blocks/consent/ConsentPolicy.astro`) opens in a new tab without the
+  external-link icon and new-tab hint the workspace rule requires. Follow-up;
+  not fixed.
+
 ## Release intake and upgrade procedure
 
 The current baseline is published Core `2.3.0`, adopted on 2026-11-11.
@@ -415,6 +422,12 @@ MD/MDX/JSON metadata renamed `layout` to `options` to avoid the official MDX
 layout import. These are recorded unpublished changes, not compatibility claims
 for an earlier released layout contract. Public Layout/schema/resolver names
 remain unchanged; there is no extra frontmatter version flag.
+
+The skip link text now follows the page language when the host sets no
+`parts.header.skipLabel` and passes no Layout `skipText`: German pages (`de`,
+`de-*`) render "Zum Hauptinhalt springen" instead of "Skip to main content";
+English and other languages are unchanged. Host values win at every level as
+before. Resolved `parts.header.skipLabel` is now absent unless the host set it.
 
 Later extensions preserve the previous released fixtures and replay them
 unchanged. Test the actual new option, omission/inheritance and old-package
