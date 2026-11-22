@@ -72,6 +72,47 @@ const sitemapEntrypoint = fileURLToPath(
   new URL("./routes/sitemap.astro", import.meta.url),
 );
 
+/**
+ * sitemap.routeOwner "host": each locale's sitemap path is exactly one
+ * literal, prerendered project page. Lists every locale that fails.
+ */
+function validateHostSitemapRoutes(claims, routes) {
+  const problems = [];
+  for (const { locale, pattern } of claims) {
+    const file = `src/pages${pattern}.astro`;
+    const matches = routes.filter((route) => route.pattern === pattern);
+    const route = matches[0];
+    if (matches.length > 1)
+      problems.push(
+        `${locale} ${pattern}: several routes (${matches.map((item) => item.entrypoint).join(", ")}); keep only the host page`,
+      );
+    else if (!route) {
+      const covering = routes.find(
+        (item) =>
+          item.type === "page" &&
+          item.origin === "project" &&
+          (item.patternRegex?.test(pattern) || item.patternRegex?.test(`${pattern}/`)),
+      );
+      problems.push(
+        covering
+          ? `${locale} ${pattern}: rendered by ${covering.entrypoint} (${covering.pattern}), which is not a literal page at ${pattern}; add ${file} and place SitemapContent there`
+          : `${locale} ${pattern}: no page; add ${file} and place SitemapContent there`,
+      );
+    } else if (route.origin !== "project")
+      problems.push(
+        `${locale} ${pattern}: owned by ${route.entrypoint}, not a host page; add ${file} and place SitemapContent there`,
+      );
+    else if (route.type !== "page")
+      problems.push(`${locale} ${pattern}: ${route.entrypoint} must be a page, not an ${route.type}`);
+    else if (route.isPrerendered !== true)
+      problems.push(`${locale} ${pattern}: ${route.entrypoint} must prerender`);
+  }
+  if (problems.length)
+    throw new Error(
+      `moo sitemap.routeOwner "host" needs one literal, prerendered host page at each locale's HTML sitemap path:\n${problems.map((line) => `- ${line}`).join("\n")}\nOr let the SDK render the pages with moo({ sitemap: { routeOwner: "plugin" } }), or turn them off with moo({ site: { seo: { htmlSitemap: false } } }).`,
+    );
+}
+
 function plainRecord(value) {
   if (value === null || typeof value !== "object" || Array.isArray(value))
     return false;
@@ -188,8 +229,9 @@ export default function moo(input = {}) {
               entrypoint: claim.entrypoint,
               prerender: true,
             });
-        for (const { pattern } of sitemapPatterns)
-          injectRoute({ pattern, entrypoint: sitemapEntrypoint, prerender: true });
+        if (sitemapCopy.routeOwner === "plugin")
+          for (const { pattern } of sitemapPatterns)
+            injectRoute({ pattern, entrypoint: sitemapEntrypoint, prerender: true });
         if (active) updateConfig({ prerenderConflictBehavior: "error" });
         if (active && command === "dev") {
           // Save + format-on-save may write twice inside Chokidar's 50ms
@@ -370,8 +412,11 @@ export default function moo(input = {}) {
                 ),
               );
           }
-        // The SDK owns each locale's sitemap page; a host page there collides.
-        for (const { pattern } of sitemapPatterns) {
+        // With routeOwner "host" the host owns each locale's sitemap page;
+        // otherwise the SDK does and a host page there collides.
+        if (sitemapCopy.routeOwner === "host")
+          validateHostSitemapRoutes(sitemapPatterns, routes);
+        else for (const { pattern } of sitemapPatterns) {
           const matches = routes.filter((route) => route.pattern === pattern);
           const host = matches.find((route) => route.origin !== "external");
           if (host)
@@ -435,6 +480,7 @@ export default function moo(input = {}) {
             ).copy,
             htmlSitemap: {
               nonce: sitemapNonce,
+              routeOwner: sitemapCopy.routeOwner,
               pages: sitemapPatterns.map(({ locale, pattern }) => {
                 const resolved = resolveSitemapOptions(sitemapProfile, locale);
                 return {
@@ -543,6 +589,8 @@ export default function moo(input = {}) {
           i18n,
           active,
           development: commandName === "dev",
+          htmlSitemap: sitemapPatterns.length > 0,
+          buildFormat: config.build?.format ?? "directory",
           nonce: sitemapNonce,
           sitemap: sitemapCopy,
         };
@@ -563,7 +611,7 @@ export default function moo(input = {}) {
               );
         injectTypes({
           filename: "sitemap-context.d.ts",
-          content: `declare module ${JSON.stringify(sitemapVirtualId)} { const profile: { site: import("@wpmoo/astro/config").SiteConfig; base: string; trailingSlash: "always" | "never" | "ignore"; i18n: import("@wpmoo/astro/context").SiteContext["i18n"]; active: boolean; development: boolean; nonce: string; sitemap: { messages: Readonly<Record<string, Readonly<Record<string, string>>>> }; staticPaths: readonly string[] }; export default profile; export const loadContent: null | (() => Promise<[typeof import("astro:content"), typeof import("@wpmoo/astro/context")]>); }`,
+          content: `declare module ${JSON.stringify(sitemapVirtualId)} { const profile: { site: import("@wpmoo/astro/config").SiteConfig; base: string; trailingSlash: "always" | "never" | "ignore"; i18n: import("@wpmoo/astro/context").SiteContext["i18n"]; active: boolean; development: boolean; htmlSitemap: boolean; buildFormat: "directory" | "file" | "preserve"; nonce: string; sitemap: { routeOwner: "plugin" | "host"; messages: Readonly<Record<string, Readonly<Record<string, string>>>> }; staticPaths: readonly string[] }; export default profile; export const loadContent: null | (() => Promise<[typeof import("astro:content"), typeof import("@wpmoo/astro/context")]>); }`,
         });
         errorProfile = {
           site,

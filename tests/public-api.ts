@@ -387,6 +387,16 @@ errorOptions.title = "Changed";
 // @ts-expect-error Locale recovery links are returned immutable.
 errorOptions.languageLinks.push({ locale: "fr", href: "/fr" });
 
+import { getSitemapOptions, type SitemapOptions } from "@wpmoo/astro/sitemap";
+import SitemapContent from "@wpmoo/astro/blocks/SitemapContent.astro";
+const sitemapOptions: SitemapOptions = getSitemapOptions("de");
+moo({ sitemap: { routeOwner: "host", messages: { de: { title: "Seitenübersicht" } } } });
+void [sitemapOptions.copy.title, sitemapOptions.href, sitemapOptions.options.parts, sitemapOptions.languageLinks, SitemapContent];
+// @ts-expect-error The sitemap page owner is "plugin" or "host".
+moo({ sitemap: { routeOwner: "theme" } });
+// @ts-expect-error Sitemap copy is returned immutable.
+sitemapOptions.copy.title = "Changed";
+
 export const presentationSite = defineSite({
   presentation: {
     navigation: "grouped",

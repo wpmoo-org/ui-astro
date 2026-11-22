@@ -6,6 +6,7 @@ import SiteLayout from "@wpmoo/astro/layouts/SiteLayout.astro";
 import LanguageSwitcher from "@wpmoo/astro/blocks/LanguageSwitcher.astro";
 import TableOfContents from "@wpmoo/astro/blocks/TableOfContents.astro";
 import EntryTaxonomies from "@wpmoo/astro/blocks/EntryTaxonomies.astro";
+import SitemapContent from "@wpmoo/astro/blocks/SitemapContent.astro";
 import ContentFrame from "@wpmoo/astro/layouts/ContentFrame.astro";
 import Placement from "@wpmoo/astro/placements/Placement.astro";
 import { preparePlacements } from "@wpmoo/astro/placements";
@@ -122,9 +123,10 @@ import Archive from "@wpmoo/astro/views/Archive.astro";
 import Loop from "@wpmoo/astro/views/Loop.astro";
 import NotFound from "@wpmoo/astro/views/NotFound.astro";
 import { getNotFoundOptions } from "@wpmoo/astro/not-found";
+import { getSitemapOptions } from "@wpmoo/astro/sitemap";
 import "@wpmoo/astro/styles.css";
 
-void [SiteLayout, TableOfContents, EntryTaxonomies, ContentFrame, Placement, preparePlacements, contentBlockSchema];
+void [SiteLayout, TableOfContents, EntryTaxonomies, SitemapContent, getSitemapOptions, ContentFrame, Placement, preparePlacements, contentBlockSchema];
 const publicWrappers = [
   Accordion,
   Alert,

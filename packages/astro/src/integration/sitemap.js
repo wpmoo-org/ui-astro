@@ -526,7 +526,7 @@ export function renderRobots({ sitemapUrl, disallow = [] } = {}) {
 /**
  * Build the outputs and write them into dir. Fails, writing nothing, when
  * any of the new files is already there. With the HTML sitemap on, the
- * built sitemap pages (htmlSitemap: { nonce, pages: [{ locale, pathname, href, copy }] })
+ * built sitemap pages (htmlSitemap: { nonce, routeOwner, pages: [{ locale, pathname, href, copy }] })
  * are filled in place from the same scan; sitemap.xsl takes its copy from
  * htmlSitemap.xslCopy (or xslCopy) and its look from a built page.
  */
@@ -540,7 +540,7 @@ export function writeSeoOutputs({ dir, pages, site, base = "/", trailingSlash = 
     files.push(...renderSitemapFiles(listed.entries, { site, base, limit }));
     const pageList = outputs.htmlSitemap && htmlSitemap ? htmlSitemap.pages : [];
     if (pageList.length)
-      filled = renderHtmlSitemaps({ root, entries: listed.entries, details: listed.details, site, base, i18n, lang, pages: pageList, nonce: htmlSitemap.nonce });
+      filled = renderHtmlSitemaps({ root, entries: listed.entries, details: listed.details, site, base, i18n, lang, pages: pageList, nonce: htmlSitemap.nonce, routeOwner: htmlSitemap.routeOwner });
     const main = pageList.find((page) => page.locale === (i18n?.defaultLocale ?? lang)) ?? pageList[0] ?? null;
     const copy = xslCopy ?? main?.copy;
     if (copy) {

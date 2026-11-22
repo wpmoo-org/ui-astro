@@ -42,6 +42,14 @@ export interface SitemapMessages {
 }
 
 export interface SitemapInput {
+  /**
+   * Who renders each locale's HTML sitemap page. "plugin" (default): the SDK
+   * route in SiteLayout's own chrome. "host": the site's own literal,
+   * prerendered page at each locale's path (`/sitemap/`, `/de/sitemap/`)
+   * placing `@wpmoo/astro/blocks/SitemapContent.astro`; set it when pages
+   * render through the site's own shell.
+   */
+  routeOwner?: "plugin" | "host";
   /** Per-locale overrides; missing fields fall back like the 404 copy. */
   messages?: Record<string, Partial<SitemapMessages>>;
 }
@@ -53,7 +61,7 @@ export interface MooInput extends PlacementInputOptions {
   taxonomyBasePath?: string;
   taxonomyRoutes?: { archive?: "plugin" | "host" };
   notFound?: NotFoundInput;
-  /** Copy of the HTML sitemap page (`site.seo.htmlSitemap`) and sitemap.xsl. */
+  /** Owner and copy of the HTML sitemap page (`site.seo.htmlSitemap`) and sitemap.xsl copy. */
   sitemap?: SitemapInput;
   termLinks?: readonly TermLink[];
 }

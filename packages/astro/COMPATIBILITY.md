@@ -188,8 +188,8 @@ also writes `sitemap.xsl` (line 2 of every sitemap file references it) and,
 unless `htmlSitemap: false`, an HTML sitemap page per locale at `/sitemap/`
 (`/de/sitemap/` ...), injected like the 404 route and listed in
 `sitemap.xml`. `moo()` takes a new `sitemap?: { messages?: Record<locale,
-Partial<SitemapMessages>> }` option for that copy; it holds copy only, and
-the on/off switches live under `site.seo`. The page's Updated column shows
+Partial<SitemapMessages>> }` option for that copy (and, since, the page
+owner `routeOwner`, see below); the on/off switches live under `site.seo`. The page's Updated column shows
 the `YYYY-MM-DD` part of `lastmod` in `<time datetime>`; the XML keeps the
 full value. Known limit: the XSL transform has no automated test (no XSLT
 processor in the guest); it was verified once by hand with `xsltproc --nonet`
@@ -202,6 +202,8 @@ plain XML, which stays valid. Behavior changes for existing hosts:
 - A host `/sitemap/` page (route or public file) at any locale, or a host
   `public/sitemap.xsl`, fails the build; remove it or set
   `site.seo.htmlSitemap: false` (the page) or `site.seo.sitemap: false`.
+  With `sitemap.routeOwner: "host"` (below) the host route is required
+  instead; a public file there still fails.
 - A host `public/robots.txt` or `public/sitemap.xml`, a host route for those
   files, a file already in the output, or another integration named like a
   sitemap or robots writer (such as `@astrojs/sitemap`) fails the build; turn
@@ -234,6 +236,30 @@ this change, because the guest has no Docker and no Playwright. They must run
 before any release.
 
 These are unpublished API changes, not a release.
+
+### Host-owned HTML sitemap page
+
+`moo({ sitemap: { routeOwner: "plugin" | "host" } })`, default `"plugin"`
+(validated like `notFound.routeOwner`). With `"host"` the SDK injects no
+sitemap route; each locale's sitemap path (`/sitemap`, `/de/sitemap` ...)
+must be exactly one literal, prerendered host page, otherwise
+`astro:routes:resolved` fails and names every failing locale with its path
+and the expected file (missing, rendered by a dynamic route, owned by
+another integration, an endpoint, not prerendered, several routes). The
+host page places the new public component
+`@wpmoo/astro/blocks/SitemapContent.astro` (the intro and the template group
+the build fills) and reads title, copy, href and locale links with
+`getSitemapOptions(locale)` from the new subpath `@wpmoo/astro/sitemap`. The
+build:done fill is unchanged and applies to host pages: a host page without
+`SitemapContent`, with a changed template or without its own self-canonical
+fails the build with a message naming `SitemapContent`. `SitemapContent`
+itself fails on any other path or while `site.seo.htmlSitemap` is off.
+
+The SDK route now renders its body through `SitemapContent`; the demo's
+`/sitemap/` and `/de/sitemap/` pages, `sitemap.xml` and `sitemap.xsl` are
+byte-identical before and after (sha256 compared). Sites that render through
+their own shell should set `routeOwner: "host"`: the default page uses
+SiteLayout's own chrome, not the site's shell. Existing hosts need no change.
 
 ## Local evidence and capability limits
 

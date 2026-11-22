@@ -1715,8 +1715,46 @@ sitemap page per locale and `robots.txt` into the build output at
     (`{page}`), `xmlPageLabel`, `urlLabel`,
     `lastModifiedLabel`. Missing fields fall back to the built-in copy of the
     locale, the host and built-in copy of the default locale, then English.
-    `sitemap.messages` holds copy only; the on/off switches live under
+    `sitemap.messages` holds copy; the on/off switches live under
     `site.seo` (`sitemap`, `htmlSitemap`, `robots`).
+  - Host-owned page. Sites that render through their own shell (a theme
+    layout wrapping `SiteLayout`) should set
+    `moo({ sitemap: { routeOwner: "host" } })`, because the default page
+    uses SiteLayout's own chrome. The SDK then injects no sitemap route and
+    each locale needs exactly one literal, prerendered host page at its path
+    (`src/pages/sitemap.astro`, `src/pages/de/sitemap.astro` ...); a missing
+    or misplaced page fails the build naming the expected path per locale.
+    The page places `SitemapContent` once, inside the site's own shell; the
+    build fills it like the SDK page, and a page without it fails the build.
+    `getSitemapOptions(Astro.currentLocale)` gives `copy` (`copy.title`),
+    `href` (the canonical), `xmlHref`, `options` and `languageLinks`. The shell
+    must give the page SEO metadata that names `href` as canonical without
+    noindex, so the page lists itself:
+
+    ```astro
+    ---
+    import ContentFrame from "@wpmoo/astro/layouts/ContentFrame.astro";
+    import PageHeader from "@wpmoo/astro/includes/PageHeader.astro";
+    import SitemapContent from "@wpmoo/astro/blocks/SitemapContent.astro";
+    import { getSitemapOptions } from "@wpmoo/astro/sitemap";
+    import Shell from "../layouts/Shell.astro";
+
+    export const prerender = true;
+    const data = getSitemapOptions(Astro.currentLocale);
+    ---
+
+    <Shell title={data.copy.title} href={data.href} type="page" view="single" pageContext={{ view: "native", key: "sitemap" }}>
+      <ContentFrame element="article" dir={data.options.dir}>
+        <PageHeader title={data.copy.title} parts={data.options.parts} />
+        <SitemapContent />
+      </ContentFrame>
+    </Shell>
+    ```
+
+    `SitemapContent` takes an optional `locale` (default
+    `Astro.currentLocale`) and fails on any other path, or while
+    `site.seo.htmlSitemap` is off. For hreflang alternates between the
+    locale pages, pass `data.languageLinks` to the shell's metadata.
   - Known limits: the XSL transform has no automated test (the guest has no
     XSLT processor; tests check well-formedness, noindex and links). It was
     verified once by hand with `xsltproc --nonet` on the demo `sitemap.xml`
@@ -1726,7 +1764,8 @@ sitemap page per locale and `robots.txt` into the build output at
 - **Collisions.** Nothing is overwritten. The build fails, naming the file and
   the opt-out, when `public/robots.txt`, `public/sitemap.xml` or
   `public/sitemap.xsl` exists, when a public file or host route sits at a
-  locale's `/sitemap/` page (opt-out `htmlSitemap: false`), when a
+  locale's `/sitemap/` page (opt-out `htmlSitemap: false`; with
+  `sitemap.routeOwner: "host"` the host route is required there instead), when a
   host route emits `/sitemap.xml`, `/sitemap-N.xml`, `/sitemap.xsl` or `/robots.txt`, when the
   file is already in the build output, or when another integration with
   `sitemap` (or `robots`) in its name is registered, such as `@astrojs/sitemap`.

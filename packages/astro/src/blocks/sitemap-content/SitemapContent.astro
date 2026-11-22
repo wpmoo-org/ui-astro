@@ -1,0 +1,106 @@
+---
+// The body of one locale's HTML sitemap page: the intro with the count and
+// the XML link, then the template group the build fills (one heading and
+// Table per group). The SDK route and host pages (sitemap.routeOwner
+// "host") place it the same way; it renders the template the build fill
+// expects, so place it once, on the page at that locale's sitemap path.
+// The dev server has no build:done, so it renders the pre-build list with
+// a note.
+import {
+  getDevelopmentGroups,
+  getSitemapOptions,
+  getSitemapTokens,
+  isDevelopmentServer,
+  isSitemapPage,
+} from "../../sitemap/index.js";
+import { displayDate, escapeHtml } from "../../integration/sitemap-page.js";
+import Typography from "../../components/Typography.astro";
+import Table from "../../components/Table.astro";
+import Alert from "../../components/Alert.astro";
+
+interface Props {
+  /** The page's locale; defaults to Astro.currentLocale. */
+  locale?: string;
+}
+
+const data = getSitemapOptions(Astro.props.locale ?? Astro.currentLocale);
+if (!isSitemapPage(Astro.url.pathname, data.href))
+  throw new Error(
+    `SitemapContent renders only on the HTML sitemap page of its locale (${data.href}), not on ${Astro.url.pathname}, and only while site.seo.htmlSitemap is on`,
+  );
+const { copy } = data;
+const development = isDevelopmentServer();
+const sentinels = getSitemapTokens();
+const template = [
+  {
+    id: sentinels.groupId,
+    label: sentinels.groupLabel,
+    count: sentinels.groupCount,
+    pages: [
+      {
+        href: sentinels.href,
+        title: sentinels.title,
+        description: sentinels.description,
+        lastmod: sentinels.dateTime,
+        display: sentinels.date,
+      },
+    ],
+  },
+];
+const groups = development
+  ? (await getDevelopmentGroups(data.locale, copy)).map((group) => ({
+      ...group,
+      count: String(group.pages.length),
+    }))
+  : template;
+const total = development
+  ? String(groups.reduce((sum, group) => sum + group.pages.length, 0))
+  : sentinels.total;
+const cell = (page: { href: string; title: string; description?: string }) =>
+  `<a class="text-break" href="${escapeHtml(page.href)}">${escapeHtml(page.title)}</a>${
+    page.description
+      ? `<span class="d-block small text-body-secondary text-break">${escapeHtml(page.description)}</span>`
+      : ""
+  }`;
+// The date part only (the full lastmod in datetime); the XML keeps it whole.
+const updated = (lastmod?: string, display?: string) =>
+  `<span class="text-nowrap">${
+    lastmod
+      ? `<time datetime="${escapeHtml(lastmod)}">${escapeHtml(display ?? displayDate(lastmod))}</time>`
+      : escapeHtml(copy.noDate)
+  }</span>`;
+const intro = copy.intro.split(/(\{count\}|\{xml\})/u);
+---
+
+<p>
+  {
+    intro.map((part) =>
+      part === "{count}" ? (
+        total
+      ) : part === "{xml}" ? (
+        <a href={data.xmlHref}>{copy.xmlLabel}</a>
+      ) : (
+        part
+      ),
+    )
+  }
+</p>
+{development ? <Alert variant="info" description={copy.devNote} /> : null}
+{
+  groups.map((group) => (
+    <section aria-labelledby={group.id}>
+      <Typography
+        variant="section-title"
+        id={group.id}
+        content={`${group.label} (${group.count})`}
+      />
+      <Table
+        headers={[copy.pageLabel, copy.updatedLabel]}
+        align={["", "end"]}
+        trustedHtml
+        aria-labelledby={group.id}
+        rows={group.pages.map((page) => [cell(page), updated(page.lastmod, "display" in page ? page.display : undefined)])}
+      />
+    </section>
+  ))
+}

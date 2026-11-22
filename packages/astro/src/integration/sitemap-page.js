@@ -23,6 +23,12 @@ const tokenNames = Object.freeze({
   dateTime: "DATETIME",
 });
 const optOut = "moo({ site: { seo: { htmlSitemap: false } } })";
+// What to do about a broken page: the SDK page is restored; a host page
+// (sitemap.routeOwner "host") places SitemapContent once.
+const remedies = Object.freeze({
+  plugin: "Restore the SDK page",
+  host: `The host page (sitemap.routeOwner "host") must place SitemapContent from @wpmoo/astro/blocks/SitemapContent.astro exactly once`,
+});
 
 /**
  * The tokens the page renders in its template for one build. The nonce is
@@ -57,7 +63,7 @@ export function escapeHtml(text) {
 
 // The template is split at its tokens once, before any value goes in; a
 // fill joins the static parts with escaped values and never scans a value.
-function splitTokens(fragment, tokens, allowed, source, what) {
+function splitTokens(fragment, tokens, allowed, source, what, routeOwner) {
   const byToken = new Map(Object.entries(tokens).map(([key, token]) => [token, key]));
   const prefix = tokens.total.slice(0, tokens.total.length - "TOTAL_".length);
   const parts = [];
@@ -67,7 +73,7 @@ function splitTokens(fragment, tokens, allowed, source, what) {
     if (at < 0) break;
     const token = [...byToken.keys()].find((value) => rest.startsWith(value, at));
     const key = token && byToken.get(token);
-    if (!key || !allowed.includes(key)) throw templateError(source, `well-formed ${what} (unexpected token there)`);
+    if (!key || !allowed.includes(key)) throw templateError(source, `well-formed ${what} (unexpected token there)`, routeOwner);
     parts.push(rest.slice(0, at), key);
     rest = rest.slice(at + token.length);
   }
@@ -179,9 +185,9 @@ export function groupSitemapPages(pages, { topLabel, locale = "en" }) {
   });
 }
 
-function templateError(source, what) {
+function templateError(source, what, routeOwner = "plugin") {
   return new Error(
-    `sitemap: the HTML sitemap ${source} has no ${what}. The page is filled at build from its own rendered template; a host override or changed markup removed it. Restore the SDK page, or turn the page off with ${optOut}.`,
+    `sitemap: the HTML sitemap ${source} has no ${what}. The page is filled at build from its own rendered template; a host override or changed markup removed it. ${remedies[routeOwner]}, or turn the page off with ${optOut}.`,
   );
 }
 
@@ -202,28 +208,28 @@ function enclosing(html, index, tag) {
  * inserted; inserted values are never scanned. Throws when the template
  * group, its row or the total is missing or malformed.
  */
-export function fillSitemapPage(html, { groups, nonce, noDate = "—", source = "page" }) {
+export function fillSitemapPage(html, { groups, nonce, noDate = "—", source = "page", routeOwner = "plugin" }) {
   const tokens = sitemapTokens(nonce);
   const prefix = tokens.total.slice(0, tokens.total.length - "TOTAL_".length);
   const groupAt = html.indexOf(tokens.groupId);
-  if (groupAt < 0) throw templateError(source, "template group");
+  if (groupAt < 0) throw templateError(source, "template group", routeOwner);
   const section = enclosing(html, groupAt, "section");
-  if (!section) throw templateError(source, "template group <section>");
+  if (!section) throw templateError(source, "template group <section>", routeOwner);
   const totalAt = html.indexOf(tokens.total);
-  if (totalAt < 0) throw templateError(source, "total count");
+  if (totalAt < 0) throw templateError(source, "total count", routeOwner);
   const intro = enclosing(html, totalAt, "p");
-  if (!intro || intro.end > section.start) throw templateError(source, "intro element before its template group");
+  if (!intro || intro.end > section.start) throw templateError(source, "intro element before its template group", routeOwner);
   // No token may sit outside the two regions (a second group, a stray row).
   const outside = [html.slice(0, intro.start), html.slice(intro.end, section.start), html.slice(section.end)];
-  if (outside.some((part) => part.includes(prefix))) throw templateError(source, "single template group");
+  if (outside.some((part) => part.includes(prefix))) throw templateError(source, "single template group", routeOwner);
   const group = html.slice(section.start, section.end);
   const hrefAt = group.indexOf(tokens.href);
-  if (hrefAt < 0) throw templateError(source, "template row");
+  if (hrefAt < 0) throw templateError(source, "template row", routeOwner);
   const row = enclosing(group, hrefAt, "tr");
-  if (!row) throw templateError(source, "template row <tr>");
+  if (!row) throw templateError(source, "template row <tr>", routeOwner);
   const rowTemplate = group.slice(row.start, row.end);
   for (const key of ["title", "date"])
-    if (!rowTemplate.includes(tokens[key])) throw templateError(source, `${key} token in its template row`);
+    if (!rowTemplate.includes(tokens[key])) throw templateError(source, `${key} token in its template row`, routeOwner);
   // A page without a description drops the description element; a page
   // without a date shows the fallback text instead of the <time> element.
   const without = (text, token, tag, replacement = "") => {
@@ -235,16 +241,16 @@ export function fillSitemapPage(html, { groups, nonce, noDate = "—", source = 
   const bareRow = without(rowTemplate, tokens.description, "span");
   const rowKeys = ["href", "title", "description", "date", "dateTime"];
   const groupKeys = ["groupId", "groupLabel", "groupCount"];
-  const fillIntro = splitTokens(html.slice(intro.start, intro.end), tokens, ["total"], source, "intro");
-  const fillHead = splitTokens(group.slice(0, row.start), tokens, groupKeys, source, "group template");
-  const fillTail = splitTokens(group.slice(row.end), tokens, groupKeys, source, "group template");
+  const fillIntro = splitTokens(html.slice(intro.start, intro.end), tokens, ["total"], source, "intro", routeOwner);
+  const fillHead = splitTokens(group.slice(0, row.start), tokens, groupKeys, source, "group template", routeOwner);
+  const fillTail = splitTokens(group.slice(row.end), tokens, groupKeys, source, "group template", routeOwner);
   const fills = new Map(
     [
       ["description dated", rowTemplate],
       ["bare dated", bareRow],
       ["description undated", undated(rowTemplate)],
       ["bare undated", undated(bareRow)],
-    ].map(([key, text]) => [key, splitTokens(text, tokens, rowKeys, source, "row template")]),
+    ].map(([key, text]) => [key, splitTokens(text, tokens, rowKeys, source, "row template", routeOwner)]),
   );
   const total = groups.reduce((sum, item) => sum + item.pages.length, 0);
   const filled = groups.map((item) => {
@@ -291,7 +297,7 @@ export function countRenderedRows(html, ids) {
  * pathname, copy }]. Returns the files to write over the built pages.
  * Throws unless the rows across all pages equal the XML entries.
  */
-export function renderHtmlSitemaps({ root, entries, details, site, base = "/", i18n = null, lang, pages, nonce }) {
+export function renderHtmlSitemaps({ root, entries, details, site, base = "/", i18n = null, lang, pages, nonce, routeOwner = "plugin" }) {
   const lists = new Map(pages.map((page) => [page.locale, []]));
   for (const entry of entries) {
     const path = localPathOf(entry.loc, base);
@@ -314,12 +320,12 @@ export function renderHtmlSitemaps({ root, entries, details, site, base = "/", i
   for (const page of pages) {
     const found = htmlFile(root, page.pathname);
     const source = `/${String(page.pathname).replace(/^\/+/u, "")}`;
-    if (!found) throw templateError(source, "built HTML file");
+    if (!found) throw templateError(source, "built HTML file", routeOwner);
     const list = lists.get(page.locale);
     const own = new URL(page.href, site).href;
     if (!list.some((item) => item.loc === own || item.loc === own.replace(/\/$/u, "") || item.loc === `${own}/`))
       throw new Error(
-        `sitemap: the HTML sitemap ${source} is not listed in sitemap.xml (it must name itself as canonical without noindex). Turn the page off with ${optOut}.`,
+        `sitemap: the HTML sitemap ${source} is not listed in sitemap.xml (it must name itself as canonical without noindex).${routeOwner === "host" ? ` The host page (sitemap.routeOwner "host") must give its layout SEO metadata with url ${own} and no noindex.` : ""} Turn the page off with ${optOut}.`,
       );
     const groups = groupSitemapPages(list, { topLabel: page.copy.topLabel, locale: page.locale });
     const content = fillSitemapPage(readFileSync(found.file, "utf8"), {
@@ -327,13 +333,14 @@ export function renderHtmlSitemaps({ root, entries, details, site, base = "/", i
       nonce,
       noDate: page.copy.noDate,
       source,
+      routeOwner,
     });
     // Count what was rendered, not what went in: a template with an extra
     // static row would list more rows than sitemap.xml has URLs.
     const rendered = countRenderedRows(content, groups.map((group) => group.id));
     if (rendered !== list.length)
       throw new Error(
-        `sitemap: the HTML sitemap ${source} renders ${rendered} rows for ${list.length} URLs of its locale; its template must hold exactly one data row. Restore the SDK page, or turn the page off with ${optOut}.`,
+        `sitemap: the HTML sitemap ${source} renders ${rendered} rows for ${list.length} URLs of its locale; its template must hold exactly one data row. ${remedies[routeOwner]}, or turn the page off with ${optOut}.`,
       );
     rows += rendered;
     files.push({ name: found.relative, content, rows: rendered, locale: page.locale });

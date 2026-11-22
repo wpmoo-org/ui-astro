@@ -1,6 +1,6 @@
 import profile, { loadContent } from "virtual:wpmoo-astro/sitemap";
 import { siteHref } from "../content/paths.js";
-import { resolveSitemapOptions } from "./options.js";
+import { resolveSitemapOptions, sitemapPageForms } from "./options.js";
 import { groupSitemapPages, sitemapTokens, splitLocale } from "../integration/sitemap-page.js";
 
 /** The template tokens of this build (random per build). */
@@ -11,6 +11,18 @@ export function getSitemapTokens() {
 /** Whether the page renders on the dev server, which has no build:done fill. */
 export function isDevelopmentServer() {
   return profile.development === true;
+}
+
+/**
+ * Whether a rendered path is a locale's HTML sitemap page (href from
+ * getSitemapOptions) in a form the build format gives it, while the page is
+ * on; only there does the build fill the template.
+ */
+export function isSitemapPage(pathname, href) {
+  return (
+    profile.htmlSitemap === true &&
+    sitemapPageForms(href, { format: profile.buildFormat, development: profile.development }).includes(String(pathname))
+  );
 }
 
 /** Copy, page href, preferences and locale links of the HTML sitemap page. */

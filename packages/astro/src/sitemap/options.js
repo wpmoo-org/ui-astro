@@ -92,9 +92,14 @@ function placeholdersValid(key, value) {
 /** The retired sitemaps.org link placeholder would otherwise print as text. */
 const retiredPlaceholder = "{protocol}";
 
-/** @param {{ messages?: Record<string, Record<string, string>> }} [input] */
+/** @param {{ routeOwner?: 'plugin' | 'host', messages?: Record<string, Record<string, string>> }} [input] */
 export function normalizeSitemap(input = {}) {
-  record(input, "moo.sitemap", ["messages"]);
+  record(input, "moo.sitemap", ["routeOwner", "messages"]);
+  // "host": the site renders each locale's page itself (its own shell) and
+  // places SitemapContent; the SDK then injects no route.
+  const routeOwner = input.routeOwner === undefined ? "plugin" : input.routeOwner;
+  if (!["plugin", "host"].includes(routeOwner))
+    throw new TypeError('moo.sitemap.routeOwner must be "plugin" or "host"');
   const dictionaries = input.messages === undefined ? {} : input.messages;
   record(dictionaries, "moo.sitemap.messages");
   const messages = {};
@@ -119,7 +124,22 @@ export function normalizeSitemap(input = {}) {
     }
     messages[locale] = Object.freeze(owned);
   }
-  return Object.freeze({ messages: Object.freeze(messages) });
+  return Object.freeze({ routeOwner, messages: Object.freeze(messages) });
+}
+
+/**
+ * The Astro.url.pathname forms of a locale's sitemap page (its href from
+ * resolveSitemapOptions) under a build format: "directory" renders /sitemap
+ * or /sitemap/ (by trailingSlash), "file" /sitemap.html, "preserve"
+ * /sitemap.html (sitemap.astro) or /sitemap/ (sitemap/index.astro); the dev
+ * server takes the request path. Any other path is another route.
+ */
+export function sitemapPageForms(href, { format = "directory", development = false } = {}) {
+  const page = String(href).replace(/\/$/u, "");
+  if (development) return [page, `${page}/`, ...(format === "directory" ? [] : [`${page}.html`])];
+  if (format === "file") return [`${page}.html`];
+  if (format === "preserve") return [`${page}.html`, `${page}/`];
+  return [page, `${page}/`];
 }
 
 /** Site path of the HTML sitemap page for a locale, before base and slash policy. */

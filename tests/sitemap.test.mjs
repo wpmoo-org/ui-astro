@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { defineSite } from "../packages/astro/src/config/index.js";
 import moo from "../packages/astro/src/integration/index.js";
+import { normalizeSitemap, sitemapPageForms } from "../packages/astro/src/sitemap/options.js";
 import {
   collectSitemapEntries,
   competingIntegrations,
@@ -301,6 +302,80 @@ test("a host public/robots.txt fails the build", () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("sitemap.routeOwner host: no injected route; one literal prerendered host page per locale", () => {
+  const i18n = { locales: ["en", "de"], defaultLocale: "en", routing: { prefixDefaultLocale: false } };
+  const injected = [];
+  const integration = moo({ plugins: [], notFound: { routeOwner: "host" }, sitemap: { routeOwner: "host" } });
+  const config = {
+    root: new URL("file:///tmp/moo-sitemap-host/"),
+    srcDir: new URL("file:///tmp/moo-sitemap-host/src/"),
+    publicDir: new URL("file:///tmp/moo-sitemap-host/public/"),
+    cacheDir: new URL("file:///tmp/moo-sitemap-host/.astro/"),
+    markdown: {},
+    vite: {},
+    base: "/",
+    trailingSlash: "always",
+    output: "static",
+    prerenderConflictBehavior: "error",
+    integrations: [integration],
+    site,
+    i18n,
+  };
+  integration.hooks["astro:config:setup"]({ config, command: "build", injectRoute: (route) => injected.push(route.pattern), updateConfig() {}, addMiddleware() {} });
+  assert.deepEqual(injected.filter((pattern) => pattern.includes("sitemap")), []);
+  const page = (pattern, entrypoint, extra = {}) => ({ pattern, pathname: pattern, entrypoint, type: "page", origin: "project", isPrerendered: true, patternRegex: new RegExp(`^${pattern.replace(/\//gu, "\\/")}\\/?$`, "u"), ...extra });
+  const errors = [page("/404", "src/pages/404.astro"), page("/de/404", "src/pages/de/404.astro")];
+  const resolve = (...routes) => () => integration.hooks["astro:routes:resolved"]({ routes: [...errors, ...routes] });
+  const en = page("/sitemap", "src/pages/sitemap.astro");
+  const de = page("/de/sitemap", "src/pages/de/sitemap.astro");
+  assert.doesNotThrow(resolve(en, de));
+  // Every failing locale is named with its expected path.
+  assert.throws(
+    resolve(),
+    (error) =>
+      /sitemap\.routeOwner "host" needs one literal, prerendered host page/u.test(error.message) &&
+      error.message.includes("- en /sitemap: no page; add src/pages/sitemap.astro and place SitemapContent there") &&
+      error.message.includes("- de /de/sitemap: no page; add src/pages/de/sitemap.astro and place SitemapContent there") &&
+      error.message.includes('moo({ sitemap: { routeOwner: "plugin" } })'),
+  );
+  // Misplaced: a dynamic host route renders the path, or the page sits elsewhere.
+  const catchAll = page("/de/[...slug]", "src/pages/de/[...slug].astro", { patternRegex: /^\/de(?:\/(.*?))?\/?$/u });
+  assert.throws(resolve(en, catchAll), /- de \/de\/sitemap: rendered by src\/pages\/de\/\[\.\.\.slug\]\.astro \(\/de\/\[\.\.\.slug\]\), which is not a literal page at \/de\/sitemap; add src\/pages\/de\/sitemap\.astro/u);
+  assert.throws(resolve(en, page("/de/karte", "src/pages/de/karte.astro")), /- de \/de\/sitemap: no page; add src\/pages\/de\/sitemap\.astro/u);
+  assert.throws(resolve(en, { ...de, origin: "external", entrypoint: "theme/sitemap.astro" }), /- de \/de\/sitemap: owned by theme\/sitemap\.astro, not a host page/u);
+  assert.throws(resolve(en, { ...de, type: "endpoint" }), /- de \/de\/sitemap: src\/pages\/de\/sitemap\.astro must be a page, not an endpoint/u);
+  assert.throws(resolve(en, { ...de, isPrerendered: false }), /- de \/de\/sitemap: src\/pages\/de\/sitemap\.astro must prerender/u);
+  assert.throws(resolve(en, de, { ...de, entrypoint: "src/pages/de/sitemap/index.astro" }), /- de \/de\/sitemap: several routes \(src\/pages\/de\/sitemap\.astro, src\/pages\/de\/sitemap\/index\.astro\)/u);
+  // The default owner still rejects a host page at the SDK's path.
+  const plugin = moo({ plugins: [], notFound: { routeOwner: "host" } });
+  plugin.hooks["astro:config:setup"]({ config: { ...config, integrations: [plugin] }, command: "build", injectRoute() {}, updateConfig() {}, addMiddleware() {} });
+  assert.throws(
+    () => plugin.hooks["astro:routes:resolved"]({ routes: [...errors, en, de] }),
+    /writes \/sitemap\/ at build, and the route \/sitemap \(src\/pages\/sitemap\.astro\) also provides it.*htmlSitemap: false/u,
+  );
+});
+
+test("SitemapContent accepts only the path forms the build format gives the sitemap page", () => {
+  // directory + trailingSlash never: /sitemap only; a sitemap.html route or
+  // /sitemap/index.html is another page whose tokens no fill replaces.
+  const never = sitemapPageForms("/sitemap", { format: "directory" });
+  assert.deepEqual(never, ["/sitemap", "/sitemap/"]);
+  for (const other of ["/sitemap.html", "/sitemap/index.html", "/sitemapx", "/de/sitemap"]) assert.equal(never.includes(other), false, other);
+  assert.deepEqual(sitemapPageForms("/docs/de/sitemap/", { format: "directory" }), ["/docs/de/sitemap", "/docs/de/sitemap/"]);
+  assert.deepEqual(sitemapPageForms("/sitemap/", { format: "file" }), ["/sitemap.html"]);
+  assert.deepEqual(sitemapPageForms("/sitemap", { format: "preserve" }), ["/sitemap.html", "/sitemap/"]);
+  assert.deepEqual(sitemapPageForms("/sitemap/", { format: "directory", development: true }), ["/sitemap", "/sitemap/"]);
+  assert.deepEqual(sitemapPageForms("/sitemap", { format: "file", development: true }), ["/sitemap", "/sitemap/", "/sitemap.html"]);
+});
+
+test("sitemap.routeOwner accepts plugin or host, default plugin", () => {
+  assert.equal(normalizeSitemap().routeOwner, "plugin");
+  assert.equal(normalizeSitemap({ routeOwner: "host" }).routeOwner, "host");
+  assert.throws(() => normalizeSitemap({ routeOwner: "theme" }), /moo\.sitemap\.routeOwner must be "plugin" or "host"/u);
+  assert.throws(() => moo({ sitemap: { routeOwner: "theme" } }), /moo\.sitemap\.routeOwner must be "plugin" or "host"/u);
+  assert.throws(() => normalizeSitemap({ owner: "host" }), /moo\.sitemap\.owner is unsupported/u);
 });
 
 test("a public file collides with the sitemap page only at the file the build format writes", () => {
